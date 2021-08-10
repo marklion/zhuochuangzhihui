@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.10)
+project(zh_rpc_server)
+
+SET(LIBRARY_OUTPUT_PATH ${PRJ_INTERNAL_BUILD}/lib)
+add_compile_options(-std=gnu++11 -g -rdynamic)
+
+
+aux_source_directory(. RPC_SRC)
+aux_source_directory(../../zh_pub/zh_rpc_base/gen_code/cpp RPC_IMP_SRC)
+
+add_library(zh_rpc_server SHARED ${RPC_SRC} ${RPC_IMP_SRC})
+
+target_link_libraries(zh_rpc_server pthread thrift)
