@@ -8,6 +8,8 @@ add_compile_options(-std=gnu++11 -g -rdynamic)
 aux_source_directory(. RPC_SRC)
 aux_source_directory(../../zh_pub/zh_rpc_base/gen_code/cpp RPC_IMP_SRC)
 
+find_library(SQLITE_ORM_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib)
+
 add_library(zh_rpc_server SHARED ${RPC_SRC} ${RPC_IMP_SRC})
 
-target_link_libraries(zh_rpc_server pthread thrift)
+target_link_libraries(zh_rpc_server pthread thrift ${SQLITE_ORM_LIB})
