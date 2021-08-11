@@ -1,44 +1,104 @@
 <template>
 <div id="app">
     <div class="web_header_show">
-        卓创互联
+        <el-row type="flex" justify="space-between" align="middle">
+            <el-col>
+                <div class="web_header_content_show">
+                    卓创互联
+                </div>
+            </el-col>
+            <el-col :span="3">
+                <el-button @click="show_login_diag = true">登录</el-button>
+            </el-col>
+        </el-row>
     </div>
-    <div >
-        <el-row >
+    <div>
+        <el-row>
             <el-col :span="4">
                 <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
                     <el-menu-item index="Home" :route="{name:'Home'}">概览</el-menu-item>
                     <el-menu-item index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
                 </el-menu>
             </el-col>
-            <el-col :span="20" >
+            <el-col :span="20">
                 <router-view></router-view>
             </el-col>
         </el-row>
     </div>
-
+    <el-dialog title="登录" :visible.sync="show_login_diag" width="40%" @keyup.enter.native="user_login">
+        <el-form :model="login_form" :rules="rules" label-width="100px">
+            <el-form-item label="用户名" prop="phone">
+                <el-input v-model="login_form.phone" placeholder="请输入手机号"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+                <el-input v-model="login_form.password" placeholder="请输入密码"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="user_login">登陆</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
 </div>
 </template>
 
 <script>
-export default {
 
+export default {
+    name: 'App',
+    data: function () {
+        return {
+            login_form: {
+                phone: '',
+                password: '',
+            },
+            show_login_diag: false,
+            rules: {
+                phone: [{
+                        required: true,
+                        message: '请输入手机号',
+                        trigger: 'blur'
+                    },
+                    {
+                        pattern: /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/,
+                        message: '请输入正确手机号',
+                        trigger: 'blur'
+                    }
+                ],
+                password: [{
+                    required: true,
+                    message: '请输入密码',
+                    trigger: 'blur'
+                }, ],
+            },
+        };
+    },
+    methods: {
+        user_login: function () {
+            var vue_this = this;
+            var shajs = require('sha.js')
+            var password_sha1 = shajs('sha1').update(vue_this.login_form.password).digest('hex');
+            vue_this.$call_remote_process("user_management", "user_login", [vue_this.login_form.phone, password_sha1]).then(function (resp) {
+                console.log(resp);
+            });
+        },
+    },
 }
 </script>
 
 <style scoped>
-.web_header_show {
-    height: 60;
-    line-height: 60px;
+.web_header_content_show {
     padding-left: 40px;
-    background-color: rgb(114, 57, 20);
     color: bisque;
     font-weight: bold;
     font-size: 40px;
+    line-height: 80px;
+}
+
+.web_header_show {
+    background-color: rgb(114, 57, 20);
 }
 
 .web_nav_show {
     min-height: 600px;
 }
-
 </style>

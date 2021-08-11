@@ -12,4 +12,4 @@ find_library(SQLITE_ORM_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib)
 
 add_library(zh_rpc_server SHARED ${RPC_SRC} ${RPC_IMP_SRC})
 
-target_link_libraries(zh_rpc_server pthread thrift ${SQLITE_ORM_LIB})
+target_link_libraries(zh_rpc_server pthread thrift uuid ${SQLITE_ORM_LIB})
