@@ -38,3 +38,18 @@ std::string zh_rpc_util_gen_ssid()
 
     return ret;
 }
+
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission)
+{
+    auto ret = zh_rpc_util_get_online_user(ssid);
+    if (ret)
+    {
+        auto permission = ret->get_parent<zh_sql_user_permission>("permission");
+        if (permission && permission->key >= 0 && permission->key <= required_permission)
+        {
+            return ret;
+        }
+    }
+
+    return std::unique_ptr<zh_sql_user_info>();
+}

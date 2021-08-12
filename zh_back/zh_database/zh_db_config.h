@@ -8,7 +8,7 @@ class zh_sql_user_permission : public sql_tree_base
 public:
     std::string name;
     std::string description;
-    long key = -1;
+    int key = -1;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
