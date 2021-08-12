@@ -25,6 +25,7 @@ public:
     virtual bool add_user(const std::string &ssid, const user_info &new_user);
     virtual bool del_user(const std::string &ssid, const int64_t user_id);
     virtual bool reset_user(const std::string &ssid, const int64_t user_id, const std::string &password);
+    virtual bool change_user_password(const std::string &ssid, const std::string &password);
 };
 
 #endif // _USER_MANAGEMENT_H_

@@ -8,7 +8,7 @@ class zh_sql_user_permission : public sql_tree_base
 public:
     std::string name;
     std::string description;
-    int key = -1;
+    long key = -1;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -30,6 +30,8 @@ public:
     std::string name;
     std::string phone;
     std::string password;
+    long need_change_password = 0;
+
     zh_sql_user_info() {
         add_parent_type<zh_sql_user_permission>("permission");
     }
@@ -39,6 +41,7 @@ public:
         ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
         ret.push_back(sqlite_orm_column("phone", sqlite_orm_column::STRING, &phone, SQLITE_ORM_COLUMN_LIMIT_UNIQ));
         ret.push_back(sqlite_orm_column("password", sqlite_orm_column::STRING, &password));
+        ret.push_back(sqlite_orm_column("need_change_password", sqlite_orm_column::INTEGER, &need_change_password));
 
         return ret;
     }

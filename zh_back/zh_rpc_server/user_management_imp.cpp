@@ -5,6 +5,24 @@
 user_management_handler *user_management_handler::m_inst = nullptr;
 
 
+bool user_management_handler::change_user_password(const std::string &ssid, const std::string &password)
+{
+    bool ret = false;
+    auto user_info = zh_rpc_util_get_online_user(ssid);
+    if (!user_info)
+    {
+        ZH_RETURN_UNLOGIN_MSG();
+    }
+    if (user_info->password == password)
+    {
+        ZH_RETURN_MSG("不允许使用相同密码");
+    }
+    user_info->password = password;
+    user_info->need_change_password = 0;
+    ret = user_info->update_record();
+
+    return ret;
+}
 bool user_management_handler::del_user(const std::string &ssid, const int64_t user_id)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid, 0);
@@ -41,10 +59,11 @@ bool user_management_handler::reset_user(const std::string &ssid, const int64_t 
     }
     if (user_need_reset->name == "admin")
     {
-        ZH_RETURN_MSG("无法删除内置管理员");
+        ZH_RETURN_MSG("无法重置内置管理员");
     }
     user_need_reset->password = password;
-    ret = user_need_reset->update_record(); 
+    user_need_reset->need_change_password = 1;
+    ret = user_need_reset->update_record();
 
     return ret;
 }
@@ -71,6 +90,7 @@ bool user_management_handler::add_user(const std::string &ssid, const user_info 
     tmp.password = new_user.password;
     tmp.phone = new_user.phone;
     tmp.set_parent(*required_permission, "permission");
+    tmp.need_change_password = 1;
 
     return tmp.insert_record();
 }
@@ -132,6 +152,7 @@ void user_management_handler::self_info(user_info &_return, const std::string &s
     _return.id = user_info->get_pri_id();
     _return.name = user_info->name;
     _return.phone = user_info->phone;
+    _return.need_change_password = user_info->need_change_password == 0 ? false : true;
 }
 void user_management_handler::user_login(std::string &_return, const std::string &phone, const std::string &password)
 {

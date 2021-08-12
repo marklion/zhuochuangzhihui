@@ -15,7 +15,8 @@
                             <div>当前用户：{{$store.state.user_info.name}}</div>
                             <div>权限：{{$store.state.user_info.permission_name}}</div>
                         </div>
-                        <el-button type="danger" plain size="mini" @click="user_logoff">退出登录</el-button>
+                        <el-button type="warning" size="mini" @click="show_change_password = true">修改密码</el-button>
+                        <el-button type="danger" size="mini" @click="user_logoff">退出登录</el-button>
                     </div>
                 </div>
             </el-col>
@@ -42,10 +43,10 @@
     </div>
     <el-dialog title="登录" :visible.sync="show_login_diag" width="40%" @keyup.enter.native="user_login">
         <el-form :model="login_form" :rules="rules" label-width="100px">
-            <el-form-item label="用户名" prop="phone">
+            <el-form-item label="手机号" prop="phone">
                 <el-input v-model="login_form.phone" placeholder="请输入手机号"></el-input>
             </el-form-item>
-            <el-form-item label="密码" prop="password" >
+            <el-form-item label="密码" prop="password">
                 <el-input v-model="login_form.password" show-password placeholder="请输入密码"></el-input>
             </el-form-item>
             <el-form-item>
@@ -53,18 +54,36 @@
             </el-form-item>
         </el-form>
     </el-dialog>
+    <el-dialog title="修改密码" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="need_show_change_password" width="60%">
+        <change-password></change-password>
+    </el-dialog>
 </div>
 </template>
 
 <script>
+import ChangePassword from './components/ChangePassword.vue'
 export default {
     name: 'App',
+    components: {
+        "change-password": ChangePassword,
+    },
+    computed: {
+        need_show_change_password: {
+            get() {
+                return this.$store.state.user_info.need_change_password || this.show_change_password;
+            },
+            set(_value) {
+                this.show_change_password = _value;
+            }
+        },
+    },
     data: function () {
         return {
             login_form: {
                 phone: '',
                 password: '',
             },
+            show_change_password: false,
             show_login_diag: false,
             rules: {
                 phone: [{
@@ -111,7 +130,8 @@ export default {
                         permissions: -1,
                         id: 0,
                         permission_name: '',
-                        phone: ''
+                        phone: '',
+                        need_change_password: false,
                     });
                     vue_this.$store.commit('set_login', false);
                 }

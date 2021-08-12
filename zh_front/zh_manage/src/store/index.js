@@ -11,6 +11,7 @@ export default new Vuex.Store({
       permission: -1,
       id: 0,
       permission_name:'',
+      need_change_password:false,
     },
 
     is_login: false,

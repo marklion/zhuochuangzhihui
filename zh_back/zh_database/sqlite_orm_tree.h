@@ -8,9 +8,9 @@
 struct parent_info
 {
     std::string parent_table;
-    int parent_id = 0;
+    long parent_id = 0;
     parent_info() {}
-    parent_info(const std::string &_table, int _id) : parent_table(_table), parent_id(_id) {}
+    parent_info(const std::string &_table, long _id) : parent_table(_table), parent_id(_id) {}
 };
 
 class sql_tree_base : public sqlite_orm
