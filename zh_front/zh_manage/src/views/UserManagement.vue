@@ -24,7 +24,7 @@
         </el-table-column>
         <el-table-column prop="name" label="姓名" min-width="25px">
         </el-table-column>
-        <el-table-column prop="phone" label="电话" min-width="30px">
+        <el-table-column prop="phone" label="手机号" min-width="30px">
         </el-table-column>
         <el-table-column prop="permission_name" label="权限">
         </el-table-column>
@@ -42,8 +42,8 @@
             <el-form-item label="姓名" prop="name">
                 <el-input v-model="new_user.name" placeholder="请输入用户姓名"></el-input>
             </el-form-item>
-            <el-form-item label="电话" prop="phone">
-                <el-input v-model="new_user.phone" placeholder="请输入电话"></el-input>
+            <el-form-item label="手机号" prop="phone">
+                <el-input v-model="new_user.phone" placeholder="请输入手机号"></el-input>
             </el-form-item>
             <el-form-item label="权限" prop="permission_name">
                 <el-select v-model="new_user.permission_name" placeholder="请分配权限">

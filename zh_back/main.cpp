@@ -89,20 +89,14 @@ void init_admin_user()
     if (admin_permission)
     {
         auto exist_admin = admin_permission->get_children<zh_sql_user_info>("permission", "name == '%s'", admin_name.c_str());
-        if (exist_admin)
-        {
-            exist_admin->phone = admin_phone;
-            exist_admin->name = admin_name;
-            exist_admin->password = admin_password;
-            exist_admin->update_record();
-        }
-        else
+        if (!exist_admin)
         {
             zh_sql_user_info admin;
             admin.name = admin_name;
             admin.phone = admin_phone;
             admin.password = admin_password;
             admin.set_parent(*admin_permission, "permission");
+            admin.need_change_password = 1;
             admin.insert_record();
         }
     }

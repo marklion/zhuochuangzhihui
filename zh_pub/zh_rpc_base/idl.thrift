@@ -14,6 +14,7 @@ struct user_info {
     4:i64 id,
     5:i64 permission,
     6:string permission_name,
+    7:bool need_change_password,
 }
 
 struct user_permission {
@@ -31,4 +32,5 @@ service user_management {
     bool add_user(1:string ssid, 2:user_info new_user) throws (1:gen_exp e),
     bool del_user(1:string ssid, 2:i64 user_id) throws (1:gen_exp e),
     bool reset_user(1:string ssid, 2:i64 user_id, 3:string password) throws (1:gen_exp e),
+    bool change_user_password(1:string ssid, 2:string password) throws (1:gen_exp e),
 }

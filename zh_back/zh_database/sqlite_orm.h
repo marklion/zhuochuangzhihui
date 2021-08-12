@@ -80,7 +80,7 @@ public:
 private:
     bool table_exists = false;
     zh_log m_log;
-    int m_pri_id = -1;
+    long m_pri_id = -1;
     std::string m_sqlite_file = "";
 
     void create_table() {
@@ -193,7 +193,7 @@ public:
     virtual std::vector<sqlite_orm_column> columns_defined() = 0;
     virtual std::string table_name() = 0;
 
-    int get_pri_id() {
+    long get_pri_id() {
         return m_pri_id;
     }
     void remove_table() {
@@ -221,7 +221,7 @@ public:
             switch (single_column.m_type)
             {
             case sqlite_orm_column::INTEGER:
-                sql_cmd.append(std::to_string(*(static_cast<int *>(single_column.m_data))) + ",");
+                sql_cmd.append(std::to_string(*(static_cast<long *>(single_column.m_data))) + ",");
                 break;
             case sqlite_orm_column::STRING:
                 sql_cmd.append("'" + escape_single_quotes(*(static_cast<std::string *>(single_column.m_data))) + "',");
@@ -246,7 +246,7 @@ public:
             if (pri_id_ret.size() >= 1)
             {
                 ret = true;
-                m_pri_id = atoi(pri_id_ret[0]["last_insert_rowid()"].c_str());
+                m_pri_id = atol(pri_id_ret[0]["last_insert_rowid()"].c_str());
             }
         }
 
@@ -270,7 +270,7 @@ public:
             switch (single_column.m_type)
             {
             case sqlite_orm_column::INTEGER:
-                sql_cmd.append(std::to_string(*(static_cast<int *>(single_column.m_data))));
+                sql_cmd.append(std::to_string(*(static_cast<long *>(single_column.m_data))));
                 break;
             case sqlite_orm_column::STRING:
                 sql_cmd.append("'" + escape_single_quotes(*(static_cast<std::string *>(single_column.m_data))) + "'");
@@ -307,13 +307,13 @@ public:
             for (auto &itr:search_ret)
             {
                 sql_record single_record;
-                single_record.m_pri_id = atoi(itr["PRI_ID"].c_str());
+                single_record.m_pri_id = atol(itr["PRI_ID"].c_str());
                 for (auto &single_column :single_record.columns_defined())
                 {
                     switch (single_column.m_type)
                     {
                         case sqlite_orm_column::INTEGER:
-                        *(static_cast<int *>(single_column.m_data)) = atoi(itr[single_column.m_name].c_str());
+                        *(static_cast<long *>(single_column.m_data)) = atol(itr[single_column.m_name].c_str());
                         break;
                         case sqlite_orm_column::STRING:
                         *(static_cast<std::string *>(single_column.m_data)) = itr[single_column.m_name].c_str();
@@ -367,9 +367,9 @@ public:
         return search_record<sql_record>(std::string(tmpbuff));
     }
     template <typename sql_record>
-    static std::unique_ptr<sql_record> search_record(int _pri_id)
+    static std::unique_ptr<sql_record> search_record(long _pri_id)
     {
-        return search_record<sql_record>("PRI_ID = %d", _pri_id);
+        return search_record<sql_record>("PRI_ID = %ld", _pri_id);
     }
 };
 
