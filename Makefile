@@ -13,7 +13,7 @@ $(DELIVER_PATH):$(SUB_DIR)
 	for component in $^;do [ -d $$component/build ] && cp -a $$component/build/* $@/; done
 
 $(SUB_DIR):
-	make -C $(SRC_DIR)/$@
+	$(MAKE) -C $(SRC_DIR)/$@
 
 zh_back:zh_pub zh_external
 

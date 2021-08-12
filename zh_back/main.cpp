@@ -88,7 +88,7 @@ void init_admin_user()
     auto admin_permission = sqlite_orm::search_record<zh_sql_user_permission>("key == 0");
     if (admin_permission)
     {
-        auto exist_admin = admin_permission->get_children<zh_sql_user_info>("permission");
+        auto exist_admin = admin_permission->get_children<zh_sql_user_info>("permission", "name == '%s'", admin_name.c_str());
         if (exist_admin)
         {
             exist_admin->phone = admin_phone;

@@ -7,8 +7,17 @@
                     卓创互联
                 </div>
             </el-col>
-            <el-col :span="3">
-                <el-button @click="show_login_diag = true">登录</el-button>
+            <el-col :span="12">
+                <div align="right" class="user_profile_show">
+                    <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
+                    <div v-else>
+                        <div class="user_info_show">
+                            <div>当前用户：{{$store.state.user_info.name}}</div>
+                            <div>权限：{{$store.state.user_info.permission_name}}</div>
+                        </div>
+                        <el-button type="danger" plain size="mini" @click="user_logoff">退出登录</el-button>
+                    </div>
+                </div>
             </el-col>
         </el-row>
     </div>
@@ -17,11 +26,17 @@
             <el-col :span="4">
                 <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
                     <el-menu-item index="Home" :route="{name:'Home'}">概览</el-menu-item>
+                    <el-menu-item index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
                     <el-menu-item index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
                 </el-menu>
             </el-col>
             <el-col :span="20">
-                <router-view></router-view>
+                <div v-if="$store.state.is_login" style="height:660px;">
+                    <router-view></router-view>
+                </div>
+                <div v-else>
+                    请先登录
+                </div>
             </el-col>
         </el-row>
     </div>
@@ -30,8 +45,8 @@
             <el-form-item label="用户名" prop="phone">
                 <el-input v-model="login_form.phone" placeholder="请输入手机号"></el-input>
             </el-form-item>
-            <el-form-item label="密码" prop="password">
-                <el-input v-model="login_form.password" placeholder="请输入密码"></el-input>
+            <el-form-item label="密码" prop="password" >
+                <el-input v-model="login_form.password" show-password placeholder="请输入密码"></el-input>
             </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="user_login">登陆</el-button>
@@ -42,7 +57,6 @@
 </template>
 
 <script>
-
 export default {
     name: 'App',
     data: function () {
@@ -78,9 +92,40 @@ export default {
             var shajs = require('sha.js')
             var password_sha1 = shajs('sha1').update(vue_this.login_form.password).digest('hex');
             vue_this.$call_remote_process("user_management", "user_login", [vue_this.login_form.phone, password_sha1]).then(function (resp) {
-                console.log(resp);
+                if (resp.length > 0) {
+                    vue_this.$cookies.set('zh_ssid', resp, '5d');
+                    vue_this.show_login_diag = false;
+                    vue_this.init_user_info();
+                }
             });
         },
+        init_user_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("user_management", 'self_info', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
+                if (resp.id != 0) {
+                    vue_this.$store.commit('set_user_info', resp);
+                    vue_this.$store.commit('set_login', true);
+                } else {
+                    vue_this.$store.commit('set_user_info', {
+                        name: '',
+                        permissions: -1,
+                        id: 0,
+                        permission_name: '',
+                        phone: ''
+                    });
+                    vue_this.$store.commit('set_login', false);
+                }
+            });
+        },
+        user_logoff: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("user_management", 'user_logoff', [vue_this.$cookies.get('zh_ssid')]).then(function () {
+                vue_this.$router.go(0);
+            });
+        },
+    },
+    beforeMount: function () {
+        this.init_user_info();
     },
 }
 </script>
@@ -99,6 +144,14 @@ export default {
 }
 
 .web_nav_show {
-    min-height: 600px;
+    height: 660px;
+}
+
+.user_profile_show {
+    padding-right: 20px;
+}
+
+.user_info_show {
+    color: white;
 }
 </style>

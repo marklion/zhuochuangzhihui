@@ -14,6 +14,11 @@ const routes = [
     name: 'SystemManagement',
     component: () => import('../views/SystemManagement.vue')
   },
+  {
+    path: '/user_management',
+    name: 'UserManagement',
+    component: () => import('../views/UserManagement.vue')
+  },
 ]
 
 const router = new VueRouter({
