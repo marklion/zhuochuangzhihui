@@ -4,7 +4,7 @@
         <el-row type="flex" justify="space-between" align="middle">
             <el-col>
                 <div class="web_header_content_show">
-                    卓创互联
+                    卓创智汇
                 </div>
             </el-col>
             <el-col :span="12">
@@ -26,9 +26,9 @@
         <el-row>
             <el-col :span="4">
                 <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
-                    <el-menu-item index="Home" :route="{name:'Home'}">概览</el-menu-item>
-                    <el-menu-item index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
-                    <el-menu-item index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
+                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
+                    <el-menu-item v-if="$store.state.user_info.permission <= 0" index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
+                    <el-menu-item v-if="$store.state.user_info.permission <= 0" index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
                 </el-menu>
             </el-col>
             <el-col :span="20">
@@ -127,7 +127,7 @@ export default {
                 } else {
                     vue_this.$store.commit('set_user_info', {
                         name: '',
-                        permissions: -1,
+                        permission: -1,
                         id: 0,
                         permission_name: '',
                         phone: '',
