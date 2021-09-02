@@ -14,6 +14,7 @@ Vue.prototype.$get_client = get_client;
 Vue.prototype.$call_remote_process = call_remote_process;
 Vue.prototype.$call_remote_process_no_toast = call_remote_process_no_toast;
 Vue.prototype.$cookies = cookies;
+Vue.prototype.$remote_url = process.env.VUE_APP_BACK_END_URL;
 
 new Vue({
   router,

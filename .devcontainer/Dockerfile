@@ -17,4 +17,6 @@ RUN mkdir thrift_dir
 COPY thrift-0.14.1.tar.gz ./thrift_dir/
 SHELL ["/bin/bash", "-c"]
 RUN pushd thrift_dir;tar xf thrift-0.14.1.tar.gz;pushd thrift-0.14.1 ;./configure --prefix=/usr --without-ruby --without-java --without-go --without-erlang --without-perl --without-qt5 --without-lua --without-php --without-nodejs --without-php_extension && make -j 8 && make install;popd;popd
-
+ENV TIME_ZONE=Asia/Shanghai 
+RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nginx

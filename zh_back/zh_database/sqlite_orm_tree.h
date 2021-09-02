@@ -19,7 +19,7 @@ class sql_tree_base : public sqlite_orm
 
 public:
     virtual std::vector<sqlite_orm_column> self_columns_defined() = 0;
-    sql_tree_base() : sqlite_orm("./zh.db") {}
+    sql_tree_base() : sqlite_orm("/database/zh.db") {}
     virtual std::vector<sqlite_orm_column> columns_defined()
     {
         std::vector<sqlite_orm_column> ret(self_columns_defined());

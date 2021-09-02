@@ -4,7 +4,7 @@ export function get_client(_service_interface) {
         // eslint-disable-next-line
     var mp1 = new Thrift.Multiplexer();
         // eslint-disable-next-line
-    var transport = new Thrift.Transport("http://localhost:8123/");
+    var transport = new Thrift.Transport(process.env.VUE_APP_BACK_END_URL + "/zh_rpc/");
         // eslint-disable-next-line
     var protocol = new Thrift.Protocol(transport);
         // eslint-disable-next-line

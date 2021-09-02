@@ -2,11 +2,16 @@ SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
 SUB_DIR=zh_pub zh_back zh_external zh_front
-
-all:$(DELIVER_PATH)
+BUILD_MODE=build
+export BUILD_MODE
 
 pack:all
-	tar zcf zczh_software_$(shell date +%Y%m%d%H%M%S).tar.gz -C $(SRC_DIR) build
+	tar zcf zh_deliver.tar.gz -C $(DELIVER_PATH) bin lib conf manage_dist
+	cat deploy.sh zh_deliver.tar.gz > $(DELIVER_PATH)/install.sh
+	chmod +x $(DELIVER_PATH)/install.sh
+	rm zh_deliver.tar.gz
+
+all:$(DELIVER_PATH)
 
 $(DELIVER_PATH):$(SUB_DIR)
 	[ -d $@ ] || mkdir $@

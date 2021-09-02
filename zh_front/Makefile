@@ -8,7 +8,7 @@ $(DELIVER_PATH):
 
 $(DELIVER_PATH)/manage_dist:$(DELIVER_PATH)
 	rm -rf $@
-	pushd $(SRC_DIR)/zh_manage;[ -d node_modules ] || npm install; npm run build; cp ./dist -a $@; popd
+	pushd $(SRC_DIR)/zh_manage;[ -d node_modules ] || npm install; npm run $(BUILD_MODE); cp ./dist -a $@; popd
 
 clean:
 	rm -rf $(DELIVER_PATH)
