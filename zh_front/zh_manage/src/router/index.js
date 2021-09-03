@@ -7,7 +7,7 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: ()=> import('../views/Home.vue')
+    component: () => import('../views/Home.vue')
   },
   {
     path: '/system_management',
@@ -18,6 +18,11 @@ const routes = [
     path: '/user_management',
     name: 'UserManagement',
     component: () => import('../views/UserManagement.vue')
+  },
+  {
+    path: '/contract_management',
+    name: 'ContractManagement',
+    component: () => import('../views/ContractManagement.vue')
   },
 ]
 
