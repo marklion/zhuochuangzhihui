@@ -53,3 +53,20 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 
     return std::unique_ptr<zh_sql_user_info>();
 }
+
+std::string zh_rpc_util_get_timestring(time_t _time)
+{
+    time_t cur_time = _time;
+
+    auto st_time = localtime(&cur_time);
+    char buff[512] = "";
+
+    sprintf(buff, "%d-%02d-%02d %02d:%02d:%02d", st_time->tm_year + 1900, st_time->tm_mon + 1, st_time->tm_mday, st_time->tm_hour, st_time->tm_min, st_time->tm_sec);
+
+    return std::string(buff);
+}
+std::string zh_rpc_util_get_datestring(time_t _time)
+{
+    auto date_time = zh_rpc_util_get_timestring(_time);
+    return date_time.substr(0, 10);
+}

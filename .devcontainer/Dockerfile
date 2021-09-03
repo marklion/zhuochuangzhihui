@@ -20,3 +20,6 @@ RUN pushd thrift_dir;tar xf thrift-0.14.1.tar.gz;pushd thrift-0.14.1 ;./configur
 ENV TIME_ZONE=Asia/Shanghai 
 RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
+COPY nginx_upload_install.sh /root/
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre3 libpcre3-dev libxslt-dev libgd-dev
+RUN ./nginx_upload_install.sh

@@ -34,3 +34,19 @@ service user_management {
     bool reset_user(1:string ssid, 2:i64 user_id, 3:string password) throws (1:gen_exp e),
     bool change_user_password(1:string ssid, 2:string password) throws (1:gen_exp e),
 }
+
+struct contract_info {
+    1:string name,
+    2:string date,
+    3:bool is_sale,
+    4:string attachment,
+    5:i64 id,
+    6:string code,
+}
+
+service contract_management {
+    bool add_contract(1:string ssid, 2:contract_info contract) throws (1:gen_exp e),
+    bool del_contract(1:string ssid, 2:i64 contract_id) throws (1:gen_exp e),
+    bool update_contract(1:string ssid, 2:contract_info contract) throws (1:gen_exp e),
+    list<contract_info> get_all_contract(1:string ssid) throws (1:gen_exp e),
+}
