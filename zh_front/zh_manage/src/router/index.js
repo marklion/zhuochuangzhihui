@@ -24,6 +24,11 @@ const routes = [
     name: 'ContractManagement',
     component: () => import('../views/ContractManagement.vue')
   },
+  {
+    path: '/stuff_management',
+    name: 'StuffManagement',
+    component: () => import('../views/StuffManagement.vue')
+  },
 ]
 
 const router = new VueRouter({

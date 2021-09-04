@@ -50,3 +50,17 @@ service contract_management {
     bool update_contract(1:string ssid, 2:contract_info contract) throws (1:gen_exp e),
     list<contract_info> get_all_contract(1:string ssid) throws (1:gen_exp e),
 }
+
+struct stuff_info {
+    1:string name,
+    2:double inventory,
+    3:string unit,
+    4:i64 id,
+}
+
+service stuff_management {
+    bool add_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
+    bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
+    bool del_stuff(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    list<stuff_info> get_all_stuff(1:string ssid) throws (1:gen_exp e),
+}

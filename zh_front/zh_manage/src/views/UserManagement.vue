@@ -14,7 +14,7 @@
             <div class="block_title_show">所有用户</div>
         </el-col>
         <el-col>
-            <div align="right">
+            <div align="right" style="margin-right:10px;">
                 <el-button size="mini" type="success" icon="el-icon-plus" @click="show_add_user_diag = true;">新增</el-button>
             </div>
         </el-col>
