@@ -136,4 +136,24 @@ public:
     }
 };
 
+class zh_sql_stuff:public sql_tree_base {
+public:
+    std::string name;
+    double inventory;
+    std::string unit;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("inventory", sqlite_orm_column::REAL, &inventory));
+        ret.push_back(sqlite_orm_column("unit", sqlite_orm_column::STRING, &unit));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "stuff_table";
+    }
+};
+
 #endif // _ZH_DB_CONFIG_H_
