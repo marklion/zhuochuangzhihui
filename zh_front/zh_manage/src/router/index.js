@@ -29,6 +29,11 @@ const routes = [
     name: 'StuffManagement',
     component: () => import('../views/StuffManagement.vue')
   },
+  {
+    path: '/vehicle_management',
+    name: 'VehicleManagement',
+    component: () => import('../views/VehicleManagement.vue')
+  },
 ]
 
 const router = new VueRouter({

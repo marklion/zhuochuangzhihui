@@ -17,6 +17,7 @@
 #include "zh_rpc_server/user_management_imp.h"
 #include "zh_rpc_server/contract_management_imp.h"
 #include "zh_rpc_server/stuff_management_imp.h"
+#include "zh_rpc_server/vehicle_management_imp.h"
 #include "zh_database/zh_db_config.h"
 #include <openssl/sha.h>
 #include <openssl/crypto.h>
@@ -113,6 +114,7 @@ int main(int argc, char const *argv[])
     multi_processor->registerProcessor("user_management", std::shared_ptr<TProcessor>(new user_managementProcessor(std::shared_ptr<user_management_handler>(user_management_handler::get_inst()))));
     multi_processor->registerProcessor("contract_management", std::shared_ptr<TProcessor>(new contract_managementProcessor(std::shared_ptr<contract_management_handler>(contract_management_handler::get_inst()))));
     multi_processor->registerProcessor("stuff_management", std::shared_ptr<TProcessor>(new stuff_managementProcessor(std::shared_ptr<stuff_management_handler>(stuff_management_handler::get_inst()))));
+    multi_processor->registerProcessor("vehicle_management", std::shared_ptr<TProcessor>(new vehicle_managementProcessor(std::shared_ptr<vehicle_management_handler>(vehicle_management_handler::get_inst()))));
 
     ::std::shared_ptr<TServerTransport> serverTransport(new TServerSocket(8123));
     ::std::shared_ptr<TTransportFactory> transportFactory(new THttpServerTransportFactory());

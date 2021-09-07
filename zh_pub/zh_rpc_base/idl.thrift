@@ -64,3 +64,22 @@ service stuff_management {
     bool del_stuff(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<stuff_info> get_all_stuff(1:string ssid) throws (1:gen_exp e),
 }
+
+struct vehicle_info {
+    1:string main_vehicle_number,
+    2:string behind_vehicle_number,
+    3:string driver_name,
+    4:string driver_phone,
+    5:string driver_id,
+    6:string company_name,
+    7:i64 id,
+    8:string group_name,
+}
+
+
+service vehicle_management {
+    bool add_vehicle(1:string ssid, 2:vehicle_info vehicle) throws (1:gen_exp e),
+    bool update_vehicle(1:string ssid, 2:vehicle_info vehicle) throws (1:gen_exp e),
+    bool del_vehicle(1:string ssid, 2:i64 vehicle_id) throws (1:gen_exp e),
+    list<vehicle_info> get_all_vehicle(1:string ssid) throws (1:gen_exp e),
+}
