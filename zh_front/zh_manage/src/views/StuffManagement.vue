@@ -145,12 +145,5 @@ export default {
 </script>
 
 <style scoped>
-.block_title_show {
-    font-weight: bold;
-    font-size: 20px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 15px;
-    color: rgb(88, 65, 0);
-}
+
 </style>

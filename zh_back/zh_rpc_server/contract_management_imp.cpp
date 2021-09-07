@@ -3,6 +3,19 @@
 
 contract_management_handler *contract_management_handler::m_inst = nullptr;
 
+bool contract_is_dup(const contract_info &contract)
+{
+    bool ret = false;
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == %ld AND PRI_ID != %ld", contract.name.c_str(), contract.is_sale?1:0, contract.id);
+    if (exist_record)
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+
 bool contract_management_handler::add_contract(const std::string &ssid, const contract_info &contract)
 {
     bool ret = false;
@@ -12,8 +25,7 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
         ZH_RETURN_NO_PRAVILIGE();
     }
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == %ld", contract.name.c_str(), contract.is_sale?1:0);
-    if (exist_record)
+    if (contract_is_dup(contract))
     {
         ZH_RETURN_DUP_CONTRACT();
     }
@@ -21,12 +33,14 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
     zh_sql_contract tmp;
     tmp.name = contract.name;
     tmp.date = zh_rpc_util_get_timestring();
-    zh_sql_file attach_file;
-    attach_file.save_file(contract.attachment.substr(0, contract.attachment.find_last_of('.')), contract.name + "-" + tmp.date + contract.attachment.substr(contract.attachment.find_last_of('.'), contract.attachment.length()));
-    attach_file.insert_record();
-    tmp.set_parent(attach_file, "attachment");
+    if (contract.attachment.length() > 0) {
+        zh_sql_file attach_file;
+        attach_file.save_file(contract.attachment.substr(0, contract.attachment.find_last_of('.')), contract.name + "-" + tmp.date + contract.attachment.substr(contract.attachment.find_last_of('.'), contract.attachment.length()));
+        attach_file.insert_record();
+        tmp.set_parent(attach_file, "attachment");
+    }
     tmp.code = contract.code;
-    tmp.is_sale = contract.is_sale?1:0;
+    tmp.is_sale = contract.is_sale ? 1 : 0;
 
     ret = tmp.insert_record();
 
@@ -67,6 +81,10 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
         ZH_RETURN_NO_CONTRACT();
     }
 
+    if (contract_is_dup(contract))
+    {
+        ZH_RETURN_DUP_CONTRACT();
+    }
     exist_record->date = zh_rpc_util_get_timestring();
     if (contract.attachment.length() > 0)
     {

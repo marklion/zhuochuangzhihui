@@ -156,4 +156,32 @@ public:
     }
 };
 
+class zh_sql_vehicle:public sql_tree_base {
+public:
+    std::string main_vehicle_number;
+    std::string behind_vehicle_number;
+    std::string driver_name;
+    std::string driver_id;
+    std::string driver_phone;
+    std::string company_name;
+    std::string group_name;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("main_vehicle_number", sqlite_orm_column::STRING, &main_vehicle_number));
+        ret.push_back(sqlite_orm_column("behind_vehicle_number", sqlite_orm_column::STRING, &behind_vehicle_number));
+        ret.push_back(sqlite_orm_column("driver_name", sqlite_orm_column::STRING, &driver_name));
+        ret.push_back(sqlite_orm_column("driver_id", sqlite_orm_column::STRING, &driver_id));
+        ret.push_back(sqlite_orm_column("driver_phone", sqlite_orm_column::STRING, &driver_phone));
+        ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
+        ret.push_back(sqlite_orm_column("group_name", sqlite_orm_column::STRING, &group_name));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "vehicle_table";
+    }
+};
+
 #endif // _ZH_DB_CONFIG_H_

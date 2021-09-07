@@ -3,6 +3,7 @@ import App from './App.vue'
 import './plugins/element.js'
 import router from './router'
 import cookies from 'vue-cookies'
+import './style/main.css';
 
 import {
   get_client, call_remote_process, call_remote_process_no_toast

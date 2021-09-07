@@ -3,6 +3,19 @@
 
 stuff_management_handler *stuff_management_handler::m_inst = nullptr;
 
+bool stuff_is_dup(const stuff_info &stuff)
+{
+    bool ret = false;
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff>("name == '%s' AND PRI_ID != %ld", stuff.name.c_str(), stuff.id);
+    if (exist_record)
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+
 bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_info &stuff)
 {
     bool ret = false;
@@ -12,8 +25,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
         ZH_RETURN_NO_PRAVILIGE();
     }
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff.name.c_str());
-    if (exist_record)
+    if (stuff_is_dup(stuff))
     {
         ZH_RETURN_DUP_STUFF();
     }
@@ -41,7 +53,10 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     {
         ZH_RETURN_NO_STUFF();
     }
-
+    if (stuff_is_dup(stuff))
+    {
+        ZH_RETURN_DUP_STUFF();
+    }
     exist_record->inventory = stuff.inventory;
     exist_record->name = stuff.name;
     exist_record->unit = stuff.unit;
