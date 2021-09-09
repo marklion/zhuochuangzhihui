@@ -71,22 +71,6 @@
 export default {
     name: 'Vehicle_management',
     data: function () {
-        var driver_info_complate = (rule, value, callback) => {
-            var ret = false;
-            console.log(this);
-            console.log(rule, value);
-            if (this.focus_vehicle.driver_name || this.focus_vehicle.driver_id || this.focus_vehicle.driver_phone) {
-                ret = this.focus_vehicle.driver_name && this.focus_vehicle.driver_id && this.focus_vehicle.driver_phone;
-            } else {
-                ret = true;
-            }
-
-            if (!ret) {
-                callback(new Error("请完整填写司机信息或全部留空"));
-            } else {
-                callback();
-            }
-        };
         return {
             company_for_select: [{
                 value: '',
@@ -133,23 +117,26 @@ export default {
                     trigger: 'blur',
                 }],
                 driver_phone: [{
+                    required: true,
+                    message: '请输入司机电话',
+                    trigger: 'blur'
+                }, {
                     pattern: /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/,
                     message: '请输入正确手机号',
                     trigger: 'blur'
-                }, {
-                    validator: driver_info_complate,
-                    trigger: 'blur'
                 }],
                 driver_name: [{
-                    validator: driver_info_complate,
+                    required: true,
+                    message: '请输入司机姓名',
                     trigger: 'blur'
                 }],
                 driver_id: [{
-                    pattern: /^[1-9]\d{5}(18|19|20|(3\d))\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/,
-                    message: '请输入正确身份证号',
+                    required: true,
+                    message: '请输入司机身份证',
                     trigger: 'blur'
                 }, {
-                    validator: driver_info_complate,
+                    pattern: /^[1-9]\d{5}(18|19|20|(3\d))\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/,
+                    message: '请输入正确身份证号',
                     trigger: 'blur'
                 }],
             },

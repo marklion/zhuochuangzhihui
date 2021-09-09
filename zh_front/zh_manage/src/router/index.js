@@ -34,6 +34,11 @@ const routes = [
     name: 'VehicleManagement',
     component: () => import('../views/VehicleManagement.vue')
   },
+  {
+    path: '/vehicle_order_center',
+    name: 'VehicleOrderCenter',
+    component: () => import('../views/VehicleOrderCenter.vue')
+  },
 ]
 
 const router = new VueRouter({

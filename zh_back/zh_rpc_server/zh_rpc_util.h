@@ -13,6 +13,8 @@
 #define ZH_RETURN_DUP_VEHICLE() ZH_RETURN_MSG("车辆已存在")
 #define ZH_RETURN_DUP_DRIVER() ZH_RETURN_MSG("司机重复绑定")
 #define ZH_RETURN_NO_VEHICLE() ZH_RETURN_MSG("车辆不存在")
+#define ZH_RETURN_DUP_ORDER() ZH_RETURN_MSG("派车内容已存在")
+#define ZH_RETURN_NO_ORDER() ZH_RETURN_MSG("派车单不存在")
 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
