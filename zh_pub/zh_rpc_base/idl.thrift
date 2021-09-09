@@ -83,3 +83,35 @@ service vehicle_management {
     bool del_vehicle(1:string ssid, 2:i64 vehicle_id) throws (1:gen_exp e),
     list<vehicle_info> get_all_vehicle(1:string ssid) throws (1:gen_exp e),
 }
+
+struct vehicle_order_info {
+    1:string order_number,
+    2:string main_vehicle_number,
+    3:string behind_vehicle_number,
+    4:string driver_phone,
+    5:string driver_name,
+    6:string driver_id,
+    7:i64 status,
+    8:i64 id,
+    9:string company_name,
+    10:string stuff_name,
+}
+
+struct gate_relate_info {
+    1:string enter_time,
+    2:string exit_time,
+}
+
+struct weight_relate_info {
+    1:string p_time,
+    2:string m_time,
+    3:double p_weight,
+    4:double m_weight,
+}
+
+service vehicle_order_center {
+    list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor) throws (1:gen_exp e),
+    gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+}
