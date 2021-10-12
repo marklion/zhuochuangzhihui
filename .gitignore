@@ -2,3 +2,4 @@ zczh_software_*
 */build/
 build/
 zh_pub/zh_rpc_base/gen_code/
+.DS_Store

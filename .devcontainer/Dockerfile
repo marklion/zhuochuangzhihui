@@ -23,3 +23,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 COPY nginx_upload_install.sh /root/
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre3 libpcre3-dev libxslt-dev libgd-dev
 RUN ./nginx_upload_install.sh
+COPY lib/* /lib
+RUN apt update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gcc-multilib build-essential module-assistant
