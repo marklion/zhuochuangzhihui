@@ -2,9 +2,33 @@ exception gen_exp {
     1:string msg,
 }
 
+struct device_gate_config {
+    1:string name,
+    2:string entry,
+    3:string exit,
+    4:string entry_id_reader_ip,
+}
+
+struct device_scale_config {
+    1:string name,
+    2:string entry,
+    3:string exit,
+    4:list<string> raster_ip,
+    5:string scale_ip,
+    6:string entry_printer_ip,
+    7:string exit_printer_ip,
+}
+
+struct device_config {
+    1:list<device_gate_config> gate,
+    2:list<device_scale_config> scale,
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
+    device_config get_device_config(1:string ssid) throws (1:gen_exp e),
+    bool edit_device_config(1:string ssid, 2:device_config config) throws (1:gen_exp e),
 }
 
 struct user_info {

@@ -9,6 +9,7 @@ MAIL_PWD_INPUT="none"
 PORT=80
 DATA_BASE="zh.db"
 IMG_BED_INPUT="logo_res"
+DEVICE_CONFIG_FILE_INPUT="./device_config.json"
 
 DOCKER_IMG_NAME="zh_deploy:v1.0"
 SRC_DIR=`dirname $(realpath $0)`/../
@@ -30,7 +31,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 93` 
+    line=`expr $line - 99` 
     tail -n $line $0 | tar zx  --skip-old-files -C /
     nginx -c /conf/nginx.conf
     zh_daemon &
@@ -40,13 +41,15 @@ start_all_server() {
 start_docker_con() {
     local DATA_BASE_PATH=`realpath $DATA_BASE`
     local DATA_BASE_PATH=`dirname ${DATA_BASE_PATH}`
+    local DEVICE_CONFIG_FILE_PATH=`realpath ${DEVICE_CONFIG_FILE_INPUT}`
+    local DEVICE_CONFIG_FILE_PATH=`dirname ${DEVICE_CONFIG_FILE_PATH}`
     local IMG_BED=`realpath $IMG_BED_INPUT`
-    local CON_ID=`docker create -ti --rm -p ${PORT}:80 -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local CON_ID=`docker create -ti --rm -p ${PORT}:80 -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start -ai ${CON_ID}
 }
 
-while getopts "D:p:w:d:i:m:a:k:M:" arg
+while getopts "D:p:w:d:i:m:a:k:M:g:" arg
 do
     case $arg in
         D)
@@ -75,6 +78,9 @@ do
             ;;
         M)
             MAIL_PWD_INPUT=${OPTARG}
+            ;;
+        g)
+            DEVICE_CONFIG_FILE_INPUT=${OPTARG}
             ;;
         *)
             echo "invalid args"

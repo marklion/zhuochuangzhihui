@@ -2,6 +2,7 @@
 #define _ZH_DB_CONFIG_H_
 
 #include "sqlite_orm_tree.h"
+#include "CJsonObject.hpp"
 
 class zh_sql_user_permission : public sql_tree_base
 {
