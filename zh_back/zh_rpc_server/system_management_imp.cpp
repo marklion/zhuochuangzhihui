@@ -4,6 +4,12 @@
 #include <iostream>
 #include <iosfwd>
 #include <fstream>
+#include "../zh_raster/lib/zh_raster.h"
+
+#define ZH_RASTER_PORT 30200
+#define ZH_SCALE_PORT 30201
+#define ZH_ID_READER_PORT 30202
+#define ZH_PRINTER_PORT 30203
 
 system_management_handler *system_management_handler::m_inst = nullptr;
 
@@ -96,4 +102,9 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
     config_file << tmp.ToFormattedString();
 
     return true;
+}
+
+bool system_management_handler::raster_is_block(const std::string &raster_ip)
+{
+    return raster_was_block(raster_ip, ZH_RASTER_PORT);
 }

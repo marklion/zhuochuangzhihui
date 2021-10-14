@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <sqlite3.h>
-static zh_log g_log("sql_execute");
+static tdf_log g_log("sql_execute");
 extern bool execute_sql_cmd(const std::string& _sql_cmd, const std::string& _sql_file, std::vector<std::map<std::string, std::string>> *_ret)
 {
     sqlite3 *db = nullptr;

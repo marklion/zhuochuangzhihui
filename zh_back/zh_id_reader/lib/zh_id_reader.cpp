@@ -2,7 +2,7 @@
 #include "../../zh_vcom/zh_vcom_link.h"
 #include <iconv.h>
 
-zh_log g_log("id_reader");
+tdf_log g_log("id_reader");
 
 std::string read_id_no(const std::string &ip, unsigned short port)
 {

@@ -34,7 +34,7 @@
 #include <list>
 #include <iostream>
 #include <memory>
-#include "../zh_log/zh_log.h"
+#include "../zh_tdf/tdf_include.h"
 
 #define SQLITE_ORM_COLUMN_LIMIT_NONE 0
 #define SQLITE_ORM_COLUMN_LIMIT_UNIQ 0x01
@@ -79,7 +79,7 @@ public:
     }
 private:
     bool table_exists = false;
-    zh_log m_log;
+    tdf_log m_log;
     long m_pri_id = -1;
     std::string m_sqlite_file = "";
 
