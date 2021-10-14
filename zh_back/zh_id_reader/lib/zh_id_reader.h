@@ -5,7 +5,7 @@ extern "C"
 {
 #include "libtermb.h"
 }
-#include "../../zh_log/zh_log.h"
+#include "../../zh_tdf/tdf_include.h"
 
 std::string read_id_no(const std::string &ip, unsigned short port);
 

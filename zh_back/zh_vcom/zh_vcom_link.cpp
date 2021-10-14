@@ -1,9 +1,9 @@
 #include "zh_vcom_link.h"
-#include "../zh_log/zh_log.h"
+#include "../zh_tdf/tdf_include.h"
 #include <thread>
 #include <sys/select.h>
 
-static zh_log g_log("vcom");
+static tdf_log g_log("vcom");
 
 zh_vcom_link::zh_vcom_link(const std::string &_ip, unsigned short _port) : ip(_ip), port(_port)
 {
@@ -74,11 +74,20 @@ std::string zh_vcom_link::get_pts()
                                         usleep(100000);
                                         char tmp;
                                         std::string log;
-                                        while (recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT) > 0)
+                                        int read_len = 0;
+                                        do
                                         {
-                                            log.push_back(tmp);
-                                            write(ptm_fd, &tmp, sizeof(tmp));
-                                        }
+                                            read_len = recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT);
+                                            if (read_len < 0)
+                                            {
+                                                return;
+                                            }
+                                            if (read_len > 0)
+                                            {
+                                                log.push_back(tmp);
+                                                write(ptm_fd, &tmp, sizeof(tmp));
+                                            }
+                                        } while (read_len > 0);
                                         g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
                                         g_log.log_package(log.data(), log.length());
                                     }

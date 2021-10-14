@@ -29,6 +29,7 @@ service system_management {
     string current_version() throws (1:gen_exp e),
     device_config get_device_config(1:string ssid) throws (1:gen_exp e),
     bool edit_device_config(1:string ssid, 2:device_config config) throws (1:gen_exp e),
+    bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
 }
 
 struct user_info {

@@ -24,6 +24,7 @@
                     <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
                     <template slot="extra">
+                        <el-button type="success" size="small" @click="open_scale_operate(single_scale)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_scale_edit(single_scale)">编辑</el-button>
                     </template>
                 </el-descriptions>
@@ -78,6 +79,22 @@
                     </el-form-item>
                 </el-form>
             </el-dialog>
+            <el-dialog title="设备操作" :visible.sync="show_scale_operate" width="60%">
+                <el-card>
+                    <el-row type="flex" :gutter="10" align="center">
+                        <el-col :span="10">光栅1</el-col>
+                        <el-col :span="14">{{cur_opt_scale.raster1_block?'阻挡':'未阻挡'}}</el-col>
+                    </el-row>
+                    <el-row type="flex" :gutter="10" align="center">
+                        <el-col :span="10">光栅2</el-col>
+                        <el-col :span="14">{{cur_opt_scale.raster2_block?'阻挡':'未阻挡'}}</el-col>
+                    </el-row>
+                    <div slot="header">
+                        <span>光栅状态</span>
+                        <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
+                    </div>
+                </el-card>
+            </el-dialog>
         </el-tab-pane>
     </el-tabs>
 </div>
@@ -88,7 +105,9 @@ export default {
     name: 'SystemManagement',
     data: function () {
         return {
-            activeName:'device_config',
+            cur_opt_scale: {},
+            show_scale_operate: false,
+            activeName: 'device_config',
             current_version: '',
             device_config: {},
             gate_for_edit: {},
@@ -149,6 +168,21 @@ export default {
         };
     },
     methods: {
+        get_raster_status: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[0]]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_scale, 'raster1_block', resp);
+            });
+            vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[1]]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_scale, 'raster2_block', resp);
+            });
+        },
+        open_scale_operate: function (_scale) {
+            this.show_scale_operate = true;
+            this.cur_opt_scale = {
+                ..._scale
+            };
+        },
         edit_gate: function () {
             var vue_this = this;
             this.$refs.edit_gate_form.validate((valid) => {

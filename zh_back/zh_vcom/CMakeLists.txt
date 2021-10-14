@@ -7,4 +7,5 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 aux_source_directory(. API_SRC)
 add_library(zh_vcom SHARED ${API_SRC})
-target_link_libraries(zh_vcom pthread)
+find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
+target_link_libraries(zh_vcom pthread ${TDF_LIB})

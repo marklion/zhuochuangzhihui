@@ -1,6 +1,5 @@
-#if !defined(_ZH_LOG_H_)
-#define _ZH_LOG_H_
-
+#if !defined(_TDF_INCLUDE_H_)
+#define _TDF_INCLUDE_H_
 #include <string>
 #include <stdarg.h>
 #include <sys/types.h>          
@@ -29,13 +28,15 @@
 #include <list>
 #include <iostream>
 #include <algorithm>
+#include <functional>
 
-class zh_log
+std::string get_string_from_format(const char *format, va_list vl);
+class tdf_log
 {
     int m_log_stdout = 1;
     int m_log_stderr = 2;
     std::string m_module;
-    void output_2_fd(const std::string &_msg, int _fd)
+    void output_2_fd(const std::string &_msg, int _fd) const
     {
         std::string output;
         char time_buffer[48];
@@ -79,8 +80,8 @@ class zh_log
     }
 
 public:
-    zh_log();
-    zh_log(const std::string _module, const std::string &_out_file_name, const std::string &_err_file_name)
+    tdf_log() {}
+    tdf_log(const std::string _module, const std::string &_out_file_name, const std::string &_err_file_name)
     {
         m_log_stdout = open(_out_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
         m_log_stderr = open(_err_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
@@ -90,11 +91,11 @@ public:
         }
         m_module = _module;
     }
-    zh_log(const std::string &_module)
+    tdf_log(const std::string &_module)
     {
         m_module = _module;
     }
-    ~zh_log()
+    ~tdf_log()
     {
         if (m_log_stdout != 1)
         {
@@ -105,20 +106,19 @@ public:
             close(m_log_stderr);
         }
     }
-    void log(const std::string &_log)
+    void log(const std::string &_log) const
     {
         output_2_fd(_log, m_log_stdout);
     }
-    void log(const char *_log, ...)
+    void log(const char *_log, ...) const
     {
         va_list vl;
         va_start(vl, _log);
-        char tmpbuff[2048];
-        vsnprintf(tmpbuff, sizeof(tmpbuff), _log, vl);
+        auto tmpbuff = get_string_from_format(_log, vl);
         va_end(vl);
         output_2_fd(tmpbuff, m_log_stdout);
     }
-    void log_package(const char *_data, int _len) {
+    void log_package(const char *_data, int _len) const {
         char tmp[4] = {0};
         std::string out_log;
         for (int i = 0; i < _len; i++)
@@ -128,19 +128,59 @@ public:
         }
         output_2_fd(out_log, m_log_stdout);
     }
-    void err(const std::string &_log)
+    void err(const std::string &_log) const
     {
         output_2_fd(_log, m_log_stderr);
     }
-    void err(const char *_log, ...)
+    void err(const char *_log, ...) const
     {
         va_list vl;
         va_start(vl, _log);
-        char tmpbuff[2048];
-        vsnprintf(tmpbuff, sizeof(tmpbuff), _log, vl);
+        auto tmpbuff = get_string_from_format(_log, vl);
         va_end(vl);
         output_2_fd(tmpbuff, m_log_stderr);
     }
 };
 
-#endif // _ZH_LOG_H_
+class Itdf_epoll_channel {
+    bool need_remove = false;
+public:
+    virtual bool proc_in() = 0;
+    virtual void proc_err() = 0;
+    virtual bool proc_out() = 0;
+    void set_remove_flag() {
+        need_remove = true;
+    }
+    bool get_remove_flag() {
+        return need_remove;
+    }
+};
+
+typedef std::function<void(const std::string &)> tdf_after_con_hook;
+typedef std::function<void(const std::string &)> tdf_before_hup_hook;
+typedef std::function<void(const std::string &, const std::string &)> tdf_data_proc;
+
+typedef void (*tdf_timer_proc)(void *_private);
+
+typedef void (*tdf_async_proc)(void *_private, const std::string &_chrct);
+
+class tdf_main {
+    static tdf_main m_inst;
+    tdf_main();
+public:
+    bool open_listen(unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
+    void close_listen(unsigned short _port);
+    bool run();
+    void send_data(const std::string &_conn_chrct, const std::string &_data);
+    void close_data(const std::string &_charct);
+    void stop();
+    int start_timer(int _sec, tdf_timer_proc _proc, void *_private);
+    void stop_timer(int _timer_handle);
+    static tdf_main &get_inst();
+    void Async_to_workthread(tdf_async_proc _func, void *_private, const std::string &_chrct);
+    void Async_to_mainthread(tdf_async_proc _func, void *_private, const std::string &_chrct);
+    ~tdf_main();
+};
+
+
+#endif // _TDF_INCLUDE_H_

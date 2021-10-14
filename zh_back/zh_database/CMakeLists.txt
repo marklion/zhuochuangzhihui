@@ -7,4 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 aux_source_directory(. API_SRC)
 add_library(sqlite_orm SHARED ${API_SRC})
-target_link_libraries(sqlite_orm sqlite3)
+
+find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
+
+target_link_libraries(sqlite_orm sqlite3 ${TDF_LIB})
