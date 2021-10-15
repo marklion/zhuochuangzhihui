@@ -23,6 +23,7 @@ public:
     virtual bool raster_is_block(const std::string &raster_ip);
     virtual bool print_content(const std::string &printer_ip, const std::string &content);
     virtual void read_id_no(std::string &_return, const std::string &id_reader_ip);
+    virtual bool ctrl_gate(const std::string &gate_code, const int64_t cmd);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

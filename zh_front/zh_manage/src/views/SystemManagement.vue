@@ -94,6 +94,9 @@
                             </div>
                         </el-card>
                     </el-col>
+                    <el-col :span="8">
+                        <gate-device-ctrl :entry="cur_opt_gate.entry" :exit="cur_opt_gate.exit"></gate-device-ctrl>
+                    </el-col>
                 </el-row>
             </el-dialog>
             <el-dialog :title="cur_opt_scale.name + '设备操作'" :visible.sync="show_scale_operate" width="60%">
@@ -135,6 +138,11 @@
                         </el-card>
                     </el-col>
                 </el-row>
+                <el-row type="flex" :gutter="10">
+                    <el-col :span="8">
+                        <gate-device-ctrl :entry="cur_opt_scale.entry" :exit="cur_opt_scale.exit"></gate-device-ctrl>
+                    </el-col>
+                </el-row>
             </el-dialog>
         </el-tab-pane>
     </el-tabs>
@@ -142,8 +150,12 @@
 </template>
 
 <script>
+import GateDeviceCtrl from '../components/GateDeviceCtrl.vue'
 export default {
     name: 'SystemManagement',
+    components: {
+        "gate-device-ctrl":GateDeviceCtrl,
+    },
     data: function () {
         return {
             content_need_print1: '',
