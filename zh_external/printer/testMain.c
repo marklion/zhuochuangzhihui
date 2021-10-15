@@ -26,104 +26,75 @@ char *convert_utf(const char * utf)
 	return ret;
 }
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int ret = -1;
 
-	ret = OpenPort(NET_PORT, argv[1]); //2016.12.21 14:23 OK ʹ�û���POSIMP88VESP
-
-	if (ret < 0)
+	ret = OpenPort(NET_PORT, argv[1]);
+	if (ret  >= 0)
 	{
-		printf("OpenPort() fail ret=%d\n", ret);
-		return;
-	}
-	printf("OpenPort() ok ret=%d\n", ret);
+		int type = 4;
+		ret = POS_Status_RTQueryTypeStatus(type);
+		if (ret == 0)
+		{
+			ret = QueryErrState();
+			if (ret == 0)
+			{
+				int isFont = 1;
+				int isBold = 1;
+				int isDoubleWidth = 1;
+				int isDoubleHeight = 1;
+				int isUnderLine = 1;
+				ret = POS_Control_SetPrintFontE(isFont, isBold, isDoubleWidth, isDoubleHeight, isUnderLine);
+				ret |= POS_Control_SetPrintFontC(isDoubleWidth, isDoubleHeight, isUnderLine);
+				if (ret == 0)
+				{
+					char *p = convert_utf(argv[2]);
+					int len = strlen(p);
 
-	int type = 4;
-	ret = POS_Status_RTQueryTypeStatus(type);
-	if (ret < 0)
-	{
-		printf("POS_Status_RTQueryTypeStatus() fail ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-		return;
-	}
-	if (ret == 1)
-	{
-		printf("POS_Status_RTQueryTypeStatus() no paper!!! ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-		return;
-	}
-	printf("POS_Status_RTQueryTypeStatus() ok ret=%d\n", ret);
+					ret = POS_Output_PrintString(p);
+					if (0 == ret)
+					{
+						ret = POS_Control_CutPaper(0, 0);
+						if (0 == ret)
+						{
 
-	ret = QueryErrState();
-	if (ret < 0)
-	{
-		printf("QueryErrState ERR,ret:%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-		return;
-	}
-	printf("QueryErrState OK,status: %d\n", ret);
-
-	int isFont = 1;
-	int isBold = 1;
-	int isDoubleWidth = 1;
-	int isDoubleHeight = 1;
-	int isUnderLine = 1;
-	ret = POS_Control_SetPrintFontE(isFont, isBold, isDoubleWidth, isDoubleHeight, isUnderLine);
-	if (ret < 0)
-	{
-		printf("POS_Control_SetPrintFontE() fail ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-
-		return;
-	}
-	printf("POS_Control_SetPrintFontE() ok ret=%d\n", ret);
-
-	ret = POS_Control_SetPrintFontC(isDoubleWidth, isDoubleHeight, isUnderLine);
-	if (ret < 0)
-	{
-		printf("POS_Control_SetPrintFontC() fail ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-
-		return;
-	}
-	printf("POS_Control_SetPrintFontC() ok ret=%d\n", ret);
-
-	char *p = convert_utf(argv[2]);
-	int len = strlen(p);
-
-	ret = POS_Output_PrintString(p);
-	if (ret < 0)
-	{
-		printf("POS_Output_PrintString() fail ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-		return;
-	}
-	printf("POS_Output_PrintString() ok ret=%d\n", ret);
-	ret = POS_Control_CutPaper(0, 0);
-	if (ret < 0)
-	{
-		printf("POS_Control_CutPaper() fail ret=%d\n", ret);
-		ret = ClosePort();
-		printf("ClosePort() finished, ret=%d\n", ret);
-		return;
-	}
-	printf("POS_Control_CutPaper() ok ret=%d\n", ret);
-
-	ret = ClosePort();
-	if (ret < 0)
-	{
-		printf("ClosePort() fail ret=%d\n", ret);
-		return;
+						}
+						else
+						{
+							printf("POS_Control_CutPaper() fail ret=%d\n", ret);
+						}
+					}
+					else
+					{
+						printf("POS_Output_PrintString() fail ret=%d\n", ret);
+					}
+				}
+				else
+				{
+					printf("POS_Control_SetPrintFontE() fail ret=%d\n", ret);
+					printf("POS_Control_SetPrintFontC() fail ret=%d\n", ret);
+				}
+			}
+			else
+			{
+				printf("QueryErrState ERR,ret:%d\n", ret);
+			}
+		}
+		else if (1 == ret)
+		{
+			printf("POS_Status_RTQueryTypeStatus() no paper!!! ret=%d\n", ret);
+		}
+		else
+		{
+			printf("POS_Status_RTQueryTypeStatus() fail ret=%d\n", ret);
+		}
+		ClosePort();
 	}
 	else
 	{
-		printf("ClosePort() ok ret=%d\n", ret);
+		printf("OpenPort() fail ret=%d\n", ret);
 	}
+
+	return ret;
 }

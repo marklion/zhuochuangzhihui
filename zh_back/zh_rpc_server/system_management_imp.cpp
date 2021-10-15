@@ -5,6 +5,7 @@
 #include <iosfwd>
 #include <fstream>
 #include "../zh_raster/lib/zh_raster.h"
+#include "../zh_id_reader/lib/zh_id_reader.h"
 
 #define ZH_RASTER_PORT 30200
 #define ZH_SCALE_PORT 30201
@@ -36,7 +37,7 @@ void system_management_handler::get_device_config(device_config &_return, const 
 
     auto gate_config = config["gate"];
     auto scale_config = config["scale"];
-    for (int i = 0; i < gate_config.GetArraySize(); i++) 
+    for (int i = 0; i < gate_config.GetArraySize(); i++)
     {
         device_gate_config tmp;
         tmp.entry = gate_config[i]("entry");
@@ -107,4 +108,34 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
 bool system_management_handler::raster_is_block(const std::string &raster_ip)
 {
     return raster_was_block(raster_ip, ZH_RASTER_PORT);
+}
+
+bool system_management_handler::print_content(const std::string& printer_ip, const std::string& content)
+{
+    bool ret = false;
+    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\"";
+
+    auto fp = popen(print_cmd.c_str(), "r");
+    if (fp)
+    {
+        tdf_log printer_log("printer");
+        std::string err_ret;
+        char tmp;
+        while (fread(&tmp, 1, 1, fp) > 0)
+        {
+            err_ret.push_back(tmp);
+        }
+        printer_log.err(err_ret);
+        if (0 == pclose(fp))
+        {
+            ret = true;
+        }
+    }
+
+    return ret;
+}
+
+void system_management_handler::read_id_no(std::string &_return, const std::string &id_reader_ip)
+{
+    _return = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
 }

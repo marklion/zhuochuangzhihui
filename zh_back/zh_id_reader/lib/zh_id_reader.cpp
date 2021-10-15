@@ -4,7 +4,7 @@
 
 tdf_log g_log("id_reader");
 
-std::string read_id_no(const std::string &ip, unsigned short port)
+std::string zh_read_id_no(const std::string &ip, unsigned short port)
 {
     std::string ret;
     zh_vcom_link vl(ip, port);

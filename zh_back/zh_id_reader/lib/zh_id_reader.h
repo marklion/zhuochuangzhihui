@@ -7,6 +7,6 @@ extern "C"
 }
 #include "../../zh_tdf/tdf_include.h"
 
-std::string read_id_no(const std::string &ip, unsigned short port);
+std::string zh_read_id_no(const std::string &ip, unsigned short port);
 
 #endif // _ZH_ID_READER_H_
