@@ -30,6 +30,8 @@ service system_management {
     device_config get_device_config(1:string ssid) throws (1:gen_exp e),
     bool edit_device_config(1:string ssid, 2:device_config config) throws (1:gen_exp e),
     bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
+    bool print_content(1:string printer_ip, 2:string content) throws (1:gen_exp e),
+    string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
 }
 
 struct user_info {

@@ -10,6 +10,7 @@
                     <el-descriptions-item label="出口编码">{{single_gate.exit}}</el-descriptions-item>
                     <el-descriptions-item label="入口身份识别IP">{{single_gate.entry_id_reader_ip}}</el-descriptions-item>
                     <template slot="extra">
+                        <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
                     </template>
                 </el-descriptions>
@@ -79,21 +80,61 @@
                     </el-form-item>
                 </el-form>
             </el-dialog>
-            <el-dialog title="设备操作" :visible.sync="show_scale_operate" width="60%">
-                <el-card>
-                    <el-row type="flex" :gutter="10" align="center">
-                        <el-col :span="10">光栅1</el-col>
-                        <el-col :span="14">{{cur_opt_scale.raster1_block?'阻挡':'未阻挡'}}</el-col>
-                    </el-row>
-                    <el-row type="flex" :gutter="10" align="center">
-                        <el-col :span="10">光栅2</el-col>
-                        <el-col :span="14">{{cur_opt_scale.raster2_block?'阻挡':'未阻挡'}}</el-col>
-                    </el-row>
-                    <div slot="header">
-                        <span>光栅状态</span>
-                        <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
-                    </div>
-                </el-card>
+            <el-dialog :title="cur_opt_gate.name + '设备操作'" :visible.sync="show_gate_operate" width="60%">
+                <el-row type="flex" :gutter="10">
+                    <el-col :span="8">
+                        <el-card>
+                            <el-row type="flex" :gutter="10" align="center">
+                                <el-col :span="10">身份证号</el-col>
+                                <el-col :span="14">{{cur_opt_gate.id_no}}</el-col>
+                            </el-row>
+                            <div slot="header">
+                                <span>身份证阅读</span>
+                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_id_no">获取</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
+            </el-dialog>
+            <el-dialog :title="cur_opt_scale.name + '设备操作'" :visible.sync="show_scale_operate" width="60%">
+                <el-row type="flex" :gutter="10">
+                    <el-col :span="8">
+                        <el-card>
+                            <el-row type="flex" :gutter="10" align="center">
+                                <el-col :span="10">光栅1</el-col>
+                                <el-col :span="14">{{cur_opt_scale.raster1_block?'阻挡':'未阻挡'}}</el-col>
+                            </el-row>
+                            <el-row type="flex" :gutter="10" align="center">
+                                <el-col :span="10">光栅2</el-col>
+                                <el-col :span="14">{{cur_opt_scale.raster2_block?'阻挡':'未阻挡'}}</el-col>
+                            </el-row>
+                            <div slot="header">
+                                <span>光栅状态</span>
+                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-card>
+                            <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print1">
+                            </el-input>
+                            <div slot="header">
+                                <span>入口打印机</span>
+                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content1">打印</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-card>
+                            <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print2">
+                            </el-input>
+                            <div slot="header">
+                                <span>出口打印机</span>
+                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content2">打印</el-button>
+                            </div>
+                        </el-card>
+                    </el-col>
+                </el-row>
             </el-dialog>
         </el-tab-pane>
     </el-tabs>
@@ -105,8 +146,12 @@ export default {
     name: 'SystemManagement',
     data: function () {
         return {
+            content_need_print1: '',
+            content_need_print2: '',
             cur_opt_scale: {},
+            cur_opt_gate:{},
             show_scale_operate: false,
+            show_gate_operate: false,
             activeName: 'device_config',
             current_version: '',
             device_config: {},
@@ -168,6 +213,48 @@ export default {
         };
     },
     methods: {
+        open_gate_operate: function (_gate) {
+            this.cur_opt_gate = {..._gate};
+            this.show_gate_operate = true;
+        },
+        get_id_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_gate.entry_id_reader_ip]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_gate, "id_no", resp);
+            });
+        },
+        print_content1: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "print_content", [vue_this.cur_opt_scale.entry_printer_ip, vue_this.content_need_print1]).then(function (resp) {
+                if (resp) {
+                    vue_this.$message({
+                        message: "打印成功",
+                        type: 'success',
+                    });
+                } else {
+                    vue_this.$message({
+                        message: "打印失败",
+                        type: 'error',
+                    });
+                }
+            });
+        },
+        print_content2: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "print_content", [vue_this.cur_opt_scale.exit_printer_ip, vue_this.content_need_print2]).then(function (resp) {
+                if (resp) {
+                    vue_this.$message({
+                        message: "打印成功",
+                        type: 'success',
+                    });
+                } else {
+                    vue_this.$message({
+                        message: "打印失败",
+                        type: 'error',
+                    });
+                }
+            });
+        },
         get_raster_status: function () {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[0]]).then(function (resp) {
