@@ -32,6 +32,7 @@ service system_management {
     bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
     bool print_content(1:string printer_ip, 2:string content) throws (1:gen_exp e),
     string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
+    bool ctrl_gate(1:string gate_code, 2:i64 cmd) throws (1:gen_exp e),
 }
 
 struct user_info {

@@ -6,6 +6,7 @@
 #include <fstream>
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_id_reader/lib/zh_id_reader.h"
+#include "../zh_hk_gate/lib/zh_hk_gate.h"
 
 #define ZH_RASTER_PORT 30200
 #define ZH_SCALE_PORT 30201
@@ -138,4 +139,9 @@ bool system_management_handler::print_content(const std::string& printer_ip, con
 void system_management_handler::read_id_no(std::string &_return, const std::string &id_reader_ip)
 {
     _return = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
+}
+
+bool system_management_handler::ctrl_gate(const std::string &gate_code, const int64_t cmd)
+{
+    return zh_hk_ctrl_gate(gate_code, (zh_hk_gate_control_cmd)cmd);
 }
