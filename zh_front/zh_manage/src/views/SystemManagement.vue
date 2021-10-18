@@ -82,7 +82,7 @@
             </el-dialog>
             <el-dialog :title="cur_opt_gate.name + '设备操作'" :visible.sync="show_gate_operate" width="60%">
                 <el-row type="flex" :gutter="10">
-                    <el-col :span="8">
+                    <el-col :span="12">
                         <el-card>
                             <el-row type="flex" :gutter="10" align="center">
                                 <el-col :span="10">身份证号</el-col>
@@ -94,8 +94,16 @@
                             </div>
                         </el-card>
                     </el-col>
-                    <el-col :span="8">
+                    <el-col :span="12">
                         <gate-device-ctrl :entry="cur_opt_gate.entry" :exit="cur_opt_gate.exit"></gate-device-ctrl>
+                    </el-col>
+                </el-row>
+                <el-row type="flex" :gutter="10">
+                    <el-col :span="12">
+                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_gate.entry"></led-voice-ctrl>
+                    </el-col>
+                    <el-col :span="12">
+                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_gate.exit"></led-voice-ctrl>
                     </el-col>
                 </el-row>
             </el-dialog>
@@ -142,6 +150,12 @@
                     <el-col :span="8">
                         <gate-device-ctrl :entry="cur_opt_scale.entry" :exit="cur_opt_scale.exit"></gate-device-ctrl>
                     </el-col>
+                    <el-col :span="8">
+                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_scale.entry"></led-voice-ctrl>
+                    </el-col>
+                    <el-col :span="8">
+                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_scale.exit"></led-voice-ctrl>
+                    </el-col>
                 </el-row>
             </el-dialog>
         </el-tab-pane>
@@ -151,17 +165,19 @@
 
 <script>
 import GateDeviceCtrl from '../components/GateDeviceCtrl.vue'
+import LedVoiceCtrl from '../components/LedVoiceCtrl.vue'
 export default {
     name: 'SystemManagement',
     components: {
-        "gate-device-ctrl":GateDeviceCtrl,
+        "gate-device-ctrl": GateDeviceCtrl,
+        "led-voice-ctrl": LedVoiceCtrl,
     },
     data: function () {
         return {
             content_need_print1: '',
             content_need_print2: '',
             cur_opt_scale: {},
-            cur_opt_gate:{},
+            cur_opt_gate: {},
             show_scale_operate: false,
             show_gate_operate: false,
             activeName: 'device_config',
@@ -226,7 +242,9 @@ export default {
     },
     methods: {
         open_gate_operate: function (_gate) {
-            this.cur_opt_gate = {..._gate};
+            this.cur_opt_gate = {
+                ..._gate
+            };
             this.show_gate_operate = true;
         },
         get_id_no: function () {

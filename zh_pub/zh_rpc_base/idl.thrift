@@ -24,6 +24,10 @@ struct device_config {
     2:list<device_scale_config> scale,
 }
 
+struct road_status {
+    1:string coming_vehicle;
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
@@ -33,6 +37,9 @@ service system_management {
     bool print_content(1:string printer_ip, 2:string content) throws (1:gen_exp e),
     string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
     bool ctrl_gate(1:string gate_code, 2:i64 cmd) throws (1:gen_exp e),
+    bool ctrl_led(1:string gate_code, 2:string content) throws (1:gen_exp e),
+    bool ctrl_voice(1:string gate_code, 2:string content) throws (1:gen_exp e),
+    road_status get_road_status(1:string gate_code) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -142,4 +149,8 @@ service vehicle_order_center {
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+}
+
+service open_api {
+    bool vehicle_come(1:string plateNo, 2:string road) throws (1:gen_exp e),
 }

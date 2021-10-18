@@ -31,10 +31,13 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 99`
+    line=`expr $line - 102`
     tail -n $line $0 | tar zx  --skip-old-files -C /
     nginx -c /conf/nginx.conf
     zh_daemon &
+    pushd /zh_rest_node
+    pm2 start index.js
+    popd
     bash
 }
 
