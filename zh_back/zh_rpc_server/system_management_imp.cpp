@@ -145,3 +145,47 @@ bool system_management_handler::ctrl_gate(const std::string &gate_code, const in
 {
     return zh_hk_ctrl_gate(gate_code, (zh_hk_gate_control_cmd)cmd);
 }
+
+bool system_management_handler::ctrl_led(const std::string &gate_code, const std::string &content)
+{
+    return zh_hk_ctrl_led(gate_code,content);
+}
+bool system_management_handler::ctrl_voice(const std::string &gate_code, const std::string &content)
+{
+    return zh_hk_ctrl_voice(gate_code,content);
+}
+road_status system_management_handler::get_status_by_road(const std::string &_road)
+{
+    road_status ret;
+    if (0 == pthread_mutex_lock(&m_road_status_map_lock))
+    {
+        ret = m_road_status_map[_road];
+        pthread_mutex_unlock(&m_road_status_map_lock);
+    }
+    else
+    {
+        tdf_log tmp("road_status");
+        tmp.err("failed to lock status map");
+    }
+
+    return ret;
+}
+void system_management_handler::set_status_by_road(const std::string &_road, road_status &status)
+{
+    if (0 == pthread_mutex_lock(&m_road_status_map_lock))
+    {
+        m_road_status_map[_road] = status;
+        pthread_mutex_unlock(&m_road_status_map_lock);
+    }
+    else
+    {
+        tdf_log tmp("road_status");
+        tmp.err("failed to lock status map");
+    }
+}
+
+void system_management_handler::get_road_status(road_status &_return, const std::string &gate_code)
+{
+    auto status = get_status_by_road(gate_code);
+    _return = status;
+}
