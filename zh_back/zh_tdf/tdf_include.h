@@ -2,7 +2,7 @@
 #define _TDF_INCLUDE_H_
 #include <string>
 #include <stdarg.h>
-#include <sys/types.h>          
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -29,6 +29,10 @@
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <memory>
+#include <thread>
+#include <mqueue.h>
+#include <set>
 
 std::string get_string_from_format(const char *format, va_list vl);
 class tdf_log
@@ -182,5 +186,92 @@ public:
     ~tdf_main();
 };
 
+class tdf_state_machine_state;
+class tdf_state_machine_lock;
+class tdf_state_machine {
+    tdf_log m_log;
+    static std::thread sm_thread;
+    static int sm_mq_fd;
+    static std::set<tdf_state_machine*> valid_sm;
+    static pthread_mutex_t valid_sm_lock;
+    void internal_trigger_sm();
+    pthread_mutex_t sm_lock;
+public:
+    friend class tdf_state_machine_lock;
+    tdf_state_machine():m_log("tdf state machine") {
+        if (sm_mq_fd < 0)
+        {
+            pthread_mutexattr_t attr;
+            pthread_mutexattr_init(&attr);
+            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+            pthread_mutex_init(&valid_sm_lock, &attr);
+            mq_attr tmp_mq_attr = {
+                .mq_flags = 0,
+                .mq_maxmsg = 100,
+                .mq_msgsize = sizeof(void *),
+                .mq_curmsgs = 0
+            };
+            int fd = mq_open("/sm_mq", O_RDWR);
+            if (fd >= 0)
+            {
+                sm_mq_fd = fd;
+            }
+            else
+            {
+                m_log.err("failed to open mq:%s", strerror(errno));
+                fd = mq_open("/sm_mq", O_RDWR | O_CREAT, 0666, NULL);
+                if (fd >= 0)
+                {
+                    sm_mq_fd = fd;
+                }
+                else
+                {
+                    m_log.err("failed to create mq:%s", strerror(errno));
+                }
+            }
+        }
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&sm_lock, &attr);
+        pthread_mutex_lock(&valid_sm_lock);
+        valid_sm.insert(this);
+        pthread_mutex_unlock(&valid_sm_lock);
+    }
+    std::unique_ptr<tdf_state_machine_state> m_cur_state;
+    void trigger_sm();
+    virtual ~tdf_state_machine()
+    {
+        pthread_mutex_destroy(&sm_lock);
+        pthread_mutex_lock(&valid_sm_lock);
+        valid_sm.erase(this);
+        pthread_mutex_unlock(&valid_sm_lock);
+    }
+};
+
+class tdf_state_machine_lock
+{
+    tdf_state_machine &related_sm;
+
+public:
+    tdf_state_machine_lock(tdf_state_machine &_sm) : related_sm(_sm)
+    {
+        pthread_mutex_lock(&_sm.sm_lock);
+    }
+    ~tdf_state_machine_lock()
+    {
+        pthread_mutex_unlock(&related_sm.sm_lock);
+    }
+};
+
+class tdf_state_machine_state
+{
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm) = 0;
+    virtual void do_action(tdf_state_machine &_sm) = 0;
+    virtual void after_enter(tdf_state_machine &_sm) = 0;
+    virtual void before_leave(tdf_state_machine &_sm) = 0;
+    virtual std::string state_name() = 0;
+};
 
 #endif // _TDF_INCLUDE_H_

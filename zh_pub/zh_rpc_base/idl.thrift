@@ -153,4 +153,5 @@ service vehicle_order_center {
 
 service open_api {
     bool vehicle_come(1:string plateNo, 2:string road) throws (1:gen_exp e),
+    bool vehicle_leave(1:string plateNo, 2:string road) throws (1:gen_exp e),
 }

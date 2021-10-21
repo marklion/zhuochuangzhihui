@@ -8,10 +8,6 @@
 #include "../zh_id_reader/lib/zh_id_reader.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
 
-#define ZH_RASTER_PORT 30200
-#define ZH_SCALE_PORT 30201
-#define ZH_ID_READER_PORT 30202
-#define ZH_PRINTER_PORT 30203
 
 system_management_handler *system_management_handler::m_inst = nullptr;
 
@@ -24,13 +20,8 @@ void system_management_handler::current_version(std::string &_return)
     _return = "v1.0";
 }
 
-void system_management_handler::get_device_config(device_config &_return, const std::string &ssid)
+void system_management_handler::internal_get_device_config(device_config &_return)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 0);
-    if (!opt_user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
     std::ifstream config_file("/conf/device/device_config.json", std::ios::in);
     std::istreambuf_iterator<char> beg(config_file), end;
     std::string config_string(beg, end);
@@ -60,6 +51,16 @@ void system_management_handler::get_device_config(device_config &_return, const 
         tmp.scale_ip = scale_config[i]("scale_ip");
         _return.scale.push_back(tmp);
     }
+}
+void system_management_handler::get_device_config(device_config &_return, const std::string &ssid)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    internal_get_device_config(_return);
 }
 
 bool system_management_handler::edit_device_config(const std::string &ssid, const device_config &config)

@@ -20,6 +20,7 @@ public:
     }
     void log_api_audit(const char *_funcion_name, const std::string &_params);
     virtual bool vehicle_come(const std::string &plateNo, const std::string &road);
+    virtual bool vehicle_leave(const std::string &plateNo, const std::string &road);
 };
 
 #endif // _OPEN_API_IMP_H_

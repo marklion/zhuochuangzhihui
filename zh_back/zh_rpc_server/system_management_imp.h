@@ -35,6 +35,7 @@ public:
     road_status get_status_by_road(const std::string &_road);
     void set_status_by_road(const std::string &_road, road_status &status);
     virtual void get_road_status(road_status &_return, const std::string &gate_code);
+    void internal_get_device_config(device_config &_return);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

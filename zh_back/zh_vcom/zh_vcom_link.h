@@ -10,6 +10,7 @@ class zh_vcom_link{
     std::string ip;
     unsigned short port = 0;
     std::thread *work = nullptr;
+    int pipe_fd[2];
 public:
     zh_vcom_link(const std::string &_ip, unsigned short _port);
     std::string get_pts();
