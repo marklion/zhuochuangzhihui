@@ -23,6 +23,7 @@
 #include "zh_database/zh_db_config.h"
 #include <openssl/sha.h>
 #include <openssl/crypto.h>
+#include <thread>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -111,6 +112,11 @@ int main(int argc, char const *argv[])
 {
     init_user_permissions();
     init_admin_user();
+
+    std::thread ([]{
+        tdf_main::get_inst().run();
+    }).detach();
+
     std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
     multi_processor->registerProcessor("system_management", std::shared_ptr<TProcessor>(new system_managementProcessor(std::shared_ptr<system_management_handler>(system_management_handler::get_inst()))));
     multi_processor->registerProcessor("user_management", std::shared_ptr<TProcessor>(new user_managementProcessor(std::shared_ptr<user_management_handler>(user_management_handler::get_inst()))));

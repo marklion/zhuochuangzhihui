@@ -7,3 +7,4 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 aux_source_directory(. FRAMEWORK_SRC)
 add_library(tcp_framework SHARED ${FRAMEWORK_SRC})
+target_link_libraries(tcp_framework pthread rt)

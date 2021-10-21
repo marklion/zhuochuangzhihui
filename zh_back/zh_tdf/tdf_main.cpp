@@ -1,5 +1,5 @@
 #include "tdf_include.h"
-#include <sys/types.h>          
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -526,4 +526,73 @@ std::string get_string_from_format(const char *format, va_list vl_orig)
     }
 
     return ret;
+}
+
+pthread_mutex_t tdf_state_machine::valid_sm_lock;
+std::set<tdf_state_machine*> tdf_state_machine::valid_sm;
+
+std::thread tdf_state_machine::sm_thread(
+    []()
+    {
+        tdf_log tmp_log("sm_thread");
+        while (true)
+        {
+            tdf_state_machine *sm = nullptr;
+            unsigned int priority = 0;
+            if (sm_mq_fd >= 0)
+            {
+                mq_attr tmp;
+                mq_getattr(sm_mq_fd, &tmp);
+                auto recv_len = mq_receive(sm_mq_fd, (char *)&sm, tmp.mq_msgsize, &priority);
+                if (recv_len == sizeof(sm))
+                {
+                    pthread_mutex_lock(&valid_sm_lock);
+                    auto sm_found = valid_sm.find(sm);
+                    if (sm_found != valid_sm.end())
+                    {
+                        tdf_state_machine_lock lock(*sm);
+                        sm->internal_trigger_sm();
+                    }
+                    pthread_mutex_unlock(&valid_sm_lock);
+                }
+                else
+                {
+                    tmp_log.err("failed to recv msg:%s", strerror(errno));
+                }
+            }
+            else
+            {
+                sleep(1);
+            }
+        }
+    });
+
+int tdf_state_machine::sm_mq_fd = -1;
+
+void tdf_state_machine::internal_trigger_sm()
+{
+    if (m_cur_state)
+    {
+        m_log.log("do action in %s", m_cur_state->state_name().c_str());
+        m_cur_state->do_action(*this);
+        auto next_state = m_cur_state->change_state(*this);
+        if (next_state)
+        {
+            m_log.log("leave %s", m_cur_state->state_name().c_str());
+            m_cur_state->before_leave(*this);
+            m_cur_state.reset(next_state.release());
+            m_log.log("enter %s", m_cur_state->state_name().c_str());
+            m_cur_state->after_enter(*this);
+            internal_trigger_sm();
+        }
+    }
+}
+
+void tdf_state_machine::trigger_sm()
+{
+    auto this_var = this;
+    if (0 != mq_send(sm_mq_fd, (char *)&this_var, sizeof(this), 1))
+    {
+        m_log.err("failed to send msg to mq: %s", strerror(errno));
+    }
 }

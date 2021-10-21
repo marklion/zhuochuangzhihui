@@ -7,6 +7,7 @@ static tdf_log g_log("vcom");
 
 zh_vcom_link::zh_vcom_link(const std::string &_ip, unsigned short _port) : ip(_ip), port(_port)
 {
+    pipe(pipe_fd);
 }
 std::string zh_vcom_link::get_pts()
 {
@@ -61,13 +62,18 @@ std::string zh_vcom_link::get_pts()
                         [this]()
                         {
                             fd_set set;
-                            FD_ZERO(&set);
+                            fd_set err_set;
                             while (1)
                             {
                                 FD_ZERO(&set);
+                                FD_SET(pipe_fd[0], &set);
                                 FD_SET(socket_fd, &set);
                                 FD_SET(ptm_fd, &set);
-                                if (0 < select(socket_fd + 1, &set, NULL, NULL, NULL))
+                                FD_ZERO(&err_set);
+                                FD_SET(pipe_fd[0], &err_set);
+                                FD_SET(socket_fd, &err_set);
+                                FD_SET(ptm_fd, &err_set);
+                                if (0 < select(socket_fd + 1, &set, NULL, &err_set, NULL))
                                 {
                                     if (FD_ISSET(socket_fd, &set))
                                     {
@@ -88,8 +94,11 @@ std::string zh_vcom_link::get_pts()
                                                 write(ptm_fd, &tmp, sizeof(tmp));
                                             }
                                         } while (read_len > 0);
-                                        g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
-                                        g_log.log_package(log.data(), log.length());
+                                        if (log.length() > 0)
+                                        {
+                                            g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
+                                            g_log.log_package(log.data(), log.length());
+                                        }
                                     }
                                     if (FD_ISSET(ptm_fd, &set))
                                     {
@@ -100,13 +109,27 @@ std::string zh_vcom_link::get_pts()
                                             log.push_back(tmp);
                                             send(socket_fd, &tmp, sizeof(tmp), 0);
                                         }
-                                        g_log.log("send to com ip:%s port:%d", ip.c_str(), port);
-                                        g_log.log_package(log.data(), log.length());
+                                        if (log.length() > 0)
+                                        {
+                                            g_log.log("send to com ip:%s port:%d", ip.c_str(), port);
+                                            g_log.log_package(log.data(), log.length());
+                                        }
                                     }
+                                    if (FD_ISSET(pipe_fd[0], &set))
+                                    {
+                                        return;
+                                    }
+                                    if (FD_ISSET(ptm_fd, &err_set) || FD_ISSET(socket_fd, &err_set) || FD_ISSET(pipe_fd[0], &err_set))
+                                    {
+                                        return;
+                                    }
+                                }
+                                else
+                                {
+                                    return;
                                 }
                             }
                         });
-                    work->detach();
                     pts_name = tmp_pts;
                 }
                 else
@@ -127,6 +150,8 @@ zh_vcom_link::~zh_vcom_link()
 {
     if (work)
     {
+        write(pipe_fd[1], "c", 1);
+        work->join();
         delete work;
     }
     if (socket_fd != -1)
@@ -136,5 +161,13 @@ zh_vcom_link::~zh_vcom_link()
     if (ptm_fd != -1)
     {
         close(ptm_fd);
+    }
+    if (pipe_fd[0] >= 0)
+    {
+        close(pipe_fd[0]);
+    }
+    if (pipe_fd[1] >= 0)
+    {
+        close(pipe_fd[1]);
     }
 }

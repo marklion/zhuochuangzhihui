@@ -29,7 +29,7 @@ function request_rpc(service_name, process_name, params) {
     });
 }
 
-app.post('/zh_rest/vehicle_come', async (req, res)=>{
+app.post('/zh_rest/vehicle_event', async (req, res)=>{
     var ret = { err_msg: '无权限' };
     try {
         for (let i in req.body.params.events) {
@@ -38,6 +38,15 @@ app.post('/zh_rest/vehicle_come', async (req, res)=>{
                 var road_code = element.data.roadwayIndex;
                 var plateNo = element.data.plateNo;
                 var resp = await request_rpc("open_api", 'vehicle_come', [plateNo, road_code]);
+                if (resp) {
+                    ret.err_msg = "";
+                }
+            }
+            if ((element.eventType == 771760131 && element.data.eventCmd == 3) || (element.eventType == 771760134 && element.data.eventCmd == 4))
+            {
+                var road_code = element.data.roadwayIndex;
+                var plateNo = element.data.plateNo;
+                var resp = await request_rpc("open_api", 'vehicle_leave', [plateNo, road_code]);
                 if (resp) {
                     ret.err_msg = "";
                 }
