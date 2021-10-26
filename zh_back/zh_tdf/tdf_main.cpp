@@ -63,7 +63,6 @@ static void work_thread_main_loop()
     }
 }
 
-static std::thread g_work_thread(work_thread_main_loop);
 
 class tdf_data;
 class tdf_listen;
@@ -107,6 +106,8 @@ struct tdf_work_pipe_channel : public Itdf_io_channel
     }
 } g_proc_work_coming_data;
 
+static pthread_mutex_t g_timer_lock;
+
 tdf_main::tdf_main()
 {
     g_epoll_fd = epoll_create(1);
@@ -118,8 +119,22 @@ tdf_main::tdf_main()
         .data = {.ptr = &g_proc_work_coming_data}};
 
     epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, g_work2main[0], &ev);
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&g_timer_lock, &attr);
 }
-
+struct tdf_timer_lock
+{
+    tdf_timer_lock()
+    {
+        pthread_mutex_lock(&g_timer_lock);
+    }
+    ~tdf_timer_lock()
+    {
+        pthread_mutex_unlock(&g_timer_lock);
+    }
+};
 struct tdf_timer_node : public Itdf_io_channel
 {
     int m_sec = -1;
@@ -134,6 +149,7 @@ struct tdf_timer_node : public Itdf_io_channel
             int cur_handle = m_handle;
             while (times--)
             {
+                tdf_timer_lock a;
                 if (nullptr == g_timer_map[cur_handle])
                 {
                     break;
@@ -339,6 +355,7 @@ bool tdf_main::run()
 {
     bool ret = true;
     epoll_event evs[128];
+    std::thread(work_thread_main_loop).detach();
 
     while (false == g_exit_flag)
     {
@@ -465,6 +482,7 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private)
 
         if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, timer_fd, &ev))
         {
+            tdf_timer_lock a;
             g_timer_map[timer_fd] = pnode;
             ret = timer_fd;
         }
@@ -480,6 +498,7 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private)
 
 void tdf_main::stop_timer(int _timer_handle)
 {
+    tdf_timer_lock a;
     auto pnode = g_timer_map[_timer_handle];
     if (nullptr != pnode)
     {
@@ -529,7 +548,7 @@ std::string get_string_from_format(const char *format, va_list vl_orig)
 }
 
 pthread_mutex_t tdf_state_machine::valid_sm_lock;
-std::set<tdf_state_machine*> tdf_state_machine::valid_sm;
+std::set<tdf_state_machine *> tdf_state_machine::valid_sm;
 
 std::thread tdf_state_machine::sm_thread(
     []()
