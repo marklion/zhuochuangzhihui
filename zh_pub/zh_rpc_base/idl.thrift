@@ -77,6 +77,8 @@ struct contract_info {
     4:string attachment,
     5:i64 id,
     6:string code,
+    7:string admin_phone,
+    8:string admin_password,
 }
 
 service contract_management {

@@ -27,7 +27,7 @@
             <el-col :span="4">
                 <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
+                    <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="StuffManagement" :route="{name:'StuffManagement'}">物料管理</el-menu-item>
