@@ -25,19 +25,29 @@
                 <span v-else>无附件</span>
             </template>
         </el-table-column>
+        <el-table-column prop="admin_phone" label="管理员手机号" min-width="45px">
+        </el-table-column>
         <el-table-column prop="date" label="修改日期">
         </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="50px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_contract(scope.row)">修改</el-button>
-                <el-button type="danger" size="mini" @click="del_contract(scope.row)" >删除</el-button>
+                <el-button type="danger" size="mini" @click="del_contract(scope.row)">删除</el-button>
             </template>
         </el-table-column>
     </el-table>
-    <el-dialog @close="clean_contract" :title="(current_opt_add?'新增':'修改') + '合同'" :visible.sync="show_add_contract_diag" width="60%" @keyup.enter.native="add_contract">
+    <el-dialog @close="clean_contract" :title="(current_opt_add?'新增':'修改') + '合同'" :visible.sync="show_add_contract_diag" width="60%" @keyup.enter.native="add_contract" @open="gen_random_password">
         <el-form :model="new_contract" ref="add_contract_form" :rules="rules" label-width="120px">
             <el-form-item label="对方公司名称" prop="name">
                 <el-input v-model="new_contract.name" placeholder="请输入对方公司名称"></el-input>
+            </el-form-item>
+            <el-form-item label="管理员手机" prop="admin_phone">
+                <el-input v-model="new_contract.admin_phone" placeholder="请输入对方公司管理员手机号"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" v-if="new_contract.admin_phone && old_admin_phone != new_contract.admin_phone">
+                <el-input v-model="new_contract.admin_password" disabled></el-input>
+                <el-button type="text" size="mini" @click="copy_random_password(new_contract.admin_password)">复制密码</el-button>
+                <span style="font-size:12px;">请复制密码，对话框关闭后将不再显示该密码</span>
             </el-form-item>
             <el-form-item label="合同类型" prop="is_sale">
                 <el-radio-group v-model="new_contract.is_sale">
@@ -74,10 +84,14 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import VueClipboard from 'vue-clipboard2'
+Vue.use(VueClipboard)
 export default {
     name: 'ContractManagement',
     data: function () {
         return {
+            old_admin_phone: '',
             current_opt_add: true,
             all_contract: [],
             show_add_contract_diag: false,
@@ -86,6 +100,8 @@ export default {
                 code: '',
                 attachment: '',
                 is_sale: true,
+                admin_phone: '',
+                admin_password: '',
             },
             rules: {
                 name: [{
@@ -102,20 +118,40 @@ export default {
         };
     },
     methods: {
+        make_random_passwod: function () {
+            var seed = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'Q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9']; // 密码源数组
+            var n = '';
+            for (var i = 0; i < 8; i++) {
+                var t = Math.round(Math.random() * (seed.length - 1));
+                n += seed[t];
+            }
+
+            return n;
+        },
+        gen_random_password: function () {
+            this.new_contract.admin_password = this.make_random_passwod();
+        },
+        copy_random_password: function (_password) {
+            this.$copyText(_password);
+            this.$message('密码已复制');
+        },
         clean_contract: function () {
             this.new_contract = {
                 name: '',
                 code: '',
                 attachment: '',
                 is_sale: true,
+                admin_phone: '',
+                admin_password: '',
             };
-
+            this.old_admin_phone = "";
         },
         trigger_update_contract: function (_contract) {
             var vue_this = this;
             vue_this.new_contract = {
                 ..._contract
             };
+            vue_this.old_admin_phone = _contract.admin_phone;
             vue_this.current_opt_add = false;
             vue_this.show_add_contract_diag = true;
         },
@@ -150,6 +186,8 @@ export default {
             }
             vue_this.$refs.add_contract_form.validate((valid) => {
                 if (valid) {
+                    var shajs = require('sha.js')
+                    vue_this.new_contract.admin_password = shajs('sha1').update(vue_this.new_contract.admin_password).digest('hex');
                     vue_this.$call_remote_process("contract_management", func_name, [vue_this.$cookies.get("zh_ssid"), vue_this.new_contract]).then(function (resp) {
                         if (resp) {
                             vue_this.show_add_contract_diag = false;
