@@ -23,6 +23,7 @@
 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
 std::string zh_rpc_util_gen_ssid();
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
 std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));

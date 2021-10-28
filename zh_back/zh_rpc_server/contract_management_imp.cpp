@@ -165,12 +165,18 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
 }
 void contract_management_handler::get_all_contract(std::vector<contract_info> &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    auto all_contract = sqlite_orm::search_record_all<zh_sql_contract>();
+    std::string contract_query;
+    auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+    if (contract)
+    {
+        contract_query = "name == '" + contract->name + "'";
+    }
+    auto all_contract = sqlite_orm::search_record_all<zh_sql_contract>(contract_query);
     for (auto &itr : all_contract)
     {
         contract_info tmp;

@@ -70,3 +70,17 @@ std::string zh_rpc_util_get_datestring(time_t _time)
     auto date_time = zh_rpc_util_get_timestring(_time);
     return date_time.substr(0, 10);
 }
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract)
+{
+    auto ret = zh_rpc_util_get_online_user(ssid);
+    if (ret)
+    {
+        auto related_contract = ret->get_parent<zh_sql_contract>("belong_contract");
+        if (related_contract && related_contract->get_pri_id() == _contract.get_pri_id())
+        {
+            return ret;
+        }
+    }
+
+    return std::unique_ptr<zh_sql_user_info>();
+}
