@@ -38,6 +38,14 @@ bool vehicle_management_handler::add_vehicle(const std::string &ssid, const vehi
     auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
     if (!opt_user)
     {
+        auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vehicle.company_name.c_str());
+        if (contract)
+        {
+            opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
+    if (!opt_user)
+    {
         ZH_RETURN_NO_PRAVILIGE();
     }
 
@@ -68,6 +76,14 @@ bool vehicle_management_handler::update_vehicle(const std::string &ssid, const v
 {
     bool ret = false;
     auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!opt_user)
+    {
+        auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vehicle.company_name.c_str());
+        if (contract)
+        {
+            opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -104,16 +120,25 @@ bool vehicle_management_handler::update_vehicle(const std::string &ssid, const v
 bool vehicle_management_handler::del_vehicle(const std::string &ssid, const int64_t vehicle_id)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
-    if (!opt_user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_vehicle>(vehicle_id);
     if (!exist_record)
     {
         ZH_RETURN_NO_VEHICLE();
+    }
+
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!opt_user)
+    {
+        auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", exist_record->company_name.c_str());
+        if (contract)
+        {
+            opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
     }
 
     exist_record->remove_record();
@@ -123,12 +148,18 @@ bool vehicle_management_handler::del_vehicle(const std::string &ssid, const int6
 }
 void vehicle_management_handler::get_all_vehicle(std::vector<vehicle_info> &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    auto all_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle>();
+    std::string contract_query;
+    auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+    if (contract)
+    {
+        contract_query = "company_name == '" + contract->name + "'";
+    }
+    auto all_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle>(contract_query);
     for (auto &itr : all_vehicle)
     {
         vehicle_info tmp;

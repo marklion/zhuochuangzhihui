@@ -9,13 +9,19 @@ vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
+    std::string contract_query = "PRI_ID != 0";
+    auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+    if (contract)
+    {
+        contract_query = "company_name == '" + contract->name + "'";
+    }
 
-    auto orders = sqlite_orm::search_record_all<zh_sql_vehicle_order>("PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 30 OFFSET %ld", anchor);
+    auto orders = sqlite_orm::search_record_all<zh_sql_vehicle_order>("%s ORDER BY PRI_ID DESC LIMIT 30 OFFSET %ld", contract_query.c_str() , anchor);
     for (auto &itr:orders)
     {
         vehicle_order_info tmp;
@@ -29,25 +35,32 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
         tmp.status = itr.status;
         tmp.stuff_name = itr.stuff_name;
         tmp.company_name = itr.company_name;
+        auto all_status = itr.get_all_children<zh_sql_order_status>("belong_order");
+        for (auto &single_status:all_status)
+        {
+            order_status_info status_detail;
+            status_detail.name = single_status.name;
+            status_detail.step = single_status.step;
+            status_detail.timestamp = single_status.timestamp;
+            status_detail.user_name = single_status.user_name;
+            tmp.status_details.push_back(status_detail);
+        }
 
         _return.push_back(tmp);
     }
-
 }
 void vehicle_order_center_handler::get_gate_info(gate_relate_info &_return, const std::string &ssid, const int64_t order_id)
 {
-
 }
 void vehicle_order_center_handler::get_weight_info(weight_relate_info &_return, const std::string &ssid, const int64_t order_id)
 {
-
 }
 
 bool vehicle_order_is_dup(const vehicle_order_info &order)
 {
     bool ret = false;
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status == 0 AND (main_vehicle_number == '%s' OR behind_vehicle_number == '%s' OR driver_id == '%s')", order.id , order.main_vehicle_number.c_str(), order.behind_vehicle_number.c_str(), order.driver_id.c_str());
+    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR behind_vehicle_number == '%s' OR driver_id == '%s')", order.id, order.main_vehicle_number.c_str(), order.behind_vehicle_number.c_str(), order.driver_id.c_str());
     if (exist_record)
     {
         ret = true;
@@ -56,10 +69,18 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
     return ret;
 }
 
-bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> & orders)
+bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders)
 {
     bool ret = false;
     auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!opt_user)
+    {
+        if (orders.size() > 0)
+        {
+            auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", orders[0].company_name.c_str());
+            opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -83,13 +104,90 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
         tmp.main_vehicle_number = order.main_vehicle_number;
         tmp.stuff_name = order.stuff_name;
         tmp.company_name = order.company_name;
-        tmp.status = 0;
+        tmp.status = -1;
 
-        if (tmp.insert_record())
+        auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+        bool op_permit = true;
+        if (contract)
+        {
+            if (contract->name != tmp.company_name)
+            {
+                op_permit = false;
+            }
+        }
+        if (op_permit && tmp.insert_record())
         {
             tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
+            auto create_status = zh_sql_order_status::make_create_status(ssid);
+            tmp.push_status(create_status);
+            if (!opt_user->get_parent<zh_sql_contract>("belong_contract"))
+            {
+                auto before_come_status = zh_sql_order_status::make_before_come_status();
+                tmp.push_status(before_come_status);
+            }
             ret = tmp.update_record();
         }
+    }
+
+    return ret;
+}
+
+bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
+{
+    bool ret = true;
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    for (auto &itr : order)
+    {
+        auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
+        if (single_order)
+        {
+            auto tmp = zh_sql_order_status::make_before_come_status(ssid);
+            single_order->push_status(tmp);
+        }
+    }
+
+    return ret;
+}
+
+bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
+{
+    bool ret = true;
+
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!opt_user)
+    {
+        if (order.size() > 0)
+        {
+            auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", order[0].company_name.c_str());
+            opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    std::list<zh_sql_vehicle_order> need_cancel;
+    for (auto &itr:order)
+    {
+        auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
+        if (!single_order || single_order->status == 2)
+        {
+            ZH_RETURN_ORDER_CANNOT_CANCEL(itr.main_vehicle_number);
+        }
+        need_cancel.push_back(*single_order);
+    }
+
+    for (auto &itr:need_cancel)
+    {
+        auto cancel_status = zh_sql_order_status::make_end_status(ssid);
+        itr.push_status(cancel_status);
     }
 
     return ret;

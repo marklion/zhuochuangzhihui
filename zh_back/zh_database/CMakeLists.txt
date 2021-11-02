@@ -10,4 +10,4 @@ add_library(sqlite_orm SHARED ${API_SRC})
 
 find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
 
-target_link_libraries(sqlite_orm sqlite3 ${TDF_LIB})
+target_link_libraries(sqlite_orm sqlite3 ${TDF_LIB} uuid)

@@ -37,7 +37,7 @@
     <el-dialog @close="clean_vehicle" :title="(current_opt_add?'新增':'修改') + '车辆'" :visible.sync="show_edit_vehicle_diag" width="60%" @keyup.enter.native="edit_vehicle">
         <el-form :model="focus_vehicle" ref="focus_vehicle" :rules="rules" label-width="120px">
             <el-form-item label="所属公司" prop="group_name">
-                <el-select v-model="focus_vehicle.company_name" placeholder="请选择所属公司">
+                <el-select v-model="focus_vehicle.company_name" placeholder="请选择所属公司" :disabled="$store.state.user_info.permission == 3">
                     <el-option v-for="(single_item,index) in company_for_select" :key="index" :label="single_item.label" :value="single_item.value"></el-option>
                 </el-select>
             </el-form-item>
@@ -200,7 +200,7 @@ export default {
                 driver_name: '',
                 driver_phone: '',
                 driver_id: '',
-                company_name: '',
+                company_name: this.company_for_select[0].label,
             };
         },
         edit_vehicle: function () {
@@ -228,12 +228,16 @@ export default {
         this.init_all_vehicle();
         var vue_this = this;
         vue_this.$call_remote_process("contract_management", 'get_all_contract', [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+            if (vue_this.$store.state.user_info.permission == 3) {
+                vue_this.company_for_select = [];
+            }
             resp.forEach(element => {
                 vue_this.company_for_select.push({
                     value: element.name,
                     label: element.name,
                 });
             });
+            vue_this.focus_vehicle.company_name = vue_this.company_for_select[0].label;
         });
     }
 }

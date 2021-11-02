@@ -15,16 +15,12 @@
 #define ZH_RETURN_NO_VEHICLE() ZH_RETURN_MSG("车辆不存在")
 #define ZH_RETURN_DUP_ORDER() ZH_RETURN_MSG("派车内容已存在")
 #define ZH_RETURN_NO_ORDER() ZH_RETURN_MSG("派车单不存在")
+#define ZH_RETURN_ORDER_CANNOT_CANCEL(x) ZH_RETURN_MSG(x + " 无法取消")
 
 #define ZH_RASTER_PORT 30200
 #define ZH_SCALE_PORT 30201
 #define ZH_ID_READER_PORT 30202
 #define ZH_PRINTER_PORT 30203
 
-std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
-std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
-std::string zh_rpc_util_gen_ssid();
-std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
-std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));
 
 #endif // _ZH_RPC_UTIL_H_

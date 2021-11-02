@@ -29,14 +29,14 @@
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
+                    <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 2" index="StuffManagement" :route="{name:'StuffManagement'}">物料管理</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 0" index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
                     <el-menu-item v-if="$store.state.user_info.permission <= 0" index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
                 </el-menu>
             </el-col>
             <el-col :span="20">
-                <div v-if="$store.state.is_login" style="height:660px;">
+                <div v-if="$store.state.is_login" class="web_nav_show">
                     <router-view></router-view>
                 </div>
                 <div v-else>
