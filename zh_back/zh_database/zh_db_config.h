@@ -4,6 +4,8 @@
 #include "sqlite_orm_tree.h"
 #include "CJsonObject.hpp"
 
+std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
+std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));
 class zh_sql_user_permission : public sql_tree_base
 {
 public:
@@ -194,6 +196,7 @@ public:
     }
 };
 
+class zh_sql_order_status;
 class zh_sql_vehicle_order : public sql_tree_base
 {
 public:
@@ -224,6 +227,122 @@ public:
     virtual std::string table_name()
     {
         return "vehicle_order_table";
+    }
+    void push_status(zh_sql_order_status &_status);
+};
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
+std::string zh_rpc_util_gen_ssid();
+
+class zh_sql_order_status:public sql_tree_base{
+public:
+    std::string name;
+    std::string timestamp;
+    std::string user_name;
+    long step = 0;
+    zh_sql_order_status() {
+        add_parent_type<zh_sql_vehicle_order>("belong_order");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("timestamp", sqlite_orm_column::STRING, &timestamp));
+        ret.push_back(sqlite_orm_column("user_name", sqlite_orm_column::STRING, &user_name));
+        ret.push_back(sqlite_orm_column("step", sqlite_orm_column::INTEGER, &step));
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "order_status_table";
+    }
+    static zh_sql_order_status make_create_status(const std::string &ssid = "") {
+        zh_sql_order_status ret;
+        ret.name = "创建";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 0;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_before_come_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "等待入场";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 1;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_in_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "场内";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 2;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_end_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "结束";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 100;
+        ret.insert_record();
+
+        return ret;
     }
 };
 

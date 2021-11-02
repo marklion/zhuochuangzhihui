@@ -36,7 +36,7 @@
                 </el-menu>
             </el-col>
             <el-col :span="20">
-                <div v-if="$store.state.is_login" style="height:660px;">
+                <div v-if="$store.state.is_login" class="web_nav_show">
                     <router-view></router-view>
                 </div>
                 <div v-else>

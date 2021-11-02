@@ -12,14 +12,19 @@
     </el-row>
     <el-tabs v-model="activeName">
         <el-tab-pane label="所有派车单" name="all">
-            <el-table class="order_table_show" :data="all_order" style="width: 100%" stripe ref="order_table" v-infinite-scroll="get_order" :infinite-scroll-disabled="lazy_finish">
+            <el-table  :data="all_order" style="width: 100%" stripe ref="order_table" infinite-scroll-listen-for-event="need_refresh" v-infinite-scroll="get_order" infinite-scroll-disabled="lazy_finish" :infinite-scroll-distance="10">
                 <el-table-column prop="order_number" label="单号" min-width="22px">
                 </el-table-column>
                 <el-table-column prop="company_name" label="对方公司" min-width="60px">
                 </el-table-column>
-                <el-table-column prop="stuff_name" label="运输货物" min-width="40px">
+                <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
                 </el-table-column>
-                <el-table-column prop="status" label="状态" min-width="20px" :formatter="status_show">
+                <el-table-column label="状态" min-width="60px">
+                    <template slot-scope="scope">
+                        <el-steps direction="vertical" :active="scope.row.status">
+                            <el-step v-for="(single_status, index) in scope.row.status_details" :key="index" :title="single_status.name" :description="single_status.user_name + '--->' + single_status.timestamp"></el-step>
+                        </el-steps>
+                    </template>
                 </el-table-column>
                 <el-table-column label="车辆信息" min-width="80px">
                     <template slot-scope="scope">
@@ -32,10 +37,17 @@
                         </el-descriptions>
                     </template>
                 </el-table-column>
-                <el-table-column fixed="right" label="操作" min-width="50px">
+                <el-table-column fixed="right" label="操作" min-width="20px">
                     <template slot-scope="scope">
-                        <el-button type="warning" size="mini">修改</el-button>
-                        <el-button type="danger" size="mini" @click="console.log(scope)">删除</el-button>
+                        <div>
+                            <el-button type="warning" size="mini">修改</el-button>
+                        </div>
+                        <div v-if="scope.row.status != 2">
+                            <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
+                        </div>
+                        <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
+                            <el-button type="success" size="mini" @click="confirm_order([scope.row])">确认可进</el-button>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -96,11 +108,19 @@
 </template>
 
 <script>
+import Vue from 'vue';
 import ItemForSelect from "../components/ItemForSelect.vue"
+import infiniteScroll from 'vue-infinite-scroll'
+Vue.use(infiniteScroll)
 export default {
     name: 'VehicleOrderCenter',
     components: {
         "item-for-select": ItemForSelect,
+    },
+    events: {
+        ['need_refresh']() {
+            console.log("tick");
+        }
     },
     data: function () {
         return {
@@ -134,29 +154,26 @@ export default {
                 driver_name: '',
                 stuff_name: '',
             },
-            status_show: function (status) {
-                var ret = "未进场";
-                switch (status) {
-                    case 1:
-                        ret = '已进场';
-                        break;
-                    case 2:
-                        ret = '已一次称重';
-                        break;
-                    case 3:
-                        ret = '已二次称重';
-                        break;
-                    case 4:
-                        ret = '已完成';
-                        break;
-                    default:
-                        break;
-                }
-                return ret;
-            },
+
         };
     },
     methods: {
+        cancel_order: function (orders) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "cancel_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
+                if (resp) {
+                    vue_this.refresh_order();
+                }
+            });
+        },
+        confirm_order: function (orders) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "confirm_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
+                if (resp) {
+                    vue_this.refresh_order();
+                }
+            });
+        },
         remove_single_vehicle: function (index) {
             this.vehicle_selected.splice(index, 1);
         },
@@ -198,8 +215,9 @@ export default {
         },
         refresh_order: function () {
             var vue_this = this;
-            vue_this.lazy_finish = false;
             vue_this.all_order = [];
+            vue_this.lazy_finish = false;
+            vue_this.$emit("need_refresh");
         },
         edit_order: function () {
             var vue_this = this;
@@ -263,8 +281,8 @@ export default {
     overflow: auto;
 }
 
-.order_table_show {
-    height: 75vh;
+.vehicle_order_center_show {
+    height: 100%;
     overflow: auto;
 }
 </style>

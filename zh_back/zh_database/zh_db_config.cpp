@@ -1,6 +1,22 @@
-#include "zh_rpc_util.h"
+#include "zh_db_config.h"
 #include <uuid/uuid.h>
 
+std::string zh_rpc_util_get_timestring(time_t _time)
+{
+    time_t cur_time = _time;
+
+    auto st_time = localtime(&cur_time);
+    char buff[512] = "";
+
+    sprintf(buff, "%d-%02d-%02d %02d:%02d:%02d", st_time->tm_year + 1900, st_time->tm_mon + 1, st_time->tm_mday, st_time->tm_hour, st_time->tm_min, st_time->tm_sec);
+
+    return std::string(buff);
+}
+std::string zh_rpc_util_get_datestring(time_t _time)
+{
+    auto date_time = zh_rpc_util_get_timestring(_time);
+    return date_time.substr(0, 10);
+}
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid)
 {
     auto user_login = sqlite_orm::search_record<zh_sql_user_login>("ssid == '%s'", ssid.c_str());
@@ -54,22 +70,6 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
     return std::unique_ptr<zh_sql_user_info>();
 }
 
-std::string zh_rpc_util_get_timestring(time_t _time)
-{
-    time_t cur_time = _time;
-
-    auto st_time = localtime(&cur_time);
-    char buff[512] = "";
-
-    sprintf(buff, "%d-%02d-%02d %02d:%02d:%02d", st_time->tm_year + 1900, st_time->tm_mon + 1, st_time->tm_mday, st_time->tm_hour, st_time->tm_min, st_time->tm_sec);
-
-    return std::string(buff);
-}
-std::string zh_rpc_util_get_datestring(time_t _time)
-{
-    auto date_time = zh_rpc_util_get_timestring(_time);
-    return date_time.substr(0, 10);
-}
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract)
 {
     auto ret = zh_rpc_util_get_online_user(ssid);
@@ -83,4 +83,23 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
     }
 
     return std::unique_ptr<zh_sql_user_info>();
+}
+void zh_sql_vehicle_order::push_status(zh_sql_order_status &_status)
+{
+    if (_status.step > status)
+    {
+        status = _status.step;
+        auto exist_status = get_children<zh_sql_order_status>("belong_order", "step == %ld", status);
+        if (exist_status)
+        {
+            exist_status->remove_record();
+        }
+        _status.set_parent(*this, "belong_order");
+        _status.update_record();
+        update_record();
+    }
+    else
+    {
+        _status.remove_record();
+    }
 }

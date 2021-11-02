@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "el-table-infinite-scroll": "^1.0.10",
     "element-ui": "^2.4.5",
     "pinyin-match": "^1.2.2",
     "sha.js": "^2.4.11",
     "vue": "^2.6.11",
     "vue-clipboard2": "^0.3.1",
     "vue-cookies": "^1.7.4",
+    "vue-infinite-scroll": "^2.0.2",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0"
   },

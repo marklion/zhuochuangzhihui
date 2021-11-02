@@ -34,7 +34,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.inventory = stuff.inventory;
     tmp.name = stuff.name;
     tmp.unit = stuff.unit;
-    
+
     ret = tmp.insert_record();
 
     return ret;
@@ -87,7 +87,7 @@ bool stuff_management_handler::del_stuff(const std::string &ssid, const int64_t 
 }
 void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();

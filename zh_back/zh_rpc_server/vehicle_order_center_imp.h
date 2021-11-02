@@ -208,8 +208,8 @@ public:
     virtual void get_gate_info(gate_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual void get_weight_info(weight_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
+    virtual bool confirm_vehicle_order(const std::string& ssid, const std::vector<vehicle_order_info> & order);
+    virtual bool cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
 };
-
-
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

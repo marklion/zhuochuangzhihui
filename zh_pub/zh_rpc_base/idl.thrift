@@ -121,6 +121,13 @@ service vehicle_management {
     list<vehicle_info> get_all_vehicle(1:string ssid) throws (1:gen_exp e),
 }
 
+struct order_status_info {
+    1:string name,
+    2:string timestamp,
+    3:i64 step,
+    4:string user_name,
+}
+
 struct vehicle_order_info {
     1:string order_number,
     2:string main_vehicle_number,
@@ -132,6 +139,7 @@ struct vehicle_order_info {
     8:i64 id,
     9:string company_name,
     10:string stuff_name,
+    11:list<order_status_info> status_details,
 }
 
 struct gate_relate_info {
@@ -151,6 +159,8 @@ service vehicle_order_center {
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    bool confirm_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
 }
 
 service open_api {
