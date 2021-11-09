@@ -119,8 +119,12 @@
                                 <el-col :span="10">光栅2</el-col>
                                 <el-col :span="14">{{cur_opt_scale.raster2_block?'阻挡':'未阻挡'}}</el-col>
                             </el-row>
+                            <el-row type="flex" :gutter="10" align="center">
+                                <el-col :span="10">当前称重</el-col>
+                                <el-col :span="14">{{cur_opt_scale.current_weight}}</el-col>
+                            </el-row>
                             <div slot="header">
-                                <span>光栅状态</span>
+                                <span>光栅和衡器</span>
                                 <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
                             </div>
                         </el-card>
@@ -292,6 +296,9 @@ export default {
             });
             vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[1]]).then(function (resp) {
                 vue_this.$set(vue_this.cur_opt_scale, 'raster2_block', resp);
+            });
+            vue_this.$call_remote_process("system_management", "read_scale", [vue_this.cur_opt_scale.scale_ip]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_scale, 'current_weight', resp);
             });
         },
         open_scale_operate: function (_scale) {
