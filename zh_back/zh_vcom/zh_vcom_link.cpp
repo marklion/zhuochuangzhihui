@@ -171,3 +171,49 @@ zh_vcom_link::~zh_vcom_link()
         close(pipe_fd[1]);
     }
 }
+
+bool zh_vcom_link::proc_modbus(int _address, std::function<bool(modbus_t *, void *)> _handler, void *_private)
+{
+    bool ret = false;
+
+    auto mctx = modbus_new_rtu(get_pts().c_str(), 19200, 'E', 8, 1);
+    if (mctx)
+    {
+        if (0 == modbus_set_slave(mctx, _address))
+        {
+            unsigned int sec;
+            unsigned int usec;
+            if (0 == modbus_get_response_timeout(mctx, &sec, &usec))
+            {
+                g_log.log("get response timeout sec:%d, usec:%d", sec, usec);
+                sec = 10;
+                usec = 0;
+                if (0 == modbus_set_response_timeout(mctx, sec, usec))
+                {
+                    g_log.log("set response timeout sec:%d, usec:%d", sec, usec);
+                }
+            }
+            if (0 == modbus_connect(mctx))
+            {
+                ret = _handler(mctx, _private);
+                modbus_close(mctx);
+            }
+            else
+            {
+                g_log.err("fail to connect modbus_slaver:%s", modbus_strerror(errno));
+            }
+        }
+        else
+        {
+            g_log.err("fail to set_slave :%s", modbus_strerror(errno));
+        }
+
+        modbus_free(mctx);
+    }
+    else
+    {
+        g_log.err("fail to open modbus:%s", modbus_strerror(errno));
+    }
+
+    return ret;
+}

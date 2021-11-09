@@ -40,6 +40,7 @@ service system_management {
     bool ctrl_led(1:string gate_code, 2:string content) throws (1:gen_exp e),
     bool ctrl_voice(1:string gate_code, 2:string content) throws (1:gen_exp e),
     road_status get_road_status(1:string gate_code) throws (1:gen_exp e),
+    double read_scale(1:string scale_ip) throws (1:gen_exp e),
 }
 
 struct user_info {

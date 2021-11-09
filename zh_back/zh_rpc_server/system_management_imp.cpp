@@ -7,6 +7,7 @@
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_id_reader/lib/zh_id_reader.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
+#include "../zh_scale/lib/zh_scale.h"
 
 
 system_management_handler *system_management_handler::m_inst = nullptr;
@@ -189,4 +190,9 @@ void system_management_handler::get_road_status(road_status &_return, const std:
 {
     auto status = get_status_by_road(gate_code);
     _return = status;
+}
+
+double system_management_handler::read_scale(const std::string &scale_ip)
+{
+    return get_current_weight(scale_ip, ZH_SCALE_PORT);
 }

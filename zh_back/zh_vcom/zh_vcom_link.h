@@ -2,6 +2,8 @@
 #define _ZH_VCOMM_LINK_H_
 #include <string>
 #include <thread>
+#include <functional>
+#include <modbus/modbus.h>
 
 class zh_vcom_link{
     std::string pts_name;
@@ -14,6 +16,7 @@ class zh_vcom_link{
 public:
     zh_vcom_link(const std::string &_ip, unsigned short _port);
     std::string get_pts();
+    bool proc_modbus(int _address, std::function<bool(modbus_t *, void *)> _handler, void *_private);
     ~zh_vcom_link();
 };
 
