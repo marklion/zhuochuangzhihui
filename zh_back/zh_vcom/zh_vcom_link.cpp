@@ -78,41 +78,29 @@ std::string zh_vcom_link::get_pts()
                                     if (FD_ISSET(socket_fd, &set))
                                     {
                                         usleep(100000);
-                                        char tmp;
-                                        std::string log;
+                                        char tmp[4096];
                                         int read_len = 0;
-                                        do
+                                        read_len = recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT);
+                                        if (read_len < 0)
                                         {
-                                            read_len = recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT);
-                                            if (read_len < 0)
-                                            {
-                                                return;
-                                            }
-                                            if (read_len > 0)
-                                            {
-                                                log.push_back(tmp);
-                                                write(ptm_fd, &tmp, sizeof(tmp));
-                                            }
-                                        } while (read_len > 0);
-                                        if (log.length() > 0)
+                                            return;
+                                        }
+                                        if (read_len > 0)
                                         {
                                             g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
-                                            g_log.log_package(log.data(), log.length());
+                                            g_log.log_package(tmp, read_len);
+                                            write(ptm_fd, tmp, read_len);
                                         }
                                     }
                                     if (FD_ISSET(ptm_fd, &set))
                                     {
-                                        char tmp;
-                                        std::string log;
-                                        while (read(ptm_fd, &tmp, sizeof(tmp)) > 0)
+                                        char tmp[4096];
+                                        int read_len = read(ptm_fd, tmp, sizeof(tmp));
+                                        if (read_len > 0)
                                         {
-                                            log.push_back(tmp);
-                                            send(socket_fd, &tmp, sizeof(tmp), 0);
-                                        }
-                                        if (log.length() > 0)
-                                        {
+                                            send(socket_fd, tmp, read_len, 0);
                                             g_log.log("send to com ip:%s port:%d", ip.c_str(), port);
-                                            g_log.log_package(log.data(), log.length());
+                                            g_log.log_package(tmp, read_len);
                                         }
                                     }
                                     if (FD_ISSET(pipe_fd[0], &set))

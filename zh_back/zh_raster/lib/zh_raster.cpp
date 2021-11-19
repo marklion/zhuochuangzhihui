@@ -16,7 +16,7 @@ bool raster_was_block(const std::string &ip, unsigned short port)
         [&](modbus_t *_mctx, void *_private) -> bool
         {
             unsigned short reply[24] = {0};
-            auto rc = modbus_read_registers(_mctx, 0, 2, reply);
+            auto rc = modbus_read_registers(_mctx, 0, 7, reply);
             if (rc > 0)
             {
                 unsigned short fin_ret = 0;
