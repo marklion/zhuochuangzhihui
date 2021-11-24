@@ -32,3 +32,25 @@ double get_current_weight(const std::string &_scale_ip, unsigned short _port)
 
     return ret;
 }
+void clean_scale_weight(const std::string &_scale_ip, unsigned short _port)
+{
+    zh_vcom_link vl(_scale_ip, _port);
+    if (!vl.proc_modbus(
+            1,
+            [&](modbus_t *mctx, void *_private) -> bool
+            {
+                if (1 == modbus_write_bit(mctx, 0, TRUE))
+                {
+                    return true;
+                }
+                else
+                {
+                    g_log.err("failed to zero scale:%s", modbus_strerror(errno));
+                }
+                return false;
+            },
+            nullptr))
+    {
+        g_log.err("failed to set scale");
+    }
+}

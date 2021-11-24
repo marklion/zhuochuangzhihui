@@ -141,6 +141,8 @@ struct vehicle_order_info {
     9:string company_name,
     10:string stuff_name,
     11:list<order_status_info> status_details,
+    12:double p_weight,
+    13:double m_weight,
 }
 
 struct gate_relate_info {

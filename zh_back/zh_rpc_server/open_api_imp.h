@@ -4,11 +4,13 @@
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/open_api.h"
 #include "../zh_tdf/tdf_include.h"
+#include "../zh_hk_gate/lib/zh_hk_gate.h"
 class open_api_handler:public open_apiIf {
 private:
     static open_api_handler *m_inst;
     tdf_log m_log;
     open_api_handler():m_log("open_api") {
+        zh_hk_subcribe_event();
     }
 public:
     static open_api_handler *get_inst() {

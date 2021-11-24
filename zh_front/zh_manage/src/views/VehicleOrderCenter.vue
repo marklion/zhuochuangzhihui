@@ -34,6 +34,8 @@
                             <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
                             <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
                             <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
+                            <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
+                            <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
                         </el-descriptions>
                     </template>
                 </el-table-column>
@@ -42,7 +44,7 @@
                         <div>
                             <el-button type="warning" size="mini">修改</el-button>
                         </div>
-                        <div v-if="scope.row.status != 2">
+                        <div v-if="scope.row.status < 2">
                             <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
                         </div>
                         <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">

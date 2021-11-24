@@ -209,6 +209,8 @@ public:
     std::string company_name;
     long status;
     std::string stuff_name;
+    double p_weight = 0;
+    double m_weight = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -221,6 +223,8 @@ public:
         ret.push_back(sqlite_orm_column("order_number", sqlite_orm_column::STRING, &order_number));
         ret.push_back(sqlite_orm_column("status", sqlite_orm_column::INTEGER, &status));
         ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
+        ret.push_back(sqlite_orm_column("p_weight", sqlite_orm_column::REAL, &p_weight));
+        ret.push_back(sqlite_orm_column("m_weight", sqlite_orm_column::REAL, &m_weight));
 
         return ret;
     }
@@ -303,7 +307,7 @@ public:
     static zh_sql_order_status make_in_status(const std::string &ssid = "")
     {
         zh_sql_order_status ret;
-        ret.name = "场内";
+        ret.name = "进场";
         ret.timestamp = zh_rpc_util_get_timestring();
         if (ssid.length() > 0)
         {
@@ -318,6 +322,72 @@ public:
             ret.user_name = "(自动)";
         }
         ret.step = 2;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_p_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "一次称重";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 3;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_m_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "二次称重";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 4;
+        ret.insert_record();
+
+        return ret;
+    }
+    static zh_sql_order_status make_out_status(const std::string &ssid = "")
+    {
+        zh_sql_order_status ret;
+        ret.name = "出场";
+        ret.timestamp = zh_rpc_util_get_timestring();
+        if (ssid.length() > 0)
+        {
+            auto opt_user = zh_rpc_util_get_online_user(ssid);
+            if (opt_user)
+            {
+                ret.user_name = opt_user->name;
+            }
+        }
+        else
+        {
+            ret.user_name = "(自动)";
+        }
+        ret.step = 5;
         ret.insert_record();
 
         return ret;

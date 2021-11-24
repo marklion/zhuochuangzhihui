@@ -42,6 +42,15 @@ static neb::CJsonObject call_hk_post(const std::string &_url, neb::CJsonObject r
     return ret;
 }
 
+void zh_hk_subcribe_event()
+{
+    neb::CJsonObject req;
+    req.AddEmptySubArray("eventTypes");
+    req["eventTypes"].Add(771760130);
+    req["eventTypes"].Add(771760133);
+    req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
+    call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
+}
 bool zh_hk_ctrl_gate(const std::string &_gate_code, zh_hk_gate_control_cmd _cmd)
 {
     bool ret = false;

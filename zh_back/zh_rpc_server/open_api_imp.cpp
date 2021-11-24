@@ -17,7 +17,10 @@ bool open_api_handler::vehicle_come(const std::string &plateNo, const std::strin
     auto status = system_management_handler::get_inst()->get_status_by_road(road);
     status.coming_vehicle = plateNo;
     system_management_handler::get_inst()->set_status_by_road(road, status);
-    vehicle_state_machine::fetch_sm(plateNo, 1).proc_gate_near(road);
+    if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
+    {
+        vehicle_state_machine::fetch_sm(plateNo, 1).proc_roadway_trigger(road);
+    }
 
     return true;
 }
@@ -29,8 +32,9 @@ bool open_api_handler::vehicle_leave(const std::string &plateNo, const std::stri
     status.coming_vehicle = "";
     system_management_handler::get_inst()->set_status_by_road(road, status);
 
-    vehicle_state_machine::fetch_sm(plateNo, 1).proc_pass_gate(road);
-    vehicle_state_machine::delete_sm(plateNo);
+    if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
+    {
+    }
 
     return true;
 }

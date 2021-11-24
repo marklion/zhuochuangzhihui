@@ -10,6 +10,7 @@ enum zh_hk_gate_control_cmd {
     zh_hk_gate_hold = 3,
 };
 
+void zh_hk_subcribe_event();
 bool zh_hk_ctrl_gate(const std::string &_gate_code, zh_hk_gate_control_cmd _cmd);
 bool zh_hk_ctrl_led(const std::string &_gate_code, const std::string &_content);
 bool zh_hk_ctrl_voice(const std::string &_gate_code, const std::string &_content);

@@ -12,7 +12,7 @@ $(DELIVER_PATH):
 	[ -d $(DELIVER_PATH)/lib ] || mkdir $(DELIVER_PATH)/lib
 
 $(DELIVER_PATH)/bin/zh_daemon:$(SUB_DIR) main.cpp $(DELIVER_PATH)
-	g++ -std=gnu++11 -g -o $@ main.cpp -lpthread -lthrift -lssl -lcrypto -L $(DELIVER_PATH)/lib -l zh_rpc_server -lsqlite_orm -lzh_id_reader -Wl,-rpath=../lib -ltcp_framework
+	g++ -std=gnu++11 -g -o $@ main.cpp -lpthread -lthrift -lssl -lcrypto -L $(DELIVER_PATH)/lib -l zh_rpc_server -lsqlite_orm -lzh_id_reader -lzh_hk_gate -Wl,-rpath=../lib -ltcp_framework
 
 zh_rpc_server:$(DELIVER_PATH) zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_hk_gate zh_scale
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
