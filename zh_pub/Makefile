@@ -4,6 +4,8 @@ SUB_DIR=zh_rpc_base
 
 all:$(CONF_DELIVER_PATH) $(SUB_DIR)
 	cp $(SRC_DIR)/zh_conf/nginx.conf $(CONF_DELIVER_PATH)
+	cp $(SRC_DIR)/zh_conf/frpc.ini $(CONF_DELIVER_PATH)
+	$(SRC_DIR)/change_base_url.sh $(COMPANY_KEY) $(CONF_DELIVER_PATH)/frpc.ini
 
 $(SUB_DIR):
 	$(MAKE) -C $(SRC_DIR)/$@

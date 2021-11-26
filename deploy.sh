@@ -31,8 +31,9 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 102`
+    line=`expr $line - 103`
     tail -n $line $0 | tar zx  --skip-old-files -C /
+    frpc -c /conf/frpc.ini &
     nginx -c /conf/nginx.conf
     zh_daemon &
     pushd /zh_rest_node
@@ -47,7 +48,7 @@ start_docker_con() {
     local DEVICE_CONFIG_FILE_PATH=`realpath ${DEVICE_CONFIG_FILE_INPUT}`
     local DEVICE_CONFIG_FILE_PATH=`dirname ${DEVICE_CONFIG_FILE_PATH}`
     local IMG_BED=`realpath $IMG_BED_INPUT`
-    local CON_ID=`docker create -ti --rm -p ${PORT}:80 -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e HK_KEY="${HK_KEY_INPUT}" -e HK_SEC="${HK_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local CON_ID=`docker create --privileged -ti --rm -p ${PORT}:80 -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e HK_KEY="${HK_KEY_INPUT}" -e HK_SEC="${HK_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start -ai ${CON_ID}
 }

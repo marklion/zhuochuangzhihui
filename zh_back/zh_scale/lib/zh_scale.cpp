@@ -6,7 +6,7 @@ static tdf_log g_log("scale");
 
 double get_current_weight(const std::string &_scale_ip, unsigned short _port)
 {
-    double ret = 0;
+    double ret = 0.0001;
     zh_vcom_link vl(_scale_ip, _port);
     if (!vl.proc_modbus(
             1,

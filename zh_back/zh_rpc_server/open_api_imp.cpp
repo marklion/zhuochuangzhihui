@@ -17,9 +17,38 @@ bool open_api_handler::vehicle_come(const std::string &plateNo, const std::strin
     auto status = system_management_handler::get_inst()->get_status_by_road(road);
     status.coming_vehicle = plateNo;
     system_management_handler::get_inst()->set_status_by_road(road, status);
-    if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
+    device_config dc;
+    system_management_handler::get_inst()->internal_get_device_config(dc);
+    for (auto &itr:dc.gate)
     {
-        vehicle_state_machine::fetch_sm(plateNo, 1).proc_roadway_trigger(road);
+        if (itr.entry == road || itr.exit == road)
+        {
+            if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
+            {
+                vehicle_state_machine::fetch_sm(plateNo, 1).proc_roadway_trigger(road);
+            }
+            break;
+        }
+    }
+    for (auto &itr:dc.scale)
+    {
+        if (itr.entry == road || itr.exit == road)
+        {
+            if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
+            {
+                auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(itr.name);
+                if (ssm)
+                {
+                    scale_trigger_event tmp;
+                    tmp.road_way = road;
+                    tmp.vehicle_number = plateNo;
+                    tdf_state_machine_lock a(*ssm);
+                    ssm->trigger_events.push_back(tmp);
+                    ssm->trigger_sm();
+                }
+            }
+            break;
+        }
     }
 
     return true;

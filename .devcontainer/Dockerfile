@@ -2,7 +2,7 @@
 
 # [Choice] Ubuntu version: bionic, focal
 ARG VARIANT="focal"
-FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
+FROM ubuntu
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -19,7 +19,7 @@ SHELL ["/bin/bash", "-c"]
 RUN pushd thrift_dir;tar xf thrift-0.14.1.tar.gz;pushd thrift-0.14.1 ;./configure --prefix=/usr --without-ruby --without-java --without-go --without-erlang --without-perl --without-qt5 --without-lua --without-php --without-nodejs --without-php_extension && make -j 8 && make install;popd;popd
 ENV TIME_ZONE=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 COPY nginx_upload_install.sh /root/
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre3 libpcre3-dev libxslt-dev libgd-dev
 RUN ./nginx_upload_install.sh
@@ -29,3 +29,5 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gcc-multilib build-essenti
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libmodbus-dev gdb
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libmodbus-dev nodejs
 RUN npm install -g pm2
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y vim valgrind
+COPY frpc* /bin/

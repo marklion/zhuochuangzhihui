@@ -7,7 +7,7 @@ static tdf_log g_log("raster");
 
 bool raster_was_block(const std::string &ip, unsigned short port)
 {
-    bool ret = true;
+    bool ret = false;
 
     zh_vcom_link vl(ip, port);
 
@@ -27,6 +27,10 @@ bool raster_was_block(const std::string &ip, unsigned short port)
                 if (fin_ret == 0)
                 {
                     ret = false;
+                }
+                else
+                {
+                    ret = true;
                 }
             }
             else

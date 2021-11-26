@@ -101,10 +101,10 @@ public:
     tdf_log m_log;
     std::string current_roadway;
     bool is_timeout = false;
-    std::vector<double> continue_weight;
     int id_reader_timer_handle = -1;
-    int scale_timer = -1;
     std::string id_no;
+    double cur_weight = 0;
+    std::string scale_name;
     void proc_roadway_trigger(const std::string &_roadway);
     bool scale_trigger();
     bool enter_trigger();
@@ -121,8 +121,6 @@ public:
     void enable_id_read();
     void open_enter_timer();
     void open_exit_timer();
-    void change_roadway();
-    void scale_zero();
     void enable_scale();
     void record_close();
     virtual bool can_scale() = 0;
@@ -165,20 +163,103 @@ public:
     virtual void enter_gate_cast();
     virtual void exit_gate_cast();
 };
+struct scale_trigger_event {
+    std::string vehicle_number;
+    std::string road_way;
+};
+
+class scale_sm_idle:public tdf_state_machine_state {
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
+    virtual void do_action(tdf_state_machine &_sm);
+    virtual void after_enter(tdf_state_machine &_sm);
+    virtual void before_leave(tdf_state_machine &_sm);
+    virtual std::string state_name() {
+        return "空闲";
+    }
+};
+class scale_sm_vehicle_come:public tdf_state_machine_state {
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
+    virtual void do_action(tdf_state_machine &_sm);
+    virtual void after_enter(tdf_state_machine &_sm);
+    virtual void before_leave(tdf_state_machine &_sm);
+    virtual std::string state_name() {
+        return "压线";
+    }
+};class scale_sm_scale:public tdf_state_machine_state {
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
+    virtual void do_action(tdf_state_machine &_sm);
+    virtual void after_enter(tdf_state_machine &_sm);
+    virtual void before_leave(tdf_state_machine &_sm);
+    virtual std::string state_name() {
+        return "称重";
+    }
+};class scale_sm_clean:public tdf_state_machine_state {
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
+    virtual void do_action(tdf_state_machine &_sm);
+    virtual void after_enter(tdf_state_machine &_sm);
+    virtual void before_leave(tdf_state_machine &_sm);
+    virtual std::string state_name() {
+        return "清理";
+    }
+};
+class scale_state_machine : public tdf_state_machine {
+public:
+    std::list<scale_trigger_event> trigger_events;
+    tdf_log m_log;
+    device_scale_config bound_scale;
+    std::string bound_vehicle_number;
+    std::string enter_roadway;
+    std::string exit_roadway;
+    int timer_fd = -1;
+    enum result_from_vsm_t {
+        none,accept,reject,
+    } rfv = none;
+    std::vector<double> continue_weight;
+    std::vector<int> id_read_timer;
+    scale_state_machine(const device_scale_config &_config);
+    virtual ~scale_state_machine();
+    void convert_event();
+    void trigger_vehicle_sm_vehicle_come();
+    void trigger_vehicle_sm_scale_finish();
+    void open_enter();
+    void open_exit();
+    void scale_zero();
+    void open_scale_timer();
+    void close_timer();
+    void clean_bound_info();
+    bool is_vehicle_come();
+    bool should_open();
+    bool should_not_open();
+    bool scale_stable();
+    bool scale_clear();
+    void proc_enter_scale_cast(const std::string &_content);
+    void proc_finish_weight_cast(const std::string &_content);
+    void proc_print_weight(const std::string &_content);
+};
 class vehicle_order_center_handler : public vehicle_order_centerIf
 {
 private:
     static vehicle_order_center_handler *m_inst;
+    static std::map<std::string, std::shared_ptr<scale_state_machine>> ssm_map;
     vehicle_order_center_handler()
     {
     }
-
 public:
     static vehicle_order_center_handler *get_inst()
     {
         if (m_inst == NULL)
         {
             m_inst = new vehicle_order_center_handler();
+            device_config dc;
+            system_management_handler::get_inst()->internal_get_device_config(dc);
+            for (auto &itr:dc.scale)
+            {
+                ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
+            }
         }
 
         return m_inst;
@@ -189,6 +270,8 @@ public:
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
+    std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
 };
+
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_
