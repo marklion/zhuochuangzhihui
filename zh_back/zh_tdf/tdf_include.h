@@ -214,12 +214,13 @@ public:
             int fd = mq_open("/sm_mq", O_RDWR);
             if (fd >= 0)
             {
+                mq_setattr(fd, &tmp_mq_attr, nullptr);
                 sm_mq_fd = fd;
             }
             else
             {
                 m_log.err("failed to open mq:%s", strerror(errno));
-                fd = mq_open("/sm_mq", O_RDWR | O_CREAT, 0666, NULL);
+                fd = mq_open("/sm_mq", O_RDWR | O_CREAT, 0666, &tmp_mq_attr);
                 if (fd >= 0)
                 {
                     sm_mq_fd = fd;

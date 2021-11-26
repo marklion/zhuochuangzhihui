@@ -17,6 +17,8 @@ struct device_scale_config {
     5:string scale_ip,
     6:string entry_printer_ip,
     7:string exit_printer_ip,
+    8:string entry_id_reader_ip,
+    9:string exit_id_reader_ip,
 }
 
 struct device_config {
