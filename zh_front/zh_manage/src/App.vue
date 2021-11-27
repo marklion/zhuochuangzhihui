@@ -1,66 +1,71 @@
 <template>
 <div id="app">
-    <div class="web_header_show">
-        <el-row type="flex" justify="space-between" align="middle">
-            <el-col>
-                <div class="web_header_content_show">
-                    卓创智汇
-                </div>
-            </el-col>
-            <el-col :span="12">
-                <div align="right" class="user_profile_show">
-                    <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
-                    <div v-else>
-                        <div class="user_info_show">
-                            <div>当前用户：{{$store.state.user_info.name}}</div>
-                            <div>权限：{{$store.state.user_info.permission_name}}</div>
-                        </div>
-                        <el-button type="warning" size="mini" @click="show_change_password = true">修改密码</el-button>
-                        <el-button type="danger" size="mini" @click="user_logoff">退出登录</el-button>
+    <div v-if="!$route.meta.mobile">
+        <div class="web_header_show">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col>
+                    <div class="web_header_content_show">
+                        卓创智汇
                     </div>
-                </div>
-            </el-col>
-        </el-row>
+                </el-col>
+                <el-col :span="12">
+                    <div align="right" class="user_profile_show">
+                        <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
+                        <div v-else>
+                            <div class="user_info_show">
+                                <div>当前用户：{{$store.state.user_info.name}}</div>
+                                <div>权限：{{$store.state.user_info.permission_name}}</div>
+                            </div>
+                            <el-button type="warning" size="mini" @click="show_change_password = true">修改密码</el-button>
+                            <el-button type="danger" size="mini" @click="user_logoff">退出登录</el-button>
+                        </div>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+        <div>
+            <el-row>
+                <el-col :span="3">
+                    <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
+                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="StuffManagement" :route="{name:'StuffManagement'}">物料管理</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 0" index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
+                        <el-menu-item v-if="$store.state.user_info.permission <= 0" index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
+                    </el-menu>
+                </el-col>
+                <el-col :span="21">
+                    <div v-if="$store.state.is_login" class="web_nav_show">
+                        <router-view></router-view>
+                    </div>
+                    <div v-else>
+                        请先登录
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+        <el-dialog title="登录" :visible.sync="show_login_diag" width="40%" @keyup.enter.native="user_login">
+            <el-form :model="login_form" :rules="rules" label-width="100px">
+                <el-form-item label="手机号" prop="phone">
+                    <el-input v-model="login_form.phone" placeholder="请输入手机号"></el-input>
+                </el-form-item>
+                <el-form-item label="密码" prop="password">
+                    <el-input v-model="login_form.password" show-password placeholder="请输入密码"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="user_login">登陆</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+        <el-dialog title="修改密码" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="need_show_change_password" width="60%">
+            <change-password></change-password>
+        </el-dialog>
     </div>
-    <div>
-        <el-row>
-            <el-col :span="4">
-                <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
-                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 2" index="StuffManagement" :route="{name:'StuffManagement'}">物料管理</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 0" index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
-                    <el-menu-item v-if="$store.state.user_info.permission <= 0" index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
-                </el-menu>
-            </el-col>
-            <el-col :span="20">
-                <div v-if="$store.state.is_login" class="web_nav_show">
-                    <router-view></router-view>
-                </div>
-                <div v-else>
-                    请先登录
-                </div>
-            </el-col>
-        </el-row>
+    <div v-else>
+        <router-view></router-view>
     </div>
-    <el-dialog title="登录" :visible.sync="show_login_diag" width="40%" @keyup.enter.native="user_login">
-        <el-form :model="login_form" :rules="rules" label-width="100px">
-            <el-form-item label="手机号" prop="phone">
-                <el-input v-model="login_form.phone" placeholder="请输入手机号"></el-input>
-            </el-form-item>
-            <el-form-item label="密码" prop="password">
-                <el-input v-model="login_form.password" show-password placeholder="请输入密码"></el-input>
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" @click="user_login">登陆</el-button>
-            </el-form-item>
-        </el-form>
-    </el-dialog>
-    <el-dialog title="修改密码" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="need_show_change_password" width="60%">
-        <change-password></change-password>
-    </el-dialog>
 </div>
 </template>
 

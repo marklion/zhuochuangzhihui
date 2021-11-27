@@ -39,6 +39,30 @@ const routes = [
     name: 'VehicleOrderCenter',
     component: () => import('../views/VehicleOrderCenter.vue')
   },
+  {
+    path:'/field_opt/:order_no',
+    name:'FieldOpt',
+    component: () => import('../views/FieldOpt.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
+  {
+    path: '/all_came_vehicle',
+    name: 'AllCameVehicle',
+    component: () => import('../views/AllCameVehicle.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
+  {
+    path: '/check_in/:order_no',
+    name: 'CheckIn',
+    component: () => import('../views/CheckIn.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
 ]
 
 const router = new VueRouter({

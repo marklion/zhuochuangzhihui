@@ -70,11 +70,11 @@
                 <el-descriptions size="mini" :column="2" border>
                     <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
                     <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
+                    <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
+                    <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
                     <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
                     <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
                     <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
-                    <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
-                    <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
                 </el-descriptions>
             </template>
         </el-table-column>
