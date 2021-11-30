@@ -13,7 +13,7 @@ DEVICE_CONFIG_FILE_INPUT="./device_config.json"
 
 DOCKER_IMG_NAME="zh_deploy:v1.0"
 SRC_DIR=`dirname $(realpath $0)`/../
-BASE_URL_INPUT="sample"
+BASE_URL_INPUT=""
 is_in_container() {
     cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null
 }
@@ -35,7 +35,7 @@ start_all_server() {
     line=`expr $line - 108`
     tail -n $line $0 | tar zx  --skip-old-files -C /
     /conf/change_base_url.sh ${BASE_URL} /conf/frpc.ini
-    frpc -c /conf/frpc.ini &
+    [ "${BASE_URL}" != "" ] && frpc -c /conf/frpc.ini &
     nginx -c /conf/nginx.conf
     zh_daemon &
     pushd /zh_rest_node

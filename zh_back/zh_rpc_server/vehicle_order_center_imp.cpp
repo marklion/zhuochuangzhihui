@@ -9,6 +9,7 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<vehicle_state_machine>> vehicle_state_machine::all_sm;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
+std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
@@ -216,7 +217,13 @@ vehicle_state_machine &vehicle_state_machine::fetch_sm(const std::string &_plate
         return *sm;
         break;
     }
-
+    case 2:
+    {
+        auto sm = std::make_shared<gate_vehicle_sm>(_plateNo, _type);
+        all_sm[_plateNo] = sm;
+        return *sm;
+        break;
+    }
     default:
     {
         auto sm = std::make_shared<no_gate_vehicle_sm>(_plateNo, _type);
@@ -243,37 +250,11 @@ bool vehicle_state_machine::scale_trigger()
 }
 bool vehicle_state_machine::enter_trigger()
 {
-    bool ret = false;
-    device_config dc;
-    system_management_handler::get_inst()->internal_get_device_config(dc);
-
-    for (auto &itr : dc.gate)
-    {
-        if (itr.entry == current_roadway)
-        {
-            ret = true;
-            break;
-        }
-    }
-
-    return ret;
+    return enter_road_way.length() > 0;
 }
 bool vehicle_state_machine::exit_trigger()
 {
-    bool ret = false;
-    device_config dc;
-    system_management_handler::get_inst()->internal_get_device_config(dc);
-
-    for (auto &itr : dc.gate)
-    {
-        if (itr.exit == current_roadway)
-        {
-            ret = true;
-            break;
-        }
-    }
-
-    return ret;
+    return exit_road_way.length() > 0;
 }
 void vehicle_state_machine::close_all_timer()
 {
@@ -292,21 +273,14 @@ bool vehicle_state_machine::scale_stable()
 {
     return cur_weight != 0;
 }
-void vehicle_state_machine::close_id_read()
-{
-    tdf_main::get_inst().stop_timer(id_reader_timer_handle);
-    id_reader_timer_handle = -1;
-    id_no = "";
-}
+
 void vehicle_state_machine::clean_roadway()
 {
-    current_roadway = "";
     scale_name = "";
+    enter_road_way = "";
+    exit_road_way = "";
 }
-void vehicle_state_machine::open_door()
-{
-    zh_hk_ctrl_gate(current_roadway, zh_hk_gate_open);
-}
+
 void vehicle_state_machine::close_scale()
 {
     cur_weight = 0;
@@ -327,66 +301,6 @@ void vehicle_state_machine::record_exit()
     {
         auto status = zh_sql_order_status::make_out_status();
         vo->push_status(status);
-    }
-}
-void vehicle_state_machine::enable_id_read()
-{
-    id_reader_timer_handle = tdf_main::get_inst().start_timer(
-        1,
-        [](void *_private)
-        {
-            auto vsm = (vehicle_state_machine *)_private;
-            device_config dc;
-            system_management_handler::get_inst()->internal_get_device_config(dc);
-            std::string id_reader_ip = "";
-            for (auto &itr : dc.gate)
-            {
-                if (itr.entry == vsm->current_roadway)
-                {
-                    id_reader_ip = itr.entry_id_reader_ip;
-                    break;
-                }
-            }
-            auto read_ret = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
-            if (read_ret.length() > 0)
-            {
-                vsm->id_no = read_ret;
-                vsm->trigger_sm();
-            }
-        },
-        this);
-}
-void vehicle_state_machine::open_enter_timer()
-{
-    all_timer_handler.push_back(tdf_main::get_inst().start_timer(
-        60,
-        [](void *_private)
-        {
-            auto vsm = (vehicle_state_machine *)_private;
-            vsm->is_timeout = true;
-            vsm->trigger_sm();
-        },
-        this));
-}
-void vehicle_state_machine::open_exit_timer()
-{
-    all_timer_handler.push_back(tdf_main::get_inst().start_timer(
-        60,
-        [](void *_private)
-        {
-            auto vsm = (vehicle_state_machine *)_private;
-            vsm->is_timeout = true;
-            vsm->trigger_sm();
-        },
-        this));
-}
-
-void vehicle_state_machine::proc_roadway_trigger(const std::string &_roadway)
-{
-    if (current_roadway.length() <= 0)
-    {
-        current_roadway = _roadway;
-        trigger_sm();
     }
 }
 
@@ -496,26 +410,7 @@ void no_gate_vehicle_sm::enter_scale_cast()
         ssm->proc_enter_scale_cast(content);
     }
 }
-void no_gate_vehicle_sm::enter_gate_cast()
-{
-    std::string content = "不允许进场";
-    if (can_scale())
-    {
-        content = "请进场";
-    }
-    zh_hk_ctrl_led(current_roadway, content);
-    zh_hk_ctrl_voice(current_roadway, content);
-}
-void no_gate_vehicle_sm::exit_gate_cast()
-{
-    std::string content = "不允许出场";
-    if (can_scale())
-    {
-        content = "请出场";
-    }
-    zh_hk_ctrl_led(current_roadway, content);
-    zh_hk_ctrl_voice(current_roadway, content);
-}
+
 std::unique_ptr<tdf_state_machine_state> vehicle_sm_before_enter_gate::change_state(tdf_state_machine &_sm)
 {
     auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
@@ -532,23 +427,32 @@ std::unique_ptr<tdf_state_machine_state> vehicle_sm_before_enter_gate::change_st
 void vehicle_sm_before_enter_gate::do_action(tdf_state_machine &_sm)
 {
     auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
-    vsm.enter_gate_cast();
     if (vsm.can_enter())
     {
-        vsm.open_door();
+        auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(vsm.enter_road_way);
+        if (gsm)
+        {
+            gsm->rfv = gate_state_machine::accept;
+            gsm->trigger_sm();
+        }
         vsm.record_enter();
+    }
+    else
+    {
+        auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(vsm.enter_road_way);
+        if (gsm)
+        {
+            gsm->rfv = gate_state_machine::reject;
+            gsm->trigger_sm();
+        }
     }
 }
 void vehicle_sm_before_enter_gate::after_enter(tdf_state_machine &_sm)
 {
-    auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
-    vsm.enable_id_read();
-    vsm.open_enter_timer();
 }
 void vehicle_sm_before_enter_gate::before_leave(tdf_state_machine &_sm)
 {
     auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
-    vsm.close_id_read();
     vsm.close_all_timer();
     vsm.clean_roadway();
 }
@@ -609,21 +513,30 @@ void vehicle_sm_before_exit_gate::do_action(tdf_state_machine &_sm)
     auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
     if (vsm.can_exit())
     {
-        vsm.open_door();
-        vsm.exit_gate_cast();
+        auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(vsm.exit_road_way);
+        if (gsm)
+        {
+            gsm->rfv = gate_state_machine::accept;
+            gsm->trigger_sm();
+        }
         vsm.record_exit();
+    }
+    else
+    {
+        auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(vsm.exit_road_way);
+        if (gsm)
+        {
+            gsm->rfv = gate_state_machine::reject;
+            gsm->trigger_sm();
+        }
     }
 }
 void vehicle_sm_before_exit_gate::after_enter(tdf_state_machine &_sm)
 {
-    auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
-    vsm.enable_id_read();
-    vsm.open_exit_timer();
 }
 void vehicle_sm_before_exit_gate::before_leave(tdf_state_machine &_sm)
 {
     auto &vsm = dynamic_cast<vehicle_state_machine &>(_sm);
-    vsm.close_id_read();
     vsm.close_all_timer();
     vsm.clean_roadway();
 }
@@ -731,7 +644,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
             auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_id == '%s' AND status != 100 AND status != 0", id_ret.c_str());
             if (vo)
             {
-                scale_trigger_event tmp;
+                road_way_trigger_event tmp;
                 tmp.road_way = ssm->bound_scale.entry;
                 tmp.vehicle_number = vo->main_vehicle_number;
                 tdf_state_machine_lock a(*ssm);
@@ -749,7 +662,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
             auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_id == '%s' AND status != 100 AND status != 0", id_ret.c_str());
             if (vo)
             {
-                scale_trigger_event tmp;
+                road_way_trigger_event tmp;
                 tmp.road_way = ssm->bound_scale.exit;
                 tmp.vehicle_number = vo->main_vehicle_number;
                 tdf_state_machine_lock a(*ssm);
@@ -890,7 +803,7 @@ void scale_state_machine::clean_bound_info()
     enter_roadway = "";
     exit_roadway = "";
     auto itr = trigger_events.begin();
-    for (; itr != trigger_events.end(); )
+    for (; itr != trigger_events.end();)
     {
         if (itr->vehicle_number == bound_vehicle_number)
         {
@@ -1088,4 +1001,204 @@ void scale_sm_clean::before_leave(tdf_state_machine &_sm)
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     ssm.close_timer();
     ssm.clean_bound_info();
+}
+gate_state_machine::gate_state_machine(const std::string &_road_way, const std::string &_id_reader_ip) : m_log("gate sm"), road_way(_road_way), id_reader_ip(_id_reader_ip)
+{
+    if (_id_reader_ip.length() > 0)
+    {
+        id_reader_timer = tdf_main::get_inst().start_timer(
+            1,
+            [](void *_private)
+            {
+                auto gsm = (gate_state_machine *)_private;
+                auto id_no = zh_read_id_no(gsm->road_way, ZH_ID_READER_PORT);
+                if (id_no.length() > 0)
+                {
+                    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_id == '%s' AND status != 100 AND status != 0", id_no.c_str());
+                    if (vo)
+                    {
+                        tdf_state_machine_lock a(*gsm);
+                        gsm->trigger_events.push_back(vo->main_vehicle_number);
+                        gsm->trigger_sm();
+                    }
+                }
+            },
+            this);
+    }
+    m_cur_state.reset(new gate_sm_idle());
+}
+gate_state_machine::~gate_state_machine()
+{
+    if (id_reader_timer >= 0)
+    {
+        tdf_main::get_inst().stop_timer(id_reader_timer);
+        id_reader_timer = -1;
+    }
+}
+void gate_state_machine::convert_event()
+{
+    if (trigger_events.size() > 0)
+    {
+        bound_vehicle_number = trigger_events.front();
+        trigger_events.pop_front();
+    }
+}
+void gate_state_machine::clean_bound_info()
+{
+    for (auto itr = trigger_events.begin(); itr != trigger_events.end();)
+    {
+        if (*itr == bound_vehicle_number)
+        {
+            itr = trigger_events.erase(itr);
+        }
+        else
+        {
+            itr++;
+        }
+    }
+    bound_vehicle_number = "";
+}
+void gate_state_machine::open_door()
+{
+    zh_hk_ctrl_gate(road_way, zh_hk_gate_open);
+}
+void gate_state_machine::gate_cast_accept()
+{
+    std::string content;
+    content += bound_vehicle_number;
+    content += "请通过";
+    zh_hk_ctrl_led(road_way, content);
+    zh_hk_ctrl_voice(road_way, content);
+}
+void gate_state_machine::gate_cast_reject()
+{
+    std::string content;
+    content += bound_vehicle_number;
+    content += "不允许通过";
+    zh_hk_ctrl_led(road_way, content);
+    zh_hk_ctrl_voice(road_way, content);
+}
+void gate_state_machine::trigger_vehicle_sm_vehicle_come()
+{
+    auto &vsm = vehicle_state_machine::fetch_sm(bound_vehicle_number, 2);
+    device_config dc;
+    system_management_handler::get_inst()->internal_get_device_config(dc);
+    for (auto &itr : dc.gate)
+    {
+        if (itr.entry == road_way)
+        {
+            vsm.enter_road_way = road_way;
+            break;
+        }
+        if (itr.exit == road_way)
+        {
+            vsm.exit_road_way = road_way;
+            break;
+        }
+    }
+    vsm.trigger_sm();
+}
+bool gate_state_machine::is_vehicle_come()
+{
+    return bound_vehicle_number.length() > 0;
+}
+bool gate_state_machine::should_open()
+{
+    return rfv == accept;
+}
+bool gate_state_machine::should_not_open()
+{
+    return rfv == reject;
+}
+
+std::shared_ptr<gate_state_machine> vehicle_order_center_handler::get_gate_sm(const std::string &_road_way)
+{
+    return gsm_map[_road_way];
+}
+
+std::unique_ptr<tdf_state_machine_state> gate_sm_idle::change_state(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    if (gsm.is_vehicle_come())
+    {
+        return std::unique_ptr<tdf_state_machine_state>(new gate_sm_vehicle_come());
+    }
+    return std::unique_ptr<tdf_state_machine_state>();
+}
+void gate_sm_idle::do_action(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    gsm.convert_event();
+}
+void gate_sm_idle::after_enter(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    gsm.clean_bound_info();
+}
+void gate_sm_idle::before_leave(tdf_state_machine &_sm)
+{
+}
+std::unique_ptr<tdf_state_machine_state> gate_sm_vehicle_come::change_state(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    if (gsm.should_not_open())
+    {
+        return std::unique_ptr<tdf_state_machine_state>(new gate_sm_idle());
+    }
+    if (gsm.should_open())
+    {
+        return std::unique_ptr<tdf_state_machine_state>(new gate_sm_idle());
+    }
+    return std::unique_ptr<tdf_state_machine_state>();
+}
+void gate_sm_vehicle_come::do_action(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    if (gsm.should_open())
+    {
+        gsm.open_door();
+        gsm.gate_cast_accept();
+    }
+    else if (gsm.should_not_open())
+    {
+        gsm.gate_cast_reject();
+    }
+}
+void gate_sm_vehicle_come::after_enter(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    gsm.trigger_vehicle_sm_vehicle_come();
+}
+void gate_sm_vehicle_come::before_leave(tdf_state_machine &_sm)
+{
+    auto &gsm = dynamic_cast<gate_state_machine &>(_sm);
+    gsm.rfv = gate_state_machine::none;
+}
+
+bool gate_vehicle_sm::can_enter()
+{
+    return true;
+}
+bool gate_vehicle_sm::can_exit()
+{
+    bool ret = false;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", plateNo.c_str());
+    if (vo)
+    {
+        if (vo->p_weight == 0 && vo->m_weight == 0)
+        {
+            ret = true;
+        }
+        else if (vo->p_weight > 0 && vo->m_weight > 0)
+        {
+            ret = true;
+        }
+    }
+
+    return ret;
+}
+
+bool gate_vehicle_sm::no_need_gate()
+{
+    return false;
 }

@@ -32,16 +32,16 @@
             </div>
         </el-col>
     </el-row>
-    <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table" infinite-scroll-listen-for-event="need_refresh" v-infinite-scroll="get_order" infinite-scroll-disabled="lazy_finish" :infinite-scroll-distance="10">
-        <el-table-column type="selection" width="30">
+    <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table" infinite-scroll-listen-for-event="need_refresh" v-infinite-scroll="get_order" :infinite-scroll-disabled="need_fetch" :infinite-scroll-distance="10">
+        <el-table-column type="selection" width="30px">
         </el-table-column>
         <el-table-column prop="order_number" label="单号" min-width="22px">
         </el-table-column>
-        <el-table-column prop="company_name" label="公司" min-width="35px">
+        <el-table-column prop="company_name" label="公司" min-width="25px">
         </el-table-column>
         <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
         </el-table-column>
-        <el-table-column label="状态" min-width="80px">
+        <el-table-column label="状态" min-width="120px">
             <template slot-scope="scope">
                 <el-steps :active="scope.row.status">
                     <el-step v-for="(single_status, index) in scope.row.status_details" :key="index">
@@ -165,6 +165,14 @@ export default {
         }
     },
     computed: {
+        need_fetch:function() {
+            var ret = false;
+            if (!this.lazy_finish && !this.is_loading)
+            {
+                ret = true;
+            }
+            return ret;
+        },
         order_need_show: function () {
             var ret = [];
 
@@ -207,6 +215,7 @@ export default {
                     ret.push(element);
                 }
             });
+
             return ret;
         },
     },
@@ -216,6 +225,7 @@ export default {
             search_condition: '',
             activeName: 'all',
             lazy_finish: false,
+            is_loading: false,
             ready_vehicle: [],
             show_vehicle_select: false,
             rules: {
@@ -310,7 +320,9 @@ export default {
             var vue_this = this;
             vue_this.all_order = [];
             vue_this.lazy_finish = false;
-            vue_this.$emit("need_refresh");
+            this.$nextTick(() => {
+                vue_this.$emit("need_refresh");
+            });
         },
         edit_order: function () {
             var vue_this = this;
@@ -342,6 +354,7 @@ export default {
         },
         get_order: function () {
             var vue_this = this;
+            vue_this.is_loading = true;
             vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length]).then(function (resp) {
                 resp.forEach(element => {
                     vue_this.all_order.push(element);
@@ -349,6 +362,8 @@ export default {
                 if (resp.length <= 0) {
                     vue_this.lazy_finish = true;
                 }
+            }).finally(function() {
+                vue_this.is_loading = false;
             });
         },
         // 导出xlsx

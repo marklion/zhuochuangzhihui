@@ -5,10 +5,11 @@
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
-                <el-descriptions border :title="single_gate.name">
+                <el-descriptions :column="2" border :title="single_gate.name">
                     <el-descriptions-item label="入口编码">{{single_gate.entry}}</el-descriptions-item>
                     <el-descriptions-item label="出口编码">{{single_gate.exit}}</el-descriptions-item>
                     <el-descriptions-item label="入口身份识别IP">{{single_gate.entry_id_reader_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口身份识别IP">{{single_gate.exit_printer_ip}}</el-descriptions-item>
                     <template slot="extra">
                         <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
@@ -24,6 +25,8 @@
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
                     <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口身份识别IP">{{single_scale.entry_id_reader_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口身份识别IP">{{single_scale.exit_id_reader_ip}}</el-descriptions-item>
                     <template slot="extra">
                         <el-button type="success" size="small" @click="open_scale_operate(single_scale)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_scale_edit(single_scale)">编辑</el-button>
@@ -43,6 +46,9 @@
                     </el-form-item>
                     <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
                         <el-input v-model="gate_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
+                        <el-input v-model="gate_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_gate">确认</el-button>
@@ -75,6 +81,12 @@
                     <el-form-item label="出口打印机IP" prop="exit_printer_ip">
                         <el-input v-model="scale_for_edit.exit_printer_ip" placeholder="请输入出口打印机IP"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
+                        <el-input v-model="scale_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
+                        <el-input v-model="scale_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
+                    </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_scale">确认</el-button>
                     </el-form-item>
@@ -85,8 +97,12 @@
                     <el-col :span="12">
                         <el-card>
                             <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">身份证号</el-col>
-                                <el-col :span="14">{{cur_opt_gate.id_no}}</el-col>
+                                <el-col :span="10">入口身份证号</el-col>
+                                <el-col :span="14">{{cur_opt_gate.entry_id_no}}</el-col>
+                            </el-row>
+                            <el-row type="flex" :gutter="10" align="center">
+                                <el-col :span="10">出口身份证号</el-col>
+                                <el-col :span="14">{{cur_opt_gate.exit_id_no}}</el-col>
                             </el-row>
                             <div slot="header">
                                 <span>身份证阅读</span>
@@ -161,6 +177,20 @@
                         <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_scale.exit"></led-voice-ctrl>
                     </el-col>
                 </el-row>
+                <el-card>
+                    <el-row type="flex" :gutter="10" align="center">
+                        <el-col :span="10">入口身份证号</el-col>
+                        <el-col :span="14">{{cur_opt_scale.entry_id_no}}</el-col>
+                    </el-row>
+                    <el-row type="flex" :gutter="10" align="center">
+                        <el-col :span="10">出口身份证号</el-col>
+                        <el-col :span="14">{{cur_opt_scale.exit_id_no}}</el-col>
+                    </el-row>
+                    <div slot="header">
+                        <span>身份证阅读</span>
+                        <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_id_no">获取</el-button>
+                    </div>
+                </el-card>
             </el-dialog>
         </el-tab-pane>
     </el-tabs>
@@ -205,9 +235,10 @@ export default {
                     message: "请输入出口编码"
                 }],
                 entry_id_reader_ip: [{
-                    required: true,
-                    message: "请输入入口身份识别IP"
-                }, {
+                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
+                    message: '请输入正确的IP'
+                }],
+                exit_id_reader_ip: [{
                     pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
                     message: '请输入正确的IP'
                 }],
@@ -254,7 +285,16 @@ export default {
         get_id_no: function () {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_gate.entry_id_reader_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_gate, "id_no", resp);
+                vue_this.$set(vue_this.cur_opt_gate, "entry_id_no", resp);
+            });
+            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_gate.exit_id_reader_ip]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_gate, "entry_id_no", resp);
+            });
+            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_scale.entry_id_reader_ip]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_scale, "entry_id_no", resp);
+            });
+            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_scale.exit_id_reader_ip]).then(function (resp) {
+                vue_this.$set(vue_this.cur_opt_scale, "exit_id_no", resp);
             });
         },
         print_content1: function () {

@@ -25,7 +25,13 @@ bool open_api_handler::vehicle_come(const std::string &plateNo, const std::strin
         {
             if (sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status != 0", plateNo.c_str()))
             {
-                vehicle_state_machine::fetch_sm(plateNo, 1).proc_roadway_trigger(road);
+                auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(road);
+                if (gsm)
+                {
+                    tdf_state_machine_lock a(*gsm);
+                    gsm->trigger_events.push_back(plateNo);
+                    gsm->trigger_sm();
+                }
             }
             break;
         }
@@ -39,7 +45,7 @@ bool open_api_handler::vehicle_come(const std::string &plateNo, const std::strin
                 auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(itr.name);
                 if (ssm)
                 {
-                    scale_trigger_event tmp;
+                    road_way_trigger_event tmp;
                     tmp.road_way = road;
                     tmp.vehicle_number = plateNo;
                     tdf_state_machine_lock a(*ssm);

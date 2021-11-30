@@ -7,6 +7,7 @@ struct device_gate_config {
     2:string entry,
     3:string exit,
     4:string entry_id_reader_ip,
+    5:string exit_id_reader_ip,
 }
 
 struct device_scale_config {
