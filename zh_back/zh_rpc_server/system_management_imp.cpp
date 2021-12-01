@@ -34,8 +34,6 @@ void system_management_handler::internal_get_device_config(device_config &_retur
     for (int i = 0; i < gate_config.GetArraySize(); i++)
     {
         device_gate_config tmp;
-        tmp.entry = gate_config[i]("entry");
-        tmp.exit = gate_config[i]("exit");
         tmp.name = gate_config[i]("name");
         tmp.entry_id_reader_ip = gate_config[i]("entry_id_reader_ip");
         tmp.exit_id_reader_ip = gate_config[i]("exit_id_reader_ip");
@@ -48,9 +46,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
     for (int i = 0; i < scale_config.GetArraySize(); i++)
     {
         device_scale_config tmp;
-        tmp.entry = scale_config[i]("entry");
         tmp.entry_printer_ip = scale_config[i]("entry_printer_ip");
-        tmp.exit = scale_config[i]("exit");
         tmp.exit_printer_ip = scale_config[i]("exit_printer_ip");
         tmp.name = scale_config[i]("name");
         tmp.raster_ip.push_back(scale_config[i]["raster_ip"](0));
@@ -95,8 +91,6 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
     for (auto &itr:config.gate)
     {
         neb::CJsonObject gate;
-        gate.Add("entry", itr.entry);
-        gate.Add("exit", itr.exit);
         gate.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
         gate.Add("exit_id_reader_ip", itr.exit_id_reader_ip);
         gate.Add("name", itr.name);
@@ -105,15 +99,13 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("exit_cam_ip", itr.exit_config.cam_ip);
         gate.Add("exit_led_ip", itr.exit_config.led_ip);
         tmp["gate"].Add(gate);
-        vehicle_order_center_handler::gsm_map[itr.entry] = std::make_shared<gate_state_machine>(itr.entry, itr.entry_id_reader_ip, true);
-        vehicle_order_center_handler::gsm_map[itr.exit] = std::make_shared<gate_state_machine>(itr.exit, itr.exit_id_reader_ip, false);
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
     }
 
     for (auto &itr : config.scale)
     {
         neb::CJsonObject scale;
-        scale.Add("entry", itr.entry);
-        scale.Add("exit", itr.exit);
         scale.Add("name", itr.name);
         scale.Add("scale_ip", itr.scale_ip);
         scale.Add("entry_printer_ip", itr.entry_printer_ip);

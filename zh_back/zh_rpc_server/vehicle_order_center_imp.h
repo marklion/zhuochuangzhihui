@@ -151,8 +151,8 @@ public:
             }
             for (auto &itr:dc.gate)
             {
-                gsm_map[itr.entry] = std::make_shared<gate_state_machine>(itr.entry, itr.entry_id_reader_ip, true);
-                gsm_map[itr.exit] = std::make_shared<gate_state_machine>(itr.exit, itr.exit_id_reader_ip, false);
+                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
             }
         }
 

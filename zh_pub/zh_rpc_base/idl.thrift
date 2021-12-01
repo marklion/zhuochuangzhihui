@@ -9,26 +9,22 @@ struct hk_gate_device_ipconfig {
 
 struct device_gate_config {
     1:string name,
-    2:string entry,
-    3:string exit,
-    4:string entry_id_reader_ip,
-    5:string exit_id_reader_ip,
-    6:hk_gate_device_ipconfig entry_config,
-    7:hk_gate_device_ipconfig exit_config,
+    2:string entry_id_reader_ip,
+    3:string exit_id_reader_ip,
+    4:hk_gate_device_ipconfig entry_config,
+    5:hk_gate_device_ipconfig exit_config,
 }
 
 struct device_scale_config {
     1:string name,
-    2:string entry,
-    3:string exit,
-    4:list<string> raster_ip,
-    5:string scale_ip,
-    6:string entry_printer_ip,
-    7:string exit_printer_ip,
-    8:string entry_id_reader_ip,
-    9:string exit_id_reader_ip,
-    10:hk_gate_device_ipconfig entry_config,
-    11:hk_gate_device_ipconfig exit_config,
+    2:list<string> raster_ip,
+    3:string scale_ip,
+    4:string entry_printer_ip,
+    5:string exit_printer_ip,
+    6:string entry_id_reader_ip,
+    7:string exit_id_reader_ip,
+    8:hk_gate_device_ipconfig entry_config,
+    9:hk_gate_device_ipconfig exit_config,
 }
 
 struct device_config {

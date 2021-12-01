@@ -270,12 +270,12 @@ bool zh_hk_ctrl_voice(const std::string &_led_ip, const std::string &_content)
 
 void __attribute__((constructor)) zh_hk_init(void)
 {
-    neb::CJsonObject req;
-    req.AddEmptySubArray("eventTypes");
-    req["eventTypes"].Add(771760130);
-    req["eventTypes"].Add(771760133);
-    req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
-    call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
+    // neb::CJsonObject req;
+    // req.AddEmptySubArray("eventTypes");
+    // req["eventTypes"].Add(771760130);
+    // req["eventTypes"].Add(771760133);
+    // req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
+    // call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
     NET_DVR_Init();
 }
 void __attribute__((destructor)) zh_hk_fini(void)
