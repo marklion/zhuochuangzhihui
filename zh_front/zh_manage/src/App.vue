@@ -37,11 +37,13 @@
                     </el-menu>
                 </el-col>
                 <el-col :span="21">
-                    <div v-if="$store.state.is_login" class="web_nav_show">
-                        <router-view></router-view>
-                    </div>
-                    <div v-else>
-                        请先登录
+                    <div class="content_show">
+                        <div v-if="$store.state.is_login" class="web_nav_show">
+                            <router-view></router-view>
+                        </div>
+                        <div v-else>
+                            请先登录
+                        </div>
                     </div>
                 </el-col>
             </el-row>
@@ -183,5 +185,10 @@ export default {
 
 .user_info_show {
     color: white;
+}
+
+.content_show {
+    height: 88vh;
+    overflow: auto;
 }
 </style>

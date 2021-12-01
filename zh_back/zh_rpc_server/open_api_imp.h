@@ -10,7 +10,6 @@ private:
     static open_api_handler *m_inst;
     tdf_log m_log;
     open_api_handler():m_log("open_api") {
-        zh_hk_subcribe_event();
     }
 public:
     static open_api_handler *get_inst() {

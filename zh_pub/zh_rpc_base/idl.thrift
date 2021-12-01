@@ -2,12 +2,19 @@ exception gen_exp {
     1:string msg,
 }
 
+struct hk_gate_device_ipconfig {
+    1:string cam_ip;
+    2:string led_ip;
+}
+
 struct device_gate_config {
     1:string name,
     2:string entry,
     3:string exit,
     4:string entry_id_reader_ip,
     5:string exit_id_reader_ip,
+    6:hk_gate_device_ipconfig entry_config,
+    7:hk_gate_device_ipconfig exit_config,
 }
 
 struct device_scale_config {
@@ -20,6 +27,8 @@ struct device_scale_config {
     7:string exit_printer_ip,
     8:string entry_id_reader_ip,
     9:string exit_id_reader_ip,
+    10:hk_gate_device_ipconfig entry_config,
+    11:hk_gate_device_ipconfig exit_config,
 }
 
 struct device_config {
@@ -39,9 +48,9 @@ service system_management {
     bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
     bool print_content(1:string printer_ip, 2:string content) throws (1:gen_exp e),
     string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
-    bool ctrl_gate(1:string gate_code, 2:i64 cmd) throws (1:gen_exp e),
-    bool ctrl_led(1:string gate_code, 2:string content) throws (1:gen_exp e),
-    bool ctrl_voice(1:string gate_code, 2:string content) throws (1:gen_exp e),
+    bool ctrl_gate(1:string road_ip, 2:i64 cmd) throws (1:gen_exp e),
+    bool ctrl_led(1:string led_ip, 2:string content) throws (1:gen_exp e),
+    bool ctrl_voice(1:string led_ip, 2:string content) throws (1:gen_exp e),
     road_status get_road_status(1:string gate_code) throws (1:gen_exp e),
     double read_scale(1:string scale_ip) throws (1:gen_exp e),
 }

@@ -5,11 +5,13 @@
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
-                <el-descriptions :column="2" border :title="single_gate.name">
-                    <el-descriptions-item label="入口编码">{{single_gate.entry}}</el-descriptions-item>
-                    <el-descriptions-item label="出口编码">{{single_gate.exit}}</el-descriptions-item>
+                <el-descriptions :column="4" border :title="single_gate.name">
+                    <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口身份识别IP">{{single_gate.entry_id_reader_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口身份识别IP">{{single_gate.exit_printer_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口身份识别IP">{{single_gate.exit_id_reader_ip}}</el-descriptions-item>
                     <template slot="extra">
                         <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
@@ -17,9 +19,11 @@
                 </el-descriptions>
             </div>
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :title="single_scale.name">
-                    <el-descriptions-item label="入口编码">{{single_scale.entry}}</el-descriptions-item>
-                    <el-descriptions-item label="出口编码">{{single_scale.exit}}</el-descriptions-item>
+                <el-descriptions border :column="3" :title="single_scale.name">
+                    <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口LEDIP">{{single_scale.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
@@ -38,11 +42,17 @@
                     <el-form-item label="名称" prop="name">
                         <el-input v-model="gate_for_edit.name" placeholder="请输入名称"></el-input>
                     </el-form-item>
-                    <el-form-item label="入口编码" prop="entry">
-                        <el-input v-model="gate_for_edit.entry" placeholder="请输入入口编码"></el-input>
+                    <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
+                        <el-input v-model="gate_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
                     </el-form-item>
-                    <el-form-item label="出口编码" prop="exit">
-                        <el-input v-model="gate_for_edit.exit" placeholder="请输入出口编码"></el-input>
+                    <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
+                        <el-input v-model="gate_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口LEDIP" prop="entry_led_ip">
+                        <el-input v-model="gate_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口LEDIP" prop="exit_led_ip">
+                        <el-input v-model="gate_for_edit.exit_config.led_ip" placeholder="请输入出口LEDIP"></el-input>
                     </el-form-item>
                     <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
                         <el-input v-model="gate_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
@@ -60,11 +70,17 @@
                     <el-form-item label="名称" prop="name">
                         <el-input v-model="scale_for_edit.name" placeholder="请输入名称"></el-input>
                     </el-form-item>
-                    <el-form-item label="入口编码" prop="entry">
-                        <el-input v-model="scale_for_edit.entry" placeholder="请输入入口编码"></el-input>
+                    <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
+                        <el-input v-model="scale_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
                     </el-form-item>
-                    <el-form-item label="出口编码" prop="exit">
-                        <el-input v-model="scale_for_edit.exit" placeholder="请输入出口编码"></el-input>
+                    <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
+                        <el-input v-model="scale_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口LEDIP" prop="entry_led_ip">
+                        <el-input v-model="scale_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口LEDIP" prop="exit_led_ip">
+                        <el-input v-model="scale_for_edit.exit_config.led_ip" placeholder="请输入出口LEDIP"></el-input>
                     </el-form-item>
                     <el-form-item label="衡器IP" prop="scale_ip">
                         <el-input v-model="scale_for_edit.scale_ip" placeholder="请输入衡器IP"></el-input>
@@ -111,15 +127,15 @@
                         </el-card>
                     </el-col>
                     <el-col :span="12">
-                        <gate-device-ctrl :entry="cur_opt_gate.entry" :exit="cur_opt_gate.exit"></gate-device-ctrl>
+                        <gate-device-ctrl :entry="cur_opt_gate.entry_config.cam_ip" :exit="cur_opt_gate.exit_config.cam_ip"></gate-device-ctrl>
                     </el-col>
                 </el-row>
                 <el-row type="flex" :gutter="10">
                     <el-col :span="12">
-                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_gate.entry"></led-voice-ctrl>
+                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_gate.entry_config.led_ip"></led-voice-ctrl>
                     </el-col>
                     <el-col :span="12">
-                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_gate.exit"></led-voice-ctrl>
+                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_gate.exit_config.led_ip"></led-voice-ctrl>
                     </el-col>
                 </el-row>
             </el-dialog>
@@ -168,13 +184,13 @@
                 </el-row>
                 <el-row type="flex" :gutter="10">
                     <el-col :span="8">
-                        <gate-device-ctrl :entry="cur_opt_scale.entry" :exit="cur_opt_scale.exit"></gate-device-ctrl>
+                        <gate-device-ctrl :entry="cur_opt_scale.entry_config.cam_ip" :exit="cur_opt_scale.exit_config.cam_ip"></gate-device-ctrl>
                     </el-col>
                     <el-col :span="8">
-                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_scale.entry"></led-voice-ctrl>
+                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_scale.entry_config.led_ip"></led-voice-ctrl>
                     </el-col>
                     <el-col :span="8">
-                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_scale.exit"></led-voice-ctrl>
+                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_scale.exit_config.led_ip"></led-voice-ctrl>
                     </el-col>
                 </el-row>
                 <el-card>
@@ -210,29 +226,48 @@ export default {
         return {
             content_need_print1: '',
             content_need_print2: '',
-            cur_opt_scale: {},
-            cur_opt_gate: {},
+            cur_opt_scale: {
+                entry_config: {},
+                exit_config: {}
+            },
+            cur_opt_gate: {
+                entry_config: {},
+                exit_config: {}
+            },
             show_scale_operate: false,
             show_gate_operate: false,
             activeName: 'device_config',
             current_version: '',
             device_config: {},
-            gate_for_edit: {},
+            gate_for_edit: {
+                entry_config: {},
+                exit_config: {}
+            },
             scale_for_edit: {
-                raster_ip: ['', '']
+                raster_ip: ['', ''],
+                entry_config: {},
+                exit_config: {}
             },
             rules: {
                 name: [{
                     required: true,
                     message: "请输入名称"
                 }],
-                entry: [{
-                    required: true,
-                    message: "请输入入口编码"
+                entry_cam_ip: [{
+                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
+                    message: '请输入正确的IP'
                 }],
-                exit: [{
-                    required: true,
-                    message: "请输入出口编码"
+                exit_cam_ip: [{
+                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
+                    message: '请输入正确的IP'
+                }],
+                entry_led_ip: [{
+                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
+                    message: '请输入正确的IP'
+                }],
+                exit_led_ip: [{
+                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
+                    message: '请输入正确的IP'
                 }],
                 entry_id_reader_ip: [{
                     pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,

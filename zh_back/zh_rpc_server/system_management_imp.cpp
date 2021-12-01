@@ -39,6 +39,10 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.name = gate_config[i]("name");
         tmp.entry_id_reader_ip = gate_config[i]("entry_id_reader_ip");
         tmp.exit_id_reader_ip = gate_config[i]("exit_id_reader_ip");
+        tmp.entry_config.cam_ip = gate_config[i]("entry_cam_ip");
+        tmp.entry_config.led_ip = gate_config[i]("entry_led_ip");
+        tmp.exit_config.cam_ip = gate_config[i]("exit_cam_ip");
+        tmp.exit_config.led_ip = gate_config[i]("exit_led_ip");
         _return.gate.push_back(tmp);
     }
     for (int i = 0; i < scale_config.GetArraySize(); i++)
@@ -54,6 +58,10 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.scale_ip = scale_config[i]("scale_ip");
         tmp.entry_id_reader_ip = scale_config[i]("entry_id_reader_ip");
         tmp.exit_id_reader_ip = scale_config[i]("exit_id_reader_ip");
+        tmp.entry_config.cam_ip = scale_config[i]("entry_cam_ip");
+        tmp.entry_config.led_ip = scale_config[i]("entry_led_ip");
+        tmp.exit_config.cam_ip = scale_config[i]("exit_cam_ip");
+        tmp.exit_config.led_ip = scale_config[i]("exit_led_ip");
         _return.scale.push_back(tmp);
     }
 }
@@ -92,9 +100,13 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
         gate.Add("exit_id_reader_ip", itr.exit_id_reader_ip);
         gate.Add("name", itr.name);
+        gate.Add("entry_cam_ip", itr.entry_config.cam_ip);
+        gate.Add("entry_led_ip", itr.entry_config.led_ip);
+        gate.Add("exit_cam_ip", itr.exit_config.cam_ip);
+        gate.Add("exit_led_ip", itr.exit_config.led_ip);
         tmp["gate"].Add(gate);
-        vehicle_order_center_handler::gsm_map[itr.entry] = std::make_shared<gate_state_machine>(itr.entry, itr.entry_id_reader_ip);
-        vehicle_order_center_handler::gsm_map[itr.exit] = std::make_shared<gate_state_machine>(itr.exit, itr.exit_id_reader_ip);
+        vehicle_order_center_handler::gsm_map[itr.entry] = std::make_shared<gate_state_machine>(itr.entry, itr.entry_id_reader_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.exit] = std::make_shared<gate_state_machine>(itr.exit, itr.exit_id_reader_ip, false);
     }
 
     for (auto &itr : config.scale)
@@ -111,6 +123,10 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale["raster_ip"].Add(itr.raster_ip[1]);
         scale.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
         scale.Add("exit_id_reader_ip", itr.exit_id_reader_ip);
+        scale.Add("entry_cam_ip", itr.entry_config.cam_ip);
+        scale.Add("entry_led_ip", itr.entry_config.led_ip);
+        scale.Add("exit_cam_ip", itr.exit_config.cam_ip);
+        scale.Add("exit_led_ip", itr.exit_config.led_ip);
         tmp["scale"].Add(scale);
         vehicle_order_center_handler::ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
     }
@@ -155,9 +171,9 @@ void system_management_handler::read_id_no(std::string &_return, const std::stri
     _return = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
 }
 
-bool system_management_handler::ctrl_gate(const std::string &gate_code, const int64_t cmd)
+bool system_management_handler::ctrl_gate(const std::string &road_ip, const int64_t cmd)
 {
-    return zh_hk_ctrl_gate(gate_code, (zh_hk_gate_control_cmd)cmd);
+    return zh_hk_ctrl_gate(road_ip, (zh_hk_gate_control_cmd)cmd);
 }
 
 bool system_management_handler::ctrl_led(const std::string &gate_code, const std::string &content)
