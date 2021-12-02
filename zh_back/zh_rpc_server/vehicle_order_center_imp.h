@@ -73,7 +73,7 @@ public:
     }
     scale_gate_trigger_param entry_param;
     scale_gate_trigger_param exit_param;
-    bool trigger_switch = false;
+    bool trigger_switch = true;
     gate_ctrl_policy ctrl_policy;
     void open_trigger_switch();
     void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);

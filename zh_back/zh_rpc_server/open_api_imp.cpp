@@ -29,3 +29,55 @@ bool open_api_handler::vehicle_leave(const std::string &plateNo, const std::stri
 
     return true;
 }
+
+bool open_api_handler::external_trigger_gate_vehicle(const std::string &road_ip, const std::string &plate_no)
+{
+    bool ret = false;
+
+    auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(road_ip);
+    if (gsm)
+    {
+        gsm->proc_trigger_vehicle_number(plate_no);
+        gsm->trigger_sm();
+    }
+
+    return ret;
+}
+bool open_api_handler::external_trigger_gate_id(const std::string &id_reader_ip, const std::string &id_no, const std::string &road_ip)
+{
+    bool ret = false;
+    auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(road_ip);
+    if (gsm)
+    {
+        gsm->proc_trigger_id_no(id_no);
+        gsm->trigger_sm();
+    }
+
+    return ret;
+
+}
+bool open_api_handler::external_trigger_scale_vehicle(const std::string &road_ip, const std::string &plate_no, const std::string &scale_name)
+{
+    bool ret = false;
+    auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(scale_name);
+    if (ssm)
+    {
+        ssm->proc_trigger_vehicle(plate_no, road_ip);
+        ssm->trigger_sm();
+    }
+
+    return ret;
+}
+bool open_api_handler::external_trigger_scale_id(const std::string &id_reader_ip, const std::string &id_no, const std::string &scale_name)
+{
+    bool ret = false;
+    auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(scale_name);
+    if (ssm)
+    {
+        ssm->proc_trigger_id_read(id_no, id_reader_ip);
+        ssm->trigger_sm();
+    }
+
+    return ret;
+
+}

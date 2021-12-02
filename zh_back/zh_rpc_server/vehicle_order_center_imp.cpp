@@ -268,18 +268,22 @@ scale_state_machine::~scale_state_machine()
 
 void scale_state_machine::open_enter()
 {
+    m_log.log("开入口");
     zh_hk_ctrl_gate(enter_cam_ip, zh_hk_gate_open);
 }
 void scale_state_machine::open_exit()
 {
+    m_log.log("开出口");
     zh_hk_ctrl_gate(exit_cam_ip, zh_hk_gate_open);
 }
 void scale_state_machine::scale_zero()
 {
+    m_log.log("清零衡器");
     clean_scale_weight(bound_scale.scale_ip, ZH_SCALE_PORT);
 }
 void scale_state_machine::open_scale_timer()
 {
+    m_log.log("开启定时器");
     timer_fd = tdf_main::get_inst().start_timer(
         1,
         [](void *_private)
@@ -323,6 +327,7 @@ void scale_state_machine::open_scale_timer()
 }
 void scale_state_machine::close_timer()
 {
+    m_log.log("关闭定时器");
     if (timer_fd >= 0)
     {
         tdf_main::get_inst().stop_timer(timer_fd);
@@ -332,6 +337,7 @@ void scale_state_machine::close_timer()
 }
 void scale_state_machine::clean_bound_info()
 {
+    m_log.log("清理绑定数据");
     enter_cam_ip = "";
     exit_cam_ip = "";
     entry_param.clear();
@@ -345,9 +351,25 @@ bool scale_state_machine::should_open()
 
     std::string tmp_vehicle_entry = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, "");
     std::string tmp_vehicle_exit = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, "");
-    if (tmp_vehicle_entry.length() > 0 || tmp_vehicle_exit.length() > 0)
+    auto cur_vehicle = tmp_vehicle_entry.length()>0?tmp_vehicle_entry:tmp_vehicle_exit;
+    if (cur_vehicle.length() > 0)
     {
-        ret = true;
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
+        if (vo)
+        {
+            if (vo->p_weight == 0)
+            {
+                ret = true;
+            }
+            else if (vo->m_weight == 0 && vo->m_permit)
+            {
+                ret = true;
+            }
+        }
+        else
+        {
+            ret = true;
+        }
     }
 
     return ret;
@@ -402,6 +424,7 @@ bool scale_state_machine::scale_clear()
 
 void scale_state_machine::open_trigger_switch()
 {
+    m_log.log("开启触发开关");
     trigger_switch = true;
     zh_hk_manual_trigger(enter_cam_ip);
     zh_hk_manual_trigger(exit_cam_ip);
@@ -468,6 +491,7 @@ void scale_state_machine::record_entry_exit()
         bound_vehicle_number = tmp_vehicle;
         enter_cam_ip = bound_scale.entry_config.cam_ip;
         exit_cam_ip = bound_scale.exit_config.cam_ip;
+        m_log.log("记录当前车辆:%s,入口：%s, 出口：%s", bound_vehicle_number.c_str(), enter_cam_ip.c_str(), exit_cam_ip.c_str());
         return;
     }
 
@@ -477,6 +501,7 @@ void scale_state_machine::record_entry_exit()
         bound_vehicle_number = tmp_vehicle;
         enter_cam_ip = bound_scale.exit_config.cam_ip;
         exit_cam_ip = bound_scale.entry_config.cam_ip;
+        m_log.log("记录当前车辆:%s,入口：%s, 出口：%s", bound_vehicle_number.c_str(), enter_cam_ip.c_str(), exit_cam_ip.c_str());
         return;
     }
 }
@@ -494,6 +519,7 @@ void scale_state_machine::broadcast_enter_scale()
     {
         led_ip = bound_scale.exit_config.led_ip;
     }
+    m_log.log("播报：%s", content.c_str());
     if (led_ip.length() > 0)
     {
         zh_hk_ctrl_led(led_ip, content);
@@ -513,6 +539,7 @@ void scale_state_machine::broadcast_leave_scale()
     {
         led_ip = bound_scale.exit_config.led_ip;
     }
+    m_log.log("播报：%s", content.c_str());
     if (led_ip.length() > 0)
     {
         zh_hk_ctrl_led(led_ip, content);
@@ -588,6 +615,13 @@ void scale_sm_scale::do_action(tdf_state_machine &_sm)
                 auto status = zh_sql_order_status::make_m_status();
                 vo->m_weight = cur_weight;
                 vo->push_status(status);
+                device_config dc;
+                system_management_handler::get_inst()->internal_get_device_config(dc);
+                if (dc.gate.empty())
+                {
+                    auto end_status = zh_sql_order_status::make_end_status();
+                    vo->push_status(end_status);
+                }
             }
         }
     }
@@ -678,6 +712,7 @@ void gate_state_machine::clean_bound_info()
 }
 void gate_state_machine::open_door()
 {
+    m_log.log("开门");
     zh_hk_ctrl_gate(road_ip, zh_hk_gate_open);
 }
 void gate_state_machine::gate_cast_accept()
@@ -691,6 +726,7 @@ void gate_state_machine::gate_cast_accept()
     {
         content += "一路顺风\n";
     }
+    m_log.log("播报：" + content);
     zh_hk_ctrl_led(road_ip, content);
     zh_hk_ctrl_voice(road_ip, content);
 }
@@ -705,20 +741,52 @@ void gate_state_machine::gate_cast_reject()
     {
         content += "不允许出厂\n";
     }
+    m_log.log("播报：" + content);
     zh_hk_ctrl_led(road_ip, content);
     zh_hk_ctrl_voice(road_ip, content);
 }
 bool gate_state_machine::should_open()
 {
-    if (ctrl_policy.pass_permit(param.vehicle_number, param.id_no, "").length() > 0)
+    bool ret = false;
+    auto cur_vehicle = ctrl_policy.pass_permit(param.vehicle_number, param.id_no, "");
+    if (cur_vehicle.length() > 0)
     {
-        return true;
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
+        if (is_entry)
+        {
+            if (vo)
+            {
+                if (vo->status == 1)
+                {
+                    ret = true;
+                }
+            }
+            else
+            {
+                ret = true;
+            }
+        }
+        else
+        {
+            if (vo)
+            {
+                if (vo->status == 4)
+                {
+                    ret = true;
+                }
+            }
+            else
+            {
+                ret = true;
+            }
+        }
     }
-    return false;
+    return ret;
 }
 
 void gate_state_machine::record_vehicle_pass()
 {
+    m_log.log("入场落库");
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", ctrl_policy.pass_permit(param.vehicle_number, param.id_no, "").c_str());
     if (vo && vo->status == 1)
     {
@@ -795,6 +863,14 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
             }
             ret = itr.main_vehicle_number;
             break;
+        }
+        if (ret.empty())
+        {
+            auto vw = sqlite_orm::search_record<zh_sql_vehicle>("(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1", _id_no.c_str(), _vehicle_number.c_str());
+            if (vw)
+            {
+                ret = vw->main_vehicle_number;
+            }
         }
     }
 

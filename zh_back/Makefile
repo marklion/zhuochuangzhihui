@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-SUB_DIR=zh_rpc_server zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_device_mock zh_hk_gate zh_rest_server zh_scale
+SUB_DIR=zh_rpc_server zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_device_mock zh_hk_gate zh_rest_server zh_scale zh_manual_tool
 
 all:$(DELIVER_PATH)/bin/zh_daemon
 	cp -a $(SRC_DIR)/zh_rest_server/build/zh_rest_node $(DELIVER_PATH)/
@@ -52,6 +52,10 @@ zh_hk_gate:$(DELIVER_PATH) zh_tdf
 
 zh_rest_server: $(DELIVER_PATH)
 	$(MAKE) -C $(SRC_DIR)/$@
+
+zh_manual_tool:$(DELIVER_PATH)
+	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
+	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
 clean:
 	rm -rf $(DELIVER_PATH)

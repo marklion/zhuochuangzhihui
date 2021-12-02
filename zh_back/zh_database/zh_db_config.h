@@ -177,6 +177,7 @@ public:
     std::string driver_phone;
     std::string company_name;
     std::string group_name;
+    int in_white_list = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -187,6 +188,7 @@ public:
         ret.push_back(sqlite_orm_column("driver_phone", sqlite_orm_column::STRING, &driver_phone));
         ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
         ret.push_back(sqlite_orm_column("group_name", sqlite_orm_column::STRING, &group_name));
+        ret.push_back(sqlite_orm_column("in_white_list", sqlite_orm_column::INTEGER, &in_white_list));
 
         return ret;
     }
@@ -211,6 +213,7 @@ public:
     std::string stuff_name;
     double p_weight = 0;
     double m_weight = 0;
+    int m_permit = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -225,6 +228,7 @@ public:
         ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
         ret.push_back(sqlite_orm_column("p_weight", sqlite_orm_column::REAL, &p_weight));
         ret.push_back(sqlite_orm_column("m_weight", sqlite_orm_column::REAL, &m_weight));
+        ret.push_back(sqlite_orm_column("m_permit", sqlite_orm_column::INTEGER, &m_permit));
 
         return ret;
     }
