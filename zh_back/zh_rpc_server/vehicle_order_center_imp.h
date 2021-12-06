@@ -6,178 +6,9 @@
 #include "system_management_imp.h"
 #include "../zh_tdf/tdf_include.h"
 #include "../zh_database/zh_db_config.h"
+#include "../zh_hk_gate/lib/zh_hk_gate.h"
 
-class vehicle_sm_init:public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "初始态";
-    }
-};
-class vehicle_sm_before_enter_gate : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "进门前";
-    }
-};
-class vehicle_sm_before_scale : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "上磅前";
-    }
-};
-class vehicle_sm_before_exit_gate : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "出门前";
-    }
-};
-class vehicle_sm_insite : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "场内";
-    }
-};
-class vehicle_sm_scale : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "称重";
-    }
-};
-class vehicle_sm_end : public tdf_state_machine_state
-{
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name()
-    {
-        return "结束";
-    }
-};
-class vehicle_state_machine : public tdf_state_machine
-{
-public:
-    static std::map<std::string, std::shared_ptr<vehicle_state_machine>> all_sm;
-    std::vector<int> all_timer_handler;
-    std::string plateNo;
-    int sm_type = 0;
-    tdf_log m_log;
-    std::string current_roadway;
-    bool is_timeout = false;
-    int id_reader_timer_handle = -1;
-    std::string id_no;
-    double cur_weight = 0;
-    std::string scale_name;
-    void proc_roadway_trigger(const std::string &_roadway);
-    bool scale_trigger();
-    bool enter_trigger();
-    bool exit_trigger();
-    void close_all_timer();
-    bool timeout();
-    bool scale_stable();
-    void close_id_read();
-    void clean_roadway();
-    void open_door();
-    void close_scale();
-    void record_enter();
-    void record_exit();
-    void enable_id_read();
-    void open_enter_timer();
-    void open_exit_timer();
-    void enable_scale();
-    void record_close();
-    virtual bool can_scale() = 0;
-    virtual bool can_exit() = 0;
-    virtual bool finish_scale() = 0;
-    virtual bool no_need_gate() = 0;
-    virtual bool can_enter() = 0;
-    virtual void print_weight() = 0;
-    virtual void record_weight() = 0;
-    virtual void enter_scale_cast() = 0;
-    virtual void enter_gate_cast() = 0;
-    virtual void exit_gate_cast() = 0;
 
-    vehicle_state_machine(const std::string &_plateNo, int _type) : plateNo(_plateNo), sm_type(_type), m_log(_plateNo + "sm" + std::to_string(_type))
-    {
-        m_cur_state.reset(new vehicle_sm_init());
-        m_log.log("create");
-    }
-    virtual ~vehicle_state_machine()
-    {
-        close_all_timer();
-        m_log.log("destroy");
-    }
-    static vehicle_state_machine &fetch_sm(const std::string &_plateNo, int _type);
-    static void delete_sm(const std::string &_plateNo);
-};
-
-class no_gate_vehicle_sm : public vehicle_state_machine
-{
-public:
-    no_gate_vehicle_sm(const std::string &_plateNo, int _type) : vehicle_state_machine(_plateNo, _type) {}
-    virtual bool can_scale();
-    virtual bool can_exit();
-    virtual bool finish_scale();
-    virtual bool no_need_gate();
-    virtual bool can_enter();
-    virtual void print_weight();
-    virtual void record_weight();
-    virtual void enter_scale_cast();
-    virtual void enter_gate_cast();
-    virtual void exit_gate_cast();
-};
-struct scale_trigger_event {
-    std::string vehicle_number;
-    std::string road_way;
-};
-
-class scale_sm_idle:public tdf_state_machine_state {
-public:
-    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
-    virtual void do_action(tdf_state_machine &_sm);
-    virtual void after_enter(tdf_state_machine &_sm);
-    virtual void before_leave(tdf_state_machine &_sm);
-    virtual std::string state_name() {
-        return "空闲";
-    }
-};
 class scale_sm_vehicle_come:public tdf_state_machine_state {
 public:
     virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
@@ -185,7 +16,7 @@ public:
     virtual void after_enter(tdf_state_machine &_sm);
     virtual void before_leave(tdf_state_machine &_sm);
     virtual std::string state_name() {
-        return "压线";
+        return "判定";
     }
 };class scale_sm_scale:public tdf_state_machine_state {
 public:
@@ -206,49 +37,108 @@ public:
         return "清理";
     }
 };
+
+struct scale_gate_trigger_param {
+    std::string vehicle_number;
+    std::string id_no;
+    void clear()
+    {
+        vehicle_number.clear();
+        id_no.clear();
+    }
+};
+
+class gate_ctrl_policy {
+public:
+    bool need_id = false;
+    bool need_qr = false;
+    void set_policy(bool _need_id, bool _need_qr) {
+        need_id = _need_id;
+        need_qr = _need_qr;
+    }
+    std::string pass_permit(const std::string &_vehicle_number, const std::string &_id_no, const std::string &_qr_code);
+};
 class scale_state_machine : public tdf_state_machine {
 public:
-    std::list<scale_trigger_event> trigger_events;
     tdf_log m_log;
     device_scale_config bound_scale;
     std::string bound_vehicle_number;
-    std::string enter_roadway;
-    std::string exit_roadway;
+    std::string enter_cam_ip;
+    std::string exit_cam_ip;
     int timer_fd = -1;
-    enum result_from_vsm_t {
-        none,accept,reject,
-    } rfv = none;
     std::vector<double> continue_weight;
     std::vector<int> id_read_timer;
+    tdf_log &get_log() {
+        return m_log;
+    }
+    scale_gate_trigger_param entry_param;
+    scale_gate_trigger_param exit_param;
+    bool trigger_switch = true;
+    gate_ctrl_policy ctrl_policy;
+    void open_trigger_switch();
+    void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);
+    void proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip);
+    void record_entry_exit();
     scale_state_machine(const device_scale_config &_config);
     virtual ~scale_state_machine();
-    void convert_event();
-    void trigger_vehicle_sm_vehicle_come();
-    void trigger_vehicle_sm_scale_finish();
     void open_enter();
     void open_exit();
     void scale_zero();
     void open_scale_timer();
     void close_timer();
     void clean_bound_info();
-    bool is_vehicle_come();
     bool should_open();
-    bool should_not_open();
     bool scale_stable();
     bool scale_clear();
-    void proc_enter_scale_cast(const std::string &_content);
-    void proc_finish_weight_cast(const std::string &_content);
-    void proc_print_weight(const std::string &_content);
+    void broadcast_enter_scale();
+    void broadcast_leave_scale();
+    void print_weight_ticket();
+};
+
+class gate_sm_vehicle_come:public tdf_state_machine_state {
+public:
+    virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
+    virtual void do_action(tdf_state_machine &_sm);
+    virtual void after_enter(tdf_state_machine &_sm);
+    virtual void before_leave(tdf_state_machine &_sm);
+    virtual std::string state_name()
+    {
+        return "压线";
+    }
+};
+class gate_state_machine:public tdf_state_machine {
+public:
+    tdf_log m_log;
+    std::string road_ip;
+    std::string id_reader_ip;
+    int id_reader_timer = -1;
+    bool is_entry = false;
+    tdf_log &get_log() {
+        return m_log;
+    }
+    scale_gate_trigger_param param;
+    gate_ctrl_policy ctrl_policy;
+    gate_state_machine(const std::string &_road_way, const std::string &_id_reader_ip, bool _is_entry);
+    virtual ~gate_state_machine();
+    void clean_bound_info();
+    void open_door();
+    void gate_cast_accept();
+    void gate_cast_reject();
+    bool should_open();
+    void record_vehicle_pass();
+    void proc_trigger_id_no(const std::string &_id_no);
+    void proc_trigger_vehicle_number(const std::string &_vehicle_number);
 };
 class vehicle_order_center_handler : public vehicle_order_centerIf
 {
 private:
     static vehicle_order_center_handler *m_inst;
-    static std::map<std::string, std::shared_ptr<scale_state_machine>> ssm_map;
     vehicle_order_center_handler()
     {
     }
 public:
+    static std::map<std::string, std::shared_ptr<scale_state_machine>> ssm_map;
+    static std::map<std::string, std::shared_ptr<gate_state_machine>> gsm_map;
     static vehicle_order_center_handler *get_inst()
     {
         if (m_inst == NULL)
@@ -260,6 +150,11 @@ public:
             {
                 ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
             }
+            for (auto &itr:dc.gate)
+            {
+                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
+            }
         }
 
         return m_inst;
@@ -270,8 +165,10 @@ public:
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
+    virtual void get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number);
+    virtual bool confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed);
     std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
+    std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
 };
-
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

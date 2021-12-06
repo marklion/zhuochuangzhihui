@@ -37,6 +37,7 @@ bool raster_was_block(const std::string &ip, unsigned short port)
             {
                 g_log.err("fail to read raster:%s", modbus_strerror(errno));
             }
+            return true;
         },
         nullptr);
 

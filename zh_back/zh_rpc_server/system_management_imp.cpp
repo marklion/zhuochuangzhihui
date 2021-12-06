@@ -8,6 +8,7 @@
 #include "../zh_id_reader/lib/zh_id_reader.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
 #include "../zh_scale/lib/zh_scale.h"
+#include "vehicle_order_center_imp.h"
 
 
 system_management_handler *system_management_handler::m_inst = nullptr;
@@ -33,23 +34,30 @@ void system_management_handler::internal_get_device_config(device_config &_retur
     for (int i = 0; i < gate_config.GetArraySize(); i++)
     {
         device_gate_config tmp;
-        tmp.entry = gate_config[i]("entry");
-        tmp.exit = gate_config[i]("exit");
         tmp.name = gate_config[i]("name");
         tmp.entry_id_reader_ip = gate_config[i]("entry_id_reader_ip");
+        tmp.exit_id_reader_ip = gate_config[i]("exit_id_reader_ip");
+        tmp.entry_config.cam_ip = gate_config[i]("entry_cam_ip");
+        tmp.entry_config.led_ip = gate_config[i]("entry_led_ip");
+        tmp.exit_config.cam_ip = gate_config[i]("exit_cam_ip");
+        tmp.exit_config.led_ip = gate_config[i]("exit_led_ip");
         _return.gate.push_back(tmp);
     }
     for (int i = 0; i < scale_config.GetArraySize(); i++)
     {
         device_scale_config tmp;
-        tmp.entry = scale_config[i]("entry");
         tmp.entry_printer_ip = scale_config[i]("entry_printer_ip");
-        tmp.exit = scale_config[i]("exit");
         tmp.exit_printer_ip = scale_config[i]("exit_printer_ip");
         tmp.name = scale_config[i]("name");
         tmp.raster_ip.push_back(scale_config[i]["raster_ip"](0));
         tmp.raster_ip.push_back(scale_config[i]["raster_ip"](1));
         tmp.scale_ip = scale_config[i]("scale_ip");
+        tmp.entry_id_reader_ip = scale_config[i]("entry_id_reader_ip");
+        tmp.exit_id_reader_ip = scale_config[i]("exit_id_reader_ip");
+        tmp.entry_config.cam_ip = scale_config[i]("entry_cam_ip");
+        tmp.entry_config.led_ip = scale_config[i]("entry_led_ip");
+        tmp.exit_config.cam_ip = scale_config[i]("exit_cam_ip");
+        tmp.exit_config.led_ip = scale_config[i]("exit_led_ip");
         _return.scale.push_back(tmp);
     }
 }
@@ -76,23 +84,28 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
 
     std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
     neb::CJsonObject tmp;
+    vehicle_order_center_handler::gsm_map.clear();
+    vehicle_order_center_handler::ssm_map.clear();
     tmp.AddEmptySubArray("gate");
     tmp.AddEmptySubArray("scale");
     for (auto &itr:config.gate)
     {
         neb::CJsonObject gate;
-        gate.Add("entry", itr.entry);
-        gate.Add("exit", itr.exit);
         gate.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
+        gate.Add("exit_id_reader_ip", itr.exit_id_reader_ip);
         gate.Add("name", itr.name);
+        gate.Add("entry_cam_ip", itr.entry_config.cam_ip);
+        gate.Add("entry_led_ip", itr.entry_config.led_ip);
+        gate.Add("exit_cam_ip", itr.exit_config.cam_ip);
+        gate.Add("exit_led_ip", itr.exit_config.led_ip);
         tmp["gate"].Add(gate);
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
     }
 
-    for (auto &itr:config.scale)
+    for (auto &itr : config.scale)
     {
         neb::CJsonObject scale;
-        scale.Add("entry", itr.entry);
-        scale.Add("exit", itr.exit);
         scale.Add("name", itr.name);
         scale.Add("scale_ip", itr.scale_ip);
         scale.Add("entry_printer_ip", itr.entry_printer_ip);
@@ -100,7 +113,14 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.AddEmptySubArray("raster_ip");
         scale["raster_ip"].Add(itr.raster_ip[0]);
         scale["raster_ip"].Add(itr.raster_ip[1]);
+        scale.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
+        scale.Add("exit_id_reader_ip", itr.exit_id_reader_ip);
+        scale.Add("entry_cam_ip", itr.entry_config.cam_ip);
+        scale.Add("entry_led_ip", itr.entry_config.led_ip);
+        scale.Add("exit_cam_ip", itr.exit_config.cam_ip);
+        scale.Add("exit_led_ip", itr.exit_config.led_ip);
         tmp["scale"].Add(scale);
+        vehicle_order_center_handler::ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
     }
 
     config_file << tmp.ToFormattedString();
@@ -113,11 +133,13 @@ bool system_management_handler::raster_is_block(const std::string &raster_ip)
     return raster_was_block(raster_ip, ZH_RASTER_PORT);
 }
 
-bool system_management_handler::print_content(const std::string& printer_ip, const std::string& content)
+bool system_management_handler::print_content(const std::string &printer_ip, const std::string &content, const std::string &qr_code)
 {
     bool ret = false;
-    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\"";
+    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\" \"" + qr_code + "\"";
 
+    tdf_log tmp_log("printer " + printer_ip);
+    tmp_log.log("print:content:%s, qr_code:%s", content.c_str(), qr_code.c_str());
     auto fp = popen(print_cmd.c_str(), "r");
     if (fp)
     {
@@ -143,18 +165,18 @@ void system_management_handler::read_id_no(std::string &_return, const std::stri
     _return = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
 }
 
-bool system_management_handler::ctrl_gate(const std::string &gate_code, const int64_t cmd)
+bool system_management_handler::ctrl_gate(const std::string &road_ip, const int64_t cmd)
 {
-    return zh_hk_ctrl_gate(gate_code, (zh_hk_gate_control_cmd)cmd);
+    return zh_hk_ctrl_gate(road_ip, (zh_hk_gate_control_cmd)cmd);
 }
 
 bool system_management_handler::ctrl_led(const std::string &gate_code, const std::string &content)
 {
-    return zh_hk_ctrl_led(gate_code,content);
+    return zh_hk_ctrl_led(gate_code, content);
 }
 bool system_management_handler::ctrl_voice(const std::string &gate_code, const std::string &content)
 {
-    return zh_hk_ctrl_voice(gate_code,content);
+    return zh_hk_ctrl_voice(gate_code, content);
 }
 road_status system_management_handler::get_status_by_road(const std::string &_road)
 {

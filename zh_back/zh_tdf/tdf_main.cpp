@@ -592,15 +592,15 @@ void tdf_state_machine::internal_trigger_sm()
 {
     if (m_cur_state)
     {
-        m_log.log("do action in %s", m_cur_state->state_name().c_str());
+        get_log().log("do action in %s", m_cur_state->state_name().c_str());
         m_cur_state->do_action(*this);
         auto next_state = m_cur_state->change_state(*this);
         if (next_state)
         {
-            m_log.log("leave %s", m_cur_state->state_name().c_str());
+            get_log().log("leave %s", m_cur_state->state_name().c_str());
             m_cur_state->before_leave(*this);
             m_cur_state.reset(next_state.release());
-            m_log.log("enter %s", m_cur_state->state_name().c_str());
+            get_log().log("enter %s", m_cur_state->state_name().c_str());
             m_cur_state->after_enter(*this);
             internal_trigger_sm();
         }
@@ -612,6 +612,6 @@ void tdf_state_machine::trigger_sm()
     auto this_var = this;
     if (0 != mq_send(sm_mq_fd, (char *)&this_var, sizeof(this), 1))
     {
-        m_log.err("failed to send msg to mq: %s", strerror(errno));
+        get_log().err("failed to send msg to mq: %s", strerror(errno));
     }
 }

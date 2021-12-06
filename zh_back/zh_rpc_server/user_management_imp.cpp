@@ -162,7 +162,7 @@ void user_management_handler::user_login(std::string &_return, const std::string
         ZH_RETURN_MSG("用户名或密码错误");
     }
     auto user_login = user_info->get_children<zh_sql_user_login>("online_user");
-    if (user_login)
+    if (user_login && !zh_rpc_util_get_online_user(user_login->ssid))
     {
         user_login->remove_record();
     }
