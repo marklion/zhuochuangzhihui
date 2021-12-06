@@ -35,39 +35,25 @@
     <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table" infinite-scroll-listen-for-event="need_refresh" v-infinite-scroll="get_order" :infinite-scroll-disabled="need_fetch" :infinite-scroll-distance="10">
         <el-table-column type="selection" width="30px">
         </el-table-column>
-        <el-table-column prop="order_number" label="单号" min-width="22px">
+        <el-table-column label="单号" min-width="30px">
+            <template slot-scope="scope">
+                <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
+                    <el-link type="primary">{{scope.row.order_number}}</el-link>
+                </router-link>
+            </template>
         </el-table-column>
-        <el-table-column prop="company_name" label="公司" min-width="25px">
+        <el-table-column prop="company_name" label="公司" min-width="60px">
         </el-table-column>
         <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
         </el-table-column>
-        <el-table-column label="状态" min-width="120px">
+        <el-table-column label="状态" min-width="20px">
             <template slot-scope="scope">
-                <el-steps :active="scope.row.status">
-                    <el-step v-for="(single_status, index) in scope.row.status_details" :key="index">
-                        <template slot="title">
-                            <div class="step_title">
-                                {{single_status.name}}
-                            </div>
-                        </template>
-                        <template slot="description">
-                            <div class="step_description_name">
-                                {{single_status.user_name}}
-                            </div>
-                            <div class="step_description_time">
-                                {{single_status.timestamp.split(" ")[0]}}
-                            </div>
-                            <div class="step_description_time">
-                                {{single_status.timestamp.split(" ")[1]}}
-                            </div>
-                        </template>
-                    </el-step>
-                </el-steps>
+                {{scope.row.status_details[scope.row.status_details.length - 1].name}}
             </template>
         </el-table-column>
-        <el-table-column label="车辆信息" min-width="80px">
+        <el-table-column label="车辆信息" min-width="130px">
             <template slot-scope="scope">
-                <el-descriptions size="mini" :column="2" border>
+                <el-descriptions size="mini" :column="4" border>
                     <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
                     <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
                     <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
@@ -78,10 +64,22 @@
                 </el-descriptions>
             </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" min-width="20px">
+        <el-table-column label="附件" min-width="25px">
             <template slot-scope="scope">
-                <div>
-                    <el-button type="warning" size="mini">修改</el-button>
+                <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
+                </el-image>
+                <div v-else>
+                    无附件
+                </div>
+            </template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" min-width="30px">
+            <template slot-scope="scope">
+                <div v-if="scope.row.status <= 1">
+                    <el-button v-if="scope.row.attachment" type="warning" size="mini" @click="delete_attachment(scope.row)">删除附件</el-button>
+                    <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
+                        <el-button size="mini" type="primary">上传附件</el-button>
+                    </el-upload>
                 </div>
                 <div v-if="scope.row.status < 2">
                     <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
@@ -165,10 +163,9 @@ export default {
         }
     },
     computed: {
-        need_fetch:function() {
+        need_fetch: function () {
             var ret = false;
-            if (!this.lazy_finish && !this.is_loading)
-            {
+            if (!this.lazy_finish && !this.is_loading) {
                 ret = true;
             }
             return ret;
@@ -258,6 +255,38 @@ export default {
         };
     },
     methods: {
+        upload_attachment: function (_order) {
+            var vue_this = this;
+            return function (resp, file) {
+                var real_path = resp.match(/^\/tmp\/.*/gm)[0];
+                var file_name_split = file.name.split('.');
+                var changed_order = {
+                    ..._order
+                };
+                changed_order.attachment = real_path + '.' + file_name_split[file_name_split.length - 1];
+                vue_this.$call_remote_process("vehicle_order_center", "update_vehicle_order", [vue_this.$cookies.get("zh_ssid"), changed_order]).then(function (resp) {
+                    if (resp) {
+                        vue_this.$call_remote_process("vehicle_order_center", "get_order_detail", [vue_this.$cookies.get("zh_ssid"), changed_order.order_number]).then(function (fresh_order) {
+                            _order.attachment = fresh_order.basic_info.attachment;
+                        });
+                    }
+                });
+            };
+        },
+        delete_attachment: function (_order) {
+            var vue_this = this;
+            var changed_order = {
+                ..._order
+            };
+            changed_order.attachment = "";
+            vue_this.$call_remote_process("vehicle_order_center", "update_vehicle_order", [vue_this.$cookies.get("zh_ssid"), changed_order]).then(function (resp) {
+                if (resp) {
+                    vue_this.$call_remote_process("vehicle_order_center", "get_order_detail", [vue_this.$cookies.get("zh_ssid"), changed_order.order_number]).then(function (fresh_order) {
+                        _order.attachment = fresh_order.basic_info.attachment;
+                    });
+                }
+            });
+        },
         proc_order_select: function (_value) {
             this.order_selected = _value;
         },
@@ -362,7 +391,7 @@ export default {
                 if (resp.length <= 0) {
                     vue_this.lazy_finish = true;
                 }
-            }).finally(function() {
+            }).finally(function () {
                 vue_this.is_loading = false;
             });
         },

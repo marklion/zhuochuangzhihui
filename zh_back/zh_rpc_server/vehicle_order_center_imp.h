@@ -169,6 +169,7 @@ public:
     virtual bool confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed);
     std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
     std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
+    virtual bool update_vehicle_order(const std::string &ssid, const vehicle_order_info &order);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

@@ -62,6 +62,14 @@ const routes = [
     meta: {
       mobile: true,
     },
+  },{
+    path: '/vehicle_detail/:order_no',
+    name: 'VehicleDetail',
+    component: () => import('../views/VehicleDetail.vue'),
+    meta: {
+      is_sub:true,
+      subtitle:'派车单',
+    },
   },
 ]
 

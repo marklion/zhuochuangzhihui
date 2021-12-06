@@ -49,6 +49,11 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
         }
         tmp.p_weight = itr.p_weight;
         tmp.m_weight = itr.m_weight;
+        auto attachment = itr.get_parent<zh_sql_file>("attachment");
+        if (attachment)
+        {
+            tmp.attachment = attachment->name;
+        }
 
         _return.push_back(tmp);
     }
@@ -237,6 +242,11 @@ void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_retur
     }
     tmp.p_weight = vo->p_weight;
     tmp.m_weight = vo->m_weight;
+    auto attachment = vo->get_parent<zh_sql_file>("attachment");
+    if (attachment)
+    {
+        tmp.attachment = attachment->name;
+    }
     _return.basic_info = tmp;
     _return.confirmed = vo->m_permit;
     _return.has_called = vo->m_called;
@@ -256,6 +266,64 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
         ZH_RETURN_NO_ORDER();
     }
     vo->m_permit = confirmed;
+    ret = vo->update_record();
+    return ret;
+}
+
+bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid, const vehicle_order_info &order)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", order.company_name.c_str());
+        if (contract)
+        {
+            user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+        }
+    }
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order.id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    if (vo->status > 1)
+    {
+        ZH_RETURN_MSG("派车单正在运行或已关闭，不允许编辑");
+    }
+    vo->behind_vehicle_number = order.behind_vehicle_number;
+    vo->company_name = order.company_name;
+    vo->driver_id = order.driver_id;
+    vo->driver_name = order.driver_name;
+    vo->driver_phone = order.driver_phone;
+    vo->main_vehicle_number = order.main_vehicle_number;
+    vo->stuff_name = order.stuff_name;
+    if (order.attachment.length() > 0)
+    {
+        auto exist_attachment = vo->get_parent<zh_sql_file>("attachment");
+        if (!exist_attachment || exist_attachment->name != order.attachment)
+        {
+            zh_sql_file attach_file;
+            attach_file.save_file(order.attachment.substr(0, order.attachment.find_last_of('.')), order.order_number + "-" + std::to_string(time(nullptr))  + order.attachment.substr(order.attachment.find_last_of('.'),order.attachment.length()));
+            attach_file.insert_record();
+            vo->set_parent(attach_file, "attachment");
+        }
+    }
+    else
+    {
+        auto exist_attachment = vo->get_parent<zh_sql_file>("attachment");
+        if (exist_attachment)
+        {
+            exist_attachment->remove_record();
+        }
+        zh_sql_file empty;
+        vo->set_parent(empty, "attachment");
+    }
     ret = vo->update_record();
     return ret;
 }
@@ -485,7 +553,7 @@ bool scale_state_machine::scale_clear()
     return ret;
 }
 
-void scale_state_machine:: print_weight_ticket()
+void scale_state_machine::print_weight_ticket()
 {
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
     if (vo)

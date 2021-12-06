@@ -26,7 +26,7 @@
         <div>
             <el-row>
                 <el-col :span="3">
-                    <el-menu class="web_nav_show" default-active="Home" router background-color="#545c64" text-color="#fff">
+                    <el-menu class="web_nav_show" :default-active="$route.name" router background-color="#545c64" text-color="#fff">
                         <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
                         <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
                         <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
@@ -39,6 +39,8 @@
                 <el-col :span="21">
                     <div class="content_show">
                         <div v-if="$store.state.is_login" class="web_nav_show">
+                            <el-page-header v-if="$route.meta.is_sub" @back="go_back" :content="$route.meta.subtitle">
+                            </el-page-header>
                             <router-view></router-view>
                         </div>
                         <div v-else>
@@ -71,7 +73,7 @@
         </div>
         <div v-else>
             <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
-            <van-dialog v-model="show_login_diag" title="登录" :show-cancel-button="false" :show-confirm-button="false" :close-on-click-overlay="true" >
+            <van-dialog v-model="show_login_diag" title="登录" :show-cancel-button="false" :show-confirm-button="false" :close-on-click-overlay="true">
                 <van-form @submit="user_login">
                     <van-field v-model="login_form.phone" name="手机号" label="用户名" placeholder="用户名" :rules="[{ required: true, message: '请填写用户名' }]" />
                     <van-field v-model="login_form.password" type="password" name="密码" label="密码" placeholder="密码" :rules="[{ required: true, message: '请填写密码' }]" />
@@ -131,6 +133,9 @@ export default {
         };
     },
     methods: {
+        go_back: function() {
+            this.$router.go(-1);
+        },
         user_login: function () {
             var vue_this = this;
             var shajs = require('sha.js')

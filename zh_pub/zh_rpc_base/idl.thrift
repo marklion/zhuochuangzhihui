@@ -151,6 +151,7 @@ struct vehicle_order_info {
     11:list<order_status_info> status_details,
     12:double p_weight,
     13:double m_weight,
+    14:string attachment,
 }
 
 struct gate_relate_info {
@@ -181,6 +182,7 @@ service vehicle_order_center {
     bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),
     bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed) throws (1:gen_exp e),
+    bool update_vehicle_order(1:string ssid, 2:vehicle_order_info order) throws (1:gen_exp e),
 }
 
 service open_api {
