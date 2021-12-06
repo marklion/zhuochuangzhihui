@@ -46,7 +46,7 @@ public:
     {
         std::string prefix = "/manage_dist/logo_res/";
         int fd_orig = open(tmp_name.c_str(), O_RDONLY);
-        int fd_new = open((prefix + new_name).c_str(), O_WRONLY | O_CREAT, S_IREAD | S_IWRITE);
+        int fd_new = open((prefix + new_name).c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
         if (fd_orig >= 0 && fd_new >= 0)
         {
             long buf[100];
@@ -216,6 +216,9 @@ public:
     int m_permit = 0;
     int m_registered = 0;
     int m_called = 0;
+    zh_sql_vehicle_order() {
+        add_parent_type<zh_sql_file>("attachment");
+    }
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
