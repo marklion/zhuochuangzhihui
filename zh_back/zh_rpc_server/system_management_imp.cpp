@@ -133,11 +133,13 @@ bool system_management_handler::raster_is_block(const std::string &raster_ip)
     return raster_was_block(raster_ip, ZH_RASTER_PORT);
 }
 
-bool system_management_handler::print_content(const std::string &printer_ip, const std::string &content)
+bool system_management_handler::print_content(const std::string &printer_ip, const std::string &content, const std::string &qr_code)
 {
     bool ret = false;
-    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\"";
+    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\" \"" + qr_code + "\"";
 
+    tdf_log tmp_log("printer " + printer_ip);
+    tmp_log.log("print:content:%s, qr_code:%s", content.c_str(), qr_code.c_str());
     auto fp = popen(print_cmd.c_str(), "r");
     if (fp)
     {

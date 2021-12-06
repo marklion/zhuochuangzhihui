@@ -66,7 +66,21 @@
         </el-dialog>
     </div>
     <div v-else>
-        <router-view></router-view>
+        <div v-if="$store.state.is_login">
+            <router-view></router-view>
+        </div>
+        <div v-else>
+            <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
+            <van-dialog v-model="show_login_diag" title="登录" :show-cancel-button="false" :show-confirm-button="false" :close-on-click-overlay="true" >
+                <van-form @submit="user_login">
+                    <van-field v-model="login_form.phone" name="手机号" label="用户名" placeholder="用户名" :rules="[{ required: true, message: '请填写用户名' }]" />
+                    <van-field v-model="login_form.password" type="password" name="密码" label="密码" placeholder="密码" :rules="[{ required: true, message: '请填写密码' }]" />
+                    <div style="margin: 16px;">
+                        <van-button round block type="info" native-type="submit">提交</van-button>
+                    </div>
+                </van-form>
+            </van-dialog>
+        </div>
     </div>
 </div>
 </template>

@@ -92,6 +92,7 @@ public:
     bool scale_clear();
     void broadcast_enter_scale();
     void broadcast_leave_scale();
+    void print_weight_ticket();
 };
 
 class gate_sm_vehicle_come:public tdf_state_machine_state {
@@ -164,9 +165,10 @@ public:
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
+    virtual void get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number);
+    virtual bool confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed);
     std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
     std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
 };
-
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

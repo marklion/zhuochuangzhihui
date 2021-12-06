@@ -214,6 +214,8 @@ public:
     double p_weight = 0;
     double m_weight = 0;
     int m_permit = 0;
+    int m_registered = 0;
+    int m_called = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -229,6 +231,8 @@ public:
         ret.push_back(sqlite_orm_column("p_weight", sqlite_orm_column::REAL, &p_weight));
         ret.push_back(sqlite_orm_column("m_weight", sqlite_orm_column::REAL, &m_weight));
         ret.push_back(sqlite_orm_column("m_permit", sqlite_orm_column::INTEGER, &m_permit));
+        ret.push_back(sqlite_orm_column("m_registered", sqlite_orm_column::INTEGER, &m_registered));
+        ret.push_back(sqlite_orm_column("m_called", sqlite_orm_column::INTEGER, &m_called));
 
         return ret;
     }

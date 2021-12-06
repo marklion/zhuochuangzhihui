@@ -42,7 +42,7 @@ service system_management {
     device_config get_device_config(1:string ssid) throws (1:gen_exp e),
     bool edit_device_config(1:string ssid, 2:device_config config) throws (1:gen_exp e),
     bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
-    bool print_content(1:string printer_ip, 2:string content) throws (1:gen_exp e),
+    bool print_content(1:string printer_ip, 2:string content, 3:string qr_code) throws (1:gen_exp e),
     string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
     bool ctrl_gate(1:string road_ip, 2:i64 cmd) throws (1:gen_exp e),
     bool ctrl_led(1:string led_ip, 2:string content) throws (1:gen_exp e),
@@ -165,6 +165,13 @@ struct weight_relate_info {
     4:double m_weight,
 }
 
+struct vehicle_order_detail {
+    1:vehicle_order_info basic_info,
+    2:bool confirmed,
+    3:bool registered,
+    4:bool has_called,
+}
+
 service vehicle_order_center {
     list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor) throws (1:gen_exp e),
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
@@ -172,6 +179,8 @@ service vehicle_order_center {
     bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     bool confirm_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),
+    bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed) throws (1:gen_exp e),
 }
 
 service open_api {

@@ -25,7 +25,7 @@ public:
             [=](const std::string &_chrct, const std::string &_data)
             {
                 g_mock_map[_chrct].recv_buff.append(_data);
-                if (g_mock_map[_chrct].recv_buff.size() >= _mock.m_req_len)
+                if (g_mock_map[_chrct].recv_buff.size() >= _mock.m_req_len || _mock.m_req_len == 0)
                 {
                     _mock.m_log.log("recv data");
                     _mock.m_log.log_package(g_mock_map[_chrct].recv_buff.data(), _mock.m_req_len);
