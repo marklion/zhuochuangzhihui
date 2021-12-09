@@ -207,18 +207,9 @@ std::shared_ptr<scale_state_machine> vehicle_order_center_handler::get_scale_sm(
     return ssm_map[_name];
 }
 
-void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number)
+void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_order &_order)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 3);
-    if (!user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
-    if (!vo)
-    {
-        ZH_RETURN_NO_ORDER();
-    }
+    auto vo = &_order;
     vehicle_order_info tmp;
     tmp.behind_vehicle_number = vo->behind_vehicle_number;
     tmp.driver_id = vo->driver_id;
@@ -252,6 +243,21 @@ void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_retur
     _return.has_called = vo->m_called;
     _return.registered = vo->m_registered;
 }
+
+void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 3);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    make_vehicle_detail_from_sql(_return, *vo);
+}
 bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed)
 {
     bool ret = false;
@@ -261,9 +267,13 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
         ZH_RETURN_NO_PRAVILIGE();
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
-    if (!vo)
+    if (!vo || vo->status >= 4)
     {
-        ZH_RETURN_NO_ORDER();
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    if (vo->p_weight == 0)
+    {
+        ZH_RETURN_MSG("未完成一次称重，不允许确认");
     }
     vo->m_permit = confirmed;
     ret = vo->update_record();
@@ -309,7 +319,7 @@ bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid,
         if (!exist_attachment || exist_attachment->name != order.attachment)
         {
             zh_sql_file attach_file;
-            attach_file.save_file(order.attachment.substr(0, order.attachment.find_last_of('.')), order.order_number + "-" + std::to_string(time(nullptr))  + order.attachment.substr(order.attachment.find_last_of('.'),order.attachment.length()));
+            attach_file.save_file(order.attachment.substr(0, order.attachment.find_last_of('.')), order.order_number + "-" + std::to_string(time(nullptr)) + order.attachment.substr(order.attachment.find_last_of('.'), order.attachment.length()));
             attach_file.insert_record();
             vo->set_parent(attach_file, "attachment");
         }
@@ -325,6 +335,150 @@ bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid,
         vo->set_parent(empty, "attachment");
     }
     ret = vo->update_record();
+    return ret;
+}
+bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel)
+{
+    bool ret = false;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    if (vo->status != 1)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    vo->m_registered = is_cancel ? 0 : 1;
+    if (!vo->m_registered)
+    {
+        vo->m_called = 0;
+    }
+    ret = vo->update_record();
+
+    return ret;
+}
+
+void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number)
+{
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s' AND status != 100 AND status != 0", order_number.c_str());
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    make_vehicle_detail_from_sql(_return, *vo);
+}
+
+bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    if (vo->status != 1)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    if (!vo->m_registered)
+    {
+        ZH_RETURN_MSG("车辆未排号或已取消排号");
+    }
+    vo->m_called = is_cancel?0:1;
+    ret = vo->update_record();
+
+    return ret;
+}
+
+void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status >= 1 AND status != 100 AND m_registered == 1");
+    for (auto &itr:vos)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, itr);
+        _return.push_back(tmp);
+    }
+}
+
+bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+
+    auto status = zh_sql_order_status::make_p_status(ssid);
+    vo->push_status(status);
+    vo->p_weight = weight;
+    ret = vo->update_record();
+
+    return ret;
+}
+bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+
+    auto status = zh_sql_order_status::make_m_status(ssid);
+    vo->push_status(status);
+    vo->m_weight = weight;
+    ret = vo->update_record();
+
+    return ret;
+}
+
+bool vehicle_order_center_handler::manual_close(const std::string &ssid, const int64_t order_id)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    auto status = zh_sql_order_status::make_end_status(ssid);
+    vo->push_status(status);
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+    if (stuff)
+    {
+        stuff->inventory += vo->p_weight - vo->m_weight;
+        stuff->update_record();
+    }
+
+    ret = true;
+
     return ret;
 }
 
@@ -779,6 +933,12 @@ void scale_sm_scale::do_action(tdf_state_machine &_sm)
                 vo->m_weight = cur_weight;
                 vo->push_status(status);
                 ssm.print_weight_ticket();
+                auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+                if (stuff)
+                {
+                    stuff->inventory = vo->p_weight - vo->m_weight;
+                    stuff->update_record();
+                }
                 device_config dc;
                 system_management_handler::get_inst()->internal_get_device_config(dc);
                 if (dc.gate.empty())

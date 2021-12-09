@@ -68,7 +68,7 @@
         </el-dialog>
     </div>
     <div v-else>
-        <div v-if="$store.state.is_login">
+        <div v-if="$store.state.is_login || $route.meta.no_need_login">
             <router-view></router-view>
         </div>
         <div v-else>
@@ -133,7 +133,7 @@ export default {
         };
     },
     methods: {
-        go_back: function() {
+        go_back: function () {
             this.$router.go(-1);
         },
         user_login: function () {
@@ -170,12 +170,17 @@ export default {
         user_logoff: function () {
             var vue_this = this;
             vue_this.$call_remote_process("user_management", 'user_logoff', [vue_this.$cookies.get('zh_ssid')]).then(function () {
+                vue_this.$cookies.set('zh_ssid', "");
                 vue_this.$router.go(0);
             });
         },
     },
-    beforeMount: function () {
-        this.init_user_info();
+    watch: {
+        "$route": function (to) {
+            if (!to.meta.no_need_login) {
+                this.init_user_info();
+            }
+        },
     },
 }
 </script>
