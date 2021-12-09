@@ -183,6 +183,13 @@ service vehicle_order_center {
     vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),
     bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed) throws (1:gen_exp e),
     bool update_vehicle_order(1:string ssid, 2:vehicle_order_info order) throws (1:gen_exp e),
+    bool driver_check_in(1:i64 order_id, 2: bool is_cancel) throws (1:gen_exp e),
+    vehicle_order_detail driver_get_order(1:string order_number) throws (1:gen_exp e),
+    bool call_vehicle(1:string ssid, 2:i64 order_id, 3:bool is_cancel) throws (1:gen_exp e),
+    list<vehicle_order_detail> get_registered_vehicle(1:string ssid) throws (1:gen_exp e),
+    bool manual_set_p_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
+    bool manual_set_m_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
+    bool manual_close(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
 }
 
 service open_api {

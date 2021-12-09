@@ -87,6 +87,9 @@
                 <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
                     <el-button type="success" size="mini" @click="confirm_order([scope.row])">确认可进</el-button>
                 </div>
+                <div v-if="scope.row.status == 1">
+                    <el-button type="warning" size="mini" @click="copy_check_in_link(scope.row)">复制排号链接</el-button>
+                </div>
             </template>
         </el-table-column>
     </el-table>
@@ -151,6 +154,9 @@ import infiniteScroll from 'vue-infinite-scroll'
 
 import PinyinMatch from "pinyin-match"
 import XLSX from 'xlsx';
+import VueClipboard from 'vue-clipboard2'
+
+Vue.use(VueClipboard)
 Vue.use(infiniteScroll)
 export default {
     name: 'VehicleOrderCenter',
@@ -255,6 +261,10 @@ export default {
         };
     },
     methods: {
+        copy_check_in_link: function (_order) {
+            this.$copyText(this.$remote_url + '/#/check_in/' + _order.order_number);
+            this.$message('链接已复制，建议发送给司机');
+        },
         upload_attachment: function (_order) {
             var vue_this = this;
             return function (resp, file) {

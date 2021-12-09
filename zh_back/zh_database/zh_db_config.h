@@ -177,7 +177,7 @@ public:
     std::string driver_phone;
     std::string company_name;
     std::string group_name;
-    int in_white_list = 0;
+    long in_white_list = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -213,9 +213,9 @@ public:
     std::string stuff_name;
     double p_weight = 0;
     double m_weight = 0;
-    int m_permit = 0;
-    int m_registered = 0;
-    int m_called = 0;
+    long m_permit = 0;
+    long m_registered = 0;
+    long m_called = 0;
     zh_sql_vehicle_order() {
         add_parent_type<zh_sql_file>("attachment");
     }

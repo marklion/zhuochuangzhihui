@@ -61,6 +61,7 @@ const routes = [
     component: () => import('../views/CheckIn.vue'),
     meta: {
       mobile: true,
+      no_need_login:true,
     },
   },{
     path: '/vehicle_detail/:order_no',
