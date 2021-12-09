@@ -8,7 +8,12 @@
     <van-cell :title="cur_order.basic_info.main_vehicle_number" :label="cur_order.basic_info.behind_vehicle_number" :value="cur_order.basic_info.stuff_name"></van-cell>
     <van-cell :title="cur_order.basic_info.driver_name" :value="cur_order.basic_info.driver_phone" :label="cur_order.basic_info.company_name"></van-cell>
     <van-cell title="一次称重" :value="cur_order.basic_info.p_weight"></van-cell>
-    <div style="margin:15px;">
+    <div v-if="cur_order.basic_info.status >= 4">
+        <van-cell title="二次称重" :value="cur_order.basic_info.m_weight"></van-cell>
+        <van-cell v-if="stuff_change > 0" title="净重（卸货）" :value="j_weight"></van-cell>
+        <van-cell v-if="stuff_change < 0" title="净重（拉货）" :value="j_weight"></van-cell>
+    </div>
+    <div style="margin:15px;" v-if="cur_order.basic_info.status == 3">
         <van-button v-if="!cur_order.confirmed" block type="primary" @click="confirm_deliver(true)">确认</van-button>
         <van-button v-else block type="danger" @click="confirm_deliver(false)">取消确认</van-button>
     </div>
@@ -30,6 +35,17 @@ export default {
                 basic_info: {},
             },
         };
+    },
+    computed: {
+        j_weight: function () {
+            var ret = 0;
+            ret = Math.abs(this.cur_order.basic_info.p_weight - this.cur_order.basic_info.m_weight);
+
+            return ret;
+        },
+        stuff_change: function () {
+            return this.cur_order.basic_info.p_weight - this.cur_order.basic_info.m_weight;
+        },
     },
     methods: {
         confirm_deliver: function (_confirm) {
