@@ -71,6 +71,7 @@ public:
     tdf_log &get_log() {
         return m_log;
     }
+    double fin_weight = 0;
     scale_gate_trigger_param entry_param;
     scale_gate_trigger_param exit_param;
     bool trigger_switch = true;
@@ -92,7 +93,8 @@ public:
     bool scale_clear();
     void broadcast_enter_scale();
     void broadcast_leave_scale();
-    void print_weight_ticket();
+    void print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &_order);
+    std::unique_ptr<zh_sql_vehicle_order> record_order();
 };
 
 class gate_sm_vehicle_come:public tdf_state_machine_state {

@@ -67,6 +67,11 @@ bool vehicle_management_handler::add_vehicle(const std::string &ssid, const vehi
     tmp.driver_phone = vehicle.driver_phone;
     tmp.group_name = vehicle.group_name;
     tmp.main_vehicle_number = vehicle.main_vehicle_number;
+    auto permission = opt_user->get_parent<zh_sql_user_permission>("permission");
+    if (permission && permission->key != 3)
+    {
+        tmp.in_white_list = vehicle.in_white_list;
+    }
 
     ret = tmp.insert_record();
 
@@ -112,6 +117,11 @@ bool vehicle_management_handler::update_vehicle(const std::string &ssid, const v
     exist_record->driver_phone = vehicle.driver_phone;
     exist_record->group_name = vehicle.group_name;
     exist_record->main_vehicle_number = vehicle.main_vehicle_number;
+    auto permission = opt_user->get_parent<zh_sql_user_permission>("permission");
+    if (permission && permission->key != 3)
+    {
+        exist_record->in_white_list = vehicle.in_white_list;
+    }
 
     ret = exist_record->update_record();
 
@@ -171,6 +181,7 @@ void vehicle_management_handler::get_all_vehicle(std::vector<vehicle_info> &_ret
         tmp.group_name = itr.group_name;
         tmp.id = itr.get_pri_id();
         tmp.main_vehicle_number = itr.main_vehicle_number;
+        tmp.in_white_list = itr.in_white_list;
         _return.push_back(tmp);
     }
 }

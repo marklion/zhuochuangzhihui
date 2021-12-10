@@ -120,6 +120,7 @@ struct vehicle_info {
     6:string company_name,
     7:i64 id,
     8:string group_name,
+    9:bool in_white_list,
 }
 
 

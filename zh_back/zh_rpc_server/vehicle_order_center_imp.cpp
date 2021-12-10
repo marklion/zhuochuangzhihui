@@ -390,7 +390,7 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     {
         ZH_RETURN_MSG("车辆未排号或已取消排号");
     }
-    vo->m_called = is_cancel?0:1;
+    vo->m_called = is_cancel ? 0 : 1;
     ret = vo->update_record();
 
     return ret;
@@ -404,7 +404,7 @@ void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_or
         ZH_RETURN_NO_PRAVILIGE();
     }
     auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status >= 1 AND status != 100 AND m_registered == 1");
-    for (auto &itr:vos)
+    for (auto &itr : vos)
     {
         vehicle_order_detail tmp;
         make_vehicle_detail_from_sql(tmp, itr);
@@ -613,6 +613,7 @@ void scale_state_machine::close_timer()
         tdf_main::get_inst().stop_timer(timer_fd);
         timer_fd = -1;
         continue_weight.clear();
+        fin_weight = 0;
     }
 }
 void scale_state_machine::clean_bound_info()
@@ -707,9 +708,43 @@ bool scale_state_machine::scale_clear()
     return ret;
 }
 
-void scale_state_machine::print_weight_ticket()
+std::unique_ptr<zh_sql_vehicle_order>scale_state_machine::record_order()
 {
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
+    if (vo)
+    {
+        if (vo->status < 3)
+        {
+            auto status = zh_sql_order_status::make_p_status();
+            vo->p_weight = fin_weight;
+            vo->push_status(status);
+        }
+        else if (vo->status < 4)
+        {
+            auto status = zh_sql_order_status::make_m_status();
+            vo->m_weight = fin_weight;
+            vo->push_status(status);
+            auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+            if (stuff)
+            {
+                stuff->inventory = vo->p_weight - vo->m_weight;
+                stuff->update_record();
+            }
+            device_config dc;
+            system_management_handler::get_inst()->internal_get_device_config(dc);
+            if (dc.gate.empty())
+            {
+                auto end_status = zh_sql_order_status::make_end_status();
+                vo->push_status(end_status);
+            }
+        }
+    }
+    return vo;
+}
+void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &vo)
+{
+    std::string content;
+    std::string qr_code;
     if (vo)
     {
         std::string m_weight_string = "未称重";
@@ -722,21 +757,25 @@ void scale_state_machine::print_weight_ticket()
         {
             m_weight_string = std::to_string(vo->m_weight) + "吨";
         }
-        std::string content = "一次称重：" + p_weight_string + "\n";
+        content = "一次称重：" + p_weight_string + "\n";
         content += "二次称重：" + m_weight_string + "\n";
-        std::string qr_code(getenv("BASE_URL"));
+        qr_code = getenv("BASE_URL");
         qr_code += ".d8sis.cn/#/field_opt/" + vo->order_number;
-        std::string printer_ip;
-        if (bound_scale.entry_config.cam_ip == enter_cam_ip)
-        {
-            printer_ip = bound_scale.entry_printer_ip;
-        }
-        else
-        {
-            printer_ip = bound_scale.exit_printer_ip;
-        }
-        system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
     }
+    else
+    {
+        content = "称重：" + std::to_string(fin_weight) + "吨";
+    }
+    std::string printer_ip;
+    if (bound_scale.entry_config.cam_ip == enter_cam_ip)
+    {
+        printer_ip = bound_scale.entry_printer_ip;
+    }
+    else
+    {
+        printer_ip = bound_scale.exit_printer_ip;
+    }
+    system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
 }
 void scale_state_machine::open_trigger_switch()
 {
@@ -906,48 +945,16 @@ void scale_sm_scale::do_action(tdf_state_machine &_sm)
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     if (ssm.scale_stable())
     {
-        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", ssm.bound_vehicle_number.c_str());
-        if (vo)
+        ssm.fin_weight = [&]() -> double
         {
-            auto cur_weight = [&]() -> double
+            double ret = 0;
+            for (auto &itr : ssm.continue_weight)
             {
-                double ret = 0;
-                for (auto &itr : ssm.continue_weight)
-                {
-                    ret += itr;
-                }
-                ret /= ssm.continue_weight.size();
-
-                return ret;
-            }();
-            if (vo->status < 3)
-            {
-                auto status = zh_sql_order_status::make_p_status();
-                vo->p_weight = cur_weight;
-                vo->push_status(status);
-                ssm.print_weight_ticket();
+                ret += itr;
             }
-            else if (vo->status < 4)
-            {
-                auto status = zh_sql_order_status::make_m_status();
-                vo->m_weight = cur_weight;
-                vo->push_status(status);
-                ssm.print_weight_ticket();
-                auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
-                if (stuff)
-                {
-                    stuff->inventory = vo->p_weight - vo->m_weight;
-                    stuff->update_record();
-                }
-                device_config dc;
-                system_management_handler::get_inst()->internal_get_device_config(dc);
-                if (dc.gate.empty())
-                {
-                    auto end_status = zh_sql_order_status::make_end_status();
-                    vo->push_status(end_status);
-                }
-            }
-        }
+            ret /= ssm.continue_weight.size();
+            return ret;
+        }();
     }
 }
 void scale_sm_scale::after_enter(tdf_state_machine &_sm)
@@ -960,7 +967,8 @@ void scale_sm_scale::after_enter(tdf_state_machine &_sm)
 void scale_sm_scale::before_leave(tdf_state_machine &_sm)
 {
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
-
+    auto vo = ssm.record_order();
+    ssm.print_weight_ticket(vo);
     ssm.close_timer();
     ssm.open_exit();
     ssm.broadcast_leave_scale();
@@ -1168,7 +1176,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
 
     if (judge_permit)
     {
-        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
+        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100 AND m_called != 0", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
         for (auto &itr : vos)
         {
             if (need_id && itr.driver_id != _id_no)

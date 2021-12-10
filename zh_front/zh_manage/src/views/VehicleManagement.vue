@@ -27,6 +27,8 @@
         </el-table-column>
         <el-table-column sortable prop="company_name" label="所属公司" min-width="60px" :formatter="format_company_name">
         </el-table-column>
+        <el-table-column prop="in_white_list" label="加入白名单" min-width="60px" :formatter="format_white">
+        </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="50px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_vehicle(scope.row)">修改</el-button>
@@ -55,6 +57,10 @@
             </el-form-item>
             <el-form-item label="司机身份证" prop="driver_id">
                 <el-input v-model="focus_vehicle.driver_id" placeholder="请输入司机身份证"></el-input>
+            </el-form-item>
+            <el-form-item v-if="$store.state.user_info.permission != 3" label="添加白名单" prop="in_white_list">
+                <el-switch v-model="focus_vehicle.in_white_list" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
             </el-form-item>
             <el-form-item label="分组名" prop="group_name">
                 <el-input v-model="focus_vehicle.group_name" placeholder="请输入分组名称"></el-input>
@@ -85,6 +91,7 @@ export default {
                 driver_phone: '',
                 driver_id: '',
                 company_name: '',
+                in_white_list:false,
             },
 
             rules: {
@@ -155,6 +162,13 @@ export default {
         };
     },
     methods: {
+        format_white: function (value) {
+            if (value.in_white_list) {
+                return "是";
+            } else {
+                return "否";
+            }
+        },
         format_company_name: function (value) {
             if (value.company_name) {
                 return value.company_name;
@@ -201,6 +215,7 @@ export default {
                 driver_phone: '',
                 driver_id: '',
                 company_name: this.company_for_select[0].label,
+                in_white_list:false,
             };
         },
         edit_vehicle: function () {
