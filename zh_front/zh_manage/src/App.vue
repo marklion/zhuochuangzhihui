@@ -26,14 +26,8 @@
         <div>
             <el-row>
                 <el-col :span="3">
-                    <el-menu class="web_nav_show" :default-active="$route.name" router background-color="#545c64" text-color="#fff">
-                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="Home" :route="{name:'Home'}">概览</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleOrderCenter" :route="{name:'VehicleOrderCenter'}">派车中心</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="ContractManagement" :route="{name:'ContractManagement'}">合同管理</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 3" index="VehicleManagement" :route="{name:'VehicleManagement'}">车辆管理</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 2" index="StuffManagement" :route="{name:'StuffManagement'}">物料管理</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 0" index="UserManagement" :route="{name:'UserManagement'}">用户管理</el-menu-item>
-                        <el-menu-item v-if="$store.state.user_info.permission <= 0" index="SystemManagement" :route="{name:'SystemManagement'}">系统设置</el-menu-item>
+                    <el-menu v-if="$store.state.is_login" class="web_nav_show" :default-active="$route.name" router background-color="#545c64" text-color="#fff">
+                        <el-menu-item v-for="(single_menu, index) in menu_need_show" :key="index" :index="single_menu.route_name" :route="{name:single_menu.route_name}">{{single_menu.name}}</el-menu-item>
                     </el-menu>
                 </el-col>
                 <el-col :span="21">
@@ -103,9 +97,47 @@ export default {
                 this.show_change_password = _value;
             }
         },
+        menu_need_show: function () {
+            var ret = [];
+            this.cur_menu.forEach((element) => {
+                if (this.$store.state.user_info.permission <= element.permission_need) {
+                    ret.push(element);
+                }
+            });
+            return ret;
+        },
     },
     data: function () {
         return {
+            cur_menu: [{
+                permission_need: 2,
+                route_name: 'Home',
+                name: '概览'
+            }, {
+                permission_need: 3,
+                route_name: 'VehicleOrderCenter',
+                name: '派车中心'
+            }, {
+                permission_need: 2,
+                route_name: 'ContractManagement',
+                name: '合同管理'
+            }, {
+                permission_need: 3,
+                route_name: 'VehicleManagement',
+                name: '车辆管理'
+            }, {
+                permission_need: 2,
+                route_name: 'StuffManagement',
+                name: '物料管理'
+            }, {
+                permission_need: 0,
+                route_name: 'UserManagement',
+                name: '用户管理'
+            }, {
+                permission_need: 0,
+                route_name: 'SystemManagement',
+                name: '系统设置'
+            }, ],
             login_form: {
                 phone: '',
                 password: '',
@@ -164,6 +196,10 @@ export default {
                         need_change_password: false,
                     });
                     vue_this.$store.commit('set_login', false);
+                }
+                if (vue_this.$store.state.user_info.permission == 3 && vue_this.$route.name == 'Home')
+                {
+                    vue_this.$router.replace({name:'VehicleOrderCenter'});
                 }
             });
         },
