@@ -46,7 +46,7 @@ public:
     {
         std::string prefix = "/manage_dist/logo_res/";
         int fd_orig = open(tmp_name.c_str(), O_RDONLY);
-        int fd_new = open((prefix + new_name).c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
+        int fd_new = open((prefix + new_name).c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO);
         if (fd_orig >= 0 && fd_new >= 0)
         {
             long buf[100];
