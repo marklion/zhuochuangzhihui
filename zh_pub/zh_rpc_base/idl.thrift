@@ -13,6 +13,12 @@ struct device_gate_config {
     3:string exit_id_reader_ip,
     4:hk_gate_device_ipconfig entry_config,
     5:hk_gate_device_ipconfig exit_config,
+    6:string entry_qr_ip,
+    7:string exit_qr_ip,
+    8:bool entry_need_id,
+    9:bool entry_need_qr,
+    10:bool exit_need_id,
+    11:bool exit_need_qr,
 }
 
 struct device_scale_config {
@@ -25,6 +31,10 @@ struct device_scale_config {
     7:string exit_id_reader_ip,
     8:hk_gate_device_ipconfig entry_config,
     9:hk_gate_device_ipconfig exit_config,
+    10:string entry_qr_ip,
+    11:string exit_qr_ip,
+    12:bool need_id,
+    13:bool need_qr,
 }
 
 struct device_config {
