@@ -40,6 +40,7 @@ std::string zh_vcom_link::get_pts()
             {
                 g_log.err("grantpt failed: %s", strerror(errno));
             }
+            ptm_fd = fd;
         }
         else
         {
@@ -50,14 +51,13 @@ std::string zh_vcom_link::get_pts()
             int sk_fd = socket(AF_INET, SOCK_STREAM, 0);
             if (sk_fd >= 0)
             {
+                socket_fd = sk_fd;
                 sockaddr_in addr;
                 addr.sin_family = AF_INET;
                 addr.sin_port = htons(port);
                 addr.sin_addr.s_addr = inet_addr(ip.c_str());
                 if (0 == connect(sk_fd, (sockaddr *)(&addr), sizeof(addr)))
                 {
-                    socket_fd = sk_fd;
-                    ptm_fd = fd;
                     work = new std::thread(
                         [this]()
                         {
