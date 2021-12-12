@@ -7,11 +7,51 @@
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口身份识别IP">{{single_gate.entry_id_reader_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口身份识别IP">{{single_gate.exit_id_reader_ip}}</el-descriptions-item>
+                    <el-descriptions-item>
+                        {{single_gate.entry_qr_ip}}
+                        <template slot="label">
+                            <span>入口二维码IP</span>
+                            <span>
+                                <el-tag v-if="single_gate.entry_need_qr" type="success">必选验证</el-tag>
+                                <el-tag v-else>可选验证</el-tag>
+                            </span>
+                        </template>
+                    </el-descriptions-item>
+                    <el-descriptions-item>
+                        {{single_gate.exit_qr_ip}}
+                        <template slot="label">
+                            <span>出口二维码IP</span>
+                            <span>
+                                <el-tag v-if="single_gate.exit_need_qr" type="success">必选验证</el-tag>
+                                <el-tag v-else>可选验证</el-tag>
+                            </span>
+                        </template>
+
+                    </el-descriptions-item>
+                    <el-descriptions-item>
+                        {{single_gate.entry_id_reader_ip}}
+                        <template slot="label">
+                            <span>入口身份识别IP</span>
+                            <span>
+                                <el-tag v-if="single_gate.entry_need_id" type="success">必选验证</el-tag>
+                                <el-tag v-else>可选验证</el-tag>
+                            </span>
+                        </template>
+                    </el-descriptions-item>
+                    <el-descriptions-item>
+                        <template slot="label">
+                            <span>出口身份识别IP</span>
+                            <span>
+                                <el-tag v-if="single_gate.exit_need_id" type="success">必选验证</el-tag>
+                                <el-tag v-else>可选验证</el-tag>
+                            </span>
+                        </template>
+                        {{single_gate.exit_id_reader_ip}}
+                    </el-descriptions-item>
+
                     <template slot="extra">
                         <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
@@ -19,18 +59,28 @@
                 </el-descriptions>
             </div>
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :column="3" :title="single_scale.name">
+                <el-descriptions border :column="4" :title="single_scale.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口LEDIP">{{single_scale.exit_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
-                    <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
                     <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口身份识别IP">{{single_scale.entry_id_reader_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口身份识别IP">{{single_scale.exit_id_reader_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口二维码IP">{{single_scale.entry_qr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口二维码IP">{{single_scale.exit_qr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
+                    <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
+                    <el-descriptions-item label="身份证验证">
+                        <el-tag v-if="single_scale.need_id" type="success">必选验证</el-tag>
+                        <el-tag v-else>可选验证</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="二维码验证">
+                        <el-tag v-if="single_scale.need_qr" type="success">必选验证</el-tag>
+                        <el-tag v-else>可选验证</el-tag>
+                    </el-descriptions-item>
                     <template slot="extra">
                         <el-button type="success" size="small" @click="open_scale_operate(single_scale)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_scale_edit(single_scale)">编辑</el-button>
@@ -38,7 +88,7 @@
                 </el-descriptions>
             </div>
             <el-dialog @close="init_device_info" title="修改配置" :visible.sync="show_edit_gate_config" width="60%" @keyup.enter.native="edit_gate">
-                <el-form :model="gate_for_edit" ref="edit_gate_form" :rules="rules" label-width="120px">
+                <el-form :model="gate_for_edit" ref="edit_gate_form" :rules="rules" label-width="150px">
                     <el-form-item label="名称" prop="name">
                         <el-input v-model="gate_for_edit.name" placeholder="请输入名称"></el-input>
                     </el-form-item>
@@ -57,8 +107,26 @@
                     <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
                         <el-input v-model="gate_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口必选身份证验证" prop="entry_need_id">
+                        <el-switch v-model="gate_for_edit.entry_need_id"></el-switch>
+                    </el-form-item>
                     <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
                         <el-input v-model="gate_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口必选身份证验证" prop="exit_need_id">
+                        <el-switch v-model="gate_for_edit.exit_need_id"></el-switch>
+                    </el-form-item>
+                    <el-form-item label="入口二维码IP" prop="entry_qr_ip">
+                        <el-input v-model="gate_for_edit.entry_qr_ip" placeholder="请输入入口二维码IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口必选二维码验证" prop="entry_need_qr">
+                        <el-switch v-model="gate_for_edit.entry_need_qr"></el-switch>
+                    </el-form-item>
+                    <el-form-item label="出口二维码IP" prop="exit_qr_ip">
+                        <el-input v-model="gate_for_edit.exit_qr_ip" placeholder="请输出入口二维码IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口必选二维码验证" prop="exit_need_qr">
+                        <el-switch v-model="gate_for_edit.exit_need_qr"></el-switch>
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_gate">确认</el-button>
@@ -102,6 +170,18 @@
                     </el-form-item>
                     <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
                         <el-input v-model="scale_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口二维码IP" prop="entry_qr_ip">
+                        <el-input v-model="scale_for_edit.entry_qr_ip" placeholder="请输入入口二维码IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口二维码IP" prop="exit_qr_ip">
+                        <el-input v-model="scale_for_edit.exit_qr_ip" placeholder="请输出入口二维码IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="必选身份证验证" prop="need_id">
+                        <el-switch v-model="scale_for_edit.need_id"></el-switch>
+                    </el-form-item>
+                    <el-form-item label="必选二维码验证" prop="need_qr">
+                        <el-switch v-model="scale_for_edit.need_qr"></el-switch>
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_scale">确认</el-button>

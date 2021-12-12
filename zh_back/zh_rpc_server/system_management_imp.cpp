@@ -41,6 +41,12 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.entry_config.led_ip = gate_config[i]("entry_led_ip");
         tmp.exit_config.cam_ip = gate_config[i]("exit_cam_ip");
         tmp.exit_config.led_ip = gate_config[i]("exit_led_ip");
+        tmp.entry_qr_ip = gate_config[i]("entry_qr_ip");
+        tmp.exit_qr_ip = gate_config[i]("exit_qr_ip");
+        gate_config[i].Get("entry_need_id", tmp.entry_need_id);
+        gate_config[i].Get("exit_need_id", tmp.exit_need_id);
+        gate_config[i].Get("entry_need_qr", tmp.entry_need_qr);
+        gate_config[i].Get("exit_need_qr", tmp.exit_need_qr);
         _return.gate.push_back(tmp);
     }
     for (int i = 0; i < scale_config.GetArraySize(); i++)
@@ -58,6 +64,10 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.entry_config.led_ip = scale_config[i]("entry_led_ip");
         tmp.exit_config.cam_ip = scale_config[i]("exit_cam_ip");
         tmp.exit_config.led_ip = scale_config[i]("exit_led_ip");
+        tmp.entry_qr_ip = scale_config[i]("entry_qr_ip");
+        tmp.exit_qr_ip = scale_config[i]("exit_qr_ip");
+        scale_config[i].Get("need_id", tmp.need_id);
+        scale_config[i].Get("need_qr", tmp.need_qr);
         _return.scale.push_back(tmp);
     }
 }
@@ -98,9 +108,17 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("entry_led_ip", itr.entry_config.led_ip);
         gate.Add("exit_cam_ip", itr.exit_config.cam_ip);
         gate.Add("exit_led_ip", itr.exit_config.led_ip);
+        gate.Add("entry_need_id", itr.entry_need_id, itr.entry_need_id);
+        gate.Add("exit_need_id", itr.exit_need_id, itr.exit_need_id);
+        gate.Add("entry_need_qr", itr.entry_need_qr, itr.entry_need_qr);
+        gate.Add("exit_need_qr", itr.exit_need_qr, itr.exit_need_qr);
+        gate.Add("entry_qr_ip", itr.entry_qr_ip);
+        gate.Add("exit_qr_ip", itr.exit_qr_ip);
         tmp["gate"].Add(gate);
         vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
         vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
     }
 
     for (auto &itr : config.scale)
@@ -119,8 +137,13 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("entry_led_ip", itr.entry_config.led_ip);
         scale.Add("exit_cam_ip", itr.exit_config.cam_ip);
         scale.Add("exit_led_ip", itr.exit_config.led_ip);
+        scale.Add("entry_qr_ip", itr.entry_qr_ip);
+        scale.Add("exit_qr_ip", itr.exit_qr_ip);
+        scale.Add("need_id", itr.need_id, itr.need_id);
+        scale.Add("need_qr", itr.need_qr, itr.need_qr);
         tmp["scale"].Add(scale);
         vehicle_order_center_handler::ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
+        vehicle_order_center_handler::ssm_map[itr.name]->ctrl_policy.set_policy(itr.need_id, itr.need_qr);
     }
 
     config_file << tmp.ToFormattedString();
