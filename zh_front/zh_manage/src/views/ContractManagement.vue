@@ -5,7 +5,8 @@
             <div class="block_title_show">所有合同</div>
         </el-col>
         <el-col>
-            <div align="right" style="margin-right:10px;">
+            <div style="margin-right:10px; text-align:right;">
+                <table-import-export @proc_table="proc_upload_contract" :sample_table="sample_table" export_name="合同导出表.xlsx" :export_table="all_contract" :item_name_map="col_map"></table-import-export>
                 <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_add_contract_diag = true">新增</el-button>
             </div>
         </el-col>
@@ -85,12 +86,25 @@
 
 <script>
 import Vue from 'vue'
+import TableImportExport from '../components/TableImportExport.vue'
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)
 export default {
     name: 'ContractManagement',
+    components: {
+        "table-import-export": TableImportExport,
+    },
     data: function () {
         return {
+            sample_table: [{
+                name: '客户公司名',
+                code: '合同编号1',
+                is_sale: true,
+            },{
+                name: '供应商公司名',
+                code: '合同编号2',
+                is_sale: false,
+            }],
             old_admin_phone: '',
             current_opt_add: true,
             all_contract: [],
@@ -115,9 +129,45 @@ export default {
                     trigger: 'blur'
                 }],
             },
+            col_map: {
+                name: {
+                    text: '公司名',
+                },
+                code: {
+                    text: '编码',
+                },
+                is_sale: {
+                    text: '类型',
+                    formatter: function (_orig) {
+                        if (_orig) {
+                            return "销售";
+                        } else {
+                            return "采购";
+                        }
+                    },
+                    parser(_value) {
+                        if (_value == "销售") {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    },
+                },
+            },
         };
     },
     methods: {
+        proc_upload_contract: async function (_array) {
+            var vue_this = this;
+            for (var i = 0; i < _array.length; i++) {
+                try {
+                    await vue_this.$call_remote_process("contract_management", "add_contract", [vue_this.$cookies.get("zh_ssid"), _array[i]]);
+                } catch (err) {
+                    console.log(err);
+                }
+                vue_this.init_all_contract();
+            }
+        },
         make_random_passwod: function () {
             var seed = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'Q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9']; // 密码源数组
             var n = '';
