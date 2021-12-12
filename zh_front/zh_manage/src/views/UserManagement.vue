@@ -20,7 +20,7 @@
         </el-col>
     </el-row>
     <el-table :data="all_user" style="width: 100%" stripe>
-        <el-table-column prop="id" label="编号" min-width="10px">
+        <el-table-column type="index" label="编号" min-width="10px">
         </el-table-column>
         <el-table-column prop="name" label="姓名" min-width="25px">
         </el-table-column>

@@ -5,7 +5,8 @@
             <div class="block_title_show">所有车辆</div>
         </el-col>
         <el-col>
-            <div align="right" style="margin-right:10px;">
+            <div style="margin-right:10px; text-align:right">
+                <table-import-export @proc_table="proc_upload_vehicle" :sample_table="sample_table()" export_name="车辆导出表.xlsx" :export_table="all_vehicle" :item_name_map="col_map()"></table-import-export>
                 <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_vehicle_diag = true">新增</el-button>
             </div>
         </el-col>
@@ -38,7 +39,7 @@
     </el-table>
     <el-dialog @close="clean_vehicle" :title="(current_opt_add?'新增':'修改') + '车辆'" :visible.sync="show_edit_vehicle_diag" width="60%" @keyup.enter.native="edit_vehicle">
         <el-form :model="focus_vehicle" ref="focus_vehicle" :rules="rules" label-width="120px">
-            <el-form-item label="所属公司" prop="group_name">
+            <el-form-item label="所属公司" prop="company_name">
                 <el-select v-model="focus_vehicle.company_name" placeholder="请选择所属公司" :disabled="$store.state.user_info.permission == 3">
                     <el-option v-for="(single_item,index) in company_for_select" :key="index" :label="single_item.label" :value="single_item.value"></el-option>
                 </el-select>
@@ -74,8 +75,12 @@
 </template>
 
 <script>
+import TableImportExport from '../components/TableImportExport.vue'
 export default {
     name: 'Vehicle_management',
+    components: {
+        "table-import-export": TableImportExport,
+    },
     data: function () {
         return {
             company_for_select: [{
@@ -91,9 +96,86 @@ export default {
                 driver_phone: '',
                 driver_id: '',
                 company_name: '',
-                in_white_list:false,
+                in_white_list: false,
+                group_name: "",
             },
+            sample_table: function () {
+                var ret = {
+                    main_vehicle_number: '豫A33421',
+                    behind_vehicle_number: '川B3321挂',
+                    driver_name: '张三',
+                    driver_phone: '13987654321',
+                    driver_id: '110110201010101010',
+                    company_name: '采购公司1',
+                    group_name: "购煤组",
+                };
+                var ret2 = {
+                    main_vehicle_number: '新A38821',
+                    behind_vehicle_number: '皖B3561挂',
+                    driver_name: '李四',
+                    driver_phone: '17788996655',
+                    driver_id: '150150201505050505',
+                    company_name: '(自有)',
+                    group_name: "送灰组",
+                };
+                if (this.$store.state.user_info.permission != 3) {
+                    ret.in_white_list = false;
+                    ret2.in_white_list = true;
+                }
+                else
+                {
+                    ret.company_name = this.$store.state.user_info.name;
+                    ret2.company_name = this.$store.state.user_info.name;
+                }
+                return [ret, ret2];
+            },
+            col_map: function () {
+                var ret = {
+                    main_vehicle_number: {
+                        text: '主车车号'
+                    },
+                    behind_vehicle_number: {
+                        text: '挂车车号'
+                    },
+                    driver_name: {
+                        text: '司机姓名'
+                    },
+                    driver_phone: {
+                        text: '司机电话'
+                    },
+                    driver_id: {
+                        text: '司机身份证号'
+                    },
+                    company_name: {
+                        text: '所属公司'
+                    },
+                    group_name: {
+                        text: '分组名'
+                    },
 
+                }
+                if (this.$store.state.user_info.permission != 3) {
+                    ret.in_white_list = {
+                        text: '是否加入白名单',
+                        formatter: function (_orig) {
+                            if (_orig) {
+                                return "是";
+                            } else {
+                                return "否";
+                            }
+
+                        },
+                        parser: function (_value) {
+                            if (_value == "是") {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return ret;
+            },
             rules: {
                 main_vehicle_number: [{
                     required: true,
@@ -162,6 +244,17 @@ export default {
         };
     },
     methods: {
+        proc_upload_vehicle: async function (_array) {
+            var vue_this = this;
+            for (var i = 0; i < _array.length; i++) {
+                try {
+                    await vue_this.$call_remote_process("vehicle_management", "add_vehicle", [vue_this.$cookies.get("zh_ssid"), _array[i]]);
+                } catch (err) {
+                    console.log(err);
+                }
+                vue_this.init_all_vehicle();
+            }
+        },
         format_white: function (value) {
             if (value.in_white_list) {
                 return "是";
@@ -215,7 +308,7 @@ export default {
                 driver_phone: '',
                 driver_id: '',
                 company_name: this.company_for_select[0].label,
-                in_white_list:false,
+                in_white_list: false,
             };
         },
         edit_vehicle: function () {

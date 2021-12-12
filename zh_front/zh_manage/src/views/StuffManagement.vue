@@ -5,7 +5,8 @@
             <div class="block_title_show">所有物料</div>
         </el-col>
         <el-col>
-            <div align="right" style="margin-right:10px;">
+            <div style="margin-right:10px; text-align:right">
+                <table-import-export @proc_table="proc_upload_stuff" :sample_table="sample_table" export_name="物料导出表.xlsx" :export_table="all_stuff" :item_name_map="col_map"></table-import-export>
                 <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_stuff_diag = true">新增</el-button>
             </div>
         </el-col>
@@ -46,8 +47,12 @@
 </template>
 
 <script>
+import TableImportExport from '../components/TableImportExport.vue'
 export default {
     name: 'StuffManagement',
+    components: {
+        "table-import-export": TableImportExport,
+    },
     data: function () {
         return {
             current_opt_add: true,
@@ -76,9 +81,36 @@ export default {
                     trigger: 'blur'
                 }, ],
             },
+            col_map: {
+                name: {
+                    text: '物料名称'
+                },
+                unit: {
+                    text: '计量单位'
+                },
+                inventory: {
+                    text: '库存'
+                },
+            },
+            sample_table: [{
+                name: '中水',
+                unit: '吨',
+                inventory: '104'
+            }],
         };
     },
     methods: {
+        proc_upload_stuff: async function (_array) {
+            var vue_this = this;
+            for (var i = 0; i < _array.length; i++) {
+                try {
+                    await vue_this.$call_remote_process("stuff_management", "add_stuff", [vue_this.$cookies.get("zh_ssid"), _array[i]]);
+                } catch (err) {
+                    console.log(err);
+                }
+                vue_this.init_all_stuff();
+            }
+        },
         del_stuff: function (_stuff) {
             var vue_this = this;
             this.$confirm('确定删除物料吗', '提示', {
