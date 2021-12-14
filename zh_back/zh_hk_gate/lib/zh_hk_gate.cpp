@@ -92,11 +92,11 @@ struct hk_device_user_handler
 {
     LONG user_id = -1;
     LONG al_handler = -1;
-    hk_sub_callback_cfg callback_cfg;
+    zh_sub_callback_cfg callback_cfg;
 };
 static std::map<std::string, hk_device_user_handler> g_device_user_map;
 
-void zh_hk_subcribe_event(const std::string &_road_ip, hk_sub_callback_cfg _callback_cfg)
+void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback_cfg)
 {
     if (_road_ip.length() > 0)
     {

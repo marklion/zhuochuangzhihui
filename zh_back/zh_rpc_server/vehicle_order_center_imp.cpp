@@ -5,6 +5,7 @@
 #include "system_management_imp.h"
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_scale/lib/zh_scale.h"
+#include "../zh_qr/lib/zh_qr_lib.h"
 
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
@@ -513,7 +514,15 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
             pthis->trigger_sm();
         }
     };
-    hk_sub_callback_cfg tmp_cfg;
+    auto zh_qr_callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata) {
+        if (_qr_code.length() > 0)
+        {
+            auto pthis = (scale_state_machine *)_pdata;
+            pthis->proc_trigger_qr(_qr_code, _qr_ip);
+            pthis->trigger_sm();
+        }
+    };
+    zh_sub_callback_cfg tmp_cfg;
     tmp_cfg.pData = this;
     tmp_cfg.callback = hk_call_back;
     if (_config.entry_id_reader_ip.length() > 0)
@@ -532,6 +541,15 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     {
         zh_hk_subcribe_event(_config.exit_config.cam_ip, tmp_cfg);
     }
+    tmp_cfg.callback = zh_qr_callback;
+    if (_config.entry_qr_ip.length() > 0)
+    {
+        zh_qr_subscribe(_config.entry_qr_ip, tmp_cfg);
+    }
+    if (_config.exit_qr_ip.length() > 0)
+    {
+        zh_qr_subscribe(_config.exit_qr_ip, tmp_cfg);
+    }
     m_cur_state.reset(new scale_sm_vehicle_come());
 }
 scale_state_machine::~scale_state_machine()
@@ -544,6 +562,8 @@ scale_state_machine::~scale_state_machine()
     close_timer();
     zh_hk_unsubcribe_event(bound_scale.entry_config.cam_ip);
     zh_hk_unsubcribe_event(bound_scale.exit_config.cam_ip);
+    zh_qr_unsubscribe(bound_scale.entry_qr_ip);
+    zh_qr_unsubscribe(bound_scale.exit_qr_ip);
 }
 
 void scale_state_machine::open_enter()
@@ -630,8 +650,8 @@ bool scale_state_machine::should_open()
 {
     bool ret = false;
 
-    std::string tmp_vehicle_entry = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, "");
-    std::string tmp_vehicle_exit = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, "");
+    std::string tmp_vehicle_entry = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, entry_param.qr_code);
+    std::string tmp_vehicle_exit = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, exit_param.qr_code);
     auto cur_vehicle = tmp_vehicle_entry.length() > 0 ? tmp_vehicle_entry : tmp_vehicle_exit;
     auto led_ip = tmp_vehicle_entry.length() > 0 ? bound_scale.entry_config.led_ip : bound_scale.exit_config.led_ip;
     if (cur_vehicle.length() > 0)
@@ -811,6 +831,40 @@ void scale_state_machine::proc_trigger_id_read(const std::string &_id_no, const 
         }
     }
 }
+
+void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std::string &_road_ip)
+{
+    auto order_number_begin = _qr_code.find_last_of('/') + 1;
+    auto order_number_end = _qr_code.find_last_of('\r');
+    if (order_number_begin > _qr_code.length() || order_number_end > _qr_code.length())
+    {
+        return;
+    }
+    auto order_number = _qr_code.substr(order_number_begin, order_number_end - order_number_begin);
+    tdf_state_machine_lock a(*this);
+    if (_road_ip == bound_scale.entry_qr_ip)
+    {
+        if (trigger_switch)
+        {
+            entry_param.qr_code = order_number;
+        }
+        else
+        {
+            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+        }
+    }
+    else if (_road_ip == bound_scale.exit_qr_ip)
+    {
+        if (trigger_switch)
+        {
+            exit_param.qr_code = order_number;
+        }
+        else
+        {
+            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+        }
+    }
+}
 void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip)
 {
     tdf_state_machine_lock a(*this);
@@ -840,7 +894,7 @@ void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_numbe
 
 void scale_state_machine::record_entry_exit()
 {
-    std::string tmp_vehicle = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, "");
+    std::string tmp_vehicle = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, entry_param.qr_code);
     if (!tmp_vehicle.empty())
     {
         bound_vehicle_number = tmp_vehicle;
@@ -850,7 +904,7 @@ void scale_state_machine::record_entry_exit()
         return;
     }
 
-    tmp_vehicle = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, "");
+    tmp_vehicle = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, exit_param.qr_code);
     if (!tmp_vehicle.empty())
     {
         bound_vehicle_number = tmp_vehicle;
@@ -995,7 +1049,12 @@ void scale_sm_clean::before_leave(tdf_state_machine &_sm)
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     ssm.close_timer();
 }
-gate_state_machine::gate_state_machine(const std::string &_road_ip, const std::string &_id_reader_ip, bool _is_entry) : m_log("gate sm"), road_ip(_road_ip), id_reader_ip(_id_reader_ip), is_entry(_is_entry)
+gate_state_machine::gate_state_machine(
+    const std::string &_road_ip,
+    const std::string &_id_reader_ip,
+    const std::string &_qr_ip,
+    bool _is_entry) : m_log("gate sm " + _road_ip),
+    road_ip(_road_ip), id_reader_ip(_id_reader_ip), qr_ip(_qr_ip), is_entry(_is_entry)
 {
     if (_id_reader_ip.length() > 0)
     {
@@ -1015,7 +1074,7 @@ gate_state_machine::gate_state_machine(const std::string &_road_ip, const std::s
     }
     if (_road_ip.length() > 0)
     {
-        hk_sub_callback_cfg tmp_cfg;
+        zh_sub_callback_cfg tmp_cfg;
         tmp_cfg.pData = this;
         tmp_cfg.callback = [](const std::string &_plate_no, const std::string &_road_ip, void *_pdata)
         {
@@ -1028,6 +1087,22 @@ gate_state_machine::gate_state_machine(const std::string &_road_ip, const std::s
         };
         zh_hk_subcribe_event(_road_ip, tmp_cfg);
     }
+    if (_qr_ip.length() > 0)
+    {
+        zh_sub_callback_cfg tmp_cfg;
+        tmp_cfg.pData = this;
+        tmp_cfg.callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata)
+        {
+            if (_qr_code.length() > 0)
+            {
+                auto pthis = (gate_state_machine *)_pdata;
+                pthis->m_log.log("read qr code:%s", _qr_code.c_str());
+                pthis->proc_trigger_qr_code(_qr_code);
+                pthis->trigger_sm();
+            }
+        };
+        zh_qr_subscribe(_qr_ip, tmp_cfg);
+    }
     m_cur_state.reset(new gate_sm_vehicle_come());
 }
 gate_state_machine::~gate_state_machine()
@@ -1038,6 +1113,7 @@ gate_state_machine::~gate_state_machine()
         id_reader_timer = -1;
     }
     zh_hk_unsubcribe_event(road_ip);
+    zh_qr_unsubscribe(qr_ip);
 }
 void gate_state_machine::clean_bound_info()
 {
@@ -1074,7 +1150,7 @@ void gate_state_machine::gate_cast_reject()
 bool gate_state_machine::should_open()
 {
     bool ret = false;
-    auto cur_vehicle = ctrl_policy.pass_permit(param.vehicle_number, param.id_no, "");
+    auto cur_vehicle = ctrl_policy.pass_permit(param.vehicle_number, param.id_no, param.qr_code);
     if (cur_vehicle.length() > 0)
     {
         auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
@@ -1112,11 +1188,16 @@ bool gate_state_machine::should_open()
 
 void gate_state_machine::record_vehicle_pass()
 {
-    m_log.log("入场落库");
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", ctrl_policy.pass_permit(param.vehicle_number, param.id_no, "").c_str());
-    if (vo && vo->status == 1)
+    m_log.log("出入场落库");
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", ctrl_policy.pass_permit(param.vehicle_number, param.id_no, param.qr_code).c_str());
+    if (vo && vo->status == 1 && is_entry)
     {
         auto status = zh_sql_order_status::make_in_status();
+        vo->push_status(status);
+    }
+    if (!is_entry && vo)
+    {
+        auto status = zh_sql_order_status::make_end_status();
         vo->push_status(status);
     }
 }
@@ -1128,6 +1209,16 @@ void gate_state_machine::proc_trigger_id_no(const std::string &_id_no)
 void gate_state_machine::proc_trigger_vehicle_number(const std::string &_vehicle_number)
 {
     param.vehicle_number = _vehicle_number;
+}
+void gate_state_machine::proc_trigger_qr_code(const std::string &_qr_code)
+{
+    auto order_number_begin = _qr_code.find_last_of('/') + 1;
+    auto order_number_end = _qr_code.find_last_of('\r');
+    if (order_number_begin > _qr_code.length() || order_number_end > _qr_code.length())
+    {
+        return;
+    }
+    param.qr_code = _qr_code.substr(order_number_begin, order_number_end - order_number_begin);
 }
 std::shared_ptr<gate_state_machine> vehicle_order_center_handler::get_gate_sm(const std::string &_road_way)
 {

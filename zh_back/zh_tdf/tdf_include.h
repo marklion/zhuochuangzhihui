@@ -173,6 +173,7 @@ class tdf_main {
     tdf_main();
 public:
     bool open_listen(unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
+    bool connect_remote(const std::string &_ip, unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
     void close_listen(unsigned short _port);
     bool run();
     void send_data(const std::string &_conn_chrct, const std::string &_data);

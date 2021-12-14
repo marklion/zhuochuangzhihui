@@ -8,6 +8,7 @@
 #include "HCNetSDK.h"
 // #include "plaympeg4.h"
 #include <functional>
+#include "../../zh_rpc_server/zh_rpc_util.h"
 
 enum zh_hk_gate_control_cmd {
     zh_hk_gate_close = 0,
@@ -24,11 +25,7 @@ enum zh_hk_led_type {
     zh_hk_led_exit_scale,
 };
 
-struct hk_sub_callback_cfg {
-    void *pData = nullptr;
-    void (*callback)(const std::string &, const std::string &, void *);
-};
-void zh_hk_subcribe_event(const std::string &_road_ip, hk_sub_callback_cfg _callback);
+void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback);
 void zh_hk_unsubcribe_event(const std::string &_road_ip);
 void zh_hk_manual_trigger(const std::string &_road_ip);
 void zh_hk_clear_event();
