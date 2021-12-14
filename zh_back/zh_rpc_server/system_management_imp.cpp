@@ -8,6 +8,7 @@
 #include "../zh_id_reader/lib/zh_id_reader.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
 #include "../zh_scale/lib/zh_scale.h"
+#include "../zh_printer/lib/zh_printer.h"
 #include "vehicle_order_center_imp.h"
 
 
@@ -158,29 +159,16 @@ bool system_management_handler::raster_is_block(const std::string &raster_ip)
 
 bool system_management_handler::print_content(const std::string &printer_ip, const std::string &content, const std::string &qr_code)
 {
-    bool ret = false;
-    std::string print_cmd = "/bin/zh_sprt_printer " + printer_ip + " \"" + content + "\" \"" + qr_code + "\"";
-
     tdf_log tmp_log("printer " + printer_ip);
     tmp_log.log("print:content:%s, qr_code:%s", content.c_str(), qr_code.c_str());
-    auto fp = popen(print_cmd.c_str(), "r");
-    if (fp)
+    zh_printer_dev tmp(printer_ip);
+    tmp.print_string(content);
+    if (qr_code.length() > 0)
     {
-        tdf_log printer_log("printer");
-        std::string err_ret;
-        char tmp;
-        while (fread(&tmp, 1, 1, fp) > 0)
-        {
-            err_ret.push_back(tmp);
-        }
-        printer_log.err(err_ret);
-        if (0 == pclose(fp))
-        {
-            ret = true;
-        }
+        tmp.print_qr(qr_code);
     }
 
-    return ret;
+    return true;
 }
 
 void system_management_handler::read_id_no(std::string &_return, const std::string &id_reader_ip)

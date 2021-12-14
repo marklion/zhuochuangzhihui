@@ -15,7 +15,8 @@ find_library(ID_READER libzh_id_reader.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(HK_GATE libzh_hk_gate.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(SCALE libzh_scale.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(ZH_QR libzh_qr.so ${PRJ_INTERNAL_BUILD}/lib)
+find_library(ZH_PRINTER libzh_printer.so ${PRJ_INTERNAL_BUILD}/lib)
 
 add_library(zh_rpc_server SHARED ${RPC_SRC} ${RPC_IMP_SRC})
 
-target_link_libraries(zh_rpc_server pthread rt thrift uuid ${SQLITE_ORM_LIB} ${TDF_LIB} ${RASTER_LIB} ${ID_READER} ${HK_GATE} ${SCALE} ${ZH_QR})
+target_link_libraries(zh_rpc_server pthread rt thrift uuid ${SQLITE_ORM_LIB} ${TDF_LIB} ${RASTER_LIB} ${ID_READER} ${HK_GATE} ${SCALE} ${ZH_QR} ${ZH_PRINTER})

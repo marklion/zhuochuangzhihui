@@ -789,11 +789,11 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     std::string printer_ip;
     if (bound_scale.entry_config.cam_ip == enter_cam_ip)
     {
-        printer_ip = bound_scale.entry_printer_ip;
+        printer_ip = bound_scale.exit_printer_ip;
     }
     else
     {
-        printer_ip = bound_scale.exit_printer_ip;
+        printer_ip = bound_scale.entry_printer_ip;
     }
     system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
 }
