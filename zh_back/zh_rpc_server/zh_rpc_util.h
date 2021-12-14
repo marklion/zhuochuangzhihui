@@ -21,6 +21,10 @@
 #define ZH_SCALE_PORT 30201
 #define ZH_ID_READER_PORT 30202
 #define ZH_PRINTER_PORT 30203
+#define ZH_QR_PORT 30204
 
-
+struct zh_sub_callback_cfg {
+    void *pData = nullptr;
+    void (*callback)(const std::string &, const std::string &, void *);
+};
 #endif // _ZH_RPC_UTIL_H_

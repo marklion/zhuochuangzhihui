@@ -41,10 +41,12 @@ public:
 struct scale_gate_trigger_param {
     std::string vehicle_number;
     std::string id_no;
+    std::string qr_code;
     void clear()
     {
         vehicle_number.clear();
         id_no.clear();
+        qr_code.clear();
     }
 };
 
@@ -79,6 +81,7 @@ public:
     void open_trigger_switch();
     void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);
     void proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip);
+    void proc_trigger_qr(const std::string &_qr_code, const std::string &_road_ip);
     void record_entry_exit();
     scale_state_machine(const device_scale_config &_config);
     virtual ~scale_state_machine();
@@ -113,6 +116,7 @@ public:
     tdf_log m_log;
     std::string road_ip;
     std::string id_reader_ip;
+    std::string qr_ip;
     int id_reader_timer = -1;
     bool is_entry = false;
     tdf_log &get_log() {
@@ -120,7 +124,7 @@ public:
     }
     scale_gate_trigger_param param;
     gate_ctrl_policy ctrl_policy;
-    gate_state_machine(const std::string &_road_way, const std::string &_id_reader_ip, bool _is_entry);
+    gate_state_machine(const std::string &_road_way, const std::string &_id_reader_ip, const std::string &_qr_ip, bool _is_entry);
     virtual ~gate_state_machine();
     void clean_bound_info();
     void open_door();
@@ -130,6 +134,7 @@ public:
     void record_vehicle_pass();
     void proc_trigger_id_no(const std::string &_id_no);
     void proc_trigger_vehicle_number(const std::string &_vehicle_number);
+    void proc_trigger_qr_code(const std::string &_qr_code);
 };
 class vehicle_order_center_handler : public vehicle_order_centerIf
 {
@@ -155,9 +160,9 @@ public:
             }
             for (auto &itr:dc.gate)
             {
-                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, true);
+                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip,itr.entry_qr_ip , true);
                 gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
-                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, false);
+                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip,itr.exit_qr_ip, false);
                 gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
             }
         }

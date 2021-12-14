@@ -8,6 +8,7 @@
             <van-button size="small" type="info" icon="replay" @click="init_vehicle">刷新</van-button>
         </template>
     </van-cell>
+    <vue-qr :text="cur_url()" :size="200"></vue-qr>
     <div style="margin:15px;">
         <van-button v-if="!cur_vehicle.registered" block type="info" @click="driver_check_in(false)">排号</van-button>
         <van-button v-else block type="danger" @click="driver_check_in(true)">取消排号</van-button>
@@ -19,16 +20,23 @@
 import Vue from 'vue';
 import Vant from 'vant';
 import 'vant/lib/index.css';
+import vueQr from 'vue-qr'
 Vue.use(Vant);
 export default {
     name: 'CheckIn',
+    components: {
+        vueQr
+    },
     data: function () {
         return {
             cur_vehicle: {
                 basic_info: {},
                 confirmed: false,
                 registered: false,
-                has_called: false
+                has_called: false,
+            },
+            cur_url: function () {
+                return document.location.href;
             },
         };
     },

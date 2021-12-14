@@ -455,6 +455,45 @@ void tdf_main::stop()
     g_exit_flag = true;
 }
 
+bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc)
+{
+    bool ret = false;
+    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd >= 0)
+    {
+        struct sockaddr_in server_addr = {
+            .sin_family = AF_INET,
+            .sin_port = ntohs(_port),
+            .sin_addr = {.s_addr = inet_addr(_ip.c_str())}};
+        if (0 == connect(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr)))
+        {
+            std::string chcrt;
+            chcrt.append(inet_ntoa(server_addr.sin_addr));
+            chcrt.append(" " + std::to_string(ntohs(server_addr.sin_port)));
+            chcrt.append(std::to_string(socket_fd));
+            auto data_channel = new tdf_data(socket_fd, chcrt, _data_proc, _hup_hook);
+            struct epoll_event ev = {
+                .events = EPOLLIN,
+                .data = {.ptr = data_channel}};
+
+            if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev))
+            {
+                g_data_map[chcrt] = data_channel;
+                if (_con_hook)
+                {
+                    _con_hook(chcrt);
+                }
+                ret = true;
+            }
+            else
+            {
+                delete data_channel;
+            }
+        }
+    }
+
+    return ret;
+}
 int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private)
 {
     int ret = -1;
