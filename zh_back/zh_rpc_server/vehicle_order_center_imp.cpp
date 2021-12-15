@@ -475,7 +475,7 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
     if (stuff)
     {
         stuff->inventory += vo->p_weight - vo->m_weight;
-        stuff->update_record();
+        stuff->update_record(ssid);
     }
 
     ret = true;
@@ -748,7 +748,7 @@ std::unique_ptr<zh_sql_vehicle_order>scale_state_machine::record_order()
             if (stuff)
             {
                 stuff->inventory = vo->p_weight - vo->m_weight;
-                stuff->update_record();
+                stuff->update_record(vo->order_number);
             }
             device_config dc;
             system_management_handler::get_inst()->internal_get_device_config(dc);

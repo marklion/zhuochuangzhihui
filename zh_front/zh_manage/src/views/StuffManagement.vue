@@ -6,6 +6,7 @@
         </el-col>
         <el-col>
             <div style="margin-right:10px; text-align:right">
+                <el-button size="mini" type="warning" icon="el-icon-search" @click="download_audit_log">下载审计日志</el-button>
                 <table-import-export @proc_table="proc_upload_stuff" :sample_table="sample_table" export_name="物料导出表.xlsx" :export_table="all_stuff" :item_name_map="col_map"></table-import-export>
                 <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_stuff_diag = true">新增</el-button>
             </div>
@@ -100,6 +101,10 @@ export default {
         };
     },
     methods: {
+        download_audit_log:function() {
+            var FileSaver = require('file-saver');
+            FileSaver.saveAs(this.$remote_file_url + '/audit_log.log', "审计日志.log");
+        },
         proc_upload_stuff: async function (_array) {
             var vue_this = this;
             for (var i = 0; i < _array.length; i++) {
