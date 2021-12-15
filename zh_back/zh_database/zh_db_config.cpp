@@ -1,5 +1,6 @@
 #include "zh_db_config.h"
 #include <uuid/uuid.h>
+#include <fstream>
 
 std::string zh_rpc_util_get_timestring(time_t _time)
 {
@@ -102,4 +103,76 @@ void zh_sql_vehicle_order::push_status(zh_sql_order_status &_status)
     {
         _status.remove_record();
     }
+}
+
+static void zh_sql_write_audig_log(const std::string &_content)
+{
+    tdf_log al("操作审计", "/manage_dist/logo_res/audit_log.log", "/manage_dist/audit_log.log");
+    al.log(_content);
+}
+
+bool zh_sql_stuff::insert_record(const std::string &ssid)
+{
+    bool ret = false;
+    std::string user_name = "派车单" + ssid + "自动";
+    std::string opt_name = " 新增物料：";
+    std::string stuff_name = this->name;
+    std::string unit_name = this->unit;
+    std::string inventory_name = std::to_string(this->inventory);
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (user)
+    {
+        user_name = user->name;
+    }
+    auto content = user_name + opt_name + stuff_name + "，单位是：" + unit_name + "， 库存为：" + inventory_name;
+    zh_sql_write_audig_log(content);
+    ret = sql_tree_base::insert_record();
+
+    return ret;
+}
+bool zh_sql_stuff::update_record(const std::string &ssid)
+{
+    bool ret = false;
+    std::string user_name = "派车单" + ssid + "自动";
+    std::string opt_name = " 修改物料, 原物料信息：";
+    std::string orig_stuff_name;
+    std::string orig_unit_name;
+    std::string orig_inventory_name;
+    auto orig_record = search_record<zh_sql_stuff>(get_pri_id());
+    if (orig_record)
+    {
+        orig_stuff_name = orig_record->name;
+        orig_unit_name = orig_record->unit;
+        orig_inventory_name = std::to_string(orig_record->inventory);
+    }
+    std::string cur_stuff_name = this->name;
+    std::string cur_unit_name = this->unit;
+    std::string cur_inventory_name = std::to_string(this->inventory);
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (user)
+    {
+        user_name = user->name;
+    }
+    auto content = user_name + opt_name + orig_stuff_name + "|单位：" + orig_unit_name + "|库存：" + orig_inventory_name;
+    content += ",修改后物料信息：" + cur_stuff_name + "|单位：" + cur_unit_name + "|库存：" + cur_inventory_name;
+    zh_sql_write_audig_log(content);
+    ret = sql_tree_base::update_record();
+
+    return ret;
+}
+void zh_sql_stuff::remove_record(const std::string &ssid)
+{
+    std::string user_name = "派车单" + ssid + "自动";
+    std::string opt_name = " 删除物料：";
+    std::string stuff_name = this->name;
+    std::string unit_name = this->unit;
+    std::string inventory_name = std::to_string(this->inventory);
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (user)
+    {
+        user_name = user->name;
+    }
+    auto content = user_name + opt_name + stuff_name + "，单位是：" + unit_name + "， 库存为：" + inventory_name;
+    zh_sql_write_audig_log(content);
+    sql_tree_base::remove_record();
 }

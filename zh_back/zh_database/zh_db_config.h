@@ -165,6 +165,9 @@ public:
     {
         return "stuff_table";
     }
+    bool insert_record(const std::string &ssid);
+    bool update_record(const std::string &ssid);
+    void remove_record(const std::string &ssid);
 };
 
 class zh_sql_vehicle : public sql_tree_base
@@ -216,7 +219,8 @@ public:
     long m_permit = 0;
     long m_registered = 0;
     long m_called = 0;
-    zh_sql_vehicle_order() {
+    zh_sql_vehicle_order()
+    {
         add_parent_type<zh_sql_file>("attachment");
     }
     virtual std::vector<sqlite_orm_column> self_columns_defined()
@@ -250,13 +254,15 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
 std::string zh_rpc_util_gen_ssid();
 
-class zh_sql_order_status:public sql_tree_base{
+class zh_sql_order_status : public sql_tree_base
+{
 public:
     std::string name;
     std::string timestamp;
     std::string user_name;
     long step = 0;
-    zh_sql_order_status() {
+    zh_sql_order_status()
+    {
         add_parent_type<zh_sql_vehicle_order>("belong_order");
     }
     virtual std::vector<sqlite_orm_column> self_columns_defined()
@@ -272,7 +278,8 @@ public:
     {
         return "order_status_table";
     }
-    static zh_sql_order_status make_create_status(const std::string &ssid = "") {
+    static zh_sql_order_status make_create_status(const std::string &ssid = "")
+    {
         zh_sql_order_status ret;
         ret.name = "创建";
         ret.timestamp = zh_rpc_util_get_timestring();

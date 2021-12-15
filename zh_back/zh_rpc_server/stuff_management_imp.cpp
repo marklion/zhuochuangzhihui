@@ -35,7 +35,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.name = stuff.name;
     tmp.unit = stuff.unit;
 
-    ret = tmp.insert_record();
+    ret = tmp.insert_record(ssid);
 
     return ret;
 }
@@ -61,7 +61,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->name = stuff.name;
     exist_record->unit = stuff.unit;
 
-    ret = exist_record->update_record();
+    ret = exist_record->update_record(ssid);
 
     return ret;
 }
@@ -80,7 +80,7 @@ bool stuff_management_handler::del_stuff(const std::string &ssid, const int64_t 
         ZH_RETURN_NO_STUFF();
     }
 
-    exist_record->remove_record();
+    exist_record->remove_record(ssid);
     ret = true;
 
     return ret;
