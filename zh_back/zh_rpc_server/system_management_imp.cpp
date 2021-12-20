@@ -99,7 +99,7 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
     vehicle_order_center_handler::ssm_map.clear();
     tmp.AddEmptySubArray("gate");
     tmp.AddEmptySubArray("scale");
-    for (auto &itr:config.gate)
+    for (auto &itr : config.gate)
     {
         neb::CJsonObject gate;
         gate.Add("entry_id_reader_ip", itr.entry_id_reader_ip);
@@ -116,9 +116,9 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("entry_qr_ip", itr.entry_qr_ip);
         gate.Add("exit_qr_ip", itr.exit_qr_ip);
         tmp["gate"].Add(gate);
-        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip,itr.entry_qr_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, itr.entry_qr_ip, true);
         vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
-        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip,itr.exit_qr_ip, false);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, itr.exit_qr_ip, false);
         vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
     }
 
@@ -228,4 +228,33 @@ void system_management_handler::get_road_status(road_status &_return, const std:
 double system_management_handler::read_scale(const std::string &scale_ip)
 {
     return get_current_weight(scale_ip, ZH_SCALE_PORT);
+}
+
+void system_management_handler::run_update(const std::string &ssid, const std::string &pack_path)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    int orig_fd = open(pack_path.c_str(), O_RDONLY);
+    int new_fd = open("/root/install.sh", O_WRONLY | O_CREAT | O_TRUNC, 0777);
+    if (orig_fd >= 0 && new_fd >= 0)
+    {
+        long buf;
+        int read_len = 0;
+        while ((read_len = read(orig_fd, &buf, sizeof(buf))) > 0)
+        {
+            write(new_fd, &buf, read_len);
+        }
+    }
+    if (orig_fd >= 0)
+    {
+        close(orig_fd);
+    }
+    if (new_fd >= 0)
+    {
+        close(new_fd);
+    }
+    exit(-1);
 }

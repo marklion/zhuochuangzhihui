@@ -37,6 +37,7 @@ public:
     virtual void get_road_status(road_status &_return, const std::string &gate_code);
     void internal_get_device_config(device_config &_return);
     virtual double read_scale(const std::string &scale_ip);
+    virtual void run_update(const std::string &ssid, const std::string &pack_path);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
