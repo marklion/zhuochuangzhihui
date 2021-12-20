@@ -33,6 +33,17 @@ bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd);
 bool zh_hk_ctrl_led(const std::string &_led_ip, const std::string &_content);
 bool zh_hk_ctrl_led(const std::string &_led_ip, zh_hk_led_type content_type, const std::string &_vehicle_number);
 bool zh_hk_ctrl_voice(const std::string &_led_ip, const std::string &_content);
+bool zh_hk_cast_empty(const std::string &_led_ip);
+bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_no_order(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_holding(const std::string &_led_ip);
+bool zh_hk_cast_exit_scale(const std::string &_led_ip);
+bool zh_hk_cast_exit_busy(const std::string &_led_ip);
+bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no);
 
 
 #endif // _ZH_HK_GATE_H_

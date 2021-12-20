@@ -259,10 +259,10 @@ struct hk_led_connector
         {
             g_log.log("send to led:");
             g_log.log_package(_cmd.data(), _cmd.size());
-            if (_cmd.size() == send(socket_fd, _cmd.data(), _cmd.size(), MSG_DONTWAIT))
+            if (_cmd.size() == send(socket_fd, _cmd.data(), _cmd.size(), 0))
             {
                 char buff[1024];
-                auto recv_len = recv(socket_fd, buff, sizeof(buff), 0);
+                auto recv_len = recv(socket_fd, buff, sizeof(buff), MSG_DONTWAIT);
                 if (recv_len > 0)
                 {
                     g_log.log("recv from led:");
@@ -420,4 +420,175 @@ void zh_hk_manual_trigger(const std::string &_road_ip)
             g_log.err("failed to trigger cap:%s, error_code:%d", _road_ip.c_str(), NET_DVR_GetLastError());
         }
     }
+}
+
+enum hk_cast_type {
+    empty,enter_scale, no_order, no_call, no_confirm, holding, exit_scale, busy, welcome, cannot_leave, leave_bye
+};
+
+static std::string file_type_map[] = {
+    "empty","enter_scale", "no_order", "no_call", "no_confirm", "holding", "exit_scale","busy", "welcome", "cannot_leave", "leave_bye"
+
+};
+
+std::string hk_read_cmd_from_file(hk_cast_type _type, const std::string &_plate_no)
+{
+    std::string ret;
+    std::string file_name = "/database/" + file_type_map[_type] + ".txt";
+    int fd = open(file_name.c_str(), O_RDONLY);
+    if (fd >= 0)
+    {
+        char byte_char[3] = {0};
+        char tmp_char = 0;
+        while (2 == read(fd, byte_char, 2))
+        {
+            sscanf(byte_char, "%02x", &tmp_char);
+            ret.push_back(tmp_char);
+        }
+        close(fd);
+    }
+    unsigned char sample_vehicle[] = {0xc3, 0xc9, 0x4b, 0x31, 0x32, 0x33, 0x34, 0x35};
+    unsigned char sample_date[] {0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00, 0xc5, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x21, 0x01, 0x12, 0x20, 0x10, 0x32, 0x33, 0x00, 0x00, 0x0d, 0x0a};
+    time_t cur_time;
+    time(&cur_time);
+    tm time_str;
+    localtime_r(&cur_time, &time_str);
+    sample_date[20] = ((time_str.tm_year + 1900 - 2000) % 10) | ((time_str.tm_year + 1900 - 2000) / 10 * 16);
+    sample_date[21] = time_str.tm_wday;
+    sample_date[22] = ((time_str.tm_mon + 1) % 10) | ((time_str.tm_mon + 1) / 10 * 16);
+    sample_date[23] = (time_str.tm_mday % 10) | (time_str.tm_mday / 10 * 16);
+    sample_date[24] = (time_str.tm_hour % 10) | (time_str.tm_hour / 10 * 16);
+    sample_date[25] = (time_str.tm_min % 10) | (time_str.tm_min / 10 * 16);
+    sample_date[26] = (time_str.tm_sec % 10) | (time_str.tm_sec / 10 * 16);
+
+    char *tmp_buff = (char *)calloc(1, ret.length());
+    if (tmp_buff != NULL)
+    {
+        memcpy(tmp_buff, ret.data(), ret.length());
+        if (_plate_no.length() > 0)
+        {
+            auto gbk_plate_no = utf2gbk(_plate_no);
+            for (auto i = 0; i < ret.length(); i++)
+            {
+                if (0 == memcmp(sample_vehicle, tmp_buff + i, sizeof(sample_vehicle)))
+                {
+                    memcpy(tmp_buff + i, gbk_plate_no.data(), sizeof(sample_vehicle));
+                }
+            }
+        }
+
+        ret.assign(tmp_buff, ret.length());
+        free(tmp_buff);
+    }
+    ret.insert(0, (char *)sample_date, sizeof(sample_date));
+
+    return ret;
+}
+
+static std::map<std::string, int> g_led_timer_map;
+
+bool zh_hk_cast_empty(const std::string &_led_ip)
+{
+    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
+    {
+        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
+        g_led_timer_map.erase(_led_ip);
+    }
+    hk_led_connector hkc(_led_ip);
+    return hkc.send_cmd(hk_read_cmd_from_file(empty, ""));
+}
+
+void zh_hk_cast_auto_empty(int _second, const std::string &_led_ip)
+{
+    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
+    {
+        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
+        g_led_timer_map.erase(_led_ip);
+    }
+    g_led_timer_map[_led_ip] = tdf_main::get_inst().start_timer(
+        _second,
+        [](void *_private)
+        {
+            auto led_ip = (std::string *)_private;
+            zh_hk_cast_empty(*led_ip);
+            free(_private);
+        },
+        new std::string(_led_ip));
+}
+
+bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(3, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(enter_scale, _plate_no));
+}
+bool zh_hk_cast_no_order(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(6, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(no_order, _plate_no));
+}
+bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(6, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(no_call, _plate_no));
+}
+bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(6, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(no_confirm, _plate_no));
+}
+bool zh_hk_cast_holding(const std::string &_led_ip)
+{
+    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
+    {
+        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
+        g_led_timer_map.erase(_led_ip);
+    }
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(holding, ""));
+}
+bool zh_hk_cast_exit_scale(const std::string &_led_ip)
+{
+    zh_hk_cast_auto_empty(3, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(exit_scale, ""));
+}
+bool zh_hk_cast_exit_busy(const std::string &_led_ip)
+{
+    zh_hk_cast_auto_empty(3, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(busy, ""));
+}
+
+bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(3, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(welcome, _plate_no));
+}
+bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(6, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(cannot_leave, _plate_no));
+}
+bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no)
+{
+
+    zh_hk_cast_auto_empty(3, _led_ip);
+    hk_led_connector hkc(_led_ip);
+
+    return hkc.send_cmd(hk_read_cmd_from_file(leave_bye, _plate_no));
 }

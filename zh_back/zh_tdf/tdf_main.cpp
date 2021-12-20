@@ -149,10 +149,12 @@ struct tdf_timer_node : public Itdf_io_channel
             int cur_handle = m_handle;
             while (times--)
             {
-                tdf_timer_lock a;
-                if (nullptr == g_timer_map[cur_handle])
                 {
-                    break;
+                    tdf_timer_lock a;
+                    if (nullptr == g_timer_map[cur_handle])
+                    {
+                        break;
+                    }
                 }
                 m_proc(m_private);
             }

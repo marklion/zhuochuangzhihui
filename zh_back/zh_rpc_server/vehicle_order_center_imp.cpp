@@ -551,6 +551,8 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
         zh_qr_subscribe(_config.exit_qr_ip, tmp_cfg);
     }
     m_cur_state.reset(new scale_sm_vehicle_come());
+    zh_hk_cast_empty(_config.entry_config.led_ip);
+    zh_hk_cast_empty(_config.exit_config.led_ip);
 }
 scale_state_machine::~scale_state_machine()
 {
@@ -649,7 +651,11 @@ void scale_state_machine::clean_bound_info()
 bool scale_state_machine::should_open()
 {
     bool ret = false;
-
+    if ((entry_param.id_no == "" && entry_param.qr_code == "" && entry_param.vehicle_number == "") &&
+        (exit_param.id_no == "" && exit_param.qr_code == "" && exit_param.vehicle_number == ""))
+    {
+        return false;
+    }
     std::string tmp_vehicle_entry = ctrl_policy.pass_permit(entry_param.vehicle_number, entry_param.id_no, entry_param.qr_code);
     std::string tmp_vehicle_exit = ctrl_policy.pass_permit(exit_param.vehicle_number, exit_param.id_no, exit_param.qr_code);
     auto cur_vehicle = tmp_vehicle_entry.length() > 0 ? tmp_vehicle_entry : tmp_vehicle_exit;
@@ -659,17 +665,13 @@ bool scale_state_machine::should_open()
         auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
         if (vo)
         {
-            if (vo->p_weight == 0)
+            if (vo->p_weight == 0 && vo->m_called)
             {
                 ret = true;
             }
-            else if (vo->m_weight == 0 && vo->m_permit)
+            else if (vo->m_weight == 0 && vo->m_permit && vo->m_called)
             {
                 ret = true;
-            }
-            else if (vo->m_weight == 0 && false == vo->m_permit)
-            {
-                zh_hk_ctrl_led(led_ip, zh_hk_led_cannot_enter_scale, cur_vehicle);
             }
         }
         else
@@ -728,7 +730,7 @@ bool scale_state_machine::scale_clear()
     return ret;
 }
 
-std::unique_ptr<zh_sql_vehicle_order>scale_state_machine::record_order()
+std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 {
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
     if (vo)
@@ -816,7 +818,7 @@ void scale_state_machine::proc_trigger_id_read(const std::string &_id_no, const 
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
         }
     }
     if (_id_reader_ip == bound_scale.exit_id_reader_ip)
@@ -827,7 +829,7 @@ void scale_state_machine::proc_trigger_id_read(const std::string &_id_no, const 
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.exit_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
         }
     }
 }
@@ -850,7 +852,7 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
         }
     }
     else if (_road_ip == bound_scale.exit_qr_ip)
@@ -861,7 +863,7 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
         }
     }
 }
@@ -876,7 +878,7 @@ void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_numbe
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.entry_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
         }
     }
     if (_road_ip == bound_scale.exit_config.cam_ip)
@@ -887,7 +889,7 @@ void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_numbe
         }
         else
         {
-            zh_hk_ctrl_voice(bound_scale.exit_config.led_ip, SCALE_BUSY_MSG_CONTENT);
+            zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
         }
     }
 }
@@ -917,28 +919,22 @@ void scale_state_machine::record_entry_exit()
 
 void scale_state_machine::broadcast_enter_scale()
 {
-    std::string content = bound_vehicle_number + "\n";
-    content += "请上磅\n";
-    std::string led_ip;
+    std::string hold_led_ip;
     if (bound_scale.entry_config.cam_ip == enter_cam_ip)
     {
-        led_ip = bound_scale.entry_config.led_ip;
+        hold_led_ip = bound_scale.exit_config.led_ip;
     }
     else if (bound_scale.exit_config.cam_ip == enter_cam_ip)
     {
-        led_ip = bound_scale.exit_config.led_ip;
+        hold_led_ip = bound_scale.entry_config.led_ip;
     }
-    m_log.log("上磅播报：%s", content.c_str());
-    if (led_ip.length() > 0)
+    if (hold_led_ip.length() > 0)
     {
-        zh_hk_ctrl_led(led_ip, zh_hk_led_enter_scale, bound_vehicle_number);
-        zh_hk_ctrl_voice(led_ip, content);
+        zh_hk_cast_holding(hold_led_ip);
     }
 }
 void scale_state_machine::broadcast_leave_scale()
 {
-    std::string content = bound_vehicle_number + "\n";
-    content += "请下磅并取称重小票\n";
     std::string led_ip;
     if (bound_scale.entry_config.cam_ip == exit_cam_ip)
     {
@@ -948,11 +944,9 @@ void scale_state_machine::broadcast_leave_scale()
     {
         led_ip = bound_scale.exit_config.led_ip;
     }
-    m_log.log("下榜播报：%s", content.c_str());
     if (led_ip.length() > 0)
     {
-        zh_hk_ctrl_led(led_ip, zh_hk_led_exit_scale, bound_vehicle_number);
-        zh_hk_ctrl_voice(led_ip, content);
+        zh_hk_cast_exit_scale(led_ip);
     }
 }
 
@@ -1054,7 +1048,7 @@ gate_state_machine::gate_state_machine(
     const std::string &_id_reader_ip,
     const std::string &_qr_ip,
     bool _is_entry) : m_log("gate sm " + _road_ip),
-    road_ip(_road_ip), id_reader_ip(_id_reader_ip), qr_ip(_qr_ip), is_entry(_is_entry)
+                      road_ip(_road_ip), id_reader_ip(_id_reader_ip), qr_ip(_qr_ip), is_entry(_is_entry)
 {
     if (_id_reader_ip.length() > 0)
     {
@@ -1127,24 +1121,65 @@ void gate_state_machine::open_door()
 void gate_state_machine::gate_cast_accept()
 {
     m_log.log("允许通过提示：" + param.vehicle_number);
+    device_config dc;
+    system_management_handler::get_inst()->internal_get_device_config(dc);
+    std::string led_ip;
+    for (auto &itr:dc.gate)
+    {
+        if (road_ip == itr.entry_config.cam_ip)
+        {
+            led_ip = itr.entry_config.led_ip;
+            break;
+        }
+    }
     if (is_entry)
     {
-        zh_hk_ctrl_led(road_ip, zh_hk_led_enter_gate, param.vehicle_number);
-        zh_hk_ctrl_voice(road_ip, "欢迎光临");
+        zh_hk_cast_welcome(led_ip, param.vehicle_number);
     }
     else
     {
-        zh_hk_ctrl_led(road_ip, zh_hk_led_exit_gate, param.vehicle_number);
-        zh_hk_ctrl_voice(road_ip, "一路顺风");
+        zh_hk_cast_leave_bye(led_ip, param.vehicle_number);
     }
 }
 void gate_state_machine::gate_cast_reject()
 {
     m_log.log("不允许通过提示" + param.vehicle_number);
+    device_config dc;
+    system_management_handler::get_inst()->internal_get_device_config(dc);
+    std::string led_ip;
+    for (auto &itr : dc.gate)
+    {
+        if (road_ip == itr.entry_config.cam_ip)
+        {
+            led_ip = itr.entry_config.led_ip;
+            break;
+        }
+        if (road_ip == itr.exit_config.cam_ip)
+        {
+            led_ip = itr.exit_config.led_ip;
+            break;
+        }
+    }
+    std::string cur_vehicle = ctrl_policy.pass_permit(param.vehicle_number, param.id_no, param.qr_code);
+    if (cur_vehicle == "")
+    {
+        cur_vehicle = "当前车辆";
+    }
     if (!is_entry)
     {
-        zh_hk_ctrl_led(road_ip, zh_hk_led_cannot_exit_gate, param.vehicle_number);
-        zh_hk_ctrl_voice(road_ip, "未完成二次称重");
+        zh_hk_cast_cannot_leave(led_ip, cur_vehicle);
+    }
+    else
+    {
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
+        if (!vo)
+        {
+            zh_hk_cast_no_order(led_ip, cur_vehicle);
+        }
+        else if (!vo->m_called)
+        {
+            zh_hk_cast_no_call(led_ip, cur_vehicle);
+        }
     }
 }
 bool gate_state_machine::should_open()
@@ -1158,7 +1193,7 @@ bool gate_state_machine::should_open()
         {
             if (vo)
             {
-                if (vo->status == 1)
+                if (vo->status == 1 && vo->m_called)
                 {
                     ret = true;
                 }
@@ -1267,7 +1302,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
 
     if (judge_permit)
     {
-        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100 AND m_called != 0", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
+        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
         for (auto &itr : vos)
         {
             if (need_id && itr.driver_id != _id_no)
@@ -1279,6 +1314,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
                 continue;
             }
             ret = itr.main_vehicle_number;
+
             break;
         }
         if (ret.empty())
