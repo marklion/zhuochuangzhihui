@@ -289,6 +289,12 @@
                 </el-card>
             </el-dialog>
         </el-tab-pane>
+        <el-tab-pane label="系统维护" name="system_info">
+            <el-upload :action="$remote_url + '/upload/'" :limit="1" :on-success="confirm_update">
+                <el-button size="small" type="primary">点击上传</el-button>
+                <div slot="tip">请上传官方发布的升级包</div>
+            </el-upload>
+        </el-tab-pane>
     </el-tabs>
 </div>
 </template>
@@ -391,6 +397,22 @@ export default {
         };
     },
     methods: {
+        confirm_update: function (resp, file) {
+            var vue_this = this;
+            var real_path = resp.match(/^\/tmp\/.*/gm)[0];
+            this.$confirm('确定要更新吗', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("system_management", "run_update", [vue_this.$cookies.get("zh_ssid"), real_path]).finally(function () {
+                    vue_this.$alert('请稍后刷新页面', '正在更新', {
+                        confirmButtonText: '确定',
+                        callback: action => {}
+                    });
+                });
+            });
+        },
         open_gate_operate: function (_gate) {
             this.cur_opt_gate = {
                 ..._gate

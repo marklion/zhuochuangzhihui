@@ -31,3 +31,4 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libmodbus-dev nodejs
 RUN npm install -g pm2
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y vim valgrind
 COPY frpc* /bin/
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync
