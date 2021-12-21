@@ -258,3 +258,13 @@ void system_management_handler::run_update(const std::string &ssid, const std::s
     }
     exit(-1);
 }
+
+void system_management_handler::get_domain_name(std::string &_return)
+{
+    _return = std::string(getenv("BASE_URL")) + ".d8sis.cn";
+}
+
+void system_management_handler::get_oem_name(std::string &_return)
+{
+    _return = std::string(getenv("OEM_NAME"));
+}

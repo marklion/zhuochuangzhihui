@@ -235,12 +235,12 @@ export default {
                 company_name: [{
                     required: true,
                     message: "请选择对方公司",
-                    trigger: 'blur'
+                    trigger: ['blur', 'change']
                 }],
                 stuff_name: [{
                     required: true,
                     message: "请选择运送的货物",
-                    trigger: 'blur'
+                    trigger: ['blur', 'change']
                 }],
             },
             vehicle_selected: [],
@@ -257,12 +257,13 @@ export default {
                 driver_name: '',
                 stuff_name: '',
             },
+            domain_name:'',
 
         };
     },
     methods: {
         copy_check_in_link: function (_order) {
-            this.$copyText(this.$remote_url + '/#/check_in/' + _order.order_number);
+            this.$copyText(this.domain_name + '/#/check_in/' + _order.order_number);
             this.$message('链接已复制，建议发送给司机');
         },
         upload_attachment: function (_order) {
@@ -577,6 +578,9 @@ export default {
             resp.forEach((element, index) => {
                 vue_this.$set(vue_this.vehicle_for_select, index, element);
             });
+        });
+        vue_this.$call_remote_process("system_management", "get_domain_name", []).then(function (resp) {
+            vue_this.domain_name = resp;
         });
     },
 }

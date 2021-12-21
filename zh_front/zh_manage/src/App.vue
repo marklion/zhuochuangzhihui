@@ -5,7 +5,7 @@
             <el-row type="flex" justify="space-between" align="middle">
                 <el-col>
                     <div class="web_header_content_show">
-                        卓创智汇
+                        {{oem_name}}
                     </div>
                 </el-col>
                 <el-col :span="12">
@@ -109,6 +109,7 @@ export default {
     },
     data: function () {
         return {
+            oem_name:"卓创智汇",
             cur_menu: [{
                 permission_need: 2,
                 route_name: 'Home',
@@ -218,6 +219,12 @@ export default {
             }
         },
     },
+    beforeMount:function () {
+        var vue_this = this;
+        vue_this.$call_remote_process("system_management", "get_oem_name", []).then(function (resp) {
+            vue_this.oem_name = resp;
+        });
+    },
 }
 </script>
 
@@ -231,7 +238,7 @@ export default {
 }
 
 .web_header_show {
-    background-color: rgb(114, 57, 20);
+    background-color: #000c5e;
     height: 12vh;
 }
 
