@@ -38,6 +38,8 @@ public:
     void internal_get_device_config(device_config &_return);
     virtual double read_scale(const std::string &scale_ip);
     virtual void run_update(const std::string &ssid, const std::string &pack_path);
+    virtual void get_domain_name(std::string &_return);
+    virtual void get_oem_name(std::string &_return);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

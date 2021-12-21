@@ -14,6 +14,8 @@ DEVICE_CONFIG_FILE_INPUT="./device_config.json"
 DOCKER_IMG_NAME="zh_deploy:v1.0"
 SRC_DIR=`dirname $(realpath $0)`/../
 BASE_URL_INPUT=""
+OEM_NAME_INPUT=""
+
 is_in_container() {
     cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null
 }
@@ -32,7 +34,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 109`
+    line=`expr $line - 114`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -51,12 +53,12 @@ start_docker_con() {
     local DEVICE_CONFIG_FILE_PATH=`realpath ${DEVICE_CONFIG_FILE_INPUT}`
     local DEVICE_CONFIG_FILE_PATH=`dirname ${DEVICE_CONFIG_FILE_PATH}`
     local IMG_BED=`realpath $IMG_BED_INPUT`
-    local CON_ID=`docker create --privileged --restart=always -p ${PORT}:80 -e BASE_URL=${BASE_URL_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e HK_KEY="${HK_KEY_INPUT}" -e HK_SEC="${HK_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local CON_ID=`docker create --privileged --restart=always -p ${PORT}:80 -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e HK_KEY="${HK_KEY_INPUT}" -e HK_SEC="${HK_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start ${CON_ID}
 }
 
-while getopts "D:p:w:d:i:m:s:k:M:g:b:" arg
+while getopts "D:p:w:d:i:m:s:k:M:g:b:o:" arg
 do
     case $arg in
         D)
@@ -91,6 +93,9 @@ do
             ;;
         b)
             BASE_URL_INPUT=${OPTARG}
+            ;;
+        o)
+            OEM_NAME_INPUT=${OPTARG}
             ;;
         *)
             echo "invalid args"

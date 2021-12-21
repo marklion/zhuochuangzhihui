@@ -122,7 +122,7 @@
                     </el-upload>
                 </div>
                 <div v-else>
-                    <el-image style="width: 100%; flex-grow:1;" :src="$remote_file_url + cur_vehicle.basic_info.attachment" :preview-src-list="[$remote_file_url + cur_vehicle.basic_info.attachment]">
+                    <el-image fit="scale-down" style="width: 100%; flex-grow:1; height:250px;" :src="$remote_file_url + cur_vehicle.basic_info.attachment" :preview-src-list="[$remote_file_url + cur_vehicle.basic_info.attachment]">
                     </el-image>
                     <el-button v-if="cur_vehicle.basic_info.status <=1" type="danger" size="medium" @click="delete_attachment">删除附件</el-button>
                 </div>

@@ -34,10 +34,10 @@
                 <el-input v-model="focus_stuff.name" placeholder="请输入物料名称"></el-input>
             </el-form-item>
             <el-form-item label="计量单位" prop="unit">
-                <el-input v-model="focus_stuff.unit" placeholder="请输入计量单位"></el-input>
+                <el-autocomplete v-model="focus_stuff.unit" :fetch-suggestions="fetch_unit" placeholder="请输入物料单位"></el-autocomplete>
             </el-form-item>
             <el-form-item label="库存" prop="inventory">
-                <el-input v-model="focus_stuff.inventory" type="number" placeholder="请输入库存"></el-input>
+                <el-input-number v-model="focus_stuff.inventory" :min="0.001" label="请输入库存"></el-input-number>
             </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="edit_stuff">确认</el-button>
@@ -49,6 +49,7 @@
 
 <script>
 import TableImportExport from '../components/TableImportExport.vue'
+import PinyinMatch from "pinyin-match"
 export default {
     name: 'StuffManagement',
     components: {
@@ -101,7 +102,24 @@ export default {
         };
     },
     methods: {
-        download_audit_log:function() {
+        fetch_unit: function (_query, cb) {
+            var ret = [{
+                value: "吨"
+            }, {
+                value: "千克"
+            }];
+            if (_query) {
+                var tmp_ret = ret;
+                ret = [];
+                tmp_ret.forEach(element => {
+                    if (PinyinMatch.match(element.value, _query)) {
+                        ret.push(element);
+                    }
+                });
+            }
+            cb(ret)
+        },
+        download_audit_log: function () {
             var FileSaver = require('file-saver');
             FileSaver.saveAs(this.$remote_file_url + '/audit_log.log', "审计日志.log");
         },
