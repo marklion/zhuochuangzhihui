@@ -581,7 +581,7 @@ void scale_state_machine::open_exit()
 void scale_state_machine::scale_zero()
 {
     m_log.log("清零衡器");
-    clean_scale_weight(bound_scale.scale_ip, ZH_SCALE_PORT);
+    clean_scale_weight(bound_scale.scale_ip, ZH_SCALE_PORT, bound_scale.scale_brand);
 }
 void scale_state_machine::open_scale_timer()
 {
@@ -593,7 +593,7 @@ void scale_state_machine::open_scale_timer()
             auto ssm = (scale_state_machine *)_private;
             if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
             {
-                auto scale_ret = get_current_weight(ssm->bound_scale.scale_ip, ZH_SCALE_PORT);
+                auto scale_ret = get_current_weight(ssm->bound_scale.scale_ip, ZH_SCALE_PORT, ssm->bound_scale.scale_brand);
                 ssm->continue_weight.push_back(scale_ret);
                 auto ava = [=]() -> double
                 {

@@ -14,7 +14,7 @@ DEVICE_CONFIG_FILE_INPUT="./device_config.json"
 DOCKER_IMG_NAME="zh_deploy:v1.0"
 SRC_DIR=`dirname $(realpath $0)`/../
 BASE_URL_INPUT=""
-OEM_NAME_INPUT=""
+OEM_NAME_INPUT="卓创智汇"
 
 is_in_container() {
     cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null

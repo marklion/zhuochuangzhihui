@@ -59,6 +59,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.raster_ip.push_back(scale_config[i]["raster_ip"](0));
         tmp.raster_ip.push_back(scale_config[i]["raster_ip"](1));
         tmp.scale_ip = scale_config[i]("scale_ip");
+        tmp.scale_brand = scale_config[i]("scale_brand");
         tmp.entry_id_reader_ip = scale_config[i]("entry_id_reader_ip");
         tmp.exit_id_reader_ip = scale_config[i]("exit_id_reader_ip");
         tmp.entry_config.cam_ip = scale_config[i]("entry_cam_ip");
@@ -127,6 +128,7 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         neb::CJsonObject scale;
         scale.Add("name", itr.name);
         scale.Add("scale_ip", itr.scale_ip);
+        scale.Add("scale_brand", itr.scale_brand);
         scale.Add("entry_printer_ip", itr.entry_printer_ip);
         scale.Add("exit_printer_ip", itr.exit_printer_ip);
         scale.AddEmptySubArray("raster_ip");
@@ -227,7 +229,7 @@ void system_management_handler::get_road_status(road_status &_return, const std:
 
 double system_management_handler::read_scale(const std::string &scale_ip)
 {
-    return get_current_weight(scale_ip, ZH_SCALE_PORT);
+    return 0;
 }
 
 void system_management_handler::run_update(const std::string &ssid, const std::string &pack_path)
@@ -267,4 +269,9 @@ void system_management_handler::get_domain_name(std::string &_return)
 void system_management_handler::get_oem_name(std::string &_return)
 {
     _return = std::string(getenv("OEM_NAME"));
+}
+
+void system_management_handler::get_all_scale_brand(std::vector<std::string> &_return)
+{
+    _return = zh_scale_if::get_all_brand();
 }
