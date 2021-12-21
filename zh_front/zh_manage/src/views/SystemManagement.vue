@@ -71,6 +71,7 @@
                     <el-descriptions-item label="入口二维码IP">{{single_scale.entry_qr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口二维码IP">{{single_scale.exit_qr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="衡器品牌">{{single_scale.scale_brand}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
                     <el-descriptions-item label="身份证验证">
@@ -152,6 +153,9 @@
                     </el-form-item>
                     <el-form-item label="衡器IP" prop="scale_ip">
                         <el-input v-model="scale_for_edit.scale_ip" placeholder="请输入衡器IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="衡器品牌" prop="scale_brand">
+                        <item-for-select v-model="scale_for_edit.scale_brand" search_key="scale_brand"></item-for-select>
                     </el-form-item>
                     <el-form-item label="光栅IP-1" prop="raster_ip">
                         <el-input v-model="scale_for_edit.raster_ip[0]" placeholder="请输入光栅IP-1"></el-input>
@@ -302,10 +306,12 @@
 <script>
 import GateDeviceCtrl from '../components/GateDeviceCtrl.vue'
 import LedVoiceCtrl from '../components/LedVoiceCtrl.vue'
+import ItemForSelect from "../components/ItemForSelect.vue"
 export default {
     name: 'SystemManagement',
     components: {
         "gate-device-ctrl": GateDeviceCtrl,
+        "item-for-select": ItemForSelect,
         "led-voice-ctrl": LedVoiceCtrl,
     },
     data: function () {

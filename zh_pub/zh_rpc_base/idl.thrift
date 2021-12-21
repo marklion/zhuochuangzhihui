@@ -35,6 +35,7 @@ struct device_scale_config {
     11:string exit_qr_ip,
     12:bool need_id,
     13:bool need_qr,
+    14:string scale_brand,
 }
 
 struct device_config {
@@ -62,6 +63,7 @@ service system_management {
     void run_update(1:string ssid, 2:string pack_path) throws (1:gen_exp e),
     string get_domain_name() throws (1:gen_exp e),
     string get_oem_name() throws (1:gen_exp e),
+    list<string> get_all_scale_brand() throws (1:gen_exp e),
 }
 
 struct user_info {

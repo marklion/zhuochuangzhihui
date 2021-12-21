@@ -40,6 +40,7 @@ public:
     virtual void run_update(const std::string &ssid, const std::string &pack_path);
     virtual void get_domain_name(std::string &_return);
     virtual void get_oem_name(std::string &_return);
+    virtual void get_all_scale_brand(std::vector<std::string> &_return);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

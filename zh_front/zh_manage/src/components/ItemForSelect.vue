@@ -67,6 +67,16 @@ export default {
                 });
 
                 break;
+            case 'scale_brand':
+                vue_this.$call_remote_process("system_management", "get_all_scale_brand", []).then(function (resp) {
+                    resp.forEach(element => {
+                        vue_this.all_item.push({
+                            value: element
+                        });
+                    });
+                });
+
+                break;
             default:
                 break;
         }
