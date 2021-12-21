@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-SUB_DIR=printer
+SUB_DIR=printer script
 
 all:$(DELIVER_PATH)
 

@@ -31,4 +31,5 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libmodbus-dev nodejs
 RUN npm install -g pm2
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y vim valgrind
 COPY frpc* /bin/
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync python3-pip
+RUN pip install alibabacloud_dysmsapi20170525==2.0.8
