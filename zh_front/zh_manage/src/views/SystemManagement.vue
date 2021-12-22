@@ -403,7 +403,7 @@ export default {
         };
     },
     methods: {
-        confirm_update: function (resp, file) {
+        confirm_update: function (resp) {
             var vue_this = this;
             var real_path = resp.match(/^\/tmp\/.*/gm)[0];
             this.$confirm('确定要更新吗', '提示', {
@@ -414,7 +414,6 @@ export default {
                 vue_this.$call_remote_process("system_management", "run_update", [vue_this.$cookies.get("zh_ssid"), real_path]).finally(function () {
                     vue_this.$alert('请稍后刷新页面', '正在更新', {
                         confirmButtonText: '确定',
-                        callback: action => {}
                     });
                 });
             });

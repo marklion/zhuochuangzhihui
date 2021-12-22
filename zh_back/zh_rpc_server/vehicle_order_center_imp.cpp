@@ -391,8 +391,21 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     {
         ZH_RETURN_MSG("车辆未排号或已取消排号");
     }
+    auto orig_called = vo->m_called;
     vo->m_called = is_cancel ? 0 : 1;
     ret = vo->update_record();
+    if (ret && vo->m_called && orig_called != vo->m_called)
+    {
+        std::string oem_name;
+        system_management_handler::get_inst()->get_oem_name(oem_name);
+        std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone  + "' '" + vo->driver_name + "' '" + oem_name + "'";
+        tdf_log tmp_log("sms");
+        tmp_log.log(sms_cmd);
+        if (0 != system(sms_cmd.c_str()))
+        {
+            ZH_RETURN_MSG("发送叫号短信失败");
+        }
+    }
 
     return ret;
 }
