@@ -1,6 +1,5 @@
 <template>
 <div class="system_management_show">
-    <h2>当前版本: {{current_version}}</h2>
 
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
@@ -294,10 +293,20 @@
             </el-dialog>
         </el-tab-pane>
         <el-tab-pane label="系统维护" name="system_info">
-            <el-upload :action="$remote_url + '/upload/'" :limit="1" :on-success="confirm_update">
-                <el-button size="small" type="primary">点击上传</el-button>
-                <div slot="tip">请上传官方发布的升级包</div>
-            </el-upload>
+            <el-row :gutter="10" type="flex" justify="start">
+                <el-col :span="18">
+                    <div>当前版本: {{current_version}}</div>
+                </el-col>
+                <el-col :span="3">
+                    <el-button size="small" type="danger" @click="reboot_system">重启系统</el-button>
+                </el-col>
+                <el-col :span="3">
+                    <el-upload :action="$remote_url + '/upload/'" :limit="1" :on-success="confirm_update">
+                        <el-button size="small" type="primary">系统更新</el-button>
+                        <div slot="tip" class="el-upload__tip">点击上传官方发布的升级包</div>
+                    </el-upload>
+                </el-col>
+            </el-row>
         </el-tab-pane>
     </el-tabs>
 </div>
@@ -403,6 +412,20 @@ export default {
         };
     },
     methods: {
+        reboot_system: function () {
+            var vue_this = this;
+            this.$confirm('确定要重启吗', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                this.$call_remote_process("system_management", "reboot_system", [vue_this.$cookies.get("zh_ssid")]).finally(() => {
+                    vue_this.$alert('请稍后刷新页面', '正在重启', {
+                        confirmButtonText: '确定',
+                    });
+                });
+            });
+        },
         confirm_update: function (resp) {
             var vue_this = this;
             var real_path = resp.match(/^\/tmp\/.*/gm)[0];

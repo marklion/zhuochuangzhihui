@@ -1,6 +1,7 @@
 #include "zh_scale.h"
 #include "../../zh_vcom/zh_vcom_link.h"
 #include "../../zh_tdf/tdf_include.h"
+#include "../../zh_database/zh_db_config.h"
 #include <math.h>
 
 static tdf_log g_log("scale");
@@ -60,7 +61,12 @@ public:
                 },
                 nullptr))
         {
+            zh_runtime_get_device_health()[_scale_ip] = 2;
             g_log.err("failed to read scale");
+        }
+        else
+        {
+            zh_runtime_get_device_health()[_scale_ip] = 1;
         }
 
         return ret;
@@ -85,6 +91,11 @@ public:
                 nullptr))
         {
             g_log.err("failed to set scale");
+            zh_runtime_get_device_health()[_scale_ip] = 2;
+        }
+        else
+        {
+            zh_runtime_get_device_health()[_scale_ip] = 1;
         }
     }
     virtual std::unique_ptr<zh_scale_if> clone_self()
@@ -147,6 +158,11 @@ public:
                          nullptr))
         {
             g_log.err("failed to read weight");
+            zh_runtime_get_device_health()[_scale_ip] = 2;
+        }
+        else
+        {
+            zh_runtime_get_device_health()[_scale_ip] = 1;
         }
         return ret;
     }
@@ -170,6 +186,11 @@ public:
                          nullptr))
         {
             g_log.err("failed to clean scale");
+            zh_runtime_get_device_health()[_scale_ip] = 2;
+        }
+        else
+        {
+            zh_runtime_get_device_health()[_scale_ip] = 1;
         }
     }
     virtual std::unique_ptr<zh_scale_if> clone_self()

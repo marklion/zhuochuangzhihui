@@ -30,15 +30,15 @@ zh_vcom:$(DELIVER_PATH) zh_tdf
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_id_reader:$(DELIVER_PATH) zh_vcom
+zh_id_reader:$(DELIVER_PATH) zh_vcom zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_raster:$(DELIVER_PATH) zh_vcom
+zh_raster:$(DELIVER_PATH) zh_vcom zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_scale:$(DELIVER_PATH) zh_vcom
+zh_scale:$(DELIVER_PATH) zh_vcom zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
@@ -46,15 +46,15 @@ zh_device_mock:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_hk_gate:$(DELIVER_PATH) zh_tdf
+zh_hk_gate:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_qr:$(DELIVER_PATH) zh_tdf
+zh_qr:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_printer:$(DELIVER_PATH) zh_tdf
+zh_printer:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 

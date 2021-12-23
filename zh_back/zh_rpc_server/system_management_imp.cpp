@@ -16,7 +16,11 @@ system_management_handler *system_management_handler::m_inst = nullptr;
 
 bool system_management_handler::reboot_system(const std::string &ssid)
 {
-    return true;
+    if (!zh_rpc_util_get_online_user(ssid, 0))
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    exit(-1);
 }
 void system_management_handler::current_version(std::string &_return)
 {
@@ -274,4 +278,55 @@ void system_management_handler::get_oem_name(std::string &_return)
 void system_management_handler::get_all_scale_brand(std::vector<std::string> &_return)
 {
     _return = zh_scale_if::get_all_brand();
+}
+
+#define ZH_GET_DEVICE_HEALTH(_X) (_X.length() == 0?-1:m_get_device_health_map()[_X])
+
+void system_management_handler::get_device_health(std::vector<device_health> &_return, const std::string &ssid)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    device_config dc;
+    internal_get_device_config(dc);
+    for (auto &itr : dc.gate)
+    {
+        device_health tmp;
+        tmp.name = itr.name;
+        tmp.entry_cam = ZH_GET_DEVICE_HEALTH(itr.entry_config.cam_ip);
+        tmp.entry_led = ZH_GET_DEVICE_HEALTH(itr.entry_config.led_ip);
+        tmp.entry_id = ZH_GET_DEVICE_HEALTH(itr.entry_id_reader_ip);
+        tmp.entry_qr = ZH_GET_DEVICE_HEALTH(itr.entry_qr_ip);
+        tmp.exit_cam = ZH_GET_DEVICE_HEALTH(itr.exit_config.cam_ip);
+        tmp.exit_led = ZH_GET_DEVICE_HEALTH(itr.exit_config.led_ip);
+        tmp.exit_id = ZH_GET_DEVICE_HEALTH(itr.exit_id_reader_ip);
+        tmp.exit_qr = ZH_GET_DEVICE_HEALTH(itr.exit_qr_ip);
+        _return.push_back(tmp);
+    }
+    for (auto &itr : dc.scale)
+    {
+        device_health tmp;
+        tmp.name = itr.name;
+        tmp.entry_cam = ZH_GET_DEVICE_HEALTH(itr.entry_config.cam_ip);
+        tmp.entry_led = ZH_GET_DEVICE_HEALTH(itr.entry_config.led_ip);
+        tmp.entry_id = ZH_GET_DEVICE_HEALTH(itr.entry_id_reader_ip);
+        tmp.entry_qr = ZH_GET_DEVICE_HEALTH(itr.entry_qr_ip);
+        tmp.entry_printer = ZH_GET_DEVICE_HEALTH(itr.entry_printer_ip);
+        tmp.raster1 = ZH_GET_DEVICE_HEALTH(itr.raster_ip[0]);
+        tmp.raster2 = ZH_GET_DEVICE_HEALTH(itr.raster_ip[1]);
+        tmp.scale = ZH_GET_DEVICE_HEALTH(itr.scale_ip);
+        tmp.exit_cam = ZH_GET_DEVICE_HEALTH(itr.exit_config.cam_ip);
+        tmp.exit_led = ZH_GET_DEVICE_HEALTH(itr.exit_config.led_ip);
+        tmp.exit_id = ZH_GET_DEVICE_HEALTH(itr.exit_id_reader_ip);
+        tmp.exit_qr = ZH_GET_DEVICE_HEALTH(itr.exit_qr_ip);
+        tmp.exit_printer = ZH_GET_DEVICE_HEALTH(itr.exit_printer_ip);
+        _return.push_back(tmp);
+    }
+}
+
+std::map<std::string, long> &system_management_handler::m_get_device_health_map()
+{
+    return zh_runtime_get_device_health();
 }

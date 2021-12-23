@@ -10,7 +10,8 @@ aux_source_directory(./lib API_SRC)
 aux_source_directory(. TEST_SRC)
 
 find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
+find_library(SQLITE_ORM_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib)
 
 add_library(zh_qr SHARED ${API_SRC})
 
-target_link_libraries(zh_qr ${TDF_LIB})
+target_link_libraries(zh_qr ${TDF_LIB} ${SQLITE_ORM_LIB})

@@ -456,7 +456,50 @@ void tdf_main::stop()
     }
     g_exit_flag = true;
 }
+int connect_timeout(int sockfd, struct sockaddr *serv_addr, int addrlen, int timeout)
+{
+    int ret = -1;
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 
+    int n = connect(sockfd, serv_addr, sizeof(*serv_addr));
+    if (n < 0)
+    {
+        /*
+		EINPROGRESS表示connect正在尝试连接
+		#define EWOULDBLOCK EAGAIN Operation would block
+		*/
+        if (errno != EINPROGRESS && errno != EWOULDBLOCK)
+        {
+            ret = -1;
+        }
+        else
+        {
+
+            struct timeval tv;
+            tv.tv_sec = timeout / 1000;
+            tv.tv_usec = (timeout - tv.tv_sec * 1000) * 1000;
+            fd_set wset;
+            FD_ZERO(&wset);
+            FD_SET(sockfd, &wset);
+            n = select(sockfd + 1, NULL, &wset, NULL, &tv);
+            if (0 == n)
+            {
+                ret = 0;
+            }
+            else if (1 == n)
+            {
+                ret = 1;
+            }
+        }
+    }
+    else
+    {
+        ret = 1;
+    }
+    fcntl(sockfd, F_SETFL, flags & ~O_NONBLOCK); // 恢复为阻塞模式
+    return ret;
+}
 bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc)
 {
     bool ret = false;
@@ -467,7 +510,7 @@ bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_
             .sin_family = AF_INET,
             .sin_port = ntohs(_port),
             .sin_addr = {.s_addr = inet_addr(_ip.c_str())}};
-        if (0 == connect(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr)))
+        if (1 == connect_timeout(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr), 5000))
         {
             std::string chcrt;
             chcrt.append(inet_ntoa(server_addr.sin_addr));

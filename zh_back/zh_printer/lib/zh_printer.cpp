@@ -4,13 +4,26 @@
 #include "../../zh_tdf/tdf_include.h"
 #include "DP_Print_inc.h"
 static int g_ser_fd = -1;
+static std::string g_focus_printer_ip;
 
 static pthread_mutex_t g_plock = PTHREAD_MUTEX_INITIALIZER;
 
 void UART_SendByte(unsigned char Send_Dat)
 {
+    bool write_ret = false;
     if (-1 != g_ser_fd) {
-        write(g_ser_fd, &Send_Dat, 1);
+        if (1 == write(g_ser_fd, &Send_Dat, 1))
+        {
+            write_ret = true;
+        }
+    }
+    if (write_ret)
+    {
+        zh_runtime_get_device_health()[g_focus_printer_ip] = 1;
+    }
+    else
+    {
+        zh_runtime_get_device_health()[g_focus_printer_ip] = 2;
     }
 }
 unsigned char UART_RecByte(void)
@@ -20,15 +33,17 @@ unsigned char UART_RecByte(void)
     {
         read(g_ser_fd, &ret, 1);
     }
+    return ret;
 }
 
-zh_printer_dev::zh_printer_dev(const std::string &_ip) : vl(_ip, ZH_PRINTER_PORT)
+zh_printer_dev::zh_printer_dev(const std::string &_ip) :m_ip(_ip), vl(_ip, ZH_PRINTER_PORT)
 {
 }
 bool zh_printer_dev::print_string(const std::string &_content)
 {
     pthread_mutex_lock(&g_plock);
     g_ser_fd = open(vl.get_pts().c_str(), O_RDWR);
+    g_focus_printer_ip = m_ip;
     InitializePrint();
     SelChineseChar();
     Set_ChineseCode(2);
@@ -45,6 +60,7 @@ bool zh_printer_dev::print_string(const std::string &_content)
     print_And_Line();
     print_And_Line();
     close(g_ser_fd);
+    g_focus_printer_ip = "";
     g_ser_fd = -1;
     pthread_mutex_unlock(&g_plock);
     return true;
@@ -53,6 +69,7 @@ bool zh_printer_dev::print_qr(const std::string &_qr_code)
 {
     pthread_mutex_lock(&g_plock);
     g_ser_fd = open(vl.get_pts().c_str(), O_RDWR);
+    g_focus_printer_ip = m_ip;
     InitializePrint();
     Set_QRcodeMode(8);
     Set_QRCodeAdjuLevel(0x49);								/* 设置二维码的纠错水平 */
@@ -67,5 +84,7 @@ bool zh_printer_dev::print_qr(const std::string &_qr_code)
     print_And_Line();
     close(g_ser_fd);
     g_ser_fd = -1;
+    g_focus_printer_ip = "";
     pthread_mutex_unlock(&g_plock);
+    return true;
 }

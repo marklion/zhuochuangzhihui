@@ -96,8 +96,9 @@ struct hk_device_user_handler
 };
 static std::map<std::string, hk_device_user_handler> g_device_user_map;
 
-void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback_cfg)
+bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback_cfg)
 {
+    bool ret = false;
     if (_road_ip.length() > 0)
     {
         NET_DVR_DEVICEINFO_V30 tmp_info = {0};
@@ -156,6 +157,8 @@ void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                 tmp.al_handler = al_handler;
                 tmp.callback_cfg = _callback_cfg;
                 g_device_user_map[_road_ip] = tmp;
+                ret = true;
+                zh_runtime_get_device_health()[_road_ip] = 1;
             }
             else
             {
@@ -167,6 +170,11 @@ void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
             g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
         }
     }
+    if (!ret)
+    {
+        zh_runtime_get_device_health()[_road_ip] = 2;
+    }
+    return ret;
 }
 
 void zh_hk_unsubcribe_event(const std::string &_road_ip)
@@ -216,10 +224,12 @@ bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd)
         if (ret)
         {
             g_log.log("open door %s", _road_ip.c_str());
+            zh_runtime_get_device_health()[_road_ip] = 1;
         }
         else
         {
             g_log.err("open door %s, error_code:%d", _road_ip.c_str(), NET_DVR_GetLastError());
+            zh_runtime_get_device_health()[_road_ip] = 2;
         }
     }
 
@@ -229,7 +239,8 @@ bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd)
 struct hk_led_connector
 {
     int socket_fd = -1;
-    hk_led_connector(const std::string &_ip)
+    std::string m_ip;
+    hk_led_connector(const std::string &_ip):m_ip(_ip)
     {
         int fd = socket(AF_INET, SOCK_STREAM, 0);
         if (fd >= 0)
@@ -270,6 +281,14 @@ struct hk_led_connector
                 }
                 ret = true;
             }
+        }
+        if (ret)
+        {
+            zh_runtime_get_device_health()[m_ip] = 1;
+        }
+        else
+        {
+            zh_runtime_get_device_health()[m_ip] = 1;
         }
 
         return ret;
@@ -413,21 +432,34 @@ void zh_hk_manual_trigger(const std::string &_road_ip)
         tmp.byRelatedDriveWay = 0;
         if (NET_DVR_ContinuousShoot(hk_duh.user_id, &tmp))
         {
+            zh_runtime_get_device_health()[_road_ip] = 1;
             g_log.log("trigger cap:%s", _road_ip.c_str());
         }
         else
         {
+            zh_runtime_get_device_health()[_road_ip] = 2;
             g_log.err("failed to trigger cap:%s, error_code:%d", _road_ip.c_str(), NET_DVR_GetLastError());
         }
     }
 }
 
-enum hk_cast_type {
-    empty,enter_scale, no_order, no_call, no_confirm, holding, exit_scale, busy, welcome, cannot_leave, leave_bye
+enum hk_cast_type
+{
+    empty,
+    enter_scale,
+    no_order,
+    no_call,
+    no_confirm,
+    holding,
+    exit_scale,
+    busy,
+    welcome,
+    cannot_leave,
+    leave_bye
 };
 
 static std::string file_type_map[] = {
-    "empty","enter_scale", "no_order", "no_call", "no_confirm", "holding", "exit_scale","busy", "welcome", "cannot_leave", "leave_bye"
+    "empty", "enter_scale", "no_order", "no_call", "no_confirm", "holding", "exit_scale", "busy", "welcome", "cannot_leave", "leave_bye"
 
 };
 
@@ -448,7 +480,7 @@ std::string hk_read_cmd_from_file(hk_cast_type _type, const std::string &_plate_
         close(fd);
     }
     unsigned char sample_vehicle[] = {0xc3, 0xc9, 0x4b, 0x31, 0x32, 0x33, 0x34, 0x35};
-    unsigned char sample_date[] {0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00, 0xc5, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x21, 0x01, 0x12, 0x20, 0x10, 0x32, 0x33, 0x00, 0x00, 0x0d, 0x0a};
+    unsigned char sample_date[]{0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00, 0xc5, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x21, 0x01, 0x12, 0x20, 0x10, 0x32, 0x33, 0x00, 0x00, 0x0d, 0x0a};
     time_t cur_time;
     time(&cur_time);
     tm time_str;

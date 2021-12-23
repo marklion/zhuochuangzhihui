@@ -25,7 +25,7 @@ enum zh_hk_led_type {
     zh_hk_led_exit_scale,
 };
 
-void zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback);
+bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback);
 void zh_hk_unsubcribe_event(const std::string &_road_ip);
 void zh_hk_manual_trigger(const std::string &_road_ip);
 void zh_hk_clear_event();
