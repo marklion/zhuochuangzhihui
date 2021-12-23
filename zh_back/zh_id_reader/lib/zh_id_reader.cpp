@@ -2,6 +2,7 @@
 #include "../../zh_vcom/zh_vcom_link.h"
 #include <iconv.h>
 #include <vector>
+#include "../../zh_database/zh_db_config.h"
 
 tdf_log g_log("id_reader");
 std::vector<std::string> split_string(const std::string &s, const std::string &seperator)
@@ -52,6 +53,7 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
 {
     std::string ret;
     zh_vcom_link vl(ip, port);
+    bool read_ret = false;
 
     if (1 == InitComm(vl.get_pts().c_str()))
     {
@@ -90,6 +92,7 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
                         {
                             g_log.err("iconv open failed: %s", strerror(errno));
                         }
+                        read_ret = true;
                     }
                     else
                     {
@@ -121,6 +124,14 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
     if (all_info.size() > 5)
     {
         ret = all_info[5];
+    }
+    if (read_ret)
+    {
+        zh_runtime_get_device_health()[ip] = 1;
+    }
+    else
+    {
+        zh_runtime_get_device_health()[ip] = 2;
     }
     return ret;
 }

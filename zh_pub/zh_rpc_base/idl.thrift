@@ -44,7 +44,24 @@ struct device_config {
 }
 
 struct road_status {
-    1:string coming_vehicle;
+    1:string coming_vehicle,
+}
+
+struct device_health {
+    1:string name,
+    2:i64 entry_cam = -1,
+    3:i64 exit_cam = -1,
+    4:i64 entry_led = -1,
+    5:i64 exit_led = -1,
+    6:i64 entry_id = -1,
+    7:i64 exit_id = -1,
+    8:i64 entry_qr = -1,
+    9:i64 exit_qr = -1,
+    10:i64 raster1 = -1,
+    11:i64 raster2 = -1,
+    12:i64 entry_printer = -1,
+    13:i64 exit_printer = -1,
+    14:i64 scale = -1,
 }
 
 service system_management {
@@ -64,6 +81,7 @@ service system_management {
     string get_domain_name() throws (1:gen_exp e),
     string get_oem_name() throws (1:gen_exp e),
     list<string> get_all_scale_brand() throws (1:gen_exp e),
+    list<device_health> get_device_health(1:string ssid) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -119,12 +137,23 @@ struct stuff_info {
     4:i64 id,
 }
 
+struct stuff_change_point {
+    1:string date,
+    2:double inventory,
+}
+
+struct stuff_history {
+    1:stuff_info stuff,
+    2:list<stuff_change_point> change_point,
+}
+
 service stuff_management {
     bool add_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool del_stuff(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<stuff_info> get_all_stuff(1:string ssid) throws (1:gen_exp e),
-
+    list<stuff_history> get_change_points_for_range(1:string ssid, 2:string start_date, 3:string end_date) throws (1:gen_exp e),
+    string get_last_active(1:string ssid) throws (1:gen_exp e),
 }
 
 struct vehicle_info {
@@ -190,6 +219,15 @@ struct vehicle_order_detail {
     4:bool has_called,
 }
 
+struct vehicle_order_statistics {
+    1:i64 total,
+    2:i64 created,
+    3:i64 confirmed,
+    4:i64 entered,
+    5:i64 first_weight,
+    6:i64 second_weight,
+}
+
 service vehicle_order_center {
     list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor) throws (1:gen_exp e),
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
@@ -207,6 +245,7 @@ service vehicle_order_center {
     bool manual_set_p_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
     bool manual_set_m_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
     bool manual_close(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    vehicle_order_statistics get_order_statistics(1:string ssid) throws (1:gen_exp e),
 }
 
 service open_api {

@@ -1,6 +1,7 @@
 #include "zh_raster.h"
 #include "../../zh_vcom/zh_vcom_link.h"
 #include "../../zh_tdf/tdf_include.h"
+#include "../../zh_database/zh_db_config.h"
 #include <modbus/modbus.h>
 
 static tdf_log g_log("raster");
@@ -8,6 +9,7 @@ static tdf_log g_log("raster");
 bool raster_was_block(const std::string &ip, unsigned short port)
 {
     bool ret = false;
+    bool read_ret = false;
 
     zh_vcom_link vl(ip, port);
 
@@ -32,6 +34,7 @@ bool raster_was_block(const std::string &ip, unsigned short port)
                 {
                     ret = true;
                 }
+                read_ret = true;
             }
             else
             {
@@ -40,6 +43,15 @@ bool raster_was_block(const std::string &ip, unsigned short port)
             return true;
         },
         nullptr);
+
+    if (read_ret)
+    {
+        zh_runtime_get_device_health()[ip] = 1;
+    }
+    else
+    {
+        zh_runtime_get_device_health()[ip] = 2;
+    }
 
     return ret;
 }

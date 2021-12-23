@@ -11,9 +11,10 @@ aux_source_directory(. TEST_SRC)
 
 find_library(VCOM_LIB libzh_vcom.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
+find_library(SQLITE_ORM_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib)
 
 add_library(zh_id_reader SHARED ${API_SRC})
 add_executable(zh_id_reader_test ${TEST_SRC})
 
 target_link_libraries(zh_id_reader_test zh_id_reader)
-target_link_libraries(zh_id_reader termb ${VCOM_LIB} ${TDF_LIB})
+target_link_libraries(zh_id_reader termb ${VCOM_LIB} ${TDF_LIB} ${SQLITE_ORM_LIB})

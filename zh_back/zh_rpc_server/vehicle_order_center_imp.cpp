@@ -496,6 +496,26 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
     return ret;
 }
 
+void vehicle_order_center_handler::get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto cvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 0");
+    auto convo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1");
+    auto evo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 2");
+    auto fwvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 3");
+    auto swvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 4");
+    _return.created = cvo.size();
+    _return.confirmed = convo.size();
+    _return.entered = evo.size();
+    _return.first_weight = fwvo.size();
+    _return.second_weight = swvo.size();
+    _return.total = _return.created + _return.confirmed + _return.entered + _return.second_weight + _return.first_weight;
+}
+
 scale_state_machine::scale_state_machine(const device_scale_config &_config) : m_log(_config.name + " scale sm"), bound_scale(_config)
 {
     auto id_read_call_back_entry = [](void *_private)
@@ -527,7 +547,8 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
             pthis->trigger_sm();
         }
     };
-    auto zh_qr_callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata) {
+    auto zh_qr_callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata)
+    {
         if (_qr_code.length() > 0)
         {
             auto pthis = (scale_state_machine *)_pdata;
@@ -1070,7 +1091,7 @@ gate_state_machine::gate_state_machine(
             [](void *_private)
             {
                 auto gsm = (gate_state_machine *)_private;
-                auto id_no = zh_read_id_no(gsm->road_ip, ZH_ID_READER_PORT);
+                auto id_no = zh_read_id_no(gsm->id_reader_ip, ZH_ID_READER_PORT);
                 if (id_no.length() > 0)
                 {
                     gsm->proc_trigger_id_no(id_no);
@@ -1137,7 +1158,7 @@ void gate_state_machine::gate_cast_accept()
     device_config dc;
     system_management_handler::get_inst()->internal_get_device_config(dc);
     std::string led_ip;
-    for (auto &itr:dc.gate)
+    for (auto &itr : dc.gate)
     {
         if (road_ip == itr.entry_config.cam_ip)
         {

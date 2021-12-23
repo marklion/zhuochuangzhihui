@@ -14,6 +14,7 @@ private:
     system_management_handler() {
         pthread_mutex_init(&m_road_status_map_lock, NULL);
     }
+    std::map<std::string, long> &m_get_device_health_map();
 public:
     static system_management_handler *get_inst() {
         if (m_inst == nullptr)
@@ -41,6 +42,7 @@ public:
     virtual void get_domain_name(std::string &_return);
     virtual void get_oem_name(std::string &_return);
     virtual void get_all_scale_brand(std::vector<std::string> &_return);
+    virtual void get_device_health(std::vector<device_health> &_return, const std::string &ssid);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

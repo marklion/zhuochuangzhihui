@@ -176,3 +176,10 @@ void zh_sql_stuff::remove_record(const std::string &ssid)
     zh_sql_write_audig_log(content);
     sql_tree_base::remove_record();
 }
+
+static std::map<std::string, long> g_device_health_map;
+
+std::map<std::string, long> &zh_runtime_get_device_health()
+{
+    return g_device_health_map;
+}
