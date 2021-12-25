@@ -288,7 +288,7 @@ struct hk_led_connector
         }
         else
         {
-            zh_runtime_get_device_health()[m_ip] = 1;
+            zh_runtime_get_device_health()[m_ip] = 2;
         }
 
         return ret;
