@@ -800,11 +800,34 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &vo)
 {
     std::string content;
+    content += "称重车辆：" + bound_vehicle_number + "\n";
     std::string qr_code;
     if (vo)
     {
         std::string m_weight_string = "未称重";
+        std::string j_weight_string = "未知";
         std::string p_weight_string = m_weight_string;
+        std::string p_time;
+        std::string m_time;
+        std::string p_type = "（毛重）：";
+        std::string m_type = "（皮重）：";
+        auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
+        if (company && company->is_sale)
+        {
+            auto tmp_type = p_type;
+            p_type = m_type;
+            m_type = tmp_type;
+        }
+        auto p_status = vo->get_children<zh_sql_order_status>("belong_order", "step == 3");
+        if (p_status)
+        {
+            p_time = p_status->timestamp;
+        }
+        auto m_status = vo->get_children<zh_sql_order_status>("belong_order", "step == 4");
+        if (m_status)
+        {
+            m_time = m_status->timestamp;
+        }
         if (vo->p_weight != 0)
         {
             p_weight_string = std::to_string(vo->p_weight) + "吨";
@@ -812,15 +835,22 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         if (vo->m_weight != 0)
         {
             m_weight_string = std::to_string(vo->m_weight) + "吨";
+            j_weight_string = std::to_string(abs(vo->p_weight - vo->m_weight));
         }
-        content = "一次称重：" + p_weight_string + "\n";
-        content += "二次称重：" + m_weight_string + "\n";
+        content += "一次称重" + p_type + p_weight_string + "\n";
+        content += "一次称重时间：" + p_time + "\n";
+        content += "二次称重" + m_type + m_weight_string + "\n";
+        content += "二次称重时间：" + m_time + "\n";
+        content += "净重：" + j_weight_string + "\n";
+        content += "运送货物：" + vo->stuff_name + "\n";
+        content += "派车公司：" + vo->company_name + "\n";
         qr_code = getenv("BASE_URL");
         qr_code += ".d8sis.cn/#/field_opt/" + vo->order_number;
     }
     else
     {
-        content = "称重：" + std::to_string(fin_weight) + "吨";
+        content += "称重：" + std::to_string(fin_weight) + "吨\n";
+        content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
     }
     std::string printer_ip;
     if (bound_scale.entry_config.cam_ip == enter_cam_ip)
