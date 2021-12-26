@@ -31,7 +31,7 @@ jobs:
           # A dockerhub image
           image: "marklion/zh_deploy:v1.0"
           # Command to run inside image
-          command: make
+          command: make -j
           # Extra parameters to pass to `docker run`
           # Guest dir that will overlay host-dir, and be used as working directory
           guest-dir: /root/work_space
