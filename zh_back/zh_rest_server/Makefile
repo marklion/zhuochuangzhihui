@@ -8,7 +8,7 @@ $(DELIVER_PATH):
 
 $(DELIVER_PATH)/zh_rest_node:$(DELIVER_PATH) $(SRC_DIR)/index.js $(SRC_DIR)/package.json
 	[ -d $(DELIVER_PATH)/zh_rest_node ] || mkdir $(DELIVER_PATH)/zh_rest_node
-	cp -a $(SRC_DIR)/node_modules $(DELIVER_PATH)/zh_rest_node/
+	[ -d $(SRC_DIR)/node_modules ] && cp -a $(SRC_DIR)/node_modules $(DELIVER_PATH)/zh_rest_node/
 	cp -a $(SRC_DIR)/gen_code $(DELIVER_PATH)/zh_rest_node/
 	cp $(SRC_DIR)/index.js $(DELIVER_PATH)/zh_rest_node/
 	cp $(SRC_DIR)/package-lock.json $(DELIVER_PATH)/zh_rest_node/
