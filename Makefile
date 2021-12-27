@@ -15,7 +15,7 @@ all:$(DELIVER_PATH)
 
 $(DELIVER_PATH):$(SUB_DIR)
 	[ -d $@ ] || mkdir $@
-	for component in $^;do [ -d $$component/build ] && cp -a $$component/build/* $@/; done
+	for component in $^;do [ -d $(SRC_DIR)/$$component/build ] && cp -a $(SRC_DIR)/$$component/build/* $@/; done
 
 $(SUB_DIR):
 	$(MAKE) -C $(SRC_DIR)/$@
