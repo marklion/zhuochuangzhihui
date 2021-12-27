@@ -7,7 +7,7 @@ export BUILD_MODE
 
 pack:all
 	tar zcf zh_deliver.tar.gz -C $(DELIVER_PATH) bin lib conf manage_dist zh_rest_node script
-	cat deploy.sh zh_deliver.tar.gz > $(DELIVER_PATH)/install.sh
+	cat $(SRC_DIR)/deploy.sh zh_deliver.tar.gz > $(DELIVER_PATH)/install.sh
 	chmod +x $(DELIVER_PATH)/install.sh
 	rm zh_deliver.tar.gz
 
