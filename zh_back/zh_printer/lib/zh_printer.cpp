@@ -48,8 +48,12 @@ bool zh_printer_dev::print_string(const std::string &_content)
     SelChineseChar();
     Set_ChineseCode(2);
     unsigned char buff[2048];
-    strcpy((char *)buff,"卓创智汇");
+    SetCharacterSize(1, 1);
+    Sel_Align_Way(1);
+    strcpy((char *)buff,"卓创智汇\n自动称重系统\n");
     Print_ASCII(buff);
+    Sel_Align_Way(0);
+    SetCharacterSize(0, 0);
     print_And_Line();
     strcpy((char *)buff, _content.c_str());
     Print_ASCII(buff);

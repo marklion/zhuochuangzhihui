@@ -6,6 +6,7 @@
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_scale/lib/zh_scale.h"
 #include "../zh_qr/lib/zh_qr_lib.h"
+#include <sstream>
 
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
@@ -799,8 +800,18 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 }
 void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &vo)
 {
+    auto double2string_reserve2 = [](double _value) -> std::string
+    {
+        std::stringstream ss;
+        ss.setf(std::ios::fixed);
+        ss.precision(2);
+        ss << _value ;
+        return ss.str();
+    };
     std::string content;
+    content += "---------------\n";
     content += "称重车辆：" + bound_vehicle_number + "\n";
+    content += "---------------\n";
     std::string qr_code;
     if (vo)
     {
@@ -830,18 +841,21 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         }
         if (vo->p_weight != 0)
         {
-            p_weight_string = std::to_string(vo->p_weight) + "吨";
+            p_weight_string = double2string_reserve2(vo->p_weight) + "吨";
         }
         if (vo->m_weight != 0)
         {
-            m_weight_string = std::to_string(vo->m_weight) + "吨";
-            j_weight_string = std::to_string(abs(vo->p_weight - vo->m_weight));
+            m_weight_string = double2string_reserve2(vo->m_weight) + "吨";
+            j_weight_string = double2string_reserve2(abs(vo->p_weight - vo->m_weight));
         }
         content += "一次称重" + p_type + p_weight_string + "\n";
-        content += "一次称重时间：" + p_time + "\n";
+        content += "称重时间：" + p_time + "\n";
+        content += "---------------\n";
         content += "二次称重" + m_type + m_weight_string + "\n";
-        content += "二次称重时间：" + m_time + "\n";
-        content += "净重：" + j_weight_string + "\n";
+        content += "称重时间：" + m_time + "\n";
+        content += "---------------\n";
+        content += "净重：" + j_weight_string + "吨\n";
+        content += "---------------\n";
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
         qr_code = getenv("BASE_URL");
@@ -849,7 +863,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     }
     else
     {
-        content += "称重：" + std::to_string(fin_weight) + "吨\n";
+        content += "称重：" + double2string_reserve2(fin_weight) + "吨\n";
         content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
     }
     std::string printer_ip;
