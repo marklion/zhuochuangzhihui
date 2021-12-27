@@ -179,21 +179,12 @@ bool system_management_handler::print_content(const std::string &printer_ip, con
 
 void system_management_handler::read_id_no(std::string &_return, const std::string &id_reader_ip)
 {
-    _return = zh_read_id_no(id_reader_ip, ZH_ID_READER_PORT);
+    _return = id_result[id_reader_ip];
 }
 
 bool system_management_handler::ctrl_gate(const std::string &road_ip, const int64_t cmd)
 {
     return zh_hk_ctrl_gate(road_ip, (zh_hk_gate_control_cmd)cmd);
-}
-
-bool system_management_handler::ctrl_led(const std::string &gate_code, const std::string &content)
-{
-    return zh_hk_ctrl_led(gate_code, content);
-}
-bool system_management_handler::ctrl_voice(const std::string &gate_code, const std::string &content)
-{
-    return zh_hk_ctrl_voice(gate_code, content);
 }
 road_status system_management_handler::get_status_by_road(const std::string &_road)
 {
@@ -227,8 +218,7 @@ void system_management_handler::set_status_by_road(const std::string &_road, roa
 
 void system_management_handler::get_road_status(road_status &_return, const std::string &gate_code)
 {
-    auto status = get_status_by_road(gate_code);
-    _return = status;
+    _return.coming_vehicle = cam_result[gate_code];
 }
 
 double system_management_handler::read_scale(const std::string &scale_ip)
@@ -329,4 +319,13 @@ void system_management_handler::get_device_health(std::vector<device_health> &_r
 std::map<std::string, long> &system_management_handler::m_get_device_health_map()
 {
     return zh_runtime_get_device_health();
+}
+
+void system_management_handler::read_qr(std::string &_return, const std::string &id_reader_ip)
+{
+    _return = qr_result[id_reader_ip];
+}
+bool system_management_handler::led_cast_welcome(const std::string &led_ip)
+{
+    return zh_hk_cast_welcome(led_ip, "蒙A12345");
 }

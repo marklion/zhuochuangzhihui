@@ -523,6 +523,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     {
         auto ssm = (scale_state_machine *)_private;
         auto id_ret = zh_read_id_no(ssm->bound_scale.entry_id_reader_ip, ZH_ID_READER_PORT);
+        system_management_handler::get_inst()->id_result[ssm->bound_scale.entry_id_reader_ip] = id_ret;
         if (id_ret.length() > 0)
         {
             ssm->proc_trigger_id_read(id_ret, ssm->bound_scale.entry_id_reader_ip);
@@ -533,6 +534,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     {
         auto ssm = (scale_state_machine *)_private;
         auto id_ret = zh_read_id_no(ssm->bound_scale.exit_id_reader_ip, ZH_ID_READER_PORT);
+        system_management_handler::get_inst()->id_result[ssm->bound_scale.exit_id_reader_ip] = id_ret;
         if (id_ret.length() > 0)
         {
             ssm->proc_trigger_id_read(id_ret, ssm->bound_scale.exit_id_reader_ip);
@@ -541,6 +543,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     };
     auto hk_call_back = [](const std::string &_plate_no, const std::string &_road_ip, void *_pdata)
     {
+        system_management_handler::get_inst()->cam_result[_road_ip] = _plate_no;
         if (_plate_no.length() > 0)
         {
             auto pthis = (scale_state_machine *)_pdata;
@@ -550,6 +553,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     };
     auto zh_qr_callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata)
     {
+        system_management_handler::get_inst()->qr_result[_qr_ip] = _qr_code;
         if (_qr_code.length() > 0)
         {
             auto pthis = (scale_state_machine *)_pdata;
@@ -1136,6 +1140,7 @@ gate_state_machine::gate_state_machine(
             {
                 auto gsm = (gate_state_machine *)_private;
                 auto id_no = zh_read_id_no(gsm->id_reader_ip, ZH_ID_READER_PORT);
+                system_management_handler::get_inst()->id_result[gsm->id_reader_ip] = id_no;
                 if (id_no.length() > 0)
                 {
                     gsm->proc_trigger_id_no(id_no);
@@ -1150,6 +1155,7 @@ gate_state_machine::gate_state_machine(
         tmp_cfg.pData = this;
         tmp_cfg.callback = [](const std::string &_plate_no, const std::string &_road_ip, void *_pdata)
         {
+            system_management_handler::get_inst()->cam_result[_road_ip] = _plate_no;
             if (_plate_no.length() > 0)
             {
                 auto pthis = (gate_state_machine *)_pdata;
@@ -1165,6 +1171,7 @@ gate_state_machine::gate_state_machine(
         tmp_cfg.pData = this;
         tmp_cfg.callback = [](const std::string &_qr_code, const std::string &_qr_ip, void *_pdata)
         {
+            system_management_handler::get_inst()->qr_result[_qr_ip] = _qr_code;
             if (_qr_code.length() > 0)
             {
                 auto pthis = (gate_state_machine *)_pdata;

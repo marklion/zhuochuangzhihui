@@ -192,39 +192,19 @@
                 </el-form>
             </el-dialog>
             <el-dialog :title="cur_opt_gate.name + '设备操作'" :visible.sync="show_gate_operate" width="60%">
-                <el-row type="flex" :gutter="10">
-                    <el-col :span="12">
-                        <el-card>
-                            <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">入口身份证号</el-col>
-                                <el-col :span="14">{{cur_opt_gate.entry_id_no}}</el-col>
-                            </el-row>
-                            <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">出口身份证号</el-col>
-                                <el-col :span="14">{{cur_opt_gate.exit_id_no}}</el-col>
-                            </el-row>
-                            <div slot="header">
-                                <span>身份证阅读</span>
-                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_id_no">获取</el-button>
-                            </div>
-                        </el-card>
-                    </el-col>
-                    <el-col :span="12">
-                        <gate-device-ctrl :entry="cur_opt_gate.entry_config.cam_ip" :exit="cur_opt_gate.exit_config.cam_ip"></gate-device-ctrl>
-                    </el-col>
-                </el-row>
-                <el-row type="flex" :gutter="10">
-                    <el-col :span="12">
-                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_gate.entry_config.led_ip"></led-voice-ctrl>
-                    </el-col>
-                    <el-col :span="12">
-                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_gate.exit_config.led_ip"></led-voice-ctrl>
-                    </el-col>
-                </el-row>
+                <vue-grid align="stretch" justify="start">
+                    <vue-cell width="6of12">
+                        <id-qr-read device_name="入口设备" :id_reader_ip="cur_opt_gate.entry_id_reader_ip" :qr_reader_ip="cur_opt_gate.entry_qr_iq"></id-qr-read>
+                        <id-qr-read device_name="出口设备" :id_reader_ip="cur_opt_gate.exit_id_reader_ip" :qr_reader_ip="cur_opt_gate.exit_qr_iq"></id-qr-read>
+                    </vue-cell>
+                    <vue-cell width="6of12">
+                        <gate-device-ctrl :entry="cur_opt_gate.entry_config.cam_ip" :exit="cur_opt_gate.exit_config.cam_ip" :entry_led="cur_opt_gate.entry_config.led_ip" :exit_led="cur_opt_gate.exit_config.led_ip"></gate-device-ctrl>
+                    </vue-cell>
+                </vue-grid>
             </el-dialog>
             <el-dialog :title="cur_opt_scale.name + '设备操作'" :visible.sync="show_scale_operate" width="60%">
-                <el-row type="flex" :gutter="10">
-                    <el-col :span="8">
+                <vue-grid align="stretch" justify="start">
+                    <vue-cell width="6of12">
                         <el-card>
                             <el-row type="flex" :gutter="10" align="center">
                                 <el-col :span="10">光栅1</el-col>
@@ -243,8 +223,11 @@
                                 <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
                             </div>
                         </el-card>
-                    </el-col>
-                    <el-col :span="8">
+                    </vue-cell>
+                    <vue-cell width="6of12">
+                        <gate-device-ctrl :entry="cur_opt_scale.entry_config.cam_ip" :exit="cur_opt_scale.exit_config.cam_ip" :entry_led="cur_opt_scale.entry_config.led_ip" :exit_led="cur_opt_scale.exit_config.led_ip"></gate-device-ctrl>
+                    </vue-cell>
+                    <vue-cell width="6of12">
                         <el-card>
                             <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print1">
                             </el-input>
@@ -253,8 +236,8 @@
                                 <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content1">打印</el-button>
                             </div>
                         </el-card>
-                    </el-col>
-                    <el-col :span="8">
+                    </vue-cell>
+                    <vue-cell width="6of12">
                         <el-card>
                             <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print2">
                             </el-input>
@@ -263,33 +246,14 @@
                                 <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content2">打印</el-button>
                             </div>
                         </el-card>
-                    </el-col>
-                </el-row>
-                <el-row type="flex" :gutter="10">
-                    <el-col :span="8">
-                        <gate-device-ctrl :entry="cur_opt_scale.entry_config.cam_ip" :exit="cur_opt_scale.exit_config.cam_ip"></gate-device-ctrl>
-                    </el-col>
-                    <el-col :span="8">
-                        <led-voice-ctrl device_name="入口播报显示设备" :gate_code="cur_opt_scale.entry_config.led_ip"></led-voice-ctrl>
-                    </el-col>
-                    <el-col :span="8">
-                        <led-voice-ctrl device_name="出口播报显示设备" :gate_code="cur_opt_scale.exit_config.led_ip"></led-voice-ctrl>
-                    </el-col>
-                </el-row>
-                <el-card>
-                    <el-row type="flex" :gutter="10" align="center">
-                        <el-col :span="10">入口身份证号</el-col>
-                        <el-col :span="14">{{cur_opt_scale.entry_id_no}}</el-col>
-                    </el-row>
-                    <el-row type="flex" :gutter="10" align="center">
-                        <el-col :span="10">出口身份证号</el-col>
-                        <el-col :span="14">{{cur_opt_scale.exit_id_no}}</el-col>
-                    </el-row>
-                    <div slot="header">
-                        <span>身份证阅读</span>
-                        <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_id_no">获取</el-button>
-                    </div>
-                </el-card>
+                    </vue-cell>
+                    <vue-cell width="6of12">
+                        <id-qr-read device_name="入口设备" :id_reader_ip="cur_opt_scale.entry_id_reader_ip" :qr_reader_ip="cur_opt_gate.entry_qr_iq"></id-qr-read>
+                    </vue-cell>
+                    <vue-cell width="6of12">
+                        <id-qr-read device_name="出口设备" :id_reader_ip="cur_opt_scale.exit_id_reader_ip" :qr_reader_ip="cur_opt_gate.exit_qr_iq"></id-qr-read>
+                    </vue-cell>
+                </vue-grid>
             </el-dialog>
         </el-tab-pane>
         <el-tab-pane label="系统维护" name="system_info">
@@ -314,14 +278,20 @@
 
 <script>
 import GateDeviceCtrl from '../components/GateDeviceCtrl.vue'
-import LedVoiceCtrl from '../components/LedVoiceCtrl.vue'
+import IdQrRead from '../components/IdQrRead.vue'
 import ItemForSelect from "../components/ItemForSelect.vue"
+import {
+    VueGrid,
+    VueCell
+} from 'vue-grd';
 export default {
     name: 'SystemManagement',
     components: {
         "gate-device-ctrl": GateDeviceCtrl,
         "item-for-select": ItemForSelect,
-        "led-voice-ctrl": LedVoiceCtrl,
+        "id-qr-read": IdQrRead,
+        VueGrid,
+        VueCell
     },
     data: function () {
         return {

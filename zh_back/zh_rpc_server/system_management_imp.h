@@ -16,6 +16,9 @@ private:
     }
     std::map<std::string, long> &m_get_device_health_map();
 public:
+    std::map<std::string, std::string> id_result;
+    std::map<std::string, std::string> qr_result;
+    std::map<std::string, std::string> cam_result;
     static system_management_handler *get_inst() {
         if (m_inst == nullptr)
         {
@@ -31,8 +34,6 @@ public:
     virtual bool print_content(const std::string &printer_ip, const std::string &content, const std::string &qr_code);
     virtual void read_id_no(std::string &_return, const std::string &id_reader_ip);
     virtual bool ctrl_gate(const std::string &gate_code, const int64_t cmd);
-    virtual bool ctrl_led(const std::string &gate_code, const std::string &content);
-    virtual bool ctrl_voice(const std::string &gate_code, const std::string &content);
     road_status get_status_by_road(const std::string &_road);
     void set_status_by_road(const std::string &_road, road_status &status);
     virtual void get_road_status(road_status &_return, const std::string &gate_code);
@@ -43,6 +44,8 @@ public:
     virtual void get_oem_name(std::string &_return);
     virtual void get_all_scale_brand(std::vector<std::string> &_return);
     virtual void get_device_health(std::vector<device_health> &_return, const std::string &ssid);
+    virtual void read_qr(std::string &_return, const std::string &id_reader_ip);
+    virtual bool led_cast_welcome(const std::string &led_ip);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
