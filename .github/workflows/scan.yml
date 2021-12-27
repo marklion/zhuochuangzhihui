@@ -35,7 +35,7 @@ jobs:
           docker pull marklion/zh_deploy:v1.0
       - name: Run build-wrapper
         run: |
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} docker run -ti -v `realpath .`:/work_space marklion/zh_deploy:v1.0 make -j -f /work_space/Makefile
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} docker run -v `realpath .`:/work_space marklion/zh_deploy:v1.0 make -j -f /work_space/Makefile
       - name: Run sonar-scanner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
