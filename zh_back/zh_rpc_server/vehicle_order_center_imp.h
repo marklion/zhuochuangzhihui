@@ -188,6 +188,7 @@ public:
     virtual bool manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight);
     virtual bool manual_close(const std::string &ssid, const int64_t order_id);
     virtual void get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid);
+    virtual bool upload_enter_weight_attachment(const int64_t order_id, const std::string &attachment, const double enter_weight);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

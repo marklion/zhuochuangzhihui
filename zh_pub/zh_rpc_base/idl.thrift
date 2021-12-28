@@ -135,6 +135,7 @@ struct stuff_info {
     2:double inventory,
     3:string unit,
     4:i64 id,
+    5:bool need_enter_weight,
 }
 
 struct stuff_change_point {
@@ -198,6 +199,9 @@ struct vehicle_order_info {
     12:double p_weight,
     13:double m_weight,
     14:string attachment,
+    15:string enter_weight_attachment,
+    16:double enter_weight,
+    17:bool need_enter_weight,
 }
 
 struct gate_relate_info {
@@ -246,6 +250,7 @@ service vehicle_order_center {
     bool manual_set_m_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
     bool manual_close(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     vehicle_order_statistics get_order_statistics(1:string ssid) throws (1:gen_exp e),
+    bool upload_enter_weight_attachment(1:i64 order_id, 2:string attachment, 3:double enter_weight) throws (1:gen_exp e),
 }
 
 service open_api {

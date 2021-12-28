@@ -319,9 +319,19 @@ public:
                         *(static_cast<std::string *>(single_column.m_data)) = itr[single_column.m_name].c_str();
                         break;
                         case sqlite_orm_column::REAL:
-                        *(static_cast<double *>(single_column.m_data)) = std::stod(itr[single_column.m_name]);
+                        {
+                            double tmp_val = 0;
+                            try
+                            {
+                                tmp_val = std::stod(itr[single_column.m_name]);
+                            }
+                            catch (...)
+                            {
+                            }
+                            *(static_cast<double *>(single_column.m_data)) = tmp_val;
+                        }
                         break;
-                    }
+                        }
                 }
                 ret.push_back(single_record);
             }
@@ -330,7 +340,8 @@ public:
         return ret;
     }
     template <typename sql_record>
-    static std::list<sql_record> search_record_all() {
+    static std::list<sql_record> search_record_all()
+    {
         return search_record_all<sql_record>("");
     }
     template <typename sql_record>

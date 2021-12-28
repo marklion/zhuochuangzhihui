@@ -35,6 +35,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.inventory = stuff.inventory;
     tmp.name = stuff.name;
     tmp.unit = stuff.unit;
+    tmp.need_enter_weight = stuff.need_enter_weight;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -65,6 +66,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->inventory = stuff.inventory;
     exist_record->name = stuff.name;
     exist_record->unit = stuff.unit;
+    exist_record->need_enter_weight = stuff.need_enter_weight;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -109,6 +111,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.inventory = itr.inventory;
         tmp.name = itr.name;
         tmp.unit = itr.unit;
+        tmp.need_enter_weight = itr.need_enter_weight;
 
         _return.push_back(tmp);
     }

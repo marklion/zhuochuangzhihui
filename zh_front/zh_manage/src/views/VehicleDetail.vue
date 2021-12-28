@@ -1,5 +1,6 @@
 <template>
 <div class="vehicle_detail_show">
+    <el-image-viewer v-if="show_enter_weight" :on-close="()=>{show_enter_weight=false}" :url-list="[$remote_file_url + cur_vehicle.basic_info.enter_weight_attachment]" />
     <el-row type="flex" align="middle" :gutter="40">
         <el-col :span="12">
             <el-descriptions title="基本信息" :column="2" border>
@@ -8,6 +9,14 @@
                 <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
                 <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
                 <el-descriptions-item label="挂车">{{cur_vehicle.basic_info.behind_vehicle_number}}</el-descriptions-item>
+                <el-descriptions-item v-if="cur_vehicle.basic_info.need_enter_weight" label="矿(厂)发净重">
+                    <span>
+                        {{cur_vehicle.basic_info.enter_weight}}
+                    </span>
+                    <span>
+                        <el-button type="text" @click="show_enter_weight = true">预览磅单</el-button>
+                    </span>
+                </el-descriptions-item>
             </el-descriptions>
         </el-col>
         <el-col :span="12">
@@ -138,6 +147,7 @@ export default {
     name: "VehicleDetail",
     data: function () {
         return {
+            show_enter_weight: false,
             cur_vehicle: {
                 basic_info: {},
                 confirmed: false,
@@ -150,6 +160,9 @@ export default {
                 m_weight: 0.0,
             },
         };
+    },
+    components: {
+        'el-image-viewer': () => import('element-ui/packages/image/src/image-viewer')
     },
     methods: {
         assign_weight: function () {

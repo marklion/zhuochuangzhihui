@@ -22,7 +22,7 @@ jobs:
           SONAR_SCANNER_DOWNLOAD_URL: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${{ env.SONAR_SCANNER_VERSION }}-linux.zip
         run: |
           mkdir -p $HOME/.sonar
-          curl -sSLo $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }} 
+          curl -sSLo $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }}
           unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
           echo "$HOME/.sonar/sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}-linux/bin" >> $GITHUB_PATH
       - name: Download and set up build-wrapper
@@ -35,7 +35,7 @@ jobs:
           docker pull marklion/zh_deploy:v1.0
       - name: Run build-wrapper
         run: |
-           docker run -v `realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}`:`realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}` -v `realpath $HOME/.sonar/build-wrapper-linux-x86`:/wa_path -v `realpath .`:`realpath .` marklion/zh_deploy:v1.0 /wa_path/build-wrapper-linux-x86-64 --out-dir `realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}` make -j -f `realpath .`/Makefile
+          docker run -v `realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}`:`realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}` -v `realpath $HOME/.sonar/build-wrapper-linux-x86`:/wa_path -v `realpath .`:`realpath .` marklion/zh_deploy:v1.0 /wa_path/build-wrapper-linux-x86-64 --out-dir `realpath ${{ env.BUILD_WRAPPER_OUT_DIR }}` make -j -f `realpath .`/Makefile
       - name: Run sonar-scanner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

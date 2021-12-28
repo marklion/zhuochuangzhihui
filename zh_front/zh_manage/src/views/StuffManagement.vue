@@ -21,6 +21,11 @@
         </el-table-column>
         <el-table-column prop="inventory" label="库存">
         </el-table-column>
+        <el-table-column label="需要矿(厂)发净重">
+            <template slot-scope="scope">
+                {{scope.row.need_enter_weight?'是':'否'}}
+            </template>
+        </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="50px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_stuff(scope.row)">修改</el-button>
@@ -29,7 +34,7 @@
         </el-table-column>
     </el-table>
     <el-dialog @close="clean_stuff" :title="(current_opt_add?'新增':'修改') + '物料'" :visible.sync="show_edit_stuff_diag" width="60%" @keyup.enter.native="edit_stuff">
-        <el-form :model="focus_stuff" ref="edit_stuff_form" :rules="rules" label-width="120px">
+        <el-form :model="focus_stuff" ref="edit_stuff_form" :rules="rules" label-width="150px">
             <el-form-item label="物料名称" prop="name">
                 <el-input v-model="focus_stuff.name" placeholder="请输入物料名称"></el-input>
             </el-form-item>
@@ -38,6 +43,10 @@
             </el-form-item>
             <el-form-item label="库存" prop="inventory">
                 <el-input-number v-model="focus_stuff.inventory" :min="0.001" label="请输入库存"></el-input-number>
+            </el-form-item>
+            <el-form-item label="需要矿(厂)发净重" prop="inventory">
+                <el-switch v-model="focus_stuff.need_enter_weight" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
             </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="edit_stuff">确认</el-button>
@@ -93,11 +102,29 @@ export default {
                 inventory: {
                     text: '库存'
                 },
+                need_enter_weight: {
+                    text: '需要矿(厂)发净重',
+                    formatter: function (_orig) {
+                        if (_orig) {
+                            return "是";
+                        } else {
+                            return "否";
+                        }
+                    },
+                    parser(_value) {
+                        if (_value == "是") {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    },
+                }
             },
             sample_table: [{
                 name: '中水',
                 unit: '吨',
-                inventory: '104'
+                inventory: '104',
+                need_enter_weight: false,
             }],
         };
     },
