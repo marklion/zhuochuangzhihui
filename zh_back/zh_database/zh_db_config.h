@@ -152,14 +152,16 @@ class zh_sql_stuff : public sql_tree_base
 {
 public:
     std::string name;
-    double inventory;
+    double inventory = 0;
     std::string unit;
+    long need_enter_weight = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
         ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
         ret.push_back(sqlite_orm_column("inventory", sqlite_orm_column::REAL, &inventory));
         ret.push_back(sqlite_orm_column("unit", sqlite_orm_column::STRING, &unit));
+        ret.push_back(sqlite_orm_column("need_enter_weight", sqlite_orm_column::INTEGER, &need_enter_weight));
 
         return ret;
     }
@@ -221,9 +223,12 @@ public:
     long m_permit = 0;
     long m_registered = 0;
     long m_called = 0;
+    double enter_weight = 0;
+    long need_enter_weight = 0;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
+        add_parent_type<zh_sql_file>("enter_weight_attachment");
     }
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
@@ -242,6 +247,8 @@ public:
         ret.push_back(sqlite_orm_column("m_permit", sqlite_orm_column::INTEGER, &m_permit));
         ret.push_back(sqlite_orm_column("m_registered", sqlite_orm_column::INTEGER, &m_registered));
         ret.push_back(sqlite_orm_column("m_called", sqlite_orm_column::INTEGER, &m_called));
+        ret.push_back(sqlite_orm_column("enter_weight", sqlite_orm_column::REAL, &enter_weight));
+        ret.push_back(sqlite_orm_column("need_enter_weight", sqlite_orm_column::INTEGER, &need_enter_weight));
 
         return ret;
     }

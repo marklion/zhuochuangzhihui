@@ -56,6 +56,13 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
         {
             tmp.attachment = attachment->name;
         }
+        auto enter_weight_attachment = itr.get_parent<zh_sql_file>("enter_weight_attachment");
+        if (enter_weight_attachment)
+        {
+            tmp.enter_weight_attachment = enter_weight_attachment->name;
+        }
+        tmp.enter_weight = itr.enter_weight;
+        tmp.need_enter_weight = itr.need_enter_weight;
 
         _return.push_back(tmp);
     }
@@ -116,6 +123,11 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
         tmp.stuff_name = order.stuff_name;
         tmp.company_name = order.company_name;
         tmp.status = -1;
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
+        if (stuff && stuff->need_enter_weight)
+        {
+            tmp.need_enter_weight = 1;
+        }
 
         auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
         bool op_permit = true;
@@ -240,6 +252,13 @@ void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_
     {
         tmp.attachment = attachment->name;
     }
+    auto enter_weight_attachment = vo->get_parent<zh_sql_file>("enter_weight_attachment");
+    if (enter_weight_attachment)
+    {
+        tmp.enter_weight_attachment = enter_weight_attachment->name;
+    }
+    tmp.enter_weight = vo->enter_weight;
+    tmp.need_enter_weight = vo->need_enter_weight;
     _return.basic_info = tmp;
     _return.confirmed = vo->m_permit;
     _return.has_called = vo->m_called;
@@ -350,6 +369,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (vo->status != 1)
     {
         ZH_RETURN_NO_PRAVILIGE();
+    }
+    if (!is_cancel && vo->need_enter_weight && (vo->enter_weight == 0 || !vo->get_parent<zh_sql_file>("enter_weight_attachment")))
+    {
+        ZH_RETURN_MSG("请先填写进厂前净重并上传矿（厂）发磅单");
     }
     vo->m_registered = is_cancel ? 0 : 1;
     if (!vo->m_registered)
@@ -515,6 +538,35 @@ void vehicle_order_center_handler::get_order_statistics(vehicle_order_statistics
     _return.first_weight = fwvo.size();
     _return.second_weight = swvo.size();
     _return.total = _return.created + _return.confirmed + _return.entered + _return.second_weight + _return.first_weight;
+}
+
+bool vehicle_order_center_handler::upload_enter_weight_attachment(const int64_t order_id, const std::string &attachment, const double enter_weight)
+{
+    bool ret = false;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    if (vo->status != 1)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    if (attachment.length() > 0)
+    {
+        auto exist_attachment = vo->get_parent<zh_sql_file>("enter_weight_attachment");
+        if (!exist_attachment || exist_attachment->name != attachment)
+        {
+            zh_sql_file attach_file;
+            attach_file.save_file(attachment.substr(0, attachment.find_last_of('.')), vo->order_number + "-" + std::to_string(time(nullptr)) + attachment.substr(attachment.find_last_of('.'), attachment.length()));
+            attach_file.insert_record();
+            vo->set_parent(attach_file, "enter_weight_attachment");
+        }
+    }
+    vo->enter_weight = enter_weight;
+    ret = vo->update_record();
+
+    return ret;
 }
 
 scale_state_machine::scale_state_machine(const device_scale_config &_config) : m_log(_config.name + " scale sm"), bound_scale(_config)
@@ -809,7 +861,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         std::stringstream ss;
         ss.setf(std::ios::fixed);
         ss.precision(2);
-        ss << _value ;
+        ss << _value;
         return ss.str();
     };
     std::string content;
