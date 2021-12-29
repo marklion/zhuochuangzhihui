@@ -251,6 +251,7 @@ service vehicle_order_center {
     bool manual_close(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     vehicle_order_statistics get_order_statistics(1:string ssid) throws (1:gen_exp e),
     bool upload_enter_weight_attachment(1:i64 order_id, 2:string attachment, 3:double enter_weight) throws (1:gen_exp e),
+    bool print_weight_ticket(1:string ssid, 2:i64 order_id, 3:string scale_name) throws (1:gen_exp e),
 }
 
 service open_api {

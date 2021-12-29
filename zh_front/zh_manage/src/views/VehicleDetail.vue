@@ -36,6 +36,10 @@
                     <div style="padding:5px;" v-if="$store.state.user_info.permission != 3">
                         <el-button size="mini" type="danger" @click="manual_close">手动结束运输</el-button>
                         <el-button type="primary" size="mini" @click="manual_weight_show = true">手动修改称重</el-button>
+                        <el-popover placement="left" width="400" trigger="click">
+                            <el-button type="text" v-for="(single_scale_name, index) in scale_names" :key="index" @click="print_weight_ticket(single_scale_name)">在{{single_scale_name}}处打印</el-button>
+                            <el-button slot="reference" type="warning" size="mini">补打磅单</el-button>
+                        </el-popover>
                     </div>
                 </template>
             </el-descriptions>
@@ -147,6 +151,7 @@ export default {
     name: "VehicleDetail",
     data: function () {
         return {
+            device_config: {},
             show_enter_weight: false,
             cur_vehicle: {
                 basic_info: {},
@@ -161,10 +166,37 @@ export default {
             },
         };
     },
+    computed: {
+        scale_names: function () {
+            var ret = [];
+            if (this.device_config.scale) {
+                this.device_config.scale.forEach(element => {
+                    ret.push(element.name);
+                });
+            }
+            return ret;
+        },
+    },
     components: {
         'el-image-viewer': () => import('element-ui/packages/image/src/image-viewer')
     },
     methods: {
+        print_weight_ticket: function (_name) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "print_weight_ticket", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, _name]).then(function (resp) {
+                if (resp) {
+                    vue_this.$message({
+                        message: '操作成功',
+                        type: 'success',
+                    });
+                } else {
+                    vue_this.$message({
+                        message: '操作失败',
+                        type: 'danger',
+                    });
+                }
+            });
+        },
         assign_weight: function () {
             this.manual_weight_data.p_weight = this.cur_vehicle.basic_info.p_weight;
             this.manual_weight_data.m_weight = this.cur_vehicle.basic_info.m_weight;
@@ -273,9 +305,16 @@ export default {
                 vue_this.init_cur_vehicle();
             });
         },
+        init_device_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", 'get_device_config', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
+                vue_this.device_config = resp;
+            });
+        },
     },
     beforeMount: function () {
         this.init_cur_vehicle();
+        this.init_device_info();
     },
 }
 </script>

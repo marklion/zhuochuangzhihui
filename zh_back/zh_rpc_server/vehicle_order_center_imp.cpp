@@ -569,6 +569,30 @@ bool vehicle_order_center_handler::upload_enter_weight_attachment(const int64_t 
     return ret;
 }
 
+bool vehicle_order_center_handler::print_weight_ticket(const std::string &ssid, const int64_t order_id, const std::string &scale_name)
+{
+    bool ret = false;
+
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    auto ssm = get_scale_sm(scale_name);
+    if (ssm)
+    {
+        ssm->print_weight_ticket(vo);
+        ret = true;
+    }
+
+    return ret;
+}
+
 scale_state_machine::scale_state_machine(const device_scale_config &_config) : m_log(_config.name + " scale sm"), bound_scale(_config)
 {
     auto id_read_call_back_entry = [](void *_private)
@@ -977,6 +1001,11 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
         return;
     }
     auto order_number = _qr_code.substr(order_number_begin, order_number_end - order_number_begin);
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (vo && vo->status >= 4)
+    {
+        print_weight_ticket(vo);
+    }
     tdf_state_machine_lock a(*this);
     if (_road_ip == bound_scale.entry_qr_ip)
     {
