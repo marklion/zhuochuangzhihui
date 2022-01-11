@@ -81,3 +81,28 @@ bool open_api_handler::external_trigger_scale_id(const std::string &id_reader_ip
     return ret;
 
 }
+
+bool open_api_handler::external_trigger_gate_qr(const std::string &road_ip, const std::string &qr_code)
+{
+    bool ret = false;
+    auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(road_ip);
+    if (gsm)
+    {
+        gsm->proc_trigger_qr_code(qr_code);
+        gsm->trigger_sm();
+    }
+
+    return ret;
+}
+bool open_api_handler::external_trigger_scale_qr(const std::string &scale_ip, const std::string &qr_code, const std::string &scale_name)
+{
+    bool ret = false;
+    auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(scale_name);
+    if (ssm)
+    {
+        ssm->proc_trigger_qr(qr_code, scale_ip);
+        ssm->trigger_sm();
+    }
+
+    return ret;
+}

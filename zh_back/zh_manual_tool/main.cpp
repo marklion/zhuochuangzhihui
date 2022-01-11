@@ -18,13 +18,14 @@ int main(int argc, char *argv[])
     std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, "open_api"));
     auto client = new open_apiClient(mp);
     auto ret = false;
-    auto optstring = "p:i:v:s:";
+    auto optstring = "p:i:v:s:q:";
     int o = -1;
 
     std::string scale_name;
     std::string id_no;
     std::string vehicle_number;
     std::string road_ip;
+    std::string qr_code;
 
     while (-1 != (o = getopt(argc, argv, optstring)))
     {
@@ -41,6 +42,9 @@ int main(int argc, char *argv[])
             break;
         case 's':
             scale_name = optarg;
+            break;
+        case 'q':
+            qr_code = optarg;
             break;
         default:
             break;
@@ -61,6 +65,10 @@ int main(int argc, char *argv[])
         {
             client->external_trigger_gate_vehicle(road_ip, vehicle_number);
         }
+        if (qr_code.length() > 0)
+        {
+            client->external_trigger_gate_qr(road_ip, qr_code);
+        }
     }
     else
     {
@@ -71,6 +79,10 @@ int main(int argc, char *argv[])
         if (vehicle_number.length() > 0)
         {
             client->external_trigger_scale_vehicle(road_ip, vehicle_number, scale_name);
+        }
+        if (qr_code.length() > 0)
+        {
+            client->external_trigger_scale_qr(road_ip, qr_code, scale_name);
         }
     }
 

@@ -261,4 +261,6 @@ service open_api {
     bool external_trigger_gate_id(1:string id_reader_ip, 2:string id_no, 3:string road_ip) throws (1:gen_exp e),
     bool external_trigger_scale_vehicle(1:string road_ip, 2:string plate_no, 3:string scale_name) throws (1:gen_exp e),
     bool external_trigger_scale_id(1:string id_reader_ip, 2:string id_no, 3:string scale_name) throws (1:gen_exp e),
+    bool external_trigger_gate_qr(1:string road_ip, 2:string qr_code) throws (1:gen_exp e),
+    bool external_trigger_scale_qr(1:string scale_ip, 2:string qr_code, 3:string scale_name) throws (1:gen_exp e),
 }
