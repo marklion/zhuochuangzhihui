@@ -26,6 +26,8 @@ public:
     virtual bool external_trigger_gate_id(const std::string &id_reader_ip, const std::string &id_no, const std::string &road_ip);
     virtual bool external_trigger_scale_vehicle(const std::string &road_ip, const std::string &plate_no, const std::string &scale_name);
     virtual bool external_trigger_scale_id(const std::string &id_reader_ip, const std::string &id_no, const std::string &scale_name);
+    virtual bool external_trigger_gate_qr(const std::string &road_ip, const std::string &qr_code);
+    virtual bool external_trigger_scale_qr(const std::string &scale_ip, const std::string &qr_code, const std::string &scale_name);
 };
 
 #endif // _OPEN_API_IMP_H_
