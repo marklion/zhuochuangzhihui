@@ -1,0 +1,43 @@
+{
+  "name": "zczh_client",
+  "productName": "卓创智汇称重客户端",
+  "author": "作者",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "",
+  "scripts": {
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "electronVersion": "1.8.4",
+    "win": {
+      "requestedExecutionLevel": "highestAvailable",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "appId": "demo",
+    "artifactName": "demo-${version}-${arch}.${ext}",
+    "nsis": {
+      "artifactName": "demo-${version}-${arch}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "http://xxxxx/download/"
+      }
+    ]
+  },
+  "dependencies": {
+    "core-js": "^2.4.1",
+    "electron-packager": "^12.1.0",
+    "electron-updater": "^4.0.0"
+  }
+}

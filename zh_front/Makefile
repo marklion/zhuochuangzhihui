@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-all:$(DELIVER_PATH)/manage_dist
+all:$(DELIVER_PATH)/manage_dist $(DELIVER_PATH)/manual_tool
 
 $(DELIVER_PATH):
 	[ -d $(DELIVER_PATH) ] || mkdir $(DELIVER_PATH)
@@ -9,7 +9,11 @@ $(DELIVER_PATH):
 $(DELIVER_PATH)/manage_dist:$(DELIVER_PATH)
 	if [ "$(ONLY_BACK_END)" != "y" ]; then rm -rf $@; pushd $(SRC_DIR)/zh_manage;[ -d node_modules ] || npm install; npm run $(BUILD_MODE); cp ./dist -a $@; popd; fi
 
+$(DELIVER_PATH)/manual_tool:$(DELIVER_PATH)
+	if [ "$(ONLY_BACK_END)" != "y" ]; then rm -rf $@; pushd $(SRC_DIR)/zh_manual_tool;[ -d node_modules ] || npm install; npm run $(BUILD_MODE); cp ./dist -a $@; popd; fi
+	cp $(SRC_DIR)/zh_manual_tool/public/package.json $@/
+	cp $(SRC_DIR)/zh_manual_tool/public/main.js $@/
 clean:
 	rm -rf $(DELIVER_PATH)
 
-.PHONY:all $(DELIVER_PATH)/manage_dist
+.PHONY:all $(DELIVER_PATH)/manage_dist $(DELIVER_PATH)/manual_tool
