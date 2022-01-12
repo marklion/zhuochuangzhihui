@@ -13,7 +13,7 @@
     </el-row>
     <el-row type="flex" justify="space-between">
         <el-col>
-            <el-tabs v-model="activeName">
+            <el-tabs v-model="activeName" @tab-click="refresh_order">
                 <el-tab-pane label="所有派车单" name="all">
                 </el-tab-pane>
                 <el-tab-pane label="未确认" name="need_confirm">
@@ -28,71 +28,73 @@
         </el-col>
         <el-col :span="8">
             <div align="right" style="margin-right:10px;">
-                <el-input v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
+                <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
             </div>
         </el-col>
     </el-row>
-    <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table" infinite-scroll-listen-for-event="need_refresh" v-infinite-scroll="get_order" :infinite-scroll-disabled="need_fetch" :infinite-scroll-distance="10">
-        <el-table-column type="selection" width="30px">
-        </el-table-column>
-        <el-table-column label="单号" min-width="30px">
-            <template slot-scope="scope">
-                <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
-                    <el-link type="primary">{{scope.row.order_number}}</el-link>
-                </router-link>
-            </template>
-        </el-table-column>
-        <el-table-column prop="company_name" label="公司" min-width="60px">
-        </el-table-column>
-        <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
-        </el-table-column>
-        <el-table-column label="状态" min-width="20px">
-            <template slot-scope="scope">
-                {{scope.row.status_details[scope.row.status_details.length - 1].name}}
-            </template>
-        </el-table-column>
-        <el-table-column label="车辆信息" min-width="130px">
-            <template slot-scope="scope">
-                <el-descriptions size="mini" :column="4" border>
-                    <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
-                    <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
-                    <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
-                    <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
-                    <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
-                    <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
-                    <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
-                </el-descriptions>
-            </template>
-        </el-table-column>
-        <el-table-column label="附件" min-width="25px">
-            <template slot-scope="scope">
-                <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
-                </el-image>
-                <div v-else>
-                    无附件
-                </div>
-            </template>
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" min-width="30px">
-            <template slot-scope="scope">
-                <div v-if="scope.row.status <= 1">
-                    <el-button v-if="scope.row.attachment" type="warning" size="mini" @click="delete_attachment(scope.row)">删除附件</el-button>
-                    <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
-                        <el-button size="mini" type="primary">上传附件</el-button>
-                    </el-upload>
-                </div>
-                <div v-if="scope.row.status < 2">
-                    <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
-                </div>
-                <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
-                    <el-button type="success" size="mini" @click="confirm_order([scope.row])">确认可进</el-button>
-                </div>
-                <div v-if="scope.row.status == 1">
-                    <el-button type="warning" size="mini" @click="copy_check_in_link(scope.row)">复制排号链接</el-button>
-                </div>
-            </template>
-        </el-table-column>
-    </el-table>
+    <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
+        <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
+            <el-table-column type="selection" width="30px">
+            </el-table-column>
+            <el-table-column label="单号" min-width="30px">
+                <template slot-scope="scope">
+                    <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
+                        <el-link type="primary">{{scope.row.order_number}}</el-link>
+                    </router-link>
+                </template>
+            </el-table-column>
+            <el-table-column prop="company_name" label="公司" min-width="60px">
+            </el-table-column>
+            <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
+            </el-table-column>
+            <el-table-column label="状态" min-width="20px">
+                <template slot-scope="scope">
+                    {{scope.row.status_details[scope.row.status_details.length - 1].name}}
+                </template>
+            </el-table-column>
+            <el-table-column label="车辆信息" min-width="130px">
+                <template slot-scope="scope">
+                    <el-descriptions size="mini" :column="4" border>
+                        <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
+                        <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
+                        <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
+                        <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
+                        <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
+                        <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
+                        <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
+                    </el-descriptions>
+                </template>
+            </el-table-column>
+            <el-table-column label="附件" min-width="25px">
+                <template slot-scope="scope">
+                    <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
+                    </el-image>
+                    <div v-else>
+                        无附件
+                    </div>
+                </template>
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" min-width="30px">
+                <template slot-scope="scope">
+                    <div v-if="scope.row.status <= 1">
+                        <el-button v-if="scope.row.attachment" type="warning" size="mini" @click="delete_attachment(scope.row)">删除附件</el-button>
+                        <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
+                            <el-button size="mini" type="primary">上传附件</el-button>
+                        </el-upload>
+                    </div>
+                    <div v-if="scope.row.status < 2">
+                        <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
+                    </div>
+                    <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
+                        <el-button type="success" size="mini" @click="confirm_order([scope.row])">确认可进</el-button>
+                    </div>
+                    <div v-if="scope.row.status == 1">
+                        <el-button type="warning" size="mini" @click="copy_check_in_link(scope.row)">复制排号链接</el-button>
+                    </div>
+                </template>
+            </el-table-column>
+        </el-table>
+    </van-list>
     <el-dialog @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
         <el-row type="flex" justify="space-between" align="middle">
             <el-col :span="10">
@@ -156,6 +158,9 @@ import PinyinMatch from "pinyin-match"
 import XLSX from 'xlsx';
 import VueClipboard from 'vue-clipboard2'
 
+import Vant from 'vant';
+import 'vant/lib/index.css';
+Vue.use(Vant);
 Vue.use(VueClipboard)
 Vue.use(infiniteScroll)
 export default {
@@ -257,7 +262,7 @@ export default {
                 driver_name: '',
                 stuff_name: '',
             },
-            domain_name:'',
+            domain_name: '',
 
         };
     },
@@ -358,11 +363,10 @@ export default {
         },
         refresh_order: function () {
             var vue_this = this;
+            console.log(this.activeName);
             vue_this.all_order = [];
             vue_this.lazy_finish = false;
-            this.$nextTick(() => {
-                vue_this.$emit("need_refresh");
-            });
+            this.$refs.lazy_load.check();
         },
         edit_order: function () {
             var vue_this = this;
@@ -394,8 +398,7 @@ export default {
         },
         get_order: function () {
             var vue_this = this;
-            vue_this.is_loading = true;
-            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length]).then(function (resp) {
+            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length, vue_this.activeName]).then(function (resp) {
                 resp.forEach(element => {
                     vue_this.all_order.push(element);
                 });
@@ -405,6 +408,7 @@ export default {
             }).finally(function () {
                 vue_this.is_loading = false;
             });
+
         },
         // 导出xlsx
         exportExcel: function (headers, data, fileName = '记录表.xlsx') {
@@ -597,11 +601,6 @@ export default {
     overflow: auto;
 }
 
-.vehicle_order_center_show {
-    height: 100%;
-    overflow: auto;
-}
-
 .step_title {
     font-size: 10px;
 }
@@ -609,6 +608,11 @@ export default {
 .step_description_name {
     font-size: 8px;
     color: green;
+}
+
+.vehicle_order_center_show {
+    height: 88vh;
+    overflow: auto;
 }
 
 .step_description_time {
