@@ -11,21 +11,45 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
-void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor)
+void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    std::string contract_query = "PRI_ID != 0";
+    std::string detail_query = "PRI_ID != 0";
     auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
     if (contract)
     {
-        contract_query = "company_name == '" + contract->name + "'";
+        detail_query = "company_name == '" + contract->name + "'";
+    }
+    if (status_name.length() > 0)
+    {
+        long status = -1;
+        if (status_name == "need_confirm")
+        {
+            status = 0;
+        }
+        else if (status_name == "has_not_came")
+        {
+            status = 1;
+        }
+        else if (status_name == "end")
+        {
+            status = 100;
+        }
+        if (status > -1)
+        {
+            detail_query += " AND status == " + std::to_string(status);
+        }
+        else if (status_name == "insite")
+        {
+            detail_query += " AND status > 1 AND status < 100";
+        }
     }
 
-    auto orders = sqlite_orm::search_record_all<zh_sql_vehicle_order>("%s ORDER BY PRI_ID DESC LIMIT 30 OFFSET %ld", contract_query.c_str(), anchor);
+    auto orders = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY PRI_ID DESC LIMIT 30 OFFSET %ld", detail_query.c_str(), anchor);
     for (auto &itr : orders)
     {
         vehicle_order_info tmp;
@@ -422,7 +446,7 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     {
         std::string oem_name;
         system_management_handler::get_inst()->get_oem_name(oem_name);
-        std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone  + "' '" + vo->driver_name + "' '" + oem_name + "'";
+        std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "'";
         tdf_log tmp_log("sms");
         tmp_log.log(sms_cmd);
         if (0 != system(sms_cmd.c_str()))

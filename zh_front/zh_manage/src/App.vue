@@ -32,7 +32,7 @@
                 </el-col>
                 <el-col :span="21">
                     <div class="content_show">
-                        <div v-if="$store.state.is_login" class="web_nav_show">
+                        <div v-if="$store.state.is_login" >
                             <el-page-header v-if="$route.meta.is_sub" @back="go_back" :content="$route.meta.subtitle">
                             </el-page-header>
                             <router-view></router-view>
@@ -256,6 +256,6 @@ export default {
 
 .content_show {
     height: 88vh;
-    overflow: auto;
+    overflow-y:hidden;
 }
 </style>

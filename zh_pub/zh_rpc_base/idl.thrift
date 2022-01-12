@@ -233,7 +233,7 @@ struct vehicle_order_statistics {
 }
 
 service vehicle_order_center {
-    list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor) throws (1:gen_exp e),
+    list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor, 3:string status_name) throws (1:gen_exp e),
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),

@@ -88,7 +88,7 @@ bool open_api_handler::external_trigger_gate_qr(const std::string &road_ip, cons
     auto gsm = vehicle_order_center_handler::get_inst()->get_gate_sm(road_ip);
     if (gsm)
     {
-        gsm->proc_trigger_qr_code(qr_code);
+        gsm->proc_trigger_qr_code(qr_code + "\r");
         gsm->trigger_sm();
     }
 
@@ -100,7 +100,7 @@ bool open_api_handler::external_trigger_scale_qr(const std::string &scale_ip, co
     auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(scale_name);
     if (ssm)
     {
-        ssm->proc_trigger_qr(qr_code, scale_ip);
+        ssm->proc_trigger_qr(qr_code, scale_ip + "\r");
         ssm->trigger_sm();
     }
 
