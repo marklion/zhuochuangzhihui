@@ -1,6 +1,6 @@
 <template>
 <div class="item_for_select_show">
-    <el-autocomplete v-model="input_value" :fetch-suggestions="proc_match" placeholder="请输入内容"></el-autocomplete>
+    <el-autocomplete :disabled="disabled" v-model="input_value" :fetch-suggestions="proc_match" placeholder="请输入内容"></el-autocomplete>
 </div>
 </template>
 
@@ -16,6 +16,7 @@ export default {
     props: {
         value: String,
         search_key: String,
+        disabled: Boolean,
     },
     model: {
         prop: 'value',

@@ -95,12 +95,12 @@
             </el-table-column>
         </el-table>
     </van-list>
-    <el-dialog @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
+    <el-dialog @open="fill_company_name" @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
         <el-row type="flex" justify="space-between" align="middle">
             <el-col :span="10">
                 <el-form :model="focus_order" ref="edit_order_form" :rules="rules" label-width="120px">
-                    <el-form-item label="对方公司" prop="company_name">
-                        <item-for-select v-model="focus_order.company_name" search_key="company_name"></item-for-select>
+                    <el-form-item label="派车公司" prop="company_name">
+                        <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_order.company_name" search_key="company_name"></item-for-select>
                     </el-form-item>
                     <el-form-item label="运输货物" prop="stuff_name">
                         <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
@@ -130,7 +130,11 @@
             </el-col>
         </el-row>
     </el-dialog>
-    <el-drawer @closed="clean_select" title="请选择车辆" :visible.sync="show_vehicle_select" direction="rtl" size="70%">
+    <el-drawer @closed="clean_select"  :visible.sync="show_vehicle_select" direction="rtl" size="70%">
+        <div slot="title">
+            <div>请选择车辆</div>
+            <el-button size="small"  type="primary" @click="push_ready_to_select">确认</el-button>
+        </div>
         <el-table :data="vehicle_for_select" style="width: 100%" ref="vehicle_select_table" stripe @selection-change="proc_select">
             <el-table-column type="selection" width="55" :selectable="verify_selectable">
             </el-table-column>
@@ -239,7 +243,7 @@ export default {
             rules: {
                 company_name: [{
                     required: true,
-                    message: "请选择对方公司",
+                    message: "请选择派车公司",
                     trigger: ['blur', 'change']
                 }],
                 stuff_name: [{
@@ -267,6 +271,12 @@ export default {
         };
     },
     methods: {
+        fill_company_name: function () {
+            if (this.$store.state.user_info.permission == 3)
+            {
+                this.focus_order.company_name = this.$store.state.user_info.name;
+            }
+        },
         copy_check_in_link: function (_order) {
             this.$copyText(this.domain_name + '/#/check_in/' + _order.order_number);
             this.$message('链接已复制，建议发送给司机');
