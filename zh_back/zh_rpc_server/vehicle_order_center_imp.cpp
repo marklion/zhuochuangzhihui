@@ -102,7 +102,7 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
 {
     bool ret = false;
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR behind_vehicle_number == '%s' OR driver_id == '%s')", order.id, order.main_vehicle_number.c_str(), order.behind_vehicle_number.c_str(), order.driver_id.c_str());
+    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR driver_id == '%s')", order.id, order.main_vehicle_number.c_str(), order.driver_id.c_str());
     if (exist_record)
     {
         ret = true;
@@ -126,6 +126,31 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    for (auto itr = orders.begin(); itr != orders.end(); ++itr)
+    {
+        auto find_begin_ret = std::find_if(
+            orders.begin(), itr,
+            [&](const vehicle_order_info &_val)
+            {
+                return (itr->main_vehicle_number == _val.main_vehicle_number || itr->driver_id == _val.driver_id);
+            });
+        if (find_begin_ret != itr)
+        {
+            ZH_RETURN_DUP_ORDER();
+        }
+        auto find_end_ret = std::find_if(
+            itr + 1, orders.end(),
+            [&](const vehicle_order_info &_val)
+            {
+                return (itr->main_vehicle_number == _val.main_vehicle_number || itr->driver_id == _val.driver_id);
+            });
+
+        if (find_end_ret != orders.end())
+        {
+            ZH_RETURN_DUP_ORDER();
+        }
     }
 
     for (auto &order : orders)
