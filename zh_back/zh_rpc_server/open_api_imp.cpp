@@ -106,3 +106,25 @@ bool open_api_handler::external_trigger_scale_qr(const std::string &scale_ip, co
 
     return ret;
 }
+static NET_DVR_TIME strTime2unix(const std::string &timeStamp)
+{
+    NET_DVR_TIME tm;
+    memset(&tm, 0, sizeof(tm));
+
+    sscanf(
+        timeStamp.c_str(), "%d-%d-%d %d:%d:%d",
+        &tm.dwYear, &tm.dwMonth, &tm.dwDay,
+        &tm.dwHour, &tm.dwMinute, &tm.dwSecond);
+
+    return tm;
+}
+void open_api_handler::get_video(std::string &_return, const std::string &nvr_ip, const int64_t channel_id, const std::string &start_time, const std::string &stop_time)
+{
+    NET_DVR_TIME start = {0};
+    NET_DVR_TIME end = {0};
+
+    auto start_date_val = strTime2unix(start_time);
+    auto end_date_val = strTime2unix(stop_time);
+
+    _return = zh_hk_get_channel_video(nvr_ip, channel_id, start_date_val, end_date_val);
+}

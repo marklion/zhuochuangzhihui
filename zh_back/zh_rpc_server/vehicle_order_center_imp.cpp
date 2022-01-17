@@ -312,6 +312,16 @@ void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_
     _return.confirmed = vo->m_permit;
     _return.has_called = vo->m_called;
     _return.registered = vo->m_registered;
+    _return.enter_nvr_ip = vo->enter_nvr_ip;
+    _return.exit_nvr_ip = vo->exit_nvr_ip;
+    _return.p_nvr_ip1 = vo->p_nvr_ip1;
+    _return.p_nvr_ip2 = vo->p_nvr_ip2;
+    _return.m_nvr_ip1 = vo->m_nvr_ip1;
+    _return.m_nvr_ip2 = vo->m_nvr_ip2;
+    _return.enter_time = vo->enter_cam_time;
+    _return.exit_time = vo->exit_cam_time;
+    _return.p_time = vo->p_cam_time;
+    _return.m_time = vo->m_cam_time;
 }
 
 void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number)
@@ -901,12 +911,18 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
     {
         if (vo->status < 3)
         {
+            vo->p_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
+            vo->p_nvr_ip2 = bound_scale.exit_nvr_ip + ":" + std::to_string(bound_scale.exit_channel);
+            vo->p_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_p_status();
             vo->p_weight = fin_weight;
             vo->push_status(status);
         }
         else if (vo->status < 4)
         {
+            vo->m_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
+            vo->m_nvr_ip2 = bound_scale.exit_nvr_ip + ":" + std::to_string(bound_scale.exit_channel);
+            vo->m_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_m_status();
             vo->m_weight = fin_weight;
             vo->push_status(status);
@@ -1442,13 +1458,37 @@ void gate_state_machine::record_vehicle_pass()
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", ctrl_policy.pass_permit(param.vehicle_number, param.id_no, param.qr_code).c_str());
     if (vo && vo->status == 1 && is_entry)
     {
+        device_config dc;
+        system_management_handler::get_inst()->internal_get_device_config(dc);
+        for (auto &itr : dc.gate)
+        {
+            if (itr.entry_config.cam_ip == this->road_ip)
+            {
+                vo->enter_nvr_ip = itr.entry_nvr_ip + ":" + std::to_string(itr.entry_channel);
+                vo->enter_cam_time = zh_rpc_util_get_timestring();
+                break;
+            }
+        }
         auto status = zh_sql_order_status::make_in_status();
         vo->push_status(status);
     }
     if (!is_entry && vo)
     {
-        auto status = zh_sql_order_status::make_end_status();
-        vo->push_status(status);
+        device_config dc;
+        system_management_handler::get_inst()->internal_get_device_config(dc);
+        for (auto &itr : dc.gate)
+        {
+            if (itr.exit_config.cam_ip == this->road_ip)
+            {
+                vo->exit_nvr_ip = itr.exit_nvr_ip + ":" + std::to_string(itr.exit_channel);
+                vo->exit_cam_time = zh_rpc_util_get_timestring();
+                break;
+            }
+        }
+        auto out_status = zh_sql_order_status::make_out_status();
+        vo->push_status(out_status);
+        auto end_status = zh_sql_order_status::make_end_status();
+        vo->push_status(end_status);
     }
 }
 

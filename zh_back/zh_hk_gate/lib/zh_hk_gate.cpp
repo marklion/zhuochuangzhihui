@@ -413,6 +413,12 @@ void __attribute__((constructor)) zh_hk_init(void)
     // req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
     // call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
     NET_DVR_Init();
+    if (!NET_DVR_SetConnectTime(2000, 1) ||
+        !NET_DVR_SetReconnect(10000, true) ||
+        !NET_DVR_SetRecvTimeOut(30000))
+    {
+        g_log.err("failed to init hk_lib:%d", NET_DVR_GetLastError());
+    }
 }
 void __attribute__((destructor)) zh_hk_fini(void)
 {
@@ -623,4 +629,70 @@ bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_
     hk_led_connector hkc(_led_ip);
 
     return hkc.send_cmd(hk_read_cmd_from_file(leave_bye, _plate_no));
+}
+
+std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end)
+{
+    std::string ret;
+    NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
+    std::string store_prefix = "/manage_dist/logo_res/";
+    if (user_id >= 0)
+    {
+        NET_DVR_PLAYCOND time_cond = {0};
+        time_cond.dwChannel = _channel_id;
+        time_cond.struStartTime = _start;
+        time_cond.struStopTime = _end;
+        std::string file_name = store_prefix + "vehicle_video_" + std::to_string(_channel_id) + "_" + std::to_string(time(NULL)) + ".mp4";
+        auto find_video_ret = NET_DVR_GetFileByTime_V40(user_id, (char *)(file_name.c_str()), &time_cond);
+        if (find_video_ret >= 0)
+        {
+            if (NET_DVR_PlayBackControl_V40(find_video_ret, NET_DVR_PLAYSTART, NULL, 0, NULL, NULL))
+            {
+                int nPos = 0;
+                for (nPos = 0; nPos < 100 && nPos >= 0; nPos = NET_DVR_GetDownloadPos(find_video_ret))
+                {
+                    g_log.log("Be downloading... %d %%\n", nPos);
+                    usleep(5000); //millisecond
+                }
+                if (NET_DVR_StopGetFile(find_video_ret) && nPos == 100)
+                {
+                    ret = file_name;
+                }
+                else
+                {
+                    printf("failed to stop get file [%d]", NET_DVR_GetLastError());
+                }
+            }
+            else
+            {
+                g_log.err("Play back control failed [%d]", NET_DVR_GetLastError());
+            }
+        }
+        else
+        {
+            g_log.err("NET_DVR_GetFileByTime_V40 fail,last error %d", NET_DVR_GetLastError());
+        }
+
+        NET_DVR_Logout_V30(user_id);
+    }
+    else
+    {
+        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
+    }
+    if (ret.length() > 0)
+    {
+        auto begin_point = time(NULL);
+        std::string cmd = "ffmpeg -threads 4 -i " + ret + " -s 320x180 tmp_video.mp4 && mv tmp_video.mp4 " + ret;
+        system(cmd.c_str());
+        auto end_point = time(NULL);
+        g_log.log("convert takes %d second", end_point - begin_point);
+    }
+
+    if (ret.length() > store_prefix.length())
+    {
+        ret = ret.substr(store_prefix.length(), ret.length() - store_prefix.length());
+    }
+
+    return ret;
 }

@@ -28,6 +28,7 @@ public:
     virtual bool external_trigger_scale_id(const std::string &id_reader_ip, const std::string &id_no, const std::string &scale_name);
     virtual bool external_trigger_gate_qr(const std::string &road_ip, const std::string &qr_code);
     virtual bool external_trigger_scale_qr(const std::string &scale_ip, const std::string &qr_code, const std::string &scale_name);
+    virtual void get_video(std::string &_return, const std::string &nvr_ip, const int64_t channel_id, const std::string &start_time, const std::string &stop_time);
 };
 
 #endif // _OPEN_API_IMP_H_

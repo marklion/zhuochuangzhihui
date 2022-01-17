@@ -5,6 +5,7 @@
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/open_api.h"
 #include <unistd.h>
+#include <iostream>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -18,7 +19,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, "open_api"));
     auto client = new open_apiClient(mp);
     auto ret = false;
-    auto optstring = "p:i:v:s:q:";
+    auto optstring = "p:i:v:s:q:n:c:S:E:";
     int o = -1;
 
     std::string scale_name;
@@ -26,6 +27,10 @@ int main(int argc, char *argv[])
     std::string vehicle_number;
     std::string road_ip;
     std::string qr_code;
+    std::string nvr_ip;
+    int channel_id = 0;
+    std::string start_time;
+    std::string end_time;
 
     while (-1 != (o = getopt(argc, argv, optstring)))
     {
@@ -46,9 +51,28 @@ int main(int argc, char *argv[])
         case 'q':
             qr_code = optarg;
             break;
+        case 'n':
+            nvr_ip = optarg;
+            break;
+        case 'c':
+            channel_id = atoi(optarg);
+            break;
+        case 'S':
+            start_time = optarg;
+            break;
+        case 'E':
+            end_time = optarg;
+            break;
         default:
             break;
         }
+    }
+
+    if (nvr_ip.length() > 0)
+    {
+        std::string file_name;
+        client->get_video(file_name, nvr_ip, channel_id, start_time, end_time);
+        std::cout << file_name << std::endl;
     }
 
     if (road_ip.empty())
