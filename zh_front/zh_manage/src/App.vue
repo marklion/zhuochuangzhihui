@@ -256,6 +256,6 @@ export default {
 
 .content_show {
     height: 88vh;
-    overflow-y:hidden;
+    overflow-y:auto;
 }
 </style>

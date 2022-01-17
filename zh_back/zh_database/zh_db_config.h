@@ -225,6 +225,16 @@ public:
     long m_called = 0;
     double enter_weight = 0;
     long need_enter_weight = 0;
+    std::string enter_nvr_ip;
+    std::string exit_nvr_ip;
+    std::string p_nvr_ip1;
+    std::string m_nvr_ip1;
+    std::string p_nvr_ip2;
+    std::string m_nvr_ip2;
+    std::string enter_cam_time;
+    std::string exit_cam_time;
+    std::string p_cam_time;
+    std::string m_cam_time;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -249,6 +259,16 @@ public:
         ret.push_back(sqlite_orm_column("m_called", sqlite_orm_column::INTEGER, &m_called));
         ret.push_back(sqlite_orm_column("enter_weight", sqlite_orm_column::REAL, &enter_weight));
         ret.push_back(sqlite_orm_column("need_enter_weight", sqlite_orm_column::INTEGER, &need_enter_weight));
+        ret.push_back(sqlite_orm_column("enter_nvr_ip", sqlite_orm_column::STRING, &enter_nvr_ip));
+        ret.push_back(sqlite_orm_column("exit_nvr_ip", sqlite_orm_column::STRING, &exit_nvr_ip));
+        ret.push_back(sqlite_orm_column("p_nvr_ip1", sqlite_orm_column::STRING, &p_nvr_ip1));
+        ret.push_back(sqlite_orm_column("m_nvr_ip1", sqlite_orm_column::STRING, &m_nvr_ip1));
+        ret.push_back(sqlite_orm_column("p_nvr_ip2", sqlite_orm_column::STRING, &p_nvr_ip2));
+        ret.push_back(sqlite_orm_column("m_nvr_ip2", sqlite_orm_column::STRING, &m_nvr_ip2));
+        ret.push_back(sqlite_orm_column("enter_cam_time", sqlite_orm_column::STRING, &enter_cam_time));
+        ret.push_back(sqlite_orm_column("exit_cam_time", sqlite_orm_column::STRING, &exit_cam_time));
+        ret.push_back(sqlite_orm_column("p_cam_time", sqlite_orm_column::STRING, &p_cam_time));
+        ret.push_back(sqlite_orm_column("m_cam_time", sqlite_orm_column::STRING, &m_cam_time));
 
         return ret;
     }

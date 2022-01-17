@@ -44,6 +44,7 @@ bool zh_hk_cast_exit_busy(const std::string &_led_ip);
 bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no);
+std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end);
 
 
 #endif // _ZH_HK_GATE_H_

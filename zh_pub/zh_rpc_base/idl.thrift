@@ -19,6 +19,10 @@ struct device_gate_config {
     9:bool entry_need_qr,
     10:bool exit_need_id,
     11:bool exit_need_qr,
+    12:string entry_nvr_ip,
+    13:string exit_nvr_ip,
+    14:i64 entry_channel,
+    15:i64 exit_channel,
 }
 
 struct device_scale_config {
@@ -36,6 +40,10 @@ struct device_scale_config {
     12:bool need_id,
     13:bool need_qr,
     14:string scale_brand,
+    15:string entry_nvr_ip,
+    16:string exit_nvr_ip,
+    17:i64 entry_channel,
+    18:i64 exit_channel,
 }
 
 struct device_config {
@@ -221,6 +229,16 @@ struct vehicle_order_detail {
     2:bool confirmed,
     3:bool registered,
     4:bool has_called,
+    5:string enter_nvr_ip,
+    6:string exit_nvr_ip,
+    7:string p_nvr_ip1,
+    8:string p_nvr_ip2,
+    9:string m_nvr_ip1,
+    10:string m_nvr_ip2,
+    11:string enter_time,
+    12:string exit_time,
+    13:string p_time,
+    14:string m_time,
 }
 
 struct vehicle_order_statistics {
@@ -263,4 +281,5 @@ service open_api {
     bool external_trigger_scale_id(1:string id_reader_ip, 2:string id_no, 3:string scale_name) throws (1:gen_exp e),
     bool external_trigger_gate_qr(1:string road_ip, 2:string qr_code) throws (1:gen_exp e),
     bool external_trigger_scale_qr(1:string scale_ip, 2:string qr_code, 3:string scale_name) throws (1:gen_exp e),
+    string get_video(1:string nvr_ip, 2:i64 channel_id, 3:string start_time, 4:string stop_time) throws (1:gen_exp e),
 }

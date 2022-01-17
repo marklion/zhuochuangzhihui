@@ -6,8 +6,12 @@
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR IP">{{single_gate.entry_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 通道">{{single_gate.entry_channel}}</el-descriptions-item>
                     <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR IP">{{single_gate.exit_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 通道">{{single_gate.exit_channel}}</el-descriptions-item>
                     <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item>
                         {{single_gate.entry_qr_ip}}
@@ -60,8 +64,12 @@
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
                 <el-descriptions border :column="4" :title="single_scale.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR IP">{{single_scale.entry_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 通道">{{single_scale.entry_channel}}</el-descriptions-item>
                     <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR IP">{{single_scale.exit_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 通道">{{single_scale.exit_channel}}</el-descriptions-item>
                     <el-descriptions-item label="出口LEDIP">{{single_scale.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
@@ -95,8 +103,20 @@
                     <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
                         <el-input v-model="gate_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口NVRIP" prop="entry_nvr_ip">
+                        <el-input v-model="gate_for_edit.entry_nvr_ip" placeholder="请输入入口NVRIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口通道" prop="entry_channel">
+                        <el-input  v-model="gate_for_edit.entry_channel" type="number" placeholder="请输入入口通道"></el-input>
+                    </el-form-item>
                     <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
                         <el-input v-model="gate_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVRIP" prop="entry_nvr_ip">
+                        <el-input v-model="gate_for_edit.exit_nvr_ip" placeholder="请输入出口NVRIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口通道" prop="exit_channel">
+                        <el-input v-model="gate_for_edit.exit_channel" type="number" placeholder="请输入出口通道"></el-input>
                     </el-form-item>
                     <el-form-item label="入口LEDIP" prop="entry_led_ip">
                         <el-input v-model="gate_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
@@ -141,8 +161,20 @@
                     <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
                         <el-input v-model="scale_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口NVRIP" prop="entry_nvr_ip">
+                        <el-input v-model="scale_for_edit.entry_nvr_ip" placeholder="请输入入口NVRIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口通道" prop="entry_channel">
+                        <el-input v-model="scale_for_edit.entry_channel" placeholder="请输入入口通道"></el-input>
+                    </el-form-item>
                     <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
                         <el-input v-model="scale_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVRIP" prop="entry_nvr_ip">
+                        <el-input v-model="scale_for_edit.exit_nvr_ip" placeholder="请输入出口NVRIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口通道" prop="exit_channel">
+                        <el-input v-model="scale_for_edit.exit_channel" placeholder="请输入出口通道"></el-input>
                     </el-form-item>
                     <el-form-item label="入口LEDIP" prop="entry_led_ip">
                         <el-input v-model="scale_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
@@ -484,6 +516,8 @@ export default {
         },
         edit_gate: function () {
             var vue_this = this;
+            vue_this.gate_for_edit.entry_channel = parseInt(vue_this.gate_for_edit.entry_channel);
+            vue_this.gate_for_edit.exit_channel = parseInt(vue_this.gate_for_edit.exit_channel);
             this.$refs.edit_gate_form.validate((valid) => {
                 if (valid) {
                     vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
@@ -496,6 +530,8 @@ export default {
         },
         edit_scale: function () {
             var vue_this = this;
+            vue_this.scale_for_edit.entry_channel = parseInt(vue_this.scale_for_edit.entry_channel);
+            vue_this.scale_for_edit.exit_channel = parseInt(vue_this.scale_for_edit.exit_channel);
             vue_this.$refs.edit_scale_form.validate((valid) => {
                 if (valid) {
                     vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
