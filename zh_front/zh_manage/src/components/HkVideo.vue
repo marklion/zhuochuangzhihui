@@ -26,20 +26,7 @@ export default {
         };
     },
     methods: {
-        convert_date_to_string: function (date) {
-            var y = date.getFullYear();
-            var m = date.getMonth() + 1;
-            m = m < 10 ? ('0' + m) : m;
-            var d = date.getDate();
-            d = d < 10 ? ('0' + d) : d;
-            var h = date.getHours();
-            h = h < 10 ? ('0' + h) : h;
-            var minute = date.getMinutes();
-            minute = minute < 10 ? ('0' + minute) : minute;
-            var second = date.getSeconds();
-            second = second < 10 ? ('0' + second) : second;
-            return y + '-' + m + '-' + d + ' ' + h + ':' + minute + ':' + second;
-        },
+
         get_video: function () {
             var vue_this = this;
             var begin_time = new Date(vue_this.time_center);
@@ -48,7 +35,7 @@ export default {
             end_time.setSeconds(end_time.getSeconds() + 15);
             var nvr_ip = vue_this.nvr_ip.split(":")[0];
             var nvr_channel = vue_this.nvr_ip.split(":")[1];
-            vue_this.$call_remote_process("open_api", "get_video", [nvr_ip, parseInt(nvr_channel) + 32, vue_this.convert_date_to_string(begin_time), vue_this.convert_date_to_string(end_time)]).then(function (resp) {
+            vue_this.$call_remote_process("open_api", "get_video", [nvr_ip, parseInt(nvr_channel) + 32, vue_this.$make_time_string(begin_time, '-'), vue_this.$make_time_string(end_time, '-')]).then(function (resp) {
                 vue_this.video_path = resp;
             });
         },

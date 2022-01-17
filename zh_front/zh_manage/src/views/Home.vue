@@ -235,26 +235,12 @@ export default {
                 });
             });
         },
-        convert_date_to_string: function (date) {
-            var y = date.getFullYear();
-            var m = date.getMonth() + 1;
-            m = m < 10 ? ('0' + m) : m;
-            var d = date.getDate();
-            d = d < 10 ? ('0' + d) : d;
-            var h = date.getHours();
-            h = h < 10 ? ('0' + h) : h;
-            var minute = date.getMinutes();
-            minute = minute < 10 ? ('0' + minute) : minute;
-            var second = date.getSeconds();
-            second = second < 10 ? ('0' + second) : second;
-            return y + '/' + m + '/' + d + ' ' + h + ':' + minute + ':' + second;
-        },
         init_stuff_history: function () {
             var vue_this = this;
             var begin_date = vue_this.date_range[0];
             var end_date = new Date(vue_this.date_range[1]);
             end_date.setDate(end_date.getDate() + 1);
-            vue_this.$call_remote_process("stuff_management", "get_change_points_for_range", [vue_this.$cookies.get("zh_ssid"), vue_this.convert_date_to_string(begin_date), vue_this.convert_date_to_string(end_date)]).then(function (resp) {
+            vue_this.$call_remote_process("stuff_management", "get_change_points_for_range", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(begin_date, '/'), vue_this.$make_time_string(end_date, '/')]).then(function (resp) {
                 vue_this.stuff_history = [];
                 resp.forEach((element, index) => {
                     vue_this.$set(vue_this.stuff_history, index, element);
