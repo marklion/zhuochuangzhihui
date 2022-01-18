@@ -7,7 +7,7 @@ bool vehicle_is_dup(const vehicle_info &vehicle)
 {
     bool ret = false;
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle>("PRI_ID != %ld AND company_name == '%s' AND (main_vehicle_number == '%s' OR behind_vehicle_number == '%s')",vehicle.id , vehicle.company_name.c_str(), vehicle.main_vehicle_number.c_str(), vehicle.behind_vehicle_number.c_str());
+    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle>("PRI_ID != %ld AND company_name == '%s' AND (main_vehicle_number == '%s' OR (behind_vehicle_number != '' AND behind_vehicle_number == '%s'))",vehicle.id , vehicle.company_name.c_str(), vehicle.main_vehicle_number.c_str(), vehicle.behind_vehicle_number.c_str());
     if (exist_record)
     {
         ret = true;
