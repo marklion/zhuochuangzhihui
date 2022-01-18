@@ -59,7 +59,7 @@
             <el-form-item label="司机身份证" prop="driver_id">
                 <el-input v-model="focus_vehicle.driver_id" placeholder="请输入司机身份证"></el-input>
             </el-form-item>
-            <el-form-item v-if="$store.state.user_info.permission != 3" label="添加白名单" prop="in_white_list">
+            <el-form-item v-if="$store.state.user_info.permission != 3 && focus_vehicle.company_name == ''" label="添加白名单" prop="in_white_list">
                 <el-switch v-model="focus_vehicle.in_white_list" active-color="#13ce66" inactive-color="#ff4949">
                 </el-switch>
             </el-form-item>
@@ -118,12 +118,7 @@ export default {
                     company_name: '(自有)',
                     group_name: "送灰组",
                 };
-                if (this.$store.state.user_info.permission != 3) {
-                    ret.in_white_list = false;
-                    ret2.in_white_list = true;
-                }
-                else
-                {
+                if (!this.$store.state.user_info.permission != 3) {
                     ret.company_name = this.$store.state.user_info.name;
                     ret2.company_name = this.$store.state.user_info.name;
                 }
@@ -152,27 +147,6 @@ export default {
                     group_name: {
                         text: '分组名'
                     },
-
-                }
-                if (this.$store.state.user_info.permission != 3) {
-                    ret.in_white_list = {
-                        text: '是否加入白名单',
-                        formatter: function (_orig) {
-                            if (_orig) {
-                                return "是";
-                            } else {
-                                return "否";
-                            }
-
-                        },
-                        parser: function (_value) {
-                            if (_value == "是") {
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        }
-                    }
                 }
                 return ret;
             },
@@ -187,7 +161,7 @@ export default {
                     trigger: 'blur'
                 }],
                 behind_vehicle_number: [{
-                    required: true,
+                    required: false,
                     message: '请输入挂车车牌',
                     trigger: 'blur'
                 }, {
@@ -197,7 +171,7 @@ export default {
                 }, {
                     validator: (rule, value, callback) => {
                         console.log(rule);
-                        if (value.substr(value.length - 1, value.length) != "挂") {
+                        if (value.length > 0 && value.substr(value.length - 1, value.length) != "挂") {
                             callback(new Error("挂车牌结尾必须为挂"));
                         } else {
                             callback();
@@ -307,7 +281,7 @@ export default {
                 driver_name: '',
                 driver_phone: '',
                 driver_id: '',
-                company_name: this.company_for_select[0].label,
+                company_name: this.company_for_select[0].value,
                 in_white_list: false,
             };
         },
@@ -317,6 +291,12 @@ export default {
             var func_name = "add_vehicle";
             if (!vue_this.current_opt_add) {
                 func_name = "update_vehicle";
+            }
+            if (vue_this.focus_vehicle.company_name == '(自有)') {
+                vue_this.focus_vehicle.company_name = "";
+            }
+            if (vue_this.focus_vehicle.company_name != ""){
+                vue_this.focus_vehicle.in_white_list = false;
             }
             vue_this.focus_vehicle.main_vehicle_number = vue_this.focus_vehicle.main_vehicle_number.toUpperCase();
             vue_this.focus_vehicle.behind_vehicle_number = vue_this.focus_vehicle.behind_vehicle_number.toUpperCase();
@@ -345,7 +325,7 @@ export default {
                     label: element.name,
                 });
             });
-            vue_this.focus_vehicle.company_name = vue_this.company_for_select[0].label;
+            vue_this.focus_vehicle.company_name = vue_this.company_for_select[0].value;
         });
     }
 }

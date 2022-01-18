@@ -335,7 +335,7 @@ export default {
         },
         init_device_info: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("system_management", 'get_device_config', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
+            vue_this.$call_remote_process_no_toast("system_management", 'get_device_config', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
                 vue_this.device_config = resp;
             });
         },
