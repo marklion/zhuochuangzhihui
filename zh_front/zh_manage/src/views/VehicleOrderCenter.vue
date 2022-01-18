@@ -17,10 +17,22 @@
                 <el-tab-pane label="所有派车单" name="all">
                 </el-tab-pane>
                 <el-tab-pane label="未确认" name="need_confirm">
+                    <template slot="label">
+                        <span>未确认</span>
+                        <el-badge :value="cur_statistic.unconfirm" v-if="cur_statistic.unconfirm>0" size="mini"></el-badge>
+                    </template>
                 </el-tab-pane>
-                <el-tab-pane label="未入场" name="has_not_come">
+                <el-tab-pane name="has_not_come">
+                    <template slot="label">
+                        <span>未入场</span>
+                        <el-badge :value="cur_statistic.not_in_yet" v-if="cur_statistic.not_in_yet>0" size="mini"></el-badge>
+                    </template>
                 </el-tab-pane>
-                <el-tab-pane label="已入场" name="insite">
+                <el-tab-pane name="insite">
+                    <template slot="label">
+                        <span>已入场</span>
+                        <el-badge :value="cur_statistic.already_in" v-if="cur_statistic.already_in>0" size="mini"></el-badge>
+                    </template>
                 </el-tab-pane>
                 <el-tab-pane label="已完成" name="end">
                 </el-tab-pane>
@@ -130,10 +142,10 @@
             </el-col>
         </el-row>
     </el-dialog>
-    <el-drawer @closed="clean_select"  :visible.sync="show_vehicle_select" direction="rtl" size="70%">
+    <el-drawer @closed="clean_select" :visible.sync="show_vehicle_select" direction="rtl" size="70%">
         <div slot="title">
             <div>请选择车辆</div>
-            <el-button size="small"  type="primary" @click="push_ready_to_select">确认</el-button>
+            <el-button size="small" type="primary" @click="push_ready_to_select">确认</el-button>
         </div>
         <el-table :data="vehicle_for_select" style="width: 100%" ref="vehicle_select_table" stripe @selection-change="proc_select">
             <el-table-column type="selection" width="55" :selectable="verify_selectable">
@@ -203,7 +215,6 @@ export default {
                             ret.push(element);
                         }
                         break;
-
                     case 'insite':
                         if (element.status > 1 && element.status < 100) {
                             ret.push(element);
@@ -233,6 +244,11 @@ export default {
     },
     data: function () {
         return {
+            cur_statistic: {
+                unconfirm: 0,
+                not_in_yet: 0,
+                already_in: 0,
+            },
             order_selected: [],
             search_condition: '',
             activeName: 'all',
@@ -272,8 +288,7 @@ export default {
     },
     methods: {
         fill_company_name: function () {
-            if (this.$store.state.user_info.permission == 3)
-            {
+            if (this.$store.state.user_info.permission == 3) {
                 this.focus_order.company_name = this.$store.state.user_info.name;
             }
         },
@@ -371,12 +386,21 @@ export default {
             }
             this.vehicle_selected = [];
         },
+        init_statistics: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "get_order_statistics", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.cur_statistic.unconfirm = resp.created;
+                vue_this.cur_statistic.not_in_yet = resp.confirmed;
+                vue_this.cur_statistic.already_in = resp.entered + resp.first_weight + resp.second_weight;
+            });
+        },
         refresh_order: function () {
             var vue_this = this;
             console.log(this.activeName);
             vue_this.all_order = [];
             vue_this.lazy_finish = false;
             this.$refs.lazy_load.check();
+            this.init_statistics();
         },
         edit_order: function () {
             var vue_this = this;
@@ -588,6 +612,7 @@ export default {
     },
     beforeMount: function () {
         var vue_this = this;
+        this.init_statistics();
         vue_this.$call_remote_process("vehicle_management", "get_all_vehicle", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
             resp.forEach((element, index) => {
                 vue_this.$set(vue_this.vehicle_for_select, index, element);
