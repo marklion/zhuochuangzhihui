@@ -581,16 +581,23 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
 
 void vehicle_order_center_handler::get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid)
 {
+    std::string statis_cmd;
     auto user = zh_rpc_util_get_online_user(ssid, 2);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        user.reset(zh_rpc_util_get_online_user(ssid, 3).release());
+        if (!user)
+        {
+            ZH_RETURN_NO_PRAVILIGE();
+        }
+        statis_cmd = " AND company_name == '" + user->name + "'";
     }
-    auto cvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 0");
-    auto convo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1");
-    auto evo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 2");
-    auto fwvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 3");
-    auto swvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 4");
+
+    auto cvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 0 %s", statis_cmd.c_str());
+    auto convo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 %s", statis_cmd.c_str());
+    auto evo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 2 %s", statis_cmd.c_str());
+    auto fwvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 3 %s", statis_cmd.c_str());
+    auto swvo = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 4 %s", statis_cmd.c_str());
     _return.created = cvo.size();
     _return.confirmed = convo.size();
     _return.entered = evo.size();
