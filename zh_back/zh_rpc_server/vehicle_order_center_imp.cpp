@@ -1013,7 +1013,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
         qr_code = getenv("BASE_URL");
-        qr_code += ".d8sis.cn/#/field_opt/" + vo->order_number;
+        qr_code += std::string(getenv("URL_REMOTE")) + "/#/field_opt/" + vo->order_number;
     }
     else
     {
