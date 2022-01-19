@@ -950,16 +950,18 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
     }
     return vo;
 }
+
+static std::string zh_double2string_reserve2(double _value)
+{
+    std::stringstream ss;
+    ss.setf(std::ios::fixed);
+    ss.precision(2);
+    ss << _value;
+    return ss.str();
+}
+
 void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &vo)
 {
-    auto double2string_reserve2 = [](double _value) -> std::string
-    {
-        std::stringstream ss;
-        ss.setf(std::ios::fixed);
-        ss.precision(2);
-        ss << _value;
-        return ss.str();
-    };
     std::string content;
     content += "---------------\n";
     content += "称重车辆：" + bound_vehicle_number + "\n";
@@ -993,12 +995,12 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         }
         if (vo->p_weight != 0)
         {
-            p_weight_string = double2string_reserve2(vo->p_weight) + "吨";
+            p_weight_string = zh_double2string_reserve2(vo->p_weight) + "吨";
         }
         if (vo->m_weight != 0)
         {
-            m_weight_string = double2string_reserve2(vo->m_weight) + "吨";
-            j_weight_string = double2string_reserve2(abs(vo->p_weight - vo->m_weight));
+            m_weight_string = zh_double2string_reserve2(vo->m_weight) + "吨";
+            j_weight_string = zh_double2string_reserve2(abs(vo->p_weight - vo->m_weight));
         }
         content += "一次称重" + p_type + p_weight_string + "\n";
         content += "称重时间：" + p_time + "\n";
@@ -1015,7 +1017,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     }
     else
     {
-        content += "称重：" + double2string_reserve2(fin_weight) + "吨\n";
+        content += "称重：" + zh_double2string_reserve2(fin_weight) + "吨\n";
         content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
     }
     std::string printer_ip;
@@ -1181,7 +1183,7 @@ void scale_state_machine::broadcast_leave_scale()
     }
     if (led_ip.length() > 0)
     {
-        zh_hk_cast_exit_scale(led_ip);
+        zh_hk_cast_exit_scale(led_ip, zh_double2string_reserve2(fin_weight));
     }
 }
 
@@ -1252,9 +1254,9 @@ void scale_sm_scale::before_leave(tdf_state_machine &_sm)
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     auto vo = ssm.record_order();
     ssm.print_weight_ticket(vo);
+    ssm.broadcast_leave_scale();
     ssm.close_timer();
     ssm.open_exit();
-    ssm.broadcast_leave_scale();
 }
 std::unique_ptr<tdf_state_machine_state> scale_sm_clean::change_state(tdf_state_machine &_sm)
 {
@@ -1336,6 +1338,21 @@ gate_state_machine::gate_state_machine(
         zh_qr_subscribe(_qr_ip, tmp_cfg);
     }
     m_cur_state.reset(new gate_sm_vehicle_come());
+    device_config dc;
+    system_management_handler::get_inst()->internal_get_device_config(dc);
+    for (auto &itr : dc.gate)
+    {
+        if (itr.entry_config.cam_ip == _road_ip)
+        {
+            zh_hk_cast_empty(itr.entry_config.led_ip);
+            break;
+        }
+        if (itr.exit_config.cam_ip == _road_ip)
+        {
+            zh_hk_cast_empty(itr.exit_config.led_ip);
+            break;
+        }
+    }
 }
 gate_state_machine::~gate_state_machine()
 {
@@ -1367,6 +1384,11 @@ void gate_state_machine::gate_cast_accept()
         if (road_ip == itr.entry_config.cam_ip)
         {
             led_ip = itr.entry_config.led_ip;
+            break;
+        }
+        if (road_ip == itr.exit_config.cam_ip)
+        {
+            led_ip = itr.exit_config.led_ip;
             break;
         }
     }

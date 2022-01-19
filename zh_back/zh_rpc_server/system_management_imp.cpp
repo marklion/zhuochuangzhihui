@@ -133,10 +133,6 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("entry_channel", itr.entry_channel);
         gate.Add("exit_channel", itr.exit_channel);
         tmp["gate"].Add(gate);
-        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, itr.entry_qr_ip, true);
-        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
-        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, itr.exit_qr_ip, false);
-        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
     }
 
     for (auto &itr : config.scale)
@@ -165,11 +161,23 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("entry_channel", itr.entry_channel);
         scale.Add("exit_channel", itr.exit_channel);
         tmp["scale"].Add(scale);
+    }
+    config_file << tmp.ToFormattedString();
+    config_file.close();
+
+    for (auto &itr:config.gate)
+    {
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, itr.entry_qr_ip, true);
+        vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, itr.exit_qr_ip, false);
+        vehicle_order_center_handler::gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
+    }
+    for (auto &itr:config.scale)
+    {
         vehicle_order_center_handler::ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
         vehicle_order_center_handler::ssm_map[itr.name]->ctrl_policy.set_policy(itr.need_id, itr.need_qr);
     }
 
-    config_file << tmp.ToFormattedString();
 
     return true;
 }

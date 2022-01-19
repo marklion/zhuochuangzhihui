@@ -141,6 +141,7 @@ struct tdf_timer_node : public Itdf_io_channel
     tdf_timer_proc m_proc = nullptr;
     void *m_private = nullptr;
     int m_handle = -1;
+    bool m_one_time = false;
     void proc_in()
     {
         uint64_t times = 0;
@@ -157,6 +158,11 @@ struct tdf_timer_node : public Itdf_io_channel
                     }
                 }
                 m_proc(m_private);
+                if (m_one_time)
+                {
+                    tdf_main::get_inst().stop_timer(m_handle);
+                    return;
+                }
             }
         }
     }
@@ -539,7 +545,7 @@ bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_
 
     return ret;
 }
-int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private)
+int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _one_time)
 {
     int ret = -1;
     int timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
@@ -559,6 +565,7 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private)
         pnode->m_proc = _proc;
         pnode->m_sec = _sec;
         pnode->m_handle = timer_fd;
+        pnode->m_one_time = _one_time;
 
         struct epoll_event ev = {
             .events = EPOLLIN,
