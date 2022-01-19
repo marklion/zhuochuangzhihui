@@ -26,4 +26,4 @@ jobs:
         uses: softprops/action-gh-release@v0.1.14
         with:
           files: |
-            ./install.sh
+            ./build/install.sh
