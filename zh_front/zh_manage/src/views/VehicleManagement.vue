@@ -118,7 +118,7 @@ export default {
                     company_name: '(自有)',
                     group_name: "送灰组",
                 };
-                if (!this.$store.state.user_info.permission != 3) {
+                if (this.$store.state.user_info.permission == 3) {
                     ret.company_name = this.$store.state.user_info.name;
                     ret2.company_name = this.$store.state.user_info.name;
                 }
