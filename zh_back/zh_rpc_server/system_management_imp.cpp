@@ -10,7 +10,7 @@
 #include "../zh_scale/lib/zh_scale.h"
 #include "../zh_printer/lib/zh_printer.h"
 #include "vehicle_order_center_imp.h"
-
+#include <fstream>
 
 system_management_handler *system_management_handler::m_inst = nullptr;
 
@@ -24,7 +24,8 @@ bool system_management_handler::reboot_system(const std::string &ssid)
 }
 void system_management_handler::current_version(std::string &_return)
 {
-    _return = "v1.0";
+    std::ifstream version_file("/conf/version.txt");
+    std::getline(version_file, _return);
 }
 
 void system_management_handler::internal_get_device_config(device_config &_return)
@@ -281,7 +282,7 @@ void system_management_handler::run_update(const std::string &ssid, const std::s
 
 void system_management_handler::get_domain_name(std::string &_return)
 {
-    _return = std::string(getenv("BASE_URL")) + ".d8sis.cn";
+    _return = std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE"));
 }
 
 void system_management_handler::get_oem_name(std::string &_return)
