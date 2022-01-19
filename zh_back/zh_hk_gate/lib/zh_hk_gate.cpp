@@ -469,23 +469,204 @@ static std::string file_type_map[] = {
 
 };
 
-std::string hk_read_cmd_from_file(hk_cast_type _type, const std::string &_plate_no)
+#define ZH_HK_ORIGINAL_FRAME(ret,frame) (ret).append((char *)(frame), sizeof(frame))
+std::string hk_led_make_text_block(const std::string &_msg, char _pos, char _color, char _action = 0x01)
 {
     std::string ret;
-    std::string file_name = "/database/" + file_type_map[_type] + ".txt";
-    int fd = open(file_name.c_str(), O_RDONLY);
-    if (fd >= 0)
+    unsigned char zone_no[] = {_pos + 1};
+    int zone_len = 26;
+    unsigned char zone_type[] = {0x0e};
+    unsigned char zone_position[] = {0x00,0x00,16*_pos,0x00,0x3f,0x00,0x0f + 16*_pos,0x00};
+    unsigned char zone_color[] = {_color};
+    unsigned char reserved[2] = {0};
+    unsigned char zone_action[] = {_action, 0x00};
+    unsigned char zone_speed[] = {20};
+    unsigned char zone_stay[] = {3};
+    unsigned char zone_font[] = {0x10};
+    int string_len = 0;
+
+    auto text_string = utf2gbk(_msg);
+    string_len = text_string.size();
+    zone_len += string_len;
+
+    ZH_HK_ORIGINAL_FRAME(ret, zone_no);
+    ret.append((char *)&zone_len, sizeof(zone_len));
+    ZH_HK_ORIGINAL_FRAME(ret, zone_type);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_position);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_color);
+    ZH_HK_ORIGINAL_FRAME(ret, reserved);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_action);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_speed);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_stay);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_font);
+    ret.append((char *)&string_len, sizeof(string_len));
+    ret.append(text_string);
+
+    g_log.log("make oem_block");
+    g_log.log_package(ret.data(), ret.length());
+    return ret;
+}
+std::string hk_led_make_program_oem_data()
+{
+    std::string text_string(getenv("OEM_SHORT")?getenv("OEM_SHORT"):getenv("OEM_NAME"));
+    return hk_led_make_text_block(text_string, 0, 1);
+}
+std::string hk_led_make_program_time_data()
+{
+    std::string ret;
+    unsigned char zone_no[] = {0x02};
+    int zone_len = 32;
+    unsigned char zone_type[] = {0x21};
+    unsigned char zone_position[] = {0x00, 0x00, 0x10, 0x00, 0x3f, 0x00, 0x1f, 0x00};
+    unsigned char zone_color[] = {0x02};
+    unsigned char reserved[2] = {0};
+    unsigned char zone_action[] = {0x20, 0x00};
+    unsigned char zone_speed[] = {20};
+    unsigned char zone_stay[] = {3};
+    unsigned char zone_font[] = {0x10};
+    int time_len = 6;
+    unsigned char time_upate_type[] = {'s'};
+    unsigned char time_type[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+    char time_format[] = "%Y4-%M3-%D2 %h0:%m:%s";
+
+    time_len += strlen(time_format);
+    zone_len += strlen(time_format);
+
+    ZH_HK_ORIGINAL_FRAME(ret, zone_no);
+    ret.append((char *)&zone_len, sizeof(zone_len));
+    ZH_HK_ORIGINAL_FRAME(ret, zone_type);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_position);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_color);
+    ZH_HK_ORIGINAL_FRAME(ret, reserved);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_action);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_speed);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_stay);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_font);
+    ret.append((char *)&time_len, sizeof(time_len));
+    ZH_HK_ORIGINAL_FRAME(ret, time_upate_type);
+    ZH_HK_ORIGINAL_FRAME(ret, time_type);
+    ret.append(time_format);
+
+    g_log.log("make time_block");
+    g_log.log_package(ret.data(), ret.length());
+    return ret;
+}
+std::string hk_led_make_program_msg_data(const std::string &_msg)
+{
+    return hk_led_make_text_block(_msg, 2, 4, 0x20);
+}
+std::string hk_led_make_program_plate_data(const std::string &_plate_no)
+{
+    return hk_led_make_text_block(_plate_no, 3, 2);
+}
+
+std::string hk_led_make_program_voice_data(const std::string &_voice)
+{
+    std::string ret;
+    unsigned char zone_no[] = {0x05};
+    int zone_len = 27;
+    unsigned char zone_type[] = {0x2D};
+    unsigned char zone_reserved[15] = {0};
+    unsigned char zone_circle[] = {0x01};
+    int string_len = 0;
+
+    auto voice_string = utf2gbk(_voice);
+    string_len = voice_string.length();
+    zone_len += voice_string.length();
+
+    ZH_HK_ORIGINAL_FRAME(ret, zone_no);
+    ret.append((char *)&zone_len, sizeof(zone_len));
+    ZH_HK_ORIGINAL_FRAME(ret, zone_type);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_reserved);
+    ZH_HK_ORIGINAL_FRAME(ret, zone_circle);
+    ret.append((char *)&string_len, sizeof(string_len));
+    ret.append(voice_string);
+
+    g_log.log("make voice_block");
+    g_log.log_package(ret.data(), ret.length());
+    return ret;
+}
+
+std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_plate_no)
+{
+    std::string ret;
+
+    unsigned char program_count[] = {0x01};
+    unsigned char program_no[] = {0x01};
+    unsigned int program_len = 0;
+    unsigned char zone_count[] = {0x02};
+    unsigned char reserve[18] = {0};
+
+    if (_msg.length() > 0)
     {
-        char byte_char[3] = {0};
-        char tmp_char = 0;
-        while (2 == read(fd, byte_char, 2))
+        zone_count[0] = 0x04;
+        if (_plate_no.length() > 0)
         {
-            sscanf(byte_char, "%02x", &tmp_char);
-            ret.push_back(tmp_char);
+            zone_count[0]++;
         }
-        close(fd);
     }
-    unsigned char sample_vehicle[] = {0xc3, 0xc9, 0x4b, 0x31, 0x32, 0x33, 0x34, 0x35};
+    auto program_blocks = hk_led_make_program_oem_data();
+    program_blocks += hk_led_make_program_time_data();
+    if (_msg.length() > 0)
+        ;
+    {
+        program_blocks += hk_led_make_program_msg_data(_msg);
+        if (_plate_no.length() > 0)
+        {
+            program_blocks += hk_led_make_program_plate_data(_plate_no);
+        }
+        program_blocks += hk_led_make_program_voice_data(_msg + _plate_no);
+    }
+    program_len = program_blocks.length();
+
+    ZH_HK_ORIGINAL_FRAME(ret, program_count);
+    ZH_HK_ORIGINAL_FRAME(ret, program_no);
+    ret.append((char *)&program_len, sizeof(program_len));
+    ZH_HK_ORIGINAL_FRAME(ret, zone_count);
+    ZH_HK_ORIGINAL_FRAME(ret, reserve);
+    ret.append(program_blocks);
+
+    g_log.log("make frame");
+    g_log.log_package(ret.data(), ret.length());
+    return ret;
+}
+
+std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_no)
+{
+    std::string ret;
+    unsigned char frame_header[] = {0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00};
+    unsigned char frame_tail[] = {0x00, 0x00, 0x0d, 0x0a};
+    unsigned char op_code[] = {0xda};
+    unsigned char frame_no[] = {0x00, 0x00};
+    unsigned int data_len = 0;
+    unsigned char frame_reserve[] = {0x00, 0x00};
+
+    if (_msg.length() > 0)
+    {
+        op_code[0] = 0xdb;
+    }
+    auto frame_data = hk_led_make_frame_data(_msg, _plate_no);
+    if (frame_data.length() > 0)
+    {
+        ZH_HK_ORIGINAL_FRAME(ret, frame_header);
+        ZH_HK_ORIGINAL_FRAME(ret, op_code);
+        ZH_HK_ORIGINAL_FRAME(ret, frame_no);
+        data_len = frame_data.length();
+        ret.append((char *)&data_len, sizeof(data_len));
+        ZH_HK_ORIGINAL_FRAME(ret, frame_reserve);
+        ret.append((char *)&data_len, sizeof(data_len));
+        ret.append(frame_data);
+        ZH_HK_ORIGINAL_FRAME(ret, frame_tail);
+    }
+    g_log.log("make cmd");
+    g_log.log_package(ret.data(), ret.length());
+    return ret;
+}
+
+
+bool zh_hk_cast_empty(const std::string &_led_ip)
+{
+    hk_led_connector hkc(_led_ip);
     unsigned char sample_date[]{0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00, 0xc5, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x21, 0x01, 0x12, 0x20, 0x10, 0x32, 0x33, 0x00, 0x00, 0x0d, 0x0a};
     time_t cur_time;
     time(&cur_time);
@@ -498,52 +679,14 @@ std::string hk_read_cmd_from_file(hk_cast_type _type, const std::string &_plate_
     sample_date[24] = (time_str.tm_hour % 10) | (time_str.tm_hour / 10 * 16);
     sample_date[25] = (time_str.tm_min % 10) | (time_str.tm_min / 10 * 16);
     sample_date[26] = (time_str.tm_sec % 10) | (time_str.tm_sec / 10 * 16);
-
-    char *tmp_buff = (char *)calloc(1, ret.length());
-    if (tmp_buff != NULL)
-    {
-        memcpy(tmp_buff, ret.data(), ret.length());
-        if (_plate_no.length() > 0)
-        {
-            auto gbk_plate_no = utf2gbk(_plate_no);
-            for (auto i = 0; i < ret.length(); i++)
-            {
-                if (0 == memcmp(sample_vehicle, tmp_buff + i, sizeof(sample_vehicle)))
-                {
-                    memcpy(tmp_buff + i, gbk_plate_no.data(), sizeof(sample_vehicle));
-                }
-            }
-        }
-
-        ret.assign(tmp_buff, ret.length());
-        free(tmp_buff);
-    }
-    ret.insert(0, (char *)sample_date, sizeof(sample_date));
-
-    return ret;
-}
-
-static std::map<std::string, int> g_led_timer_map;
-
-bool zh_hk_cast_empty(const std::string &_led_ip)
-{
-    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
-    {
-        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
-        g_led_timer_map.erase(_led_ip);
-    }
-    hk_led_connector hkc(_led_ip);
-    return hkc.send_cmd(hk_read_cmd_from_file(empty, ""));
+    std::string time_cor_cmd((char *)sample_date, sizeof(sample_date));
+    hkc.send_cmd(time_cor_cmd);
+    return hkc.send_cmd(hk_led_make_cmd("", ""));
 }
 
 void zh_hk_cast_auto_empty(int _second, const std::string &_led_ip)
 {
-    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
-    {
-        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
-        g_led_timer_map.erase(_led_ip);
-    }
-    g_led_timer_map[_led_ip] = tdf_main::get_inst().start_timer(
+    tdf_main::get_inst().start_timer(
         _second,
         [](void *_private)
         {
@@ -551,7 +694,7 @@ void zh_hk_cast_auto_empty(int _second, const std::string &_led_ip)
             zh_hk_cast_empty(*led_ip);
             free(_private);
         },
-        new std::string(_led_ip));
+        new std::string(_led_ip), true);
 }
 
 bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plate_no)
@@ -559,53 +702,48 @@ bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plat
     zh_hk_cast_auto_empty(3, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(enter_scale, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("请上磅", _plate_no));
 }
 bool zh_hk_cast_no_order(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(6, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(no_order, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("未派车", _plate_no));
 }
 bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(6, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(no_call, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("未叫号", _plate_no));
 }
 bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(6, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(no_confirm, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("未确认装卸货", _plate_no));
 }
 bool zh_hk_cast_holding(const std::string &_led_ip)
 {
-    if (g_led_timer_map.find(_led_ip) != g_led_timer_map.end())
-    {
-        tdf_main::get_inst().stop_timer(g_led_timer_map[_led_ip]);
-        g_led_timer_map.erase(_led_ip);
-    }
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(holding, ""));
+    return hkc.send_cmd(hk_led_make_cmd("请保持静止，等待提示", ""));
 }
-bool zh_hk_cast_exit_scale(const std::string &_led_ip)
+bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight)
 {
-    zh_hk_cast_auto_empty(3, _led_ip);
+    zh_hk_cast_auto_empty(10, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(exit_scale, ""));
+    return hkc.send_cmd(hk_led_make_cmd("请取称重小票后下榜", _weight + "吨"));
 }
 bool zh_hk_cast_exit_busy(const std::string &_led_ip)
 {
     zh_hk_cast_auto_empty(3, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(busy, ""));
+    return hkc.send_cmd(hk_led_make_cmd("正在称重，请稍后", ""));
 }
 
 bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no)
@@ -613,22 +751,21 @@ bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no
     zh_hk_cast_auto_empty(3, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(welcome, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("欢迎光临", _plate_no));
 }
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(6, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(cannot_leave, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("未完成称重，不能离场", _plate_no));
 }
 bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no)
 {
-
     zh_hk_cast_auto_empty(3, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_read_cmd_from_file(leave_bye, _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("一路顺风", _plate_no));
 }
 
 std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end)

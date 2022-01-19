@@ -14,6 +14,7 @@ DOCKER_IMG_NAME="zh_deploy:v1.0"
 SRC_DIR=`dirname $(realpath $0)`/../
 BASE_URL_INPUT=""
 OEM_NAME_INPUT="卓创智汇"
+OEM_SHORT_INPUT="卓创智汇"
 
 is_in_container() {
     cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null
@@ -33,7 +34,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 113`
+    line=`expr $line - 117`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -52,12 +53,12 @@ start_docker_con() {
     local DEVICE_CONFIG_FILE_PATH=`realpath ${DEVICE_CONFIG_FILE_INPUT}`
     local DEVICE_CONFIG_FILE_PATH=`dirname ${DEVICE_CONFIG_FILE_PATH}`
     local IMG_BED=`realpath $IMG_BED_INPUT`
-    local CON_ID=`docker create --privileged --restart=always -p ${PORT}:80 -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local CON_ID=`docker create --privileged --restart=always -p ${PORT}:80 -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -e OEM_SHORT="${OEM_SHORT_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start ${CON_ID}
 }
 
-while getopts "D:p:w:d:i:m:a:k:M:g:b:o:" arg
+while getopts "D:p:w:d:i:m:a:k:M:g:b:o:O:" arg
 do
     case $arg in
         D)
@@ -89,6 +90,9 @@ do
             ;;
         o)
             OEM_NAME_INPUT=${OPTARG}
+            ;;
+        O)
+            OEM_SHORT_INPUT=${OPTARG}
             ;;
         a)
             ALI_KEY_ID_INPUT=${OPTARG}
