@@ -366,10 +366,6 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    if (vo->p_weight == 0)
-    {
-        ZH_RETURN_MSG("未完成一次称重，不允许确认");
-    }
     vo->m_permit = confirmed;
     ret = vo->update_record();
     return ret;
@@ -1482,9 +1478,16 @@ bool gate_state_machine::should_open()
         {
             if (vo)
             {
-                if (vo->status == 4)
+                if (vo->m_permit)
                 {
-                    ret = true;
+                    if (vo->p_weight == 0)
+                    {
+                        ret = true;
+                    }
+                    else if (vo->m_weight > 0)
+                    {
+                        ret = true;
+                    }
                 }
             }
             else

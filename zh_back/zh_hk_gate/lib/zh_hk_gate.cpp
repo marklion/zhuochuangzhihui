@@ -758,7 +758,7 @@ bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_pla
     zh_hk_cast_auto_empty(6, _led_ip);
     hk_led_connector hkc(_led_ip);
 
-    return hkc.send_cmd(hk_led_make_cmd("未完成称重，不能离场", _plate_no));
+    return hkc.send_cmd(hk_led_make_cmd("未确认装卸货或未二次称重，不能离场", _plate_no));
 }
 bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no)
 {
