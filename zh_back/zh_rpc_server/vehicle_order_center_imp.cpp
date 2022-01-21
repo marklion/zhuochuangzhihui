@@ -11,7 +11,7 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
-void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name)
+void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string& enter_date)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
@@ -47,6 +47,21 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
         {
             detail_query += " AND status > 1 AND status < 100";
         }
+    }
+
+    if (enter_date.length() > 0)
+    {
+        detail_query += " AND (PRI_ID == 0";
+        auto date_status = sqlite_orm::search_record_all<zh_sql_order_status>("(step == 2 OR step == 3) AND timestamp LIKE '%s%%'", enter_date.c_str());
+        for (auto &singel_date : date_status)
+        {
+            auto order = singel_date.get_parent<zh_sql_vehicle_order>("belong_order");
+            if (order)
+            {
+                detail_query += " OR PRI_ID == " + std::to_string(order->get_pri_id());
+            }
+        }
+        detail_query += ")";
     }
 
     auto orders = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY PRI_ID DESC LIMIT 30 OFFSET %ld", detail_query.c_str(), anchor);

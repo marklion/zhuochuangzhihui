@@ -12,7 +12,7 @@
         </el-col>
     </el-row>
     <el-row type="flex" justify="space-between">
-        <el-col>
+        <el-col :span="12">
             <el-tabs v-model="activeName" @tab-click="refresh_order">
                 <el-tab-pane label="所有派车单" name="all">
                 </el-tab-pane>
@@ -38,7 +38,13 @@
                 </el-tab-pane>
             </el-tabs>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
+            <div align="right" style="margin-right:10px;">
+                <el-date-picker @change="choose_date" v-model="enter_date_filter" align="right" type="date" placeholder="过滤进厂日期" :picker-options="picker_option" value-format="yyyy-MM-dd">
+                </el-date-picker>
+            </div>
+        </el-col>
+        <el-col :span="6">
             <div align="right" style="margin-right:10px;">
                 <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
             </div>
@@ -48,61 +54,82 @@
         <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
             <el-table-column type="selection" width="30px">
             </el-table-column>
-            <el-table-column label="单号" min-width="30px">
+            <el-table-column label="单号" width="130px">
                 <template slot-scope="scope">
                     <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
                         <el-link type="primary">{{scope.row.order_number}}</el-link>
                     </router-link>
                 </template>
             </el-table-column>
-            <el-table-column prop="company_name" label="公司" min-width="60px">
+            <el-table-column prop="company_name" label="公司" width="250px">
             </el-table-column>
-            <el-table-column prop="stuff_name" label="运输货物" min-width="20px">
+            <el-table-column prop="stuff_name" label="运输货物" width="130px">
             </el-table-column>
-            <el-table-column label="状态" min-width="20px">
+            <el-table-column label="状态" width="80px">
                 <template slot-scope="scope">
                     {{scope.row.status_details[scope.row.status_details.length - 1].name}}
                 </template>
             </el-table-column>
-            <el-table-column label="车辆信息" min-width="130px">
+            <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
+            </el-table-column>
+            <el-table-column width="40px" type="expand">
                 <template slot-scope="scope">
-                    <el-descriptions size="mini" :column="4" border>
-                        <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
-                        <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
-                        <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
-                        <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
-                        <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
-                        <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
-                        <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
-                    </el-descriptions>
+                    <div style="width:600px;">
+                        <el-descriptions size="mini" :column="4" border>
+                            <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
+                            <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
+                            <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
+                            <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
+                            <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
+                            <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
+                            <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
+                        </el-descriptions>
+                    </div>
                 </template>
             </el-table-column>
-            <el-table-column label="附件" min-width="25px">
+            <el-table-column label="进厂时间" width="160px">
+                <template slot-scope="scope">
+                    {{calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)}}
+                </template>
+            </el-table-column>
+            <el-table-column label="出厂时间" width="160px">
+                <template slot-scope="scope">
+                    {{calc_status_date(scope.row, 100)}}
+                </template>
+            </el-table-column>
+            <el-table-column label="附件" width="100px">
                 <template slot-scope="scope">
                     <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
                     </el-image>
                     <div v-else>
                         无附件
                     </div>
-                </template>
-            </el-table-column>
-            <el-table-column fixed="right" label="操作" min-width="30px">
-                <template slot-scope="scope">
                     <div v-if="scope.row.status <= 1">
-                        <el-button v-if="scope.row.attachment" type="warning" size="mini" @click="delete_attachment(scope.row)">删除附件</el-button>
+                        <el-button v-if="scope.row.attachment" icon="el-icon-delete" type="warning" size="mini" @click="delete_attachment(scope.row)">删除</el-button>
                         <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
-                            <el-button size="mini" type="primary">上传附件</el-button>
+                            <el-button size="mini" type="primary" icon="el-icon-paperclip">上传</el-button>
                         </el-upload>
                     </div>
-                    <div v-if="scope.row.status < 2">
-                        <el-button type="danger" size="mini" @click="cancel_order([scope.row])">取消</el-button>
-                    </div>
-                    <div v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
-                        <el-button type="success" size="mini" @click="confirm_order([scope.row])">确认可进</el-button>
-                    </div>
-                    <div v-if="scope.row.status == 1">
-                        <el-button type="warning" size="mini" @click="copy_check_in_link(scope.row)">复制排号链接</el-button>
-                    </div>
+                </template>
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="120px">
+                <template slot-scope="scope">
+
+                    <span v-if="scope.row.status < 2">
+                        <el-tooltip class="item" effect="dark" content="取消派车" placement="top">
+                            <el-button type="danger" size="small" icon="el-icon-s-release" @click="cancel_order([scope.row])" circle></el-button>
+                        </el-tooltip>
+                    </span>
+                    <span v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
+                        <el-tooltip class="item" effect="dark" content="确认派车" placement="top">
+                            <el-button type="success" size="small" icon="el-icon-check" circle @click="confirm_order([scope.row])"></el-button>
+                        </el-tooltip>
+                    </span>
+                    <span v-if="scope.row.status == 1">
+                        <el-tooltip class="item" effect="dark" content="拷贝排号连接" placement="top">
+                            <el-button type="warning" size="small" icon="el-icon-postcard" circle @click="copy_check_in_link(scope.row)"></el-button>
+                        </el-tooltip>
+                    </span>
                 </template>
             </el-table-column>
         </el-table>
@@ -244,6 +271,43 @@ export default {
     },
     data: function () {
         return {
+            picker_option: {
+                disabledDate(time) {
+                    return time.getTime() > Date.now();
+                },
+                shortcuts: [{
+                    text: '今天',
+                    onClick(picker) {
+                        picker.$emit('pick', new Date());
+                    }
+                }, {
+                    text: '昨天',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24);
+                        picker.$emit('pick', date);
+                    }
+                }, {
+                    text: '一周前',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', date);
+                    }
+                }]
+            },
+            enter_date_filter: '',
+            calc_status_date: function (_row, _status) {
+                var ret = "";
+
+                _row.status_details.forEach(element => {
+                    if (element.step == _status) {
+                        ret = element.timestamp;
+                    }
+                });
+
+                return ret;
+            },
             cur_statistic: {
                 unconfirm: 0,
                 not_in_yet: 0,
@@ -287,6 +351,9 @@ export default {
         };
     },
     methods: {
+        choose_date: function () {
+            this.refresh_order();
+        },
         fill_company_name: function () {
             if (this.$store.state.user_info.permission == 3) {
                 this.focus_order.company_name = this.$store.state.user_info.name;
@@ -432,7 +499,7 @@ export default {
         },
         get_order: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length, vue_this.activeName]).then(function (resp) {
+            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length, vue_this.activeName, vue_this.enter_date_filter]).then(function (resp) {
                 resp.forEach(element => {
                     vue_this.all_order.push(element);
                 });

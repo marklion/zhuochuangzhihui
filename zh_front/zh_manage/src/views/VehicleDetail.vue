@@ -145,22 +145,22 @@
 
     <vue-grid align="stretch" justify="start">
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.enter_nvr_ip" title="进厂录像" :nvr_ip="cur_vehicle.enter_nvr_ip" :time_center="new Date(cur_vehicle.enter_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.enter_nvr_ip)" title="进厂录像" :nvr_ip="cur_vehicle.enter_nvr_ip" :time_center="new Date(cur_vehicle.enter_time)"></hk-video>
         </vue-cell>
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.exit_nvr_ip" title="出厂录像" :nvr_ip="cur_vehicle.exit_nvr_ip" :time_center="new Date(cur_vehicle.exit_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.exit_nvr_ip)" title="出厂录像" :nvr_ip="cur_vehicle.exit_nvr_ip" :time_center="new Date(cur_vehicle.exit_time)"></hk-video>
         </vue-cell>
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.p_nvr_ip1" title="一次称重录像1" :nvr_ip="cur_vehicle.p_nvr_ip1" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.p_nvr_ip1)" title="一次称重录像1" :nvr_ip="cur_vehicle.p_nvr_ip1" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
         </vue-cell>
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.p_nvr_ip2" title="一次称重录像2" :nvr_ip="cur_vehicle.p_nvr_ip2" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.p_nvr_ip2)" title="一次称重录像2" :nvr_ip="cur_vehicle.p_nvr_ip2" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
         </vue-cell>
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.m_nvr_ip1" title="二次称重录像1" :nvr_ip="cur_vehicle.m_nvr_ip1" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.m_nvr_ip1)" title="二次称重录像1" :nvr_ip="cur_vehicle.m_nvr_ip1" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
         </vue-cell>
         <vue-cell width="4of12">
-            <hk-video v-if="cur_vehicle.m_nvr_ip2" title="二次称重录像2" :nvr_ip="cur_vehicle.m_nvr_ip2" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
+            <hk-video v-if="has_video_rec(cur_vehicle.m_nvr_ip2)" title="二次称重录像2" :nvr_ip="cur_vehicle.m_nvr_ip2" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
         </vue-cell>
     </vue-grid>
 </div>
@@ -188,6 +188,14 @@ export default {
             manual_weight_data: {
                 p_weight: 0.0,
                 m_weight: 0.0,
+            },
+            has_video_rec: function (_ip_channel) {
+                var ret = false;
+                if (_ip_channel.split(":")[0]) {
+                    ret = true;
+                }
+
+                return ret;
             },
         };
     },
