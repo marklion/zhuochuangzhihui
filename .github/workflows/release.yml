@@ -27,3 +27,4 @@ jobs:
         with:
           files: |
             ./build/install.sh
+            ./zh_plugin/plugin_build/*.tar.gz
