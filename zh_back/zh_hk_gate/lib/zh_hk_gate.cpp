@@ -480,7 +480,7 @@ std::string hk_led_make_text_block(const std::string &_msg, char _pos, char _col
     unsigned char zone_color[] = {_color};
     unsigned char reserved[2] = {0};
     unsigned char zone_action[] = {_action, 0x00};
-    unsigned char zone_speed[] = {20};
+    unsigned char zone_speed[] = {15};
     unsigned char zone_stay[] = {3};
     unsigned char zone_font[] = {0x10};
     int string_len = 0;
@@ -514,50 +514,19 @@ std::string hk_led_make_program_oem_data()
 std::string hk_led_make_program_time_data()
 {
     std::string ret;
-    unsigned char zone_no[] = {0x02};
-    int zone_len = 32;
-    unsigned char zone_type[] = {0x21};
-    unsigned char zone_position[] = {0x00, 0x00, 0x10, 0x00, 0x3f, 0x00, 0x1f, 0x00};
-    unsigned char zone_color[] = {0x02};
-    unsigned char reserved[2] = {0};
-    unsigned char zone_action[] = {0x20, 0x00};
-    unsigned char zone_speed[] = {20};
-    unsigned char zone_stay[] = {3};
-    unsigned char zone_font[] = {0x10};
-    int time_len = 6;
-    unsigned char time_upate_type[] = {'s'};
-    unsigned char time_type[] = {0x00, 0x00, 0x00, 0x00, 0x00};
-    char time_format[] = "%Y4-%M3-%D2 %h0:%m:%s";
-
-    time_len += strlen(time_format);
-    zone_len += strlen(time_format);
-
-    ZH_HK_ORIGINAL_FRAME(ret, zone_no);
-    ret.append((char *)&zone_len, sizeof(zone_len));
-    ZH_HK_ORIGINAL_FRAME(ret, zone_type);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_position);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_color);
-    ZH_HK_ORIGINAL_FRAME(ret, reserved);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_action);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_speed);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_stay);
-    ZH_HK_ORIGINAL_FRAME(ret, zone_font);
-    ret.append((char *)&time_len, sizeof(time_len));
-    ZH_HK_ORIGINAL_FRAME(ret, time_upate_type);
-    ZH_HK_ORIGINAL_FRAME(ret, time_type);
-    ret.append(time_format);
-
+    auto time_string = zh_rpc_util_get_timestring();
+    ret = hk_led_make_text_block(time_string, 1, 8, 0x20);
     g_log.log("make time_block");
     g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 std::string hk_led_make_program_msg_data(const std::string &_msg)
 {
-    return hk_led_make_text_block(_msg, 2, 4, 0x20);
+    return hk_led_make_text_block(_msg, 2, 1, 0x20);
 }
 std::string hk_led_make_program_plate_data(const std::string &_plate_no)
 {
-    return hk_led_make_text_block(_plate_no, 3, 2);
+    return hk_led_make_text_block(_plate_no, 3, 8);
 }
 
 std::string hk_led_make_program_voice_data(const std::string &_voice)
@@ -608,7 +577,6 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
     auto program_blocks = hk_led_make_program_oem_data();
     program_blocks += hk_led_make_program_time_data();
     if (_msg.length() > 0)
-        ;
     {
         program_blocks += hk_led_make_program_msg_data(_msg);
         if (_plate_no.length() > 0)
@@ -662,7 +630,6 @@ std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_n
     g_log.log_package(ret.data(), ret.length());
     return ret;
 }
-
 
 bool zh_hk_cast_empty(const std::string &_led_ip)
 {

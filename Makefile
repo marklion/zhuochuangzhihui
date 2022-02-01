@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-SUB_DIR=zh_pub zh_back zh_external zh_front
+SUB_DIR=zh_pub zh_back zh_external zh_front zh_plugin
 BUILD_MODE=build
 VERSION_TAG=internal
 export BUILD_MODE
@@ -17,7 +17,7 @@ all:$(DELIVER_PATH)
 
 $(DELIVER_PATH):$(SUB_DIR)
 	[ -d $@ ] || mkdir $@
-	for component in $^;do [ -d $(SRC_DIR)/$$component/build ] && cp -a $(SRC_DIR)/$$component/build/* $@/; done
+	for component in $^;do [ -d $(SRC_DIR)/$$component/build ] && cp -a $(SRC_DIR)/$$component/build/* $@/ || echo no_assert; done
 
 $(SUB_DIR):
 	$(MAKE) -C $(SRC_DIR)/$@
