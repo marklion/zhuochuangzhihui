@@ -78,6 +78,24 @@ export default {
                 });
 
                 break;
+            case 'company_address':
+                vue_this.$call_remote_process("contract_management", "get_all_contract", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                    resp.forEach(element => {
+                        vue_this.all_item.push({
+                            value: element.company_address,
+                        });
+                    });
+                });
+                break;
+            case 'use_for':
+                vue_this.all_item.push({value:"煤场用煤"});
+                vue_this.all_item.push({value:"工业用煤"});
+                vue_this.all_item.push({value:"民用燃煤"});
+                vue_this.all_item.push({value:"铁路用煤"});
+                vue_this.all_item.push({value:"电厂用煤"});
+                vue_this.all_item.push({value:"化工用煤"});
+                vue_this.all_item.push({value:"供暖用煤"});
+                break;
             default:
                 break;
         }

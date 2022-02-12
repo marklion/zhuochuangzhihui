@@ -34,3 +34,4 @@ COPY frpc* /bin/
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync python3-pip
 RUN pip install alibabacloud_dysmsapi20170525==2.0.8
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cups

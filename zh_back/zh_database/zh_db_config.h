@@ -76,6 +76,7 @@ public:
     std::string date;
     long is_sale = 0;
     std::string code;
+    std::string address;
     zh_sql_contract()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -88,6 +89,7 @@ public:
         ret.push_back(sqlite_orm_column("date", sqlite_orm_column::STRING, &date));
         ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
         ret.push_back(sqlite_orm_column("is_sale", sqlite_orm_column::INTEGER, &is_sale));
+        ret.push_back(sqlite_orm_column("address", sqlite_orm_column::STRING, &address));
 
         return ret;
     }
@@ -235,6 +237,8 @@ public:
     std::string exit_cam_time;
     std::string p_cam_time;
     std::string m_cam_time;
+    std::string company_address;
+    std::string use_for;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -269,6 +273,8 @@ public:
         ret.push_back(sqlite_orm_column("exit_cam_time", sqlite_orm_column::STRING, &exit_cam_time));
         ret.push_back(sqlite_orm_column("p_cam_time", sqlite_orm_column::STRING, &p_cam_time));
         ret.push_back(sqlite_orm_column("m_cam_time", sqlite_orm_column::STRING, &m_cam_time));
+        ret.push_back(sqlite_orm_column("company_address", sqlite_orm_column::STRING, &company_address));
+        ret.push_back(sqlite_orm_column("use_for", sqlite_orm_column::STRING, &use_for));
 
         return ret;
     }

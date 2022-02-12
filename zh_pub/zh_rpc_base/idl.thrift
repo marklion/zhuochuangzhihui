@@ -129,6 +129,7 @@ struct contract_info {
     6:string code,
     7:string admin_phone,
     8:string admin_password,
+    9:string company_address,
 }
 
 service contract_management {
@@ -210,6 +211,8 @@ struct vehicle_order_info {
     15:string enter_weight_attachment,
     16:double enter_weight,
     17:bool need_enter_weight,
+    18:string company_address,
+    19:string use_for,
 }
 
 struct gate_relate_info {
@@ -282,4 +285,11 @@ service open_api {
     bool external_trigger_gate_qr(1:string road_ip, 2:string qr_code) throws (1:gen_exp e),
     bool external_trigger_scale_qr(1:string scale_ip, 2:string qr_code, 3:string scale_name) throws (1:gen_exp e),
     string get_video(1:string nvr_ip, 2:i64 channel_id, 3:string start_time, 4:string stop_time) throws (1:gen_exp e),
+}
+
+service plugin_management {
+    string run_plugin_cmd(1:string ssid, 2:string plugin_name, 3:string cmd) throws (1:gen_exp e),
+    bool install_plugin(1:string ssid, 2:string plugin_name, 3:string file_name) throws (1:gen_exp e),
+    void uninstall_plugin(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
+    list<string> get_installed_plugins(1:string ssid) throws (1:gen_exp e),
 }

@@ -6,6 +6,7 @@
             <el-descriptions title="基本信息" :column="2" border>
                 <el-descriptions-item label="派车单号">{{cur_vehicle.basic_info.order_number}}</el-descriptions-item>
                 <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}</el-descriptions-item>
+                <el-descriptions-item v-if="cur_vehicle.basic_info.company_address" label="运往地点">{{cur_vehicle.basic_info.company_address}}</el-descriptions-item>
                 <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
                 <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
                 <el-descriptions-item label="挂车">{{cur_vehicle.basic_info.behind_vehicle_number}}</el-descriptions-item>
@@ -17,6 +18,7 @@
                         <el-button type="text" @click="show_enter_weight = true">预览磅单</el-button>
                     </span>
                 </el-descriptions-item>
+                <el-descriptions-item v-if="cur_vehicle.basic_info.use_for" label="用途">{{cur_vehicle.basic_info.use_for}}</el-descriptions-item>
             </el-descriptions>
         </el-col>
         <el-col :span="12">

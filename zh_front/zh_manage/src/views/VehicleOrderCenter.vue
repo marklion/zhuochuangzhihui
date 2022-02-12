@@ -144,6 +144,14 @@
                     <el-form-item label="运输货物" prop="stuff_name">
                         <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
                     </el-form-item>
+                    <div v-if="need_print_ticket">
+                        <el-form-item label="运往地点" prop="company_address">
+                            <item-for-select v-model="focus_order.company_address" search_key="company_address"></item-for-select>
+                        </el-form-item>
+                        <el-form-item label="用途" prop="use_for">
+                            <item-for-select v-model="focus_order.use_for" search_key="use_for"></item-for-select>
+                        </el-form-item>
+                    </div>
                     <el-form-item>
                         <el-button type="primary" @click="edit_order">确认</el-button>
                     </el-form-item>
@@ -269,8 +277,30 @@ export default {
             return ret;
         },
     },
+    watch: {
+        "focus_order.company_name": function (_value) {
+            if (_value) {
+                var vue_this = this;
+                vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "get -k basic_data"]).then(function (resp) {
+                    var basic_data = JSON.parse(resp);
+                    if (basic_data.customers.find((element) => {
+                            return element.Name == _value;
+                        })) {
+                        vue_this.need_print_ticket = true;
+                    }
+                    else
+                    {
+                        vue_this.need_print_ticket = false;
+                    }
+                });
+            } else {
+                vue_this.need_print_ticket = false;
+            }
+        },
+    },
     data: function () {
         return {
+            need_print_ticket: false,
             picker_option: {
                 disabledDate(time) {
                     return time.getTime() > Date.now();
@@ -339,6 +369,8 @@ export default {
             all_order: [],
             focus_order: {
                 company_name: '',
+                company_address: '',
+                use_for: '',
                 main_vehicle_number: '',
                 behind_vehicle_number: '',
                 driver_id: '',
@@ -444,6 +476,8 @@ export default {
         clean_order: function () {
             this.focus_order = {
                 company_name: '',
+                company_address: '',
+                use_for: '',
                 main_vehicle_number: '',
                 behind_vehicle_number: '',
                 driver_id: '',
@@ -479,6 +513,8 @@ export default {
                     var single_req = element;
                     single_req.company_name = vue_this.focus_order.company_name;
                     single_req.stuff_name = vue_this.focus_order.stuff_name;
+                    single_req.company_address = vue_this.focus_order.company_address;
+                    single_req.use_for = vue_this.focus_order.use_for;
                     req_body.push(single_req);
                 });
                 func_name = "create_vehicle_order";

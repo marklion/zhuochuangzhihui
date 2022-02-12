@@ -13,10 +13,14 @@
         <van-cell v-if="stuff_change > 0" title="净重（卸货）" :value="j_weight"></van-cell>
         <van-cell v-if="stuff_change < 0" title="净重（拉货）" :value="j_weight"></van-cell>
     </div>
-    <div style="margin:15px;" v-if="cur_order.basic_info.status == 3">
+    <div style="margin:15px;" v-if="cur_order.basic_info.status >= 1 && cur_order.basic_info.status != 100">
         <van-button v-if="!cur_order.confirmed" block type="primary" @click="confirm_deliver(true)">确认</van-button>
         <van-button v-else block type="danger" @click="confirm_deliver(false)">取消确认</van-button>
     </div>
+    <div style="margin:15px;" v-if="cur_order.basic_info.status == 100">
+        <van-button block type="info" @click="print_ticket">打票</van-button>
+    </div>
+
 </div>
 </template>
 
@@ -48,6 +52,26 @@ export default {
         },
     },
     methods: {
+        print_ticket: function () {
+            var vue_this = this;
+            var print_req = {
+                "main_vehicle_number": vue_this.cur_order.basic_info.main_vehicle_number,
+                "p_weight": vue_this.cur_order.basic_info.p_weight.toFixed(2),
+                "m_weight": vue_this.cur_order.basic_info.m_weight.toFixed(2),
+                "axes": "6",
+                "j_weight": (vue_this.cur_order.basic_info.m_weight - vue_this.cur_order.basic_info.p_weight).toFixed(2),
+                "finish_date": vue_this.$make_time_string(new Date(), '-'),
+                "stuff_name": vue_this.cur_order.basic_info.stuff_name,
+                "company_name": vue_this.cur_order.basic_info.company_name,
+                "company_address": vue_this.cur_order.basic_info.company_address,
+                "use_for": vue_this.cur_order.basic_info.use_for,
+            };
+            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "finish '" + JSON.stringify(print_req) + "'"]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_order();
+                }
+            });
+        },
         confirm_deliver: function (_confirm) {
             var vue_this = this;
             if (!_confirm) {
