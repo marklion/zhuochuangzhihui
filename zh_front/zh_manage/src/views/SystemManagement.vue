@@ -107,7 +107,7 @@
                         <el-input v-model="gate_for_edit.entry_nvr_ip" placeholder="请输入入口NVRIP"></el-input>
                     </el-form-item>
                     <el-form-item label="入口通道" prop="entry_channel">
-                        <el-input  v-model="gate_for_edit.entry_channel" type="number" placeholder="请输入入口通道"></el-input>
+                        <el-input v-model="gate_for_edit.entry_channel" type="number" placeholder="请输入入口通道"></el-input>
                     </el-form-item>
                     <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
                         <el-input v-model="gate_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
@@ -304,6 +304,25 @@
                 </el-col>
             </el-row>
         </el-tab-pane>
+        <el-tab-pane label="插件配置" name="plugin_conf">
+            <vue-grid align="stretch" justify="start">
+                <vue-cell v-for="(single_plugin, index) in installed_plugins" :key="index" width="6of12">
+                    <el-card>
+                        <div slot="header" class="clearfix">
+                            <span>{{single_plugin}}</span>
+                            <el-button type="text" style="float:right;" @click="uninstall_plugin(single_plugin)">卸载</el-button>
+                        </div>
+                        <component :is="get_component_from_plugin_name(single_plugin)"></component>
+                    </el-card>
+
+                </vue-cell>
+                <vue-cell width="6of12">
+                    <el-upload :action="$remote_url + '/upload/'" :limit="1" :on-success="install_plugin" :show-file-list="false">
+                        <i class="el-icon-plus avatar-uploader-icon"></i>
+                    </el-upload>
+                </vue-cell>
+            </vue-grid>
+        </el-tab-pane>
     </el-tabs>
 </div>
 </template>
@@ -327,6 +346,11 @@ export default {
     },
     data: function () {
         return {
+            get_component_from_plugin_name: function (_plugin_name) {
+                var comp = require(`../components/${_plugin_name}.vue`);
+                return comp.default;
+            },
+            installed_plugins: [],
             content_need_print1: '',
             content_need_print2: '',
             cur_opt_scale: {
@@ -414,6 +438,22 @@ export default {
         };
     },
     methods: {
+        install_plugin(resp, file) {
+            var real_path = resp.match(/^\/tmp\/.*/gm)[0];
+            var file_name_split = file.name.split('.');
+            var vue_this = this;
+            vue_this.$call_remote_process("plugin_management", "install_plugin", [vue_this.$cookies.get("zh_ssid"), file_name_split[0], real_path]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_plugins();
+                }
+            });
+        },
+        uninstall_plugin: function (_plugin) {
+            var vue_this = this;
+            vue_this.$call_remote_process("plugin_management", "uninstall_plugin", [vue_this.$cookies.get("zh_ssid"), _plugin]).then(function () {
+                vue_this.init_plugins();
+            })
+        },
         reboot_system: function () {
             var vue_this = this;
             this.$confirm('确定要重启吗', '提示', {
@@ -556,6 +596,15 @@ export default {
                 vue_this.device_config = resp;
             });
         },
+        init_plugins: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("plugin_management", "get_installed_plugins", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.installed_plugins = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.installed_plugins, index, element);
+                });
+            });
+        },
     },
     beforeMount: function () {
         var vue_this = this;
@@ -563,6 +612,7 @@ export default {
             vue_this.current_version = resp;
         });
         this.init_device_info();
+        this.init_plugins();
     },
 }
 </script>

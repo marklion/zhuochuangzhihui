@@ -116,7 +116,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         _return.push_back(tmp);
     }
 }
-std::vector<std::string> split_string(const std::string &str, const std::string &pattern)
+static std::vector<std::string> split_string(const std::string &str, const std::string &pattern)
 {
     using namespace std;
     vector<string> res;

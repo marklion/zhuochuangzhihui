@@ -28,6 +28,8 @@
         </el-table-column>
         <el-table-column prop="admin_phone" label="管理员手机号" min-width="45px">
         </el-table-column>
+        <el-table-column prop="company_address" label="公司地址" min-width="30px">
+        </el-table-column>
         <el-table-column prop="date" label="修改日期">
         </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="50px">
@@ -41,6 +43,9 @@
         <el-form :model="new_contract" ref="add_contract_form" :rules="rules" label-width="120px">
             <el-form-item label="对方公司名称" prop="name">
                 <el-input v-model="new_contract.name" placeholder="请输入对方公司名称"></el-input>
+            </el-form-item>
+            <el-form-item label="公司地址" prop="company_address">
+                <el-input v-model="new_contract.company_address" placeholder="请输入对方公司地址"></el-input>
             </el-form-item>
             <el-form-item label="管理员手机" prop="admin_phone">
                 <el-input v-model="new_contract.admin_phone" placeholder="请输入对方公司管理员手机号"></el-input>
@@ -98,10 +103,12 @@ export default {
         return {
             sample_table: [{
                 name: '客户公司名',
+                company_address:"内蒙古通辽",
                 code: '合同编号1',
                 is_sale: true,
             },{
                 name: '供应商公司名',
+                company_address:"新疆伊犁",
                 code: '合同编号2',
                 is_sale: false,
             }],
@@ -132,6 +139,9 @@ export default {
             col_map: {
                 name: {
                     text: '公司名',
+                },
+                company_address: {
+                    text: '公司地址',
                 },
                 code: {
                     text: '编码',

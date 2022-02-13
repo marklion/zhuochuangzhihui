@@ -21,7 +21,7 @@
                 </div>
             </template>
         </van-cell>
-        <van-cell v-if="single_vehicle.has_called" title="装卸货确认" is-link :to="{name:'FieldOpt', params:{order_no:single_vehicle.basic_info.order_number}}"></van-cell>
+        <van-cell v-if="single_vehicle.has_called" title="详细信息" is-link :to="{name:'FieldOpt', params:{order_no:single_vehicle.basic_info.order_number}}"></van-cell>
     </div>
 
 </div>

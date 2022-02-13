@@ -64,6 +64,7 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
     }
     tmp.code = contract.code;
     tmp.is_sale = contract.is_sale ? 1 : 0;
+    tmp.address = contract.company_address;
 
     ret = tmp.insert_record();
     if (ret && contract.admin_phone.length() > 0)
@@ -142,6 +143,7 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
     exist_record->code = contract.code;
     exist_record->is_sale = contract.is_sale ? 1 : 0;
     exist_record->name = contract.name;
+    exist_record->address = contract.company_address;
 
     auto ext_user = exist_record->get_children<zh_sql_user_info>("belong_contract");
     if (ext_user)
@@ -190,6 +192,7 @@ void contract_management_handler::get_all_contract(std::vector<contract_info> &_
         tmp.id = itr.get_pri_id();
         tmp.is_sale = itr.is_sale == 0 ? false : true;
         tmp.name = itr.name;
+        tmp.company_address = itr.address;
         auto ext_user = itr.get_children<zh_sql_user_info>("belong_contract");
         if (ext_user)
         {

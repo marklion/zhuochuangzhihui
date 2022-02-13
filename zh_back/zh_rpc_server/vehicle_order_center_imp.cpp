@@ -102,6 +102,8 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
         }
         tmp.enter_weight = itr.enter_weight;
         tmp.need_enter_weight = itr.need_enter_weight;
+        tmp.company_address = itr.company_address;
+        tmp.use_for = itr.use_for;
 
         _return.push_back(tmp);
     }
@@ -187,6 +189,8 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
         tmp.stuff_name = order.stuff_name;
         tmp.company_name = order.company_name;
         tmp.status = -1;
+        tmp.company_address = order.company_address;
+        tmp.use_for = order.use_for;
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
         if (stuff && stuff->need_enter_weight)
         {
@@ -323,6 +327,8 @@ void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_
     }
     tmp.enter_weight = vo->enter_weight;
     tmp.need_enter_weight = vo->need_enter_weight;
+    tmp.company_address = vo->company_address;
+    tmp.use_for = vo->use_for;
     _return.basic_info = tmp;
     _return.confirmed = vo->m_permit;
     _return.has_called = vo->m_called;
