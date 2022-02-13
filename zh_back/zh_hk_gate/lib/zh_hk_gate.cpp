@@ -575,7 +575,10 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
         }
     }
     auto program_blocks = hk_led_make_program_oem_data();
-    program_blocks += hk_led_make_program_time_data();
+    if (_plate_no.length() > 0 || _msg.length() > 0)
+    {
+        program_blocks += hk_led_make_program_time_data();
+    }
     if (_msg.length() > 0)
     {
         program_blocks += hk_led_make_program_msg_data(_msg);
