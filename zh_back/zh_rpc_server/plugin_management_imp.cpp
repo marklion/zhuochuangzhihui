@@ -128,7 +128,7 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
     {
         cmd_permisson_req = 3;
     }
-    auto user = zh_rpc_util_get_online_user(ssid, 3);
+    auto user = zh_rpc_util_get_online_user(ssid, cmd_permisson_req);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();

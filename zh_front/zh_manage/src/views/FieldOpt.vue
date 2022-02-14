@@ -55,10 +55,10 @@ export default {
         print_ticket: function () {
             var vue_this = this;
             var print_req = {
-                "main_vehicle_number": vue_this.cur_order.basic_info.main_vehicle_number + '123123123123',
+                "main_vehicle_number": vue_this.cur_order.basic_info.main_vehicle_number,
                 "p_weight": vue_this.cur_order.basic_info.p_weight.toFixed(2),
                 "m_weight": vue_this.cur_order.basic_info.m_weight.toFixed(2),
-                "axes": "1000",
+                "axes": "6",
                 "j_weight": (vue_this.cur_order.basic_info.m_weight - vue_this.cur_order.basic_info.p_weight).toFixed(2),
                 "finish_date": vue_this.$make_time_string(new Date(), '-'),
                 "stuff_name": vue_this.cur_order.basic_info.stuff_name,
