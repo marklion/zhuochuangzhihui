@@ -147,7 +147,15 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     //for debug
     // auto orig_url = zh_ordos_ticket_get_config()("remote_url");
     // zh_ordos_set_config("remote_url", "https://www.fastmock.site/mock/34e68b17ea9b4e8b3d37f02809fed8af/thirdParty");
-    zh_ordos_req_with_token("/vehicles/supervisory_gross_weight", _msg);
+    auto gross_info = neb::CJsonObject(_msg);
+    neb::CJsonObject curb_weight;
+    curb_weight.Add("VehicleNum", gross_info("VehicleNum"));
+    curb_weight.Add("CurbWeight", gross_info("CurbWeight"));
+    curb_weight.Add("Axes", gross_info("Axes"));
+    curb_weight.Add("GPS", zh_ordos_ticket_get_config()("gps"));
+    zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString());
+    gross_info.Add("GPS", zh_ordos_ticket_get_config()("gps"));
+    zh_ordos_req_with_token("/vehicles/supervisory_gross_weight", gross_info.ToString());
     //for debug
     // zh_ordos_set_config("remote_url", orig_url);
     auto ticket_number = print_req("WarehouseDetail");
@@ -230,4 +238,13 @@ bool zh_ordos_ticket_init()
     config.Delete("remote_url");
     zh_ordos_set_config("remote_url", "http://58.18.38.116:8811");
     return true;
+}
+
+void zh_ordos_ticket_refresh()
+{
+    auto config = zh_ordos_ticket_get_config();
+    if (config("token").length() > 0)
+    {
+        zh_ordos_fetch_basic();
+    }
 }

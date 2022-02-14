@@ -18,6 +18,7 @@ int main(int argc, char **argv)
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string)) |
                 command("init").set(cmd) |
+                command("refresh").set(cmd) |
                 command("tids").set(cmd) |
                 (command("finish").set(cmd) & value("req_json", json_string)) |
                 (command("print").set(cmd) & value("req_json", json_string)));
@@ -97,6 +98,11 @@ int main(int argc, char **argv)
         {
             iret = 0;
         }
+    }
+    else if (cmd == "refresh")
+    {
+        zh_ordos_ticket_refresh();
+        iret = 0;
     }
 
     return iret;
