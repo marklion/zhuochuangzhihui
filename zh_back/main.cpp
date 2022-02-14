@@ -116,6 +116,7 @@ int main(int argc, char const *argv[])
     init_admin_user();
 
     std::thread ([]{
+
         tdf_main::get_inst().run();
     }).detach();
 
@@ -137,6 +138,19 @@ int main(int argc, char const *argv[])
     threadManager->threadFactory(threadFactory);
     threadManager->start();
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
+    tdf_main::get_inst().start_timer(
+        1000, [](void *_private)
+        {
+            auto single_this = (plugin_management_handler *)(_private);
+            auto all_plugins = single_this->internel_get_installed_plugins();
+            for (auto &itr : all_plugins)
+            {
+                std::string std_out_tmp;
+                std::string std_err_tmp;
+                single_this->zh_plugin_run_plugin("refresh", itr, std_out_tmp, std_err_tmp);
+            }
+        },
+        plugin_management_handler::get_inst());
 
     tp_server.serve();
 

@@ -60,23 +60,13 @@ static std::vector<std::string> split_string(const std::string &str, const std::
 
     return ret;
 }
-void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::string &ssid, const std::string &plugin_name, const std::string &cmd)
+void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, const std::string &_plugin_name, std::string &_stdout_string, std::string &_stderr_string)
 {
-    int cmd_permisson_req = 1;
-    if (cmd.substr(0, 3) == "get")
-    {
-        cmd_permisson_req = 3;
-    }
-    auto user = zh_rpc_util_get_online_user(ssid, 3);
-    if (!user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
     int pipfd[2];
     int pipfd_err[2];
     pipe(pipfd);
     pipe(pipfd_err);
-    std::string plug_cmd = "/plugin/" + plugin_name + "/bin/" + plugin_name + "_plugin";
+    std::string plug_cmd = "/plugin/" + _plugin_name + "/bin/" + _plugin_name + "_plugin";
     int ipid = fork();
     if (ipid > 0)
     {
@@ -85,7 +75,7 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
         char buff = 0;
         while (read(pipfd[0], &buff, sizeof(buff)) > 0)
         {
-            _return.push_back(buff);
+            _stdout_string.push_back(buff);
         }
         std::string error_string;
         while (read(pipfd_err[0], &buff, sizeof(buff)) > 0)
@@ -100,16 +90,16 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
         if (error_string.size() > 0 || istatus != 0)
         {
             error_string.insert(0, "出错原因");
-            ZH_RETURN_MSG(error_string);
+            _stderr_string = error_string;
         }
-        if (_return.length() > 0 && _return[_return.size() - 1] == '\n')
+        if (_stdout_string.length() > 0 && _stdout_string[_stdout_string.size() - 1] == '\n')
         {
-            _return.pop_back();
+            _stdout_string.pop_back();
         }
     }
     else
     {
-        auto all_args = split_string(cmd, " ");
+        auto all_args = split_string(_cmd, " ");
         char **argv = (char **)calloc(1UL, (all_args.size() + 2) * sizeof(char *));
         int i = 1;
         argv[0] = (char *)calloc(1UL, plug_cmd.length() + 1);
@@ -129,6 +119,25 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
         dup2(pipfd[1], 1);
         dup2(pipfd_err[1], 2);
         execv(plug_cmd.c_str(), argv);
+    }
+}
+void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::string &ssid, const std::string &plugin_name, const std::string &cmd)
+{
+    int cmd_permisson_req = 1;
+    if (cmd.substr(0, 3) == "get")
+    {
+        cmd_permisson_req = 3;
+    }
+    auto user = zh_rpc_util_get_online_user(ssid, cmd_permisson_req);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    std::string error_string;
+    zh_plugin_run_plugin(cmd, plugin_name, _return, error_string);
+    if (error_string.length() > 0)
+    {
+        ZH_RETURN_MSG(error_string);
     }
 }
 
@@ -166,6 +175,13 @@ void plugin_management_handler::get_installed_plugins(std::vector<std::string> &
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
+    auto all_plugins = internel_get_installed_plugins();
+    _return = all_plugins;
+}
+
+std::vector<std::string> plugin_management_handler::internel_get_installed_plugins()
+{
+    std::vector<std::string> _return;
     std::string cmd = "ls /plugin/";
     auto read_fd = popen(cmd.c_str(), "r");
     if (read_fd)
@@ -184,4 +200,5 @@ void plugin_management_handler::get_installed_plugins(std::vector<std::string> &
             _return.pop_back();
         }
     }
+    return _return;
 }

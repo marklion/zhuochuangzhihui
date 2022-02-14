@@ -13,4 +13,5 @@ void zh_ordos_ticket_order_finish(const std::string &_msg);
 bool zh_ordos_ticket_print_ticket(const std::string &_msg);
 bool zh_ordos_ticket_proc_finish(const std::string &_msg);
 bool zh_ordos_ticket_init();
+void zh_ordos_ticket_refresh();
 #endif // _ZH_ORDOS_TICKETS_H_
