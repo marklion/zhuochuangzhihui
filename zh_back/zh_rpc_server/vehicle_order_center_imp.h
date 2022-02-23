@@ -190,6 +190,7 @@ public:
     virtual void get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid);
     virtual bool upload_enter_weight_attachment(const int64_t order_id, const std::string &attachment, const double enter_weight);
     virtual bool print_weight_ticket(const std::string &ssid, const int64_t order_id, const std::string &printer_ip);
+    virtual void check_price_balance(std::string &_return, const std::string &ssid, const std::vector<vehicle_order_info> &order);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

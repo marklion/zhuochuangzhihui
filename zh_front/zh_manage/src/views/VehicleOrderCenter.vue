@@ -50,6 +50,12 @@
             </div>
         </el-col>
     </el-row>
+    <el-popover ref="pop1" v-model="visible1" width="200">
+        <company-balance :company_name="curObj1"></company-balance>
+    </el-popover>
+    <el-popover ref="pop2" v-model="visible2" width="200">
+        <stuff-price :stuff_name="curObj2"></stuff-price>
+    </el-popover>
     <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
         <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
             <el-table-column type="selection" width="30px">
@@ -61,13 +67,24 @@
                     </router-link>
                 </template>
             </el-table-column>
-            <el-table-column prop="company_name" label="公司" width="250px">
-            </el-table-column>
-            <el-table-column prop="stuff_name" label="运输货物" width="130px">
-            </el-table-column>
-            <el-table-column label="状态" width="80px">
+            <el-table-column label="公司" width="250px">
                 <template slot-scope="scope">
-                    {{scope.row.status_details[scope.row.status_details.length - 1].name}}
+                    <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
+                </template>
+            </el-table-column>
+            <el-table-column  label="运输货物" width="130px">
+                <template slot-scope="scope">
+                    <div slot="reference" @mouseenter="e=> show_pop_info2(e, scope.row.stuff_name)" @mouseleave="visible2 = false">{{scope.row.stuff_name}}</div>
+                </template>
+            </el-table-column>
+            <el-table-column label="状态" width="200px">
+                <template slot-scope="scope">
+                    <div>
+                        {{scope.row.status_details[scope.row.status_details.length - 1].name}}
+                    </div>
+                    <div v-if="scope.row.status == 0" style="color:red;">
+                        {{scope.row.balance_warn}}
+                    </div>
                 </template>
             </el-table-column>
             <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
@@ -87,12 +104,12 @@
                     </div>
                 </template>
             </el-table-column>
-            <el-table-column label="进厂时间" width="160px">
+            <el-table-column label="进厂时间" width="180px">
                 <template slot-scope="scope">
                     {{calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)}}
                 </template>
             </el-table-column>
-            <el-table-column label="出厂时间" width="160px">
+            <el-table-column label="出厂时间" width="180px">
                 <template slot-scope="scope">
                     {{calc_status_date(scope.row, 100)}}
                 </template>
@@ -137,6 +154,14 @@
     <el-dialog @open="fill_company_name" @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
         <el-row type="flex" justify="space-between" align="middle">
             <el-col :span="10">
+                <el-row type="flex" justify="space-between" align="middle">
+                    <el-col :span="12" v-if="focus_order.company_name">
+                        <company-balance :company_name="focus_order.company_name"></company-balance>
+                    </el-col>
+                    <el-col :span="12" v-if="focus_order.stuff_name">
+                        <stuff-price :stuff_name="focus_order.stuff_name"></stuff-price>
+                    </el-col>
+                </el-row>
                 <el-form :model="focus_order" ref="edit_order_form" :rules="rules" label-width="120px">
                     <el-form-item label="派车公司" prop="company_name">
                         <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_order.company_name" search_key="company_name"></item-for-select>
@@ -203,6 +228,8 @@
 <script>
 import Vue from 'vue';
 import ItemForSelect from "../components/ItemForSelect.vue"
+import CompanyBalance from "../components/CompanyBalance.vue"
+import StuffPrice from "../components/StuffPrice.vue"
 import infiniteScroll from 'vue-infinite-scroll'
 
 import PinyinMatch from "pinyin-match"
@@ -218,6 +245,8 @@ export default {
     name: 'VehicleOrderCenter',
     components: {
         "item-for-select": ItemForSelect,
+        "company-balance": CompanyBalance,
+        "stuff-price": StuffPrice,
     },
     events: {
         ['need_refresh']() {
@@ -287,9 +316,7 @@ export default {
                             return element.Name == _value;
                         })) {
                         vue_this.need_print_ticket = true;
-                    }
-                    else
-                    {
+                    } else {
                         vue_this.need_print_ticket = false;
                     }
                 });
@@ -300,6 +327,7 @@ export default {
     },
     data: function () {
         return {
+            pop_info_component: undefined,
             need_print_ticket: false,
             picker_option: {
                 disabledDate(time) {
@@ -379,10 +407,39 @@ export default {
                 stuff_name: '',
             },
             domain_name: '',
-
+            curObj1: '',
+            curObj2: '',
+            visible1: false,
+            visible2: false,
         };
     },
     methods: {
+show_pop_info2: function (e, obj) {
+            this.curObj2 = obj
+            //关键代码
+            //先隐藏并销毁之前显示的
+            this.visible2 = false
+            var pop2 = this.$refs.pop2
+            pop2.doDestroy(true)
+            this.$nextTick(() => {
+                //显示新的
+                pop2.referenceElm = pop2.$refs.reference = e.target
+                this.visible2 = true
+            })
+        },
+        show_pop_info1: function (e, obj) {
+            this.curObj1 = obj
+            //关键代码
+            //先隐藏并销毁之前显示的
+            this.visible1 = false
+            var pop1 = this.$refs.pop1
+            pop1.doDestroy(true)
+            this.$nextTick(() => {
+                //显示新的
+                pop1.referenceElm = pop1.$refs.reference = e.target
+                this.visible1 = true
+            })
+        },
         choose_date: function () {
             this.refresh_order();
         },
@@ -440,11 +497,31 @@ export default {
         },
         confirm_order: function (orders) {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "confirm_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
-                if (resp) {
-                    vue_this.refresh_order();
+            var need_confirm_balance = false;
+            orders.forEach(element => {
+                if (element.balance_warn) {
+                    need_confirm_balance = true;
                 }
             });
+            var real_func = function () {
+                vue_this.$call_remote_process("vehicle_order_center", "confirm_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
+                    if (resp) {
+                        vue_this.refresh_order();
+                    }
+                });
+            };
+            if (need_confirm_balance) {
+                vue_this.$confirm('车辆所属的公司余额不足，确定要确认派车吗', '提示', {
+                    confirmButtonText: '强制确认',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    real_func();
+                })
+            } else {
+                real_func();
+            }
+
         },
         remove_single_vehicle: function (index) {
             this.vehicle_selected.splice(index, 1);
@@ -523,10 +600,25 @@ export default {
             }
             vue_this.$refs.edit_order_form.validate((valid) => {
                 if (valid) {
-                    vue_this.$call_remote_process("vehicle_order_center", func_name, [vue_this.$cookies.get("zh_ssid"), req_body]).then(function (resp) {
-                        if (resp) {
-                            vue_this.refresh_order();
-                            vue_this.show_edit_order_diag = false;
+                    var real_add_req_func = () => {
+                        vue_this.$call_remote_process("vehicle_order_center", func_name, [vue_this.$cookies.get("zh_ssid"), req_body]).then(function (resp) {
+                            if (resp) {
+                                vue_this.refresh_order();
+                                vue_this.show_edit_order_diag = false;
+                            }
+                        });
+                    };
+                    vue_this.$call_remote_process("vehicle_order_center", "check_price_balance", [vue_this.$cookies.get("zh_ssid"), req_body]).then(function (balance_msg) {
+                        if (balance_msg) {
+                            vue_this.$confirm(balance_msg, '提示', {
+                                confirmButtonText: '仍然派车',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }).then(() => {
+                                real_add_req_func();
+                            });
+                        } else {
+                            real_add_req_func();
                         }
                     });
 

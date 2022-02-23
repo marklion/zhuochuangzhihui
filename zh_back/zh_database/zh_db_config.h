@@ -77,6 +77,8 @@ public:
     long is_sale = 0;
     std::string code;
     std::string address;
+    double balance = 0;
+    double credit = 0;
     zh_sql_contract()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -90,6 +92,8 @@ public:
         ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
         ret.push_back(sqlite_orm_column("is_sale", sqlite_orm_column::INTEGER, &is_sale));
         ret.push_back(sqlite_orm_column("address", sqlite_orm_column::STRING, &address));
+        ret.push_back(sqlite_orm_column("balance", sqlite_orm_column::REAL, &balance));
+        ret.push_back(sqlite_orm_column("credit", sqlite_orm_column::REAL, &credit));
 
         return ret;
     }
@@ -157,6 +161,8 @@ public:
     double inventory = 0;
     std::string unit;
     long need_enter_weight = 0;
+    double price = 0;
+    double expect_weight = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -164,6 +170,8 @@ public:
         ret.push_back(sqlite_orm_column("inventory", sqlite_orm_column::REAL, &inventory));
         ret.push_back(sqlite_orm_column("unit", sqlite_orm_column::STRING, &unit));
         ret.push_back(sqlite_orm_column("need_enter_weight", sqlite_orm_column::INTEGER, &need_enter_weight));
+        ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
+        ret.push_back(sqlite_orm_column("expect_weight", sqlite_orm_column::REAL, &expect_weight));
 
         return ret;
     }
@@ -289,6 +297,55 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
 std::string zh_rpc_util_gen_ssid();
 
+class zh_sql_balance_point : public sql_tree_base{
+public:
+    double change_value = 0;
+    double new_value = 0;
+    std::string timestamp;
+    std::string reason;
+    zh_sql_balance_point()
+    {
+        add_parent_type<zh_sql_contract>("belong_contract");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("change_value", sqlite_orm_column::REAL, &change_value));
+        ret.push_back(sqlite_orm_column("new_value", sqlite_orm_column::REAL, &new_value));
+        ret.push_back(sqlite_orm_column("timestamp", sqlite_orm_column::STRING, &timestamp));
+        ret.push_back(sqlite_orm_column("reason", sqlite_orm_column::STRING, &reason));
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "balance_point_table";
+    }
+};
+
+class zh_sql_price_point : public sql_tree_base{
+public:
+    double change_value = 0;
+    double new_value = 0;
+    std::string timestamp;
+    std::string reason;
+    zh_sql_price_point()
+    {
+        add_parent_type<zh_sql_stuff>("belong_stuff");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("change_value", sqlite_orm_column::REAL, &change_value));
+        ret.push_back(sqlite_orm_column("new_value", sqlite_orm_column::REAL, &new_value));
+        ret.push_back(sqlite_orm_column("timestamp", sqlite_orm_column::STRING, &timestamp));
+        ret.push_back(sqlite_orm_column("reason", sqlite_orm_column::STRING, &reason));
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "price_point_table";
+    }
+};
 class zh_sql_order_status : public sql_tree_base
 {
 public:
@@ -468,5 +525,8 @@ public:
         return ret;
     }
 };
+
+std::string zh_double2string_reserve2(double _value);
+
 
 #endif // _ZH_DB_CONFIG_H_

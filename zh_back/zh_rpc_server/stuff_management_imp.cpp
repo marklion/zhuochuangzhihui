@@ -36,6 +36,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.name = stuff.name;
     tmp.unit = stuff.unit;
     tmp.need_enter_weight = stuff.need_enter_weight;
+    tmp.expect_weight = stuff.expect_weight;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -67,6 +68,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->name = stuff.name;
     exist_record->unit = stuff.unit;
     exist_record->need_enter_weight = stuff.need_enter_weight;
+    exist_record->expect_weight = stuff.expect_weight;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -112,6 +114,8 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.name = itr.name;
         tmp.unit = itr.unit;
         tmp.need_enter_weight = itr.need_enter_weight;
+        tmp.price = itr.price;
+        tmp.expect_weight = itr.expect_weight;
 
         _return.push_back(tmp);
     }
@@ -220,4 +224,78 @@ void stuff_management_handler::get_last_active(std::string &_return, const std::
         ZH_RETURN_NO_PRAVILIGE();
     }
     _return = last_active_stuff;
+}
+
+void stuff_management_handler::get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &stuff_name, const int64_t count)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
+    if (!stuff)
+    {
+        ZH_RETURN_NO_STUFF();
+    }
+    auto points = stuff->get_all_children<zh_sql_price_point>("belong_stuff", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
+    for (auto &itr:points)
+    {
+        number_change_point tmp;
+        tmp.change_value = itr.change_value;
+        tmp.new_value = itr.new_value;
+        tmp.reason = itr.reason;
+        tmp.timestamp = itr.timestamp;
+        _return.push_back(tmp);
+    }
+}
+bool stuff_management_handler::change_price(const std::string &ssid, const std::string &stuff_name, const double new_value)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
+    if (!stuff)
+    {
+        ZH_RETURN_NO_STUFF();
+    }
+
+    zh_sql_price_point tmp;
+    tmp.change_value = new_value - stuff->price;
+    tmp.new_value = new_value;
+    tmp.timestamp = zh_rpc_util_get_timestring();
+    tmp.set_parent(*stuff, "belong_stuff");
+
+    if (tmp.insert_record())
+    {
+        stuff->price = new_value;
+        ret = stuff->update_record(ssid);
+    }
+
+    return ret;
+}
+
+void stuff_management_handler::get_stuff(stuff_info &_return, const std::string &ssid, const std::string &stuff_name)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
+    if (!stuff)
+    {
+        ZH_RETURN_NO_STUFF();
+    }
+    _return.expect_weight = stuff->expect_weight;
+    _return.id = stuff->get_pri_id();
+    _return.inventory = stuff->inventory;
+    _return.name = stuff->name;
+    _return.need_enter_weight = stuff->need_enter_weight;
+    _return.price = stuff->price;
+    _return.unit = stuff->unit;
 }

@@ -24,6 +24,9 @@ public:
     virtual void get_all_stuff(std::vector<stuff_info> &_return, const std::string &ssid);
     virtual void get_change_points_for_range(std::vector<stuff_history> &_return, const std::string &ssid, const std::string &start_date, const std::string &end_date);
     virtual void get_last_active(std::string &_return, const std::string &ssid);
+    virtual void get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &stuff_name, const int64_t count);
+    virtual bool change_price(const std::string &ssid, const std::string &stuff_name, const double new_value);
+    virtual void get_stuff(stuff_info &_return, const std::string &ssid, const std::string &stuff_name);
 };
 
 #endif // _STUFF_MANAGEMENT_H_

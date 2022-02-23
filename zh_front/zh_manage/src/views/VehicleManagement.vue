@@ -12,25 +12,25 @@
         </el-col>
     </el-row>
     <el-table :data="all_vehicle" style="width: 100%" stripe>
-        <el-table-column type="index" label="编号" min-width="10px">
+        <el-table-column type="index" label="编号" width="50px">
         </el-table-column>
-        <el-table-column prop="main_vehicle_number" label="主车" min-width="30px">
+        <el-table-column prop="main_vehicle_number" label="主车" width="100px">
         </el-table-column>
-        <el-table-column prop="behind_vehicle_number" label="挂车" min-width="30px">
+        <el-table-column prop="behind_vehicle_number" label="挂车" width="100px">
         </el-table-column>
-        <el-table-column prop="driver_name" label="司机姓名" min-width="30px">
+        <el-table-column prop="driver_name" label="司机姓名" width="80px">
         </el-table-column>
-        <el-table-column prop="driver_phone" label="司机电话" min-width="40px">
+        <el-table-column prop="driver_phone" label="司机电话" width="120px">
         </el-table-column>
-        <el-table-column prop="driver_id" label="司机身份证" min-width="60px">
+        <el-table-column prop="driver_id" label="司机身份证" width="180px">
         </el-table-column>
-        <el-table-column sortable prop="group_name" label="分组名" min-width="30px">
+        <el-table-column sortable prop="group_name" label="分组名" width="90px">
         </el-table-column>
-        <el-table-column sortable prop="company_name" label="所属公司" min-width="60px" :formatter="format_company_name">
+        <el-table-column sortable prop="company_name" label="所属公司" width="200px" :formatter="format_company_name">
         </el-table-column>
-        <el-table-column prop="in_white_list" label="加入白名单" min-width="60px" :formatter="format_white">
+        <el-table-column prop="in_white_list" label="加入白名单" width="100px" :formatter="format_white">
         </el-table-column>
-        <el-table-column fixed="right" label="操作" min-width="50px">
+        <el-table-column fixed="right" label="操作" width="150px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_vehicle(scope.row)">修改</el-button>
                 <el-button type="danger" size="mini" @click="del_vehicle(scope.row)">删除</el-button>

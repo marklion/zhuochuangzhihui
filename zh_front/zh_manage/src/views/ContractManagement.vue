@@ -12,27 +12,38 @@
         </el-col>
     </el-row>
     <el-table :data="all_contract" style="width: 100%" stripe>
-        <el-table-column type="index" label="编号" min-width="10px">
+        <el-table-column type="index" label="编号" width="50px">
         </el-table-column>
-        <el-table-column prop="name" label="公司名" min-width="60px">
+        <el-table-column prop="name" label="公司名" width="200px">
         </el-table-column>
-        <el-table-column prop="code" label="编码" min-width="25px">
+        <el-table-column prop="code" label="编码" width="150px">
         </el-table-column>
-        <el-table-column label="类型" min-width="30px" :formatter="get_type">
+        <el-table-column label="类型" width="50px" :formatter="get_type">
         </el-table-column>
-        <el-table-column prop="attachment" label="附件" min-width="45px">
+        <el-table-column prop="attachment" label="附件" width="80px">
             <template slot-scope="scope">
                 <el-link v-if="scope.row.attachment" type="primary" :href="$remote_file_url + scope.row.attachment">查看</el-link>
                 <span v-else>无附件</span>
             </template>
         </el-table-column>
-        <el-table-column prop="admin_phone" label="管理员手机号" min-width="45px">
+        <el-table-column prop="admin_phone" label="管理员手机号" width="120px">
         </el-table-column>
-        <el-table-column prop="company_address" label="公司地址" min-width="30px">
+        <el-table-column prop="balance" label="余额" width="120px">
+            <template slot-scope="scope">
+                <span>{{scope.row.balance}}</span>
+                <el-tooltip class="item" effect="dark" content="修改余额" placement="top">
+                    <el-button type="text" size="mini" @click="change_balance(scope.row)" class="el-icon-edit"></el-button>
+                </el-tooltip>
+                <el-tooltip class="item" effect="dark" content="历史余额" placement="top">
+                    <el-button type="text" size="mini" @click="show_balance_history(scope.row)" class="el-icon-s-data"></el-button>
+                </el-tooltip>
+            </template>
         </el-table-column>
-        <el-table-column prop="date" label="修改日期">
+        <el-table-column prop="credit" label="授信额度" width="80px">
         </el-table-column>
-        <el-table-column fixed="right" label="操作" min-width="50px">
+        <el-table-column prop="company_address" label="公司地址" width="200px">
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="150px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_contract(scope.row)">修改</el-button>
                 <el-button type="danger" size="mini" @click="del_contract(scope.row)">删除</el-button>
@@ -64,6 +75,9 @@
             <el-form-item label="合同编号" prop="code">
                 <el-input v-model="new_contract.code" placeholder="请输入合同编号(可选)"></el-input>
             </el-form-item>
+            <el-form-item label="授信额度" prop="credit">
+                <el-input v-model="new_contract.credit" type="number" placeholder="请输入授信额度(可选)"></el-input>
+            </el-form-item>
             <el-form-item label="附件">
                 <span v-if="!new_contract.attachment">未上传</span>
                 <span v-else-if="new_contract.attachment.substring(0, 4) == '/tmp'">已上传</span>
@@ -86,6 +100,20 @@
             </el-form-item>
         </el-form>
     </el-dialog>
+    <el-drawer :title="balance_focus_company +'历史余额'" size="40%" :visible.sync="show_balance_history_diag" direction="rtl" @opened="open_balance_history_diag" @closed="close_balance_history_diag">
+        <van-list ref="lazy_load" :offset="200" v-model="balance_history_loading" :finished="balance_history_load_end" finished-text="没有更多了" @load="get_balance_history">
+            <el-table :data="balance_history" style="width: 100%" stripe>
+                <el-table-column label="时间" min-width="50px" prop="timestamp">
+                </el-table-column>
+                <el-table-column label="变化量" min-width="30px" prop="change_value">
+                </el-table-column>
+                <el-table-column label="修改后" min-width="30px" prop="new_value">
+                </el-table-column>
+                <el-table-column label="原因" min-width="60px" prop="reason">
+                </el-table-column>
+            </el-table>
+        </van-list>
+    </el-drawer>
 </div>
 </template>
 
@@ -93,6 +121,9 @@
 import Vue from 'vue'
 import TableImportExport from '../components/TableImportExport.vue'
 import VueClipboard from 'vue-clipboard2'
+import Vant from 'vant';
+import 'vant/lib/index.css';
+Vue.use(Vant);
 Vue.use(VueClipboard)
 export default {
     name: 'ContractManagement',
@@ -101,16 +132,22 @@ export default {
     },
     data: function () {
         return {
+            balance_history: [],
+            balance_history_load_end: false,
+            balance_history_loading: false,
+            show_balance_history_diag: false,
             sample_table: [{
                 name: '客户公司名',
-                company_address:"内蒙古通辽",
+                company_address: "内蒙古通辽",
                 code: '合同编号1',
                 is_sale: true,
-            },{
+                balance: 0,
+            }, {
                 name: '供应商公司名',
-                company_address:"新疆伊犁",
+                company_address: "新疆伊犁",
                 code: '合同编号2',
                 is_sale: false,
+                balance: 0,
             }],
             old_admin_phone: '',
             current_opt_add: true,
@@ -123,6 +160,7 @@ export default {
                 is_sale: true,
                 admin_phone: '',
                 admin_password: '',
+                credit:0,
             },
             rules: {
                 name: [{
@@ -163,10 +201,76 @@ export default {
                         }
                     },
                 },
+                balance: {
+                    text: '余额',
+                    formatter: function (_orig) {
+                        return _orig.toFixed(2);
+                    },
+                    parser(_value) {
+                        return parseFloat(_value);
+                    },
+                },
             },
+            balance_focus_company: '',
         };
     },
     methods: {
+        open_balance_history_diag: function () {
+            this.$refs.lazy_load.check();
+        },
+        get_balance_history: function () {
+            var vue_this = this;
+            if (vue_this.balance_focus_company) {
+                vue_this.$call_remote_process("contract_management", "get_history", [vue_this.$cookies.get("zh_ssid"), vue_this.balance_focus_company, vue_this.balance_history.length]).then(function (resp) {
+                    vue_this.balance_history_loading = false;
+                    resp.forEach((element) => {
+                        vue_this.balance_history.push(element)
+                    });
+                    if (resp.length < 10) {
+                        vue_this.balance_history_load_end = true;
+                    }
+                });
+
+            } else {
+                vue_this.balance_history_load_end = true;
+            }
+        },
+        show_balance_history: function (_contract) {
+            this.balance_focus_company = _contract.name;
+            this.show_balance_history_diag = true;
+        },
+        close_balance_history_diag: function () {
+            this.balance_focus_company = '';
+            this.balance_history = [];
+            this.balance_history_load_end = false;
+            this.balance_history_loading = false;
+        },
+        change_balance: function (_contract) {
+            var vue_this = this;
+            this.$prompt('请输入调整后的余额', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputType: 'number',
+                inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
+                inputErrorMessage: '请输入新余额'
+            }).then(function (_new_balance) {
+                vue_this.$prompt('请输入原因', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
+                    inputErrorMessage: '必须输入原因'
+                }).then(({
+                    value
+                }) => {
+                    vue_this.$call_remote_process("contract_management", "change_balance", [vue_this.$cookies.get("zh_ssid"), _contract.name, _new_balance.value, value]).then(function (resp) {
+                        if (resp) {
+                            vue_this.init_all_contract();
+                        }
+                    });
+                });
+            });
+
+        },
         proc_upload_contract: async function (_array) {
             var vue_this = this;
             for (var i = 0; i < _array.length; i++) {
@@ -203,6 +307,7 @@ export default {
                 is_sale: true,
                 admin_phone: '',
                 admin_password: '',
+                credit:0,
             };
             this.old_admin_phone = "";
         },
