@@ -130,6 +130,15 @@ struct contract_info {
     7:string admin_phone,
     8:string admin_password,
     9:string company_address,
+    10:double balance,
+    11:double credit,
+}
+
+struct number_change_point{
+    1:string timestamp,
+    2:string reason,
+    3:double change_value,
+    4:double new_value,
 }
 
 service contract_management {
@@ -137,6 +146,9 @@ service contract_management {
     bool del_contract(1:string ssid, 2:i64 contract_id) throws (1:gen_exp e),
     bool update_contract(1:string ssid, 2:contract_info contract) throws (1:gen_exp e),
     list<contract_info> get_all_contract(1:string ssid) throws (1:gen_exp e),
+    contract_info get_contract(1:string ssid, 2:string company_name) throws (1:gen_exp e),
+    list<number_change_point> get_history(1:string ssid, 2:string company_name, 3:i64 count) throws (1:gen_exp e),
+    bool change_balance(1:string ssid, 2:string company_name, 3:double new_value, 4:string reason) throws (1:gen_exp e),
 }
 
 struct stuff_info {
@@ -145,6 +157,8 @@ struct stuff_info {
     3:string unit,
     4:i64 id,
     5:bool need_enter_weight,
+    6:double price,
+    10:double expect_weight,
 }
 
 struct stuff_change_point {
@@ -162,8 +176,11 @@ service stuff_management {
     bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool del_stuff(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<stuff_info> get_all_stuff(1:string ssid) throws (1:gen_exp e),
+    stuff_info get_stuff(1:string ssid, 2:string stuff_name) throws (1:gen_exp e),
     list<stuff_history> get_change_points_for_range(1:string ssid, 2:string start_date, 3:string end_date) throws (1:gen_exp e),
     string get_last_active(1:string ssid) throws (1:gen_exp e),
+    list<number_change_point> get_history(1:string ssid, 2:string stuff_name, 3:i64 count) throws (1:gen_exp e),
+    bool change_price(1:string ssid, 2:string stuff_name, 3:double new_value) throws (1:gen_exp e),
 }
 
 struct vehicle_info {
@@ -213,6 +230,7 @@ struct vehicle_order_info {
     17:bool need_enter_weight,
     18:string company_address,
     19:string use_for,
+    20:string balance_warn,
 }
 
 struct gate_relate_info {
@@ -273,6 +291,7 @@ service vehicle_order_center {
     vehicle_order_statistics get_order_statistics(1:string ssid) throws (1:gen_exp e),
     bool upload_enter_weight_attachment(1:i64 order_id, 2:string attachment, 3:double enter_weight) throws (1:gen_exp e),
     bool print_weight_ticket(1:string ssid, 2:i64 order_id, 3:string scale_name) throws (1:gen_exp e),
+    string check_price_balance(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
 }
 
 service open_api {

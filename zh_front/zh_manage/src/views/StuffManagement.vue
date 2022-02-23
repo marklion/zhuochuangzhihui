@@ -13,20 +13,33 @@
         </el-col>
     </el-row>
     <el-table :data="all_stuff" style="width: 100%" stripe>
-        <el-table-column type="index" label="编号" min-width="10px">
+        <el-table-column type="index" label="编号" width="50px">
         </el-table-column>
-        <el-table-column prop="name" label="物料名" min-width="60px">
+        <el-table-column prop="name" label="物料名" width="120px">
         </el-table-column>
-        <el-table-column prop="unit" label="计量单位" min-width="30px">
+        <el-table-column prop="unit" label="计量单位" width="100px">
         </el-table-column>
-        <el-table-column prop="inventory" label="库存">
+        <el-table-column prop="inventory" label="库存" width="60px">
         </el-table-column>
-        <el-table-column label="需要矿(厂)发净重">
+        <el-table-column prop="price" label="单价" width="120px">
+            <template slot-scope="scope">
+                <span>{{scope.row.price}}</span>
+                <el-tooltip class="item" effect="dark" content="修改价格" placement="top">
+                    <el-button type="text" size="mini" @click="change_price(scope.row)" class="el-icon-edit"></el-button>
+                </el-tooltip>
+                <el-tooltip class="item" effect="dark" content="历史价格" placement="top">
+                    <el-button type="text" size="mini" @click="show_price_history(scope.row)" class="el-icon-s-data"></el-button>
+                </el-tooltip>
+            </template>
+        </el-table-column>
+        <el-table-column label="需要矿(厂)发净重" width="180px">
             <template slot-scope="scope">
                 {{scope.row.need_enter_weight?'是':'否'}}
             </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" min-width="50px">
+        <el-table-column prop="expect_weight" label="预计装车净重" width="120px">
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="150px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_stuff(scope.row)">修改</el-button>
                 <el-button type="danger" size="mini" @click="del_stuff(scope.row)">删除</el-button>
@@ -44,6 +57,9 @@
             <el-form-item label="库存" prop="inventory">
                 <el-input-number v-model="focus_stuff.inventory" :min="0.001" label="请输入库存"></el-input-number>
             </el-form-item>
+            <el-form-item label="预计装车净重" prop="expect_weight">
+                <el-input-number v-model="focus_stuff.expect_weight" :min="0.001" label="请输入预计装车净重"></el-input-number>
+            </el-form-item>
             <el-form-item label="需要矿(厂)发净重" prop="inventory">
                 <el-switch v-model="focus_stuff.need_enter_weight" active-color="#13ce66" inactive-color="#ff4949">
                 </el-switch>
@@ -53,12 +69,28 @@
             </el-form-item>
         </el-form>
     </el-dialog>
+    <el-drawer :title="price_focus_stuff+'历史单价'" size="40%" :visible.sync="show_price_history_diag" direction="rtl" @opened="open_price_history_diag" @closed="close_price_history_diag">
+        <van-list ref="lazy_load" :offset="200" v-model="price_history_loading" :finished="price_history_load_end" finished-text="没有更多了" @load="get_price_history">
+            <el-table :data="price_history" style="width: 100%" stripe>
+                <el-table-column label="时间" min-width="50px" prop="timestamp">
+                </el-table-column>
+                <el-table-column label="变化量" min-width="30px" prop="change_value">
+                </el-table-column>
+                <el-table-column label="修改后" min-width="30px" prop="new_value">
+                </el-table-column>
+            </el-table>
+        </van-list>
+    </el-drawer>
 </div>
 </template>
 
 <script>
 import TableImportExport from '../components/TableImportExport.vue'
 import PinyinMatch from "pinyin-match"
+import Vue from 'vue'
+import Vant from 'vant';
+import 'vant/lib/index.css';
+Vue.use(Vant);
 export default {
     name: 'StuffManagement',
     components: {
@@ -66,6 +98,11 @@ export default {
     },
     data: function () {
         return {
+            price_focus_stuff: '',
+            price_history: [],
+            price_history_load_end: false,
+            price_history_loading: false,
+            show_price_history_diag: false,
             current_opt_add: true,
             show_edit_stuff_diag: false,
             focus_stuff: {
@@ -73,6 +110,7 @@ export default {
                 name: '',
                 unit: '',
                 inventory: 0,
+                expect_weight:30,
             },
             all_stuff: [],
             rules: {
@@ -118,17 +156,84 @@ export default {
                             return false;
                         }
                     },
-                }
+                },
+                price: {
+                    text: '单价',
+                    formatter: function (_orig) {
+                        return _orig.toFixed(2);
+                    },
+                    parser(_value) {
+                        return parseFloat(_value);
+                    },
+                },
+                expect_weight: {
+                    text: '预计装车净重',
+                    formatter: function (_orig) {
+                        return _orig.toFixed(2);
+                    },
+                    parser(_value) {
+                        return parseFloat(_value);
+                    },
+                },
             },
             sample_table: [{
                 name: '中水',
                 unit: '吨',
                 inventory: '104',
                 need_enter_weight: false,
+                price: 600,
+                expect_weight:30,
             }],
         };
     },
     methods: {
+        open_price_history_diag: function () {
+            this.$refs.lazy_load.check();
+        },
+        get_price_history: function () {
+            var vue_this = this;
+            if (vue_this.price_focus_stuff) {
+                vue_this.$call_remote_process("stuff_management", "get_history", [vue_this.$cookies.get("zh_ssid"), vue_this.price_focus_stuff, vue_this.price_history.length]).then(function (resp) {
+                    vue_this.price_history_loading = false;
+                    resp.forEach((element) => {
+                        vue_this.price_history.push(element)
+                    });
+                    if (resp.length < 10) {
+                        vue_this.price_history_load_end = true;
+                    }
+                });
+
+            } else {
+                vue_this.price_history_load_end = true;
+            }
+        },
+        show_price_history: function (_stuff) {
+            this.price_focus_stuff = _stuff.name;
+            this.show_price_history_diag = true;
+        },
+        close_price_history_diag: function () {
+            this.price_focus_stuff = '';
+            this.price_history = [];
+            this.price_history_load_end = false;
+            this.price_history_loading = false;
+        },
+        change_price: function (_stuff) {
+            var vue_this = this;
+            this.$prompt('请输入调整后的单价', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputType: 'number',
+                inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
+                inputErrorMessage: '请输入新单价'
+            }).then(function (_new_price) {
+                vue_this.$call_remote_process("stuff_management", "change_price", [vue_this.$cookies.get("zh_ssid"), _stuff.name, _new_price.value]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_all_stuff();
+                    }
+                });
+            });
+
+        },
         fetch_unit: function (_query, cb) {
             var ret = [{
                 value: "吨"
@@ -216,6 +321,7 @@ export default {
                 name: '',
                 unit: '',
                 inventory: 0,
+                expect_weight:30,
             };
         },
     },

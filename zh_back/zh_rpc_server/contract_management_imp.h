@@ -21,6 +21,10 @@ public:
     virtual bool del_contract(const std::string &ssid, const int64_t contract_id);
     virtual bool update_contract(const std::string &ssid, const contract_info &contract);
     virtual void get_all_contract(std::vector<contract_info> &_return, const std::string &ssid);
+    virtual void get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &company_name, const int64_t count);
+    virtual bool change_balance(const std::string &ssid, const std::string &company_name, const double new_value, const std::string &reason);
+    bool internal_change_balance(const std::string &company_name, const double new_value, const std::string &reason);
+    virtual void get_contract(contract_info &_return, const std::string &ssid, const std::string &company_name);
 };
 
 #endif // _CONTRACT_MANAGEMENT_H_

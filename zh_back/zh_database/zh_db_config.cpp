@@ -1,6 +1,7 @@
 #include "zh_db_config.h"
 #include <uuid/uuid.h>
 #include <fstream>
+#include <sstream>
 
 std::string zh_rpc_util_get_timestring(time_t _time)
 {
@@ -182,4 +183,13 @@ static std::map<std::string, long> g_device_health_map;
 std::map<std::string, long> &zh_runtime_get_device_health()
 {
     return g_device_health_map;
+}
+
+std::string zh_double2string_reserve2(double _value)
+{
+    std::stringstream ss;
+    ss.setf(std::ios::fixed);
+    ss.precision(2);
+    ss << _value;
+    return ss.str();
 }

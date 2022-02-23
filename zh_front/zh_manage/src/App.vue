@@ -12,12 +12,22 @@
                     <div align="right" class="user_profile_show">
                         <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
                         <div v-else>
-                            <div class="user_info_show">
-                                <div>当前用户：{{$store.state.user_info.name}}</div>
-                                <div>权限：{{$store.state.user_info.permission_name}}</div>
-                            </div>
-                            <el-button type="warning" size="mini" @click="show_change_password = true">修改密码</el-button>
-                            <el-button type="danger" size="mini" @click="user_logoff">退出登录</el-button>
+                            <el-row type="flex" align="middle">
+                                <el-col>
+                                    <div class="user_info_show">
+                                        <div>当前用户：{{$store.state.user_info.name}}</div>
+                                        <div>权限：{{$store.state.user_info.permission_name}}</div>
+                                    </div>
+                                </el-col>
+                                <el-col :span="6">
+                                    <div>
+                                        <el-button type="warning" size="mini" @click="show_change_password = true">修改密码</el-button>
+                                    </div>
+                                    <div>
+                                        <el-button type="danger" size="mini" @click="user_logoff">退出登录</el-button>
+                                    </div>
+                                </el-col>
+                            </el-row>
                         </div>
                     </div>
                 </el-col>
@@ -32,7 +42,7 @@
                 </el-col>
                 <el-col :span="21">
                     <div class="content_show">
-                        <div v-if="$store.state.is_login" >
+                        <div v-if="$store.state.is_login">
                             <el-page-header v-if="$route.meta.is_sub" @back="go_back" :content="$route.meta.subtitle">
                             </el-page-header>
                             <router-view></router-view>
@@ -109,7 +119,7 @@ export default {
     },
     data: function () {
         return {
-            oem_name:"卓创智汇",
+            oem_name: "卓创智汇",
             cur_menu: [{
                 permission_need: 2,
                 route_name: 'Home',
@@ -198,9 +208,10 @@ export default {
                     });
                     vue_this.$store.commit('set_login', false);
                 }
-                if (vue_this.$store.state.user_info.permission == 3 && vue_this.$route.name == 'Home')
-                {
-                    vue_this.$router.replace({name:'VehicleOrderCenter'});
+                if (vue_this.$store.state.user_info.permission == 3 && vue_this.$route.name == 'Home') {
+                    vue_this.$router.replace({
+                        name: 'VehicleOrderCenter'
+                    });
                 }
             });
         },
@@ -219,7 +230,7 @@ export default {
             }
         },
     },
-    beforeMount:function () {
+    beforeMount: function () {
         var vue_this = this;
         vue_this.$call_remote_process("system_management", "get_oem_name", []).then(function (resp) {
             vue_this.oem_name = resp;
@@ -256,6 +267,6 @@ export default {
 
 .content_show {
     height: 88vh;
-    overflow-y:auto;
+    overflow-y: auto;
 }
 </style>

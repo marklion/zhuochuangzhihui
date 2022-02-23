@@ -1,13 +1,13 @@
 <template>
 <div class="home">
     <el-row type="flex" :gutter="10">
-        <el-col :span="12">
+        <el-col :span="10">
             <div class="dashboard_show">
                 <el-divider content-position="left">派车单统计</el-divider>
                 <ve-ring :data="{columns:vehicle_os_columns, rows:vehicle_os_row}" :title="{left:'center',text:'正在进行的派车单:共' + total_order + '单'}" :legend="{left:'right', orient:'vertical', top:'middle', formatter:match_number_name}" />
             </div>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="14">
             <div class="dashboard_show">
                 <el-row type="flex" align="middle" :gutter="10">
                     <el-col>

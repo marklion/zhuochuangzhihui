@@ -65,6 +65,7 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
     tmp.code = contract.code;
     tmp.is_sale = contract.is_sale ? 1 : 0;
     tmp.address = contract.company_address;
+    tmp.credit = contract.credit;
 
     ret = tmp.insert_record();
     if (ret && contract.admin_phone.length() > 0)
@@ -144,6 +145,7 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
     exist_record->is_sale = contract.is_sale ? 1 : 0;
     exist_record->name = contract.name;
     exist_record->address = contract.company_address;
+    exist_record->credit = contract.credit;
 
     auto ext_user = exist_record->get_children<zh_sql_user_info>("belong_contract");
     if (ext_user)
@@ -193,6 +195,8 @@ void contract_management_handler::get_all_contract(std::vector<contract_info> &_
         tmp.is_sale = itr.is_sale == 0 ? false : true;
         tmp.name = itr.name;
         tmp.company_address = itr.address;
+        tmp.balance = itr.balance;
+        tmp.credit = itr.credit;
         auto ext_user = itr.get_children<zh_sql_user_info>("belong_contract");
         if (ext_user)
         {
@@ -200,4 +204,95 @@ void contract_management_handler::get_all_contract(std::vector<contract_info> &_
         }
         _return.push_back(tmp);
     }
+}
+
+void contract_management_handler::get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &company_name, const int64_t count)
+{
+    auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
+    if (!contract)
+    {
+        ZH_RETURN_NO_CONTRACT();
+    }
+    auto user = zh_rpc_util_get_online_user(ssid,2);
+    if (!user)
+    {
+        user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+    }
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto points = contract->get_all_children<zh_sql_balance_point>("belong_contract", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
+    for (auto &itr:points)
+    {
+        number_change_point tmp;
+        tmp.change_value = itr.change_value;
+        tmp.new_value = itr.new_value;
+        tmp.reason = itr.reason;
+        tmp.timestamp = itr.timestamp;
+        _return.push_back(tmp);
+    }
+
+}
+
+bool contract_management_handler::internal_change_balance(const std::string &company_name, const double new_value, const std::string &reason)
+{
+    bool ret = false;
+    auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
+    if (!contract)
+    {
+        ZH_RETURN_NO_CONTRACT();
+    }
+
+    zh_sql_balance_point tmp;
+    tmp.change_value = new_value - contract->balance;
+    tmp.new_value = new_value;
+    tmp.reason = reason;
+    tmp.timestamp = zh_rpc_util_get_timestring();
+    tmp.set_parent(*contract, "belong_contract");
+
+    if (tmp.insert_record())
+    {
+        contract->balance = new_value;
+        ret = contract->update_record();
+    }
+
+    return ret;
+}
+
+bool contract_management_handler::change_balance(const std::string &ssid, const std::string &company_name, const double new_value, const std::string &reason)
+{
+    auto user = zh_rpc_util_get_online_user(ssid,1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    return internal_change_balance(company_name, new_value, reason);
+}
+
+void contract_management_handler::get_contract(contract_info &_return, const std::string &ssid, const std::string &company_name)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
+
+    if (!contract)
+    {
+        ZH_RETURN_NO_CONTRACT();
+    }
+    if (!user)
+    {
+        user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
+    }
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    _return.balance = contract->balance;
+    _return.code = contract->code;
+    _return.company_address = contract->address;
+    _return.credit = contract->credit;
+    _return.id = contract->get_pri_id();
+    _return.is_sale = contract->is_sale;
+    _return.name = contract->name;
 }
