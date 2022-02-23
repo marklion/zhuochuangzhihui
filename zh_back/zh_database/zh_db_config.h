@@ -297,16 +297,13 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
 std::string zh_rpc_util_gen_ssid();
 
-class zh_sql_balance_point : public sql_tree_base{
+class zh_sql_history_data:public sql_tree_base {
 public:
     double change_value = 0;
     double new_value = 0;
     std::string timestamp;
     std::string reason;
-    zh_sql_balance_point()
-    {
-        add_parent_type<zh_sql_contract>("belong_contract");
-    }
+
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -315,6 +312,13 @@ public:
         ret.push_back(sqlite_orm_column("timestamp", sqlite_orm_column::STRING, &timestamp));
         ret.push_back(sqlite_orm_column("reason", sqlite_orm_column::STRING, &reason));
         return ret;
+    }
+};
+class zh_sql_balance_point : public zh_sql_history_data{
+public:
+    zh_sql_balance_point()
+    {
+        add_parent_type<zh_sql_contract>("belong_contract");
     }
     virtual std::string table_name()
     {
@@ -322,24 +326,12 @@ public:
     }
 };
 
-class zh_sql_price_point : public sql_tree_base{
+class zh_sql_price_point : public zh_sql_history_data
+{
 public:
-    double change_value = 0;
-    double new_value = 0;
-    std::string timestamp;
-    std::string reason;
     zh_sql_price_point()
     {
         add_parent_type<zh_sql_stuff>("belong_stuff");
-    }
-    virtual std::vector<sqlite_orm_column> self_columns_defined()
-    {
-        std::vector<sqlite_orm_column> ret;
-        ret.push_back(sqlite_orm_column("change_value", sqlite_orm_column::REAL, &change_value));
-        ret.push_back(sqlite_orm_column("new_value", sqlite_orm_column::REAL, &new_value));
-        ret.push_back(sqlite_orm_column("timestamp", sqlite_orm_column::STRING, &timestamp));
-        ret.push_back(sqlite_orm_column("reason", sqlite_orm_column::STRING, &reason));
-        return ret;
     }
     virtual std::string table_name()
     {
@@ -527,6 +519,5 @@ public:
 };
 
 std::string zh_double2string_reserve2(double _value);
-
 
 #endif // _ZH_DB_CONFIG_H_
