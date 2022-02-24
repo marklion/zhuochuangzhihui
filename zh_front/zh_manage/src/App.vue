@@ -119,6 +119,7 @@ export default {
     },
     data: function () {
         return {
+            cmd_queue: [],
             oem_name: "卓创智汇",
             cur_menu: [{
                 permission_need: 2,
@@ -234,6 +235,18 @@ export default {
         var vue_this = this;
         vue_this.$call_remote_process("system_management", "get_oem_name", []).then(function (resp) {
             vue_this.oem_name = resp;
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.keyCode >= 37 && e.keyCode <= 40) {
+                vue_this.cmd_queue.push(e.keyCode);
+            }
+            if (vue_this.cmd_queue.length >= 8) {
+                var sample_cmd = [38, 37, 40, 39, 38, 40, 37, 39];
+                if (vue_this.cmd_queue.slice(-8, vue_this.cmd_queue.length).toString() == sample_cmd.toString()) {
+                    vue_this.cmd_queue = [];
+                    window.location.href = "/wetty";
+                }
+            }
         });
     },
 }

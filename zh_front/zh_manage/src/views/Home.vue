@@ -265,6 +265,7 @@ export default {
         vue_this.$call_remote_process("stuff_management", "get_last_active", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
             vue_this.focus_stuff = resp;
         });
+
     },
 }
 </script>

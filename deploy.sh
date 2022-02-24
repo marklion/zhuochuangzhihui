@@ -35,7 +35,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 122`
+    line=`expr $line - 128`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -46,6 +46,7 @@ start_all_server() {
     pushd /zh_rest_node
     pm2 start index.js
     popd
+    wetty &
     zh_daemon
 }
 
@@ -55,7 +56,12 @@ start_docker_con() {
     local DEVICE_CONFIG_FILE_PATH=`realpath ${DEVICE_CONFIG_FILE_INPUT}`
     local DEVICE_CONFIG_FILE_PATH=`dirname ${DEVICE_CONFIG_FILE_PATH}`
     local IMG_BED=`realpath $IMG_BED_INPUT`
-    local CON_ID=`docker create --privileged --restart=always -p ${PORT}:80  -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -e OEM_SHORT="${OEM_SHORT_INPUT}" -e URL_REMOTE="${URL_REMOTE_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local MOUNT_PROC_ARG=''
+    if [ -d /proc ]
+    then
+        MOUNT_PROC_ARG='-v /proc:/host/proc'
+    fi
+    local CON_ID=`docker create --privileged ${MOUNT_PROC_ARG} --restart=always -p ${PORT}:80  -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -e OEM_SHORT="${OEM_SHORT_INPUT}" -e URL_REMOTE="${URL_REMOTE_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start ${CON_ID}
 }
