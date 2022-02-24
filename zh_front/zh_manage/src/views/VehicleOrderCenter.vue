@@ -72,7 +72,7 @@
                     <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
                 </template>
             </el-table-column>
-            <el-table-column  label="运输货物" width="130px">
+            <el-table-column label="运输货物" width="130px">
                 <template slot-scope="scope">
                     <div slot="reference" @mouseenter="e=> show_pop_info2(e, scope.row.stuff_name)" @mouseleave="visible2 = false">{{scope.row.stuff_name}}</div>
                 </template>
@@ -414,7 +414,7 @@ export default {
         };
     },
     methods: {
-show_pop_info2: function (e, obj) {
+        show_pop_info2: function (e, obj) {
             this.curObj2 = obj
             //关键代码
             //先隐藏并销毁之前显示的
@@ -489,11 +489,17 @@ show_pop_info2: function (e, obj) {
         },
         cancel_order: function (orders) {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "cancel_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
-                if (resp) {
-                    vue_this.refresh_order();
-                }
-            });
+            vue_this.$confirm('确定要取消吗', '提示', {
+                confirmButtonText: '确认',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("vehicle_order_center", "cancel_vehicle_order", [vue_this.$cookies.get("zh_ssid"), orders]).then(function (resp) {
+                    if (resp) {
+                        vue_this.refresh_order();
+                    }
+                });
+            })
         },
         confirm_order: function (orders) {
             var vue_this = this;
