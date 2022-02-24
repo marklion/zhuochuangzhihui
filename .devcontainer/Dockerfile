@@ -35,3 +35,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync py
 RUN pip install alibabacloud_dysmsapi20170525==2.0.8
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cups
+RUN npm install -g yarn && yarn global add wetty
+RUN echo 'root:P@ssw0rd' | chpasswd
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y net-tools
