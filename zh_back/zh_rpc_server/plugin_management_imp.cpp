@@ -87,7 +87,12 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
 
         int istatus = 0;
         waitpid(ipid, &istatus, 0);
-        if (error_string.size() > 0 || istatus != 0)
+        bool exit_normal = false;
+        if (WEXITSTATUS(istatus) == 0)
+        {
+            exit_normal = true;
+        }
+        if (error_string.size() > 0 || !exit_normal)
         {
             error_string.insert(0, "出错原因");
             _stderr_string = error_string;
@@ -119,6 +124,7 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
         dup2(pipfd[1], 1);
         dup2(pipfd_err[1], 2);
         execv(plug_cmd.c_str(), argv);
+        exit(0);
     }
 }
 void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::string &ssid, const std::string &plugin_name, const std::string &cmd)
