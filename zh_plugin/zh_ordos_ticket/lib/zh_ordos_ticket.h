@@ -2,7 +2,8 @@
 #define _ZH_ORDOS_TICKETS_H_
 #include <string>
 #include <list>
-#include "CJsonObject.hpp"
+#include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
+#include "../../../zh_pub/zh_cpp_pub/Base64.h"
 
 neb::CJsonObject zh_ordos_ticket_get_config();
 void zh_ordos_set_config(const std::string &_key, const std::string &_value);

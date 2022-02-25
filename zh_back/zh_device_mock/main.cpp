@@ -1,6 +1,6 @@
 #include "../zh_tdf/tdf_include.h"
 #include <fstream>
-#include "../zh_database/CJsonObject.hpp"
+#include "../zh_database/zh_db_config.h"
 
 class zh_device_mock {
     unsigned short m_port = 0;
