@@ -1,11 +1,9 @@
 #include "zh_ordos_ticket.h"
 #include <iostream>
 #include <fstream>
-#include "CJsonObject.hpp"
 #include <stdio.h>
 #include <string.h>
 #include "httplib.h"
-#include "Base64.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
 
 neb::CJsonObject zh_ordos_ticket_get_config()

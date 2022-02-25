@@ -2,7 +2,7 @@
 #define _ZH_DB_CONFIG_H_
 
 #include "sqlite_orm_tree.h"
-#include "CJsonObject.hpp"
+#include "../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
 
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
 std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));

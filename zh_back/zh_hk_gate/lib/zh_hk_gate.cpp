@@ -1,5 +1,5 @@
 #include "zh_hk_gate.h"
-#include "../../zh_database/CJsonObject.hpp"
+#include "../../zh_database/zh_db_config.h"
 #include <vector>
 #include <iconv.h>
 

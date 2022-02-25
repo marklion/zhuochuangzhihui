@@ -6,7 +6,9 @@ add_compile_options(-std=gnu++11 -g)
 include_directories(${PROJECT_SOURCE_DIR})
 
 aux_source_directory(. API_SRC)
-add_library(sqlite_orm SHARED ${API_SRC})
+aux_source_directory(../../zh_pub/zh_cpp_pub PUB_SRC)
+
+add_library(sqlite_orm SHARED ${API_SRC} ${PUB_SRC})
 
 find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
 

@@ -8,8 +8,9 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 aux_source_directory(./lib API_SRC)
 aux_source_directory(./ PLUGIN_SRC)
+aux_source_directory(../../zh_pub/zh_cpp_pub PUB_SRC)
 
-add_library(zh_ordos_ticket STATIC ${API_SRC})
+add_library(zh_ordos_ticket STATIC ${API_SRC} ${PUB_SRC})
 add_executable(zh_ordos_ticket_plugin ${PLUGIN_SRC})
 
 target_link_libraries(zh_ordos_ticket_plugin zh_ordos_ticket)
