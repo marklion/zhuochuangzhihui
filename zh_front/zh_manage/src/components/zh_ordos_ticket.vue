@@ -5,7 +5,7 @@
             <el-input v-model="login_form.username"></el-input>
         </el-form-item>
         <el-form-item label="密码">
-            <el-input v-model="login_form.password"></el-input>
+            <el-input v-model="login_form.password" show-password></el-input>
         </el-form-item>
         <el-form-item label="验证码">
             <span>
@@ -231,6 +231,8 @@ export default {
             var vue_this = this;
             vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "login -u " + vue_this.login_form.username + " -p " + vue_this.login_form.password + " -v " + vue_this.login_form.verify_code]).then(function () {
                 vue_this.init_tids();
+            }).finally(function () {
+                vue_this.get_verify_code();
             });
         },
         get_verify_code: function () {
