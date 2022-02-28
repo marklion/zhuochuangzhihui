@@ -852,6 +852,15 @@ void scale_state_machine::scale_zero()
 void scale_state_machine::open_scale_timer()
 {
     m_log.log("开启定时器");
+    scale_stable_timer_fd = tdf_main::get_inst().start_timer(
+        20,
+        [](void *_private)
+        {
+            auto ssm = (scale_state_machine *)_private;
+            ssm->m_log.log("20秒未稳定，超时");
+            ssm->scale_force_stable = true;
+        },
+        this);
     timer_fd = tdf_main::get_inst().start_timer(
         1,
         [](void *_private)
@@ -903,6 +912,12 @@ void scale_state_machine::close_timer()
         continue_weight.clear();
         fin_weight = 0;
     }
+    if (scale_stable_timer_fd >= 0)
+    {
+        tdf_main::get_inst().stop_timer(scale_stable_timer_fd);
+        scale_stable_timer_fd = -1;
+        scale_force_stable = false;
+    }
 }
 void scale_state_machine::clean_bound_info()
 {
@@ -952,7 +967,7 @@ bool scale_state_machine::should_open()
 bool scale_state_machine::scale_stable()
 {
     bool ret = false;
-    if (continue_weight.size() > 8)
+    if (continue_weight.size() > 8 || scale_force_stable)
     {
         auto cur_weight = [=]() -> double
         {
@@ -961,10 +976,13 @@ bool scale_state_machine::scale_stable()
             {
                 scale_ret += itr;
             }
-            scale_ret /= continue_weight.size();
+            if (continue_weight.size() > 0)
+            {
+                scale_ret /= continue_weight.size();
+            }
             return scale_ret;
         }();
-        if (cur_weight > 1)
+        if (cur_weight > 1 || scale_force_stable)
         {
             ret = true;
         }
@@ -975,7 +993,7 @@ bool scale_state_machine::scale_stable()
 bool scale_state_machine::scale_clear()
 {
     bool ret = false;
-    if (continue_weight.size() > 8)
+    if (continue_weight.size() > 8 || scale_force_stable)
     {
         auto cur_weight = [=]() -> double
         {
@@ -984,10 +1002,13 @@ bool scale_state_machine::scale_clear()
             {
                 scale_ret += itr;
             }
-            scale_ret /= continue_weight.size();
+            if (continue_weight.size() > 0)
+            {
+                scale_ret /= continue_weight.size();
+            }
             return scale_ret;
         }();
-        if (cur_weight < 1)
+        if (cur_weight < 1 || scale_force_stable)
         {
             ret = true;
         }
@@ -1308,7 +1329,10 @@ void scale_sm_scale::do_action(tdf_state_machine &_sm)
             {
                 ret += itr;
             }
-            ret /= ssm.continue_weight.size();
+            if (ssm.continue_weight.size() > 0)
+            {
+                ret /= ssm.continue_weight.size();
+            }
             return ret;
         }();
     }

@@ -68,6 +68,8 @@ public:
     std::string enter_cam_ip;
     std::string exit_cam_ip;
     int timer_fd = -1;
+    int scale_stable_timer_fd = -1;
+    bool scale_force_stable = false;
     std::vector<double> continue_weight;
     std::vector<int> id_read_timer;
     tdf_log &get_log() {
