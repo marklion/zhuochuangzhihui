@@ -194,6 +194,7 @@ struct vehicle_info {
     7:i64 id,
     8:string group_name,
     9:bool in_white_list,
+    10:double max_count = 35,
 }
 
 
@@ -232,6 +233,7 @@ struct vehicle_order_info {
     18:string company_address,
     19:string use_for,
     20:string balance_warn,
+    21:double max_count,
 }
 
 struct gate_relate_info {

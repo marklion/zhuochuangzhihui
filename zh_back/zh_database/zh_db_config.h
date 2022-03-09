@@ -195,6 +195,7 @@ public:
     std::string company_name;
     std::string group_name;
     long in_white_list = 0;
+    double max_count = 35;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -206,6 +207,7 @@ public:
         ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
         ret.push_back(sqlite_orm_column("group_name", sqlite_orm_column::STRING, &group_name));
         ret.push_back(sqlite_orm_column("in_white_list", sqlite_orm_column::INTEGER, &in_white_list));
+        ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
 
         return ret;
     }
@@ -247,6 +249,7 @@ public:
     std::string m_cam_time;
     std::string company_address;
     std::string use_for;
+    double max_count = 35;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -283,6 +286,7 @@ public:
         ret.push_back(sqlite_orm_column("m_cam_time", sqlite_orm_column::STRING, &m_cam_time));
         ret.push_back(sqlite_orm_column("company_address", sqlite_orm_column::STRING, &company_address));
         ret.push_back(sqlite_orm_column("use_for", sqlite_orm_column::STRING, &use_for));
+        ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
 
         return ret;
     }
