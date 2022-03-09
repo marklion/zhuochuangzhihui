@@ -85,6 +85,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         scale_config[i].Get("exit_channel", tmp.exit_channel);
         _return.scale.push_back(tmp);
     }
+    config.Get("auto_order", _return.auto_order);
 }
 void system_management_handler::get_device_config(device_config &_return, const std::string &ssid)
 {
@@ -163,6 +164,7 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("exit_channel", itr.exit_channel);
         tmp["scale"].Add(scale);
     }
+    tmp.Add("auto_order", config.auto_order, config.auto_order);
     config_file << tmp.ToFormattedString();
     config_file.close();
 
