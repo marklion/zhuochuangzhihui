@@ -8,6 +8,7 @@ class zh_device_mock {
     tdf_log m_log;
     int m_req_len = 0;
     std::string recv_buff;
+    bool postive = false;
     static std::map<std::string, zh_device_mock> g_mock_map;
 public:
     zh_device_mock() {}
@@ -17,6 +18,21 @@ public:
             [=](const std::string &_chrct)
             {
                 g_mock_map[_chrct] = _mock;
+                if (_mock.postive)
+                {
+                    for (auto i = 0; i < 5; i++)
+                    {
+                        char *out_buf = (char *)calloc(1UL, _mock.m_mock_data.length() / 2);
+                        for (int i = 0; i < _mock.m_mock_data.length() / 2; i++)
+                        {
+                            sscanf(_mock.m_mock_data.c_str() + i * 2, "%02x", out_buf + i);
+                        }
+                        tdf_main::get_inst().send_data(_chrct, std::string(out_buf, _mock.m_mock_data.size() / 2));
+                        _mock.m_log.log("send data");
+                        _mock.m_log.log_package(out_buf, _mock.m_mock_data.size() / 2);
+                        free(out_buf);
+                    }
+                }
             },
             [=](const std::string &_chrct)
             {
@@ -42,7 +58,7 @@ public:
                 }
             });
     }
-    zh_device_mock(unsigned short _port, const std::string &_mock_data, int _req_len) : m_port(_port), m_mock_data(_mock_data), m_log("device_mock:" + std::to_string(_port)), m_req_len(_req_len) {}
+    zh_device_mock(unsigned short _port, const std::string &_mock_data, int _req_len, bool _postive) : m_port(_port), m_mock_data(_mock_data), m_log("device_mock:" + std::to_string(_port)), m_req_len(_req_len), postive(_postive) {}
 };
 
 std::map<std::string, zh_device_mock> zh_device_mock::g_mock_map;
@@ -55,7 +71,9 @@ int main(int argc, char const *argv[])
 
     for (int i = 0; i < config.GetArraySize(); i++)
     {
-        zh_device_mock tmp(atoi(config[i]("port").c_str()), config[i]("data"), atoi(config[i]("req_len").c_str()));
+        bool postive = false;
+        config[i].Get("postive", postive);
+        zh_device_mock tmp(atoi(config[i]("port").c_str()), config[i]("data"), atoi(config[i]("req_len").c_str()), postive);
         zh_device_mock::install_mock(tmp);
     }
 

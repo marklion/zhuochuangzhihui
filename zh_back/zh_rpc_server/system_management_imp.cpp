@@ -248,7 +248,19 @@ void system_management_handler::get_road_status(road_status &_return, const std:
 
 double system_management_handler::read_scale(const std::string &scale_ip)
 {
-    return 0;
+    double ret = 0;
+    device_config tmp;
+    internal_get_device_config(tmp);
+    for (auto &itr:tmp.scale)
+    {
+        if (itr.scale_ip == scale_ip)
+        {
+            ret = get_current_weight(scale_ip, ZH_SCALE_PORT, itr.scale_brand);
+            break;
+        }
+    }
+
+    return ret;
 }
 
 void system_management_handler::run_update(const std::string &ssid, const std::string &pack_path)

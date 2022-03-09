@@ -3,6 +3,7 @@
 #include "../../zh_tdf/tdf_include.h"
 #include "../../zh_database/zh_db_config.h"
 #include <math.h>
+#include <termios.h>
 
 static tdf_log g_log("scale");
 static std::map<std::string, zh_scale_if *> g_scale_map;
@@ -22,16 +23,18 @@ std::vector<std::string> zh_scale_if::get_all_brand()
 {
     std::vector<std::string> ret;
 
-    for (auto itr = g_scale_map.begin(); itr != g_scale_map.end();++itr)
+    for (auto itr = g_scale_map.begin(); itr != g_scale_map.end(); ++itr)
     {
         ret.push_back(itr->first);
     }
 
     return ret;
 }
-class zh_scale_test:public zh_scale_if {
+class zh_scale_test : public zh_scale_if
+{
 public:
-    zh_scale_test() {
+    zh_scale_test()
+    {
         std::string brand_name = "信衡";
         if (g_scale_map[brand_name] == NULL)
         {
@@ -104,7 +107,7 @@ public:
     }
 } g_single_test_scale;
 
-class zh_scale_kld2008 : public zh_scale_if
+class zh_scale_kld2008_tf1 : public zh_scale_if
 {
 public:
     virtual double get_weight(const std::string &_scale_ip, unsigned short _port)
@@ -121,11 +124,11 @@ public:
                              {
                                  lamda_ret = true;
                                  int pos = 0;
-                                 for (int i = 0; i <sizeof(ret_buff) / 2; i++)
+                                 for (int i = 0; i < sizeof(ret_buff) / 2; i++)
                                  {
-                                     auto tmp = ret_buff[i*2];
-                                     ret_buff[i*2] = ret_buff[i*2+1];
-                                     ret_buff[i*2+1] = tmp;
+                                     auto tmp = ret_buff[i * 2];
+                                     ret_buff[i * 2] = ret_buff[i * 2 + 1];
+                                     ret_buff[i * 2 + 1] = tmp;
                                  }
                                  for (int i = sizeof(ret_buff) - 2; i >= 0; i--)
                                  {
@@ -195,17 +198,121 @@ public:
     }
     virtual std::unique_ptr<zh_scale_if> clone_self()
     {
-        return std::unique_ptr<zh_scale_kld2008>(new zh_scale_kld2008(*this));
+        return std::unique_ptr<zh_scale_kld2008_tf1>(new zh_scale_kld2008_tf1(*this));
     }
-    zh_scale_kld2008()
+    zh_scale_kld2008_tf1()
     {
-        std::string brand_name = "柯力D2008";
+        std::string brand_name = "柯力D2008_tf1";
         if (g_scale_map[brand_name] == NULL)
         {
             g_scale_map[brand_name] = this;
         }
     }
-} g_zh_scale_kld2008;
+} g_zh_scale_kld2008_tf1;
+
+class zh_scale_kld2008_tf0 : public zh_scale_if
+{
+public:
+    std::string make_one_frame(const char *_data, int _length)
+    {
+        std::string ret;
+        if (_length >= 12)
+        {
+            auto p_tail = _data + _length - 1;
+            auto p_head = _data;
+            while (*p_tail != 0x03 && p_tail != p_head)
+            {
+                p_tail--;
+            }
+            if (p_tail - p_head >= 11)
+            {
+                p_head = p_tail - 11;
+                if (*p_head == 0x02)
+                {
+                    ret.assign(p_head, 12);
+                }
+            }
+        }
+
+        return ret;
+    }
+    double parse_weight(const std::string &_frame)
+    {
+        double ret = 0;
+        if (_frame.length() == 12)
+        {
+            auto sign_flag = _frame[1];
+
+            for (auto i = 0; i < 6; i++)
+            {
+                auto dig = _frame[2 + i];
+                ret += (dig - '0') * pow(10, (5 - i));
+            }
+            for (auto i = 0; i < (_frame[8] - '0'); i++)
+            {
+                ret /= 10;
+            }
+
+            if (sign_flag == '-')
+            {
+                ret = 0 - ret;
+            }
+        }
+
+        return ret;
+    }
+    virtual double get_weight(const std::string &_scale_ip, unsigned short _port)
+    {
+        double ret = 0;
+        zh_vcom_link vl(_scale_ip, _port);
+        char buff[2048] = {0};
+
+        int fd = open(vl.get_pts().c_str(), O_RDWR);
+        if (fd >= 0)
+        {
+            termios opt;
+            tcgetattr(fd, &opt);
+            opt.c_cflag |= CLOCAL | CREAD;
+            opt.c_oflag = 0;
+            opt.c_lflag = 0;
+            opt.c_cc[VTIME] = 0;
+            opt.c_cc[VMIN] = 12;
+            tcsetattr(fd, TCSANOW, &opt);
+            int read_len = read(fd, buff, sizeof(buff));
+            if (read_len >= 0)
+            {
+                ret = parse_weight(make_one_frame(buff, read_len));
+            }
+            else
+            {
+                g_log.err("failed to read data from scale : %s", strerror(errno));
+            }
+            close(fd);
+        }
+        else
+        {
+            g_log.err("failed to open scale device: %s", strerror(errno));
+        }
+
+        return ret;
+    }
+    virtual void clean_scale(const std::string &_scale_ip, unsigned short _port)
+    {
+        return;
+    }
+    virtual std::unique_ptr<zh_scale_if> clone_self()
+    {
+        return std::unique_ptr<zh_scale_kld2008_tf0>(new zh_scale_kld2008_tf0(*this));
+    }
+    zh_scale_kld2008_tf0()
+    {
+        std::string brand_name = "柯力D2008_tf0";
+        if (g_scale_map[brand_name] == NULL)
+        {
+            g_scale_map[brand_name] = this;
+        }
+    }
+} g_zh_scale_kld2008_tf0;
 
 double get_current_weight(const std::string &_scale_ip, unsigned short _port, const std::string &_brand)
 {
