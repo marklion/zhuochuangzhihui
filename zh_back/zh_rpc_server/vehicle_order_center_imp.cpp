@@ -1040,9 +1040,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->m_weight = fin_weight;
             vo->push_status(status);
             recalcu_balance_inventory(*vo);
-            device_config dc;
-            system_management_handler::get_inst()->internal_get_device_config(dc);
-            if (dc.gate.empty())
+            if (!vo->get_children<zh_sql_order_status>("belong_order", "step == 2"))
             {
                 auto end_status = zh_sql_order_status::make_end_status();
                 vo->push_status(end_status);
@@ -1688,6 +1686,25 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
 
     if (judge_permit)
     {
+        device_config dc;
+        system_management_handler::get_inst()->internal_get_device_config(dc);
+        if (dc.auto_order && _vehicle_number.length() > 0)
+        {
+            if (!sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number = '%s' AND status != 100", _vehicle_number.c_str()))
+            {
+                zh_sql_vehicle_order tmp;
+                tmp.main_vehicle_number = _vehicle_number;
+                tmp.m_registered = true;
+                tmp.m_called = true;
+                tmp.m_permit = true;
+                tmp.insert_record();
+                tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
+                auto create_status = zh_sql_order_status::make_create_status();
+                auto before_come_status = zh_sql_order_status::make_before_come_status();
+                tmp.push_status(create_status);
+                tmp.push_status(before_come_status);
+            }
+        }
         auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
         for (auto &itr : vos)
         {

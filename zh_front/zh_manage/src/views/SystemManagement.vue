@@ -1,8 +1,9 @@
 <template>
 <div class="system_management_show">
-
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
+            <el-switch v-model="device_config.auto_order" @change="change_auto_order" active-text="自由过车" inactive-text="严格过车">
+            </el-switch>
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
@@ -553,6 +554,14 @@ export default {
             this.cur_opt_scale = {
                 ..._scale
             };
+        },
+        change_auto_order: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_device_info();
+                }
+            });
         },
         edit_gate: function () {
             var vue_this = this;

@@ -49,6 +49,7 @@ struct device_scale_config {
 struct device_config {
     1:list<device_gate_config> gate,
     2:list<device_scale_config> scale,
+    3:bool auto_order,
 }
 
 struct road_status {

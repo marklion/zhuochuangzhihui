@@ -226,7 +226,7 @@ public:
     std::string driver_id;
     std::string driver_phone;
     std::string company_name;
-    long status;
+    long status = -1;
     std::string stuff_name;
     double p_weight = 0;
     double m_weight = 0;
