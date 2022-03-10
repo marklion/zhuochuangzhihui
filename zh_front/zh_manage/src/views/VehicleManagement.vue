@@ -30,6 +30,8 @@
         </el-table-column>
         <el-table-column prop="in_white_list" label="加入白名单" width="100px" :formatter="format_white">
         </el-table-column>
+        <el-table-column prop="max_count" label="最大净重" width="100px" >
+        </el-table-column>
         <el-table-column fixed="right" label="操作" width="150px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_vehicle(scope.row)">修改</el-button>
@@ -58,6 +60,9 @@
             </el-form-item>
             <el-form-item label="司机身份证" prop="driver_id">
                 <el-input v-model="focus_vehicle.driver_id" placeholder="请输入司机身份证"></el-input>
+            </el-form-item>
+            <el-form-item label="最大净重" prop="max_count">
+                <el-input v-model="focus_vehicle.max_count" type="number" placeholder="最大净重"></el-input>
             </el-form-item>
             <el-form-item v-if="$store.state.user_info.permission != 3 && focus_vehicle.company_name == ''" label="添加白名单" prop="in_white_list">
                 <el-switch v-model="focus_vehicle.in_white_list" active-color="#13ce66" inactive-color="#ff4949">
@@ -98,6 +103,7 @@ export default {
                 company_name: '',
                 in_white_list: false,
                 group_name: "",
+                max_count:35,
             },
             sample_table: function () {
                 var ret = {
@@ -108,6 +114,7 @@ export default {
                     driver_id: '110110201010101010',
                     company_name: '采购公司1',
                     group_name: "购煤组",
+                    max_count:35,
                 };
                 var ret2 = {
                     main_vehicle_number: '新A38821',
@@ -117,6 +124,7 @@ export default {
                     driver_id: '150150201505050505',
                     company_name: '(自有)',
                     group_name: "送灰组",
+                    max_count:35,
                 };
                 if (this.$store.state.user_info.permission == 3) {
                     ret.company_name = this.$store.state.user_info.name;
@@ -146,6 +154,9 @@ export default {
                     },
                     group_name: {
                         text: '分组名'
+                    },
+                    max_count:{
+                        text: '最大净重'
                     },
                 }
                 return ret;
@@ -283,6 +294,7 @@ export default {
                 driver_id: '',
                 company_name: this.company_for_select[0].value,
                 in_white_list: false,
+                max_count:35,
             };
         },
         edit_vehicle: function () {

@@ -92,6 +92,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     tmp.need_enter_weight = vo->need_enter_weight;
     tmp.company_address = vo->company_address;
     tmp.use_for = vo->use_for;
+    tmp.max_count = vo->max_count;
     auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", tmp.company_name.c_str());
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", tmp.stuff_name.c_str());
     if (company && stuff && company->is_sale && tmp.status == 0)
@@ -261,6 +262,7 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
         tmp.status = -1;
         tmp.company_address = order.company_address;
         tmp.use_for = order.use_for;
+        tmp.max_count = order.max_count;
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
         if (stuff && stuff->need_enter_weight)
         {

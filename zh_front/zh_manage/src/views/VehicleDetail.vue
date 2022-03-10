@@ -10,6 +10,7 @@
                 <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
                 <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
                 <el-descriptions-item label="挂车">{{cur_vehicle.basic_info.behind_vehicle_number}}</el-descriptions-item>
+                <el-descriptions-item label="最大净重">{{cur_vehicle.basic_info.max_count}}</el-descriptions-item>
                 <el-descriptions-item v-if="cur_vehicle.basic_info.need_enter_weight" label="矿(厂)发净重">
                     <span>
                         {{cur_vehicle.basic_info.enter_weight}}
@@ -27,12 +28,16 @@
                 <el-descriptions-item label="司机电话">{{cur_vehicle.basic_info.driver_phone}}</el-descriptions-item>
                 <el-descriptions-item label="司机身份证">{{cur_vehicle.basic_info.driver_id}}</el-descriptions-item>
             </el-descriptions>
-            <el-descriptions title="称重数据" :column="2" border>
+            <el-descriptions title="称重数据" :column="3" border>
                 <el-descriptions-item label="一次称重">
-                    {{cur_vehicle.basic_info.p_weight}}
+                    {{cur_vehicle.basic_info.p_weight.toFixed(2)}}
                 </el-descriptions-item>
                 <el-descriptions-item label="二次称重">
-                    {{cur_vehicle.basic_info.m_weight}}
+                    {{cur_vehicle.basic_info.m_weight.toFixed(2)}}
+                </el-descriptions-item>
+                <el-descriptions-item label="净重称重">
+                    {{Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)}}
+                    <span style="color:red" v-if="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight) > cur_vehicle.basic_info.max_count">超重</span>
                 </el-descriptions-item>
                 <template slot="extra">
                     <div style="padding:5px;" v-if="$store.state.user_info.permission != 3">

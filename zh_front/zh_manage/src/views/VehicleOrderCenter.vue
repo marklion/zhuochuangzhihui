@@ -85,6 +85,9 @@
                     <div v-if="scope.row.status == 0" style="color:red;">
                         {{scope.row.balance_warn}}
                     </div>
+                    <div v-if="scope.row.status == 3 && deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)) > 30" style="color:red">
+                        装卸货消耗{{deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3))}}分钟
+                    </div>
                 </template>
             </el-table-column>
             <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
@@ -100,6 +103,7 @@
                             <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
                             <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
                             <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
+                            <el-descriptions-item label="最大净重">{{scope.row.max_count}}</el-descriptions-item>
                         </el-descriptions>
                     </div>
                 </template>
@@ -192,9 +196,30 @@
                                 <template slot="extra">
                                     <el-button type="danger" size="mini" @click="remove_single_vehicle(index)">移除</el-button>
                                 </template>
-                                <el-descriptions-item label="司机">{{single_vehicle.driver_name}}</el-descriptions-item>
-                                <el-descriptions-item label="电话">{{single_vehicle.driver_phone}}</el-descriptions-item>
-                                <el-descriptions-item label="身份证">{{single_vehicle.driver_id}}</el-descriptions-item>
+                                <el-descriptions-item label="司机">
+                                    <span>
+                                        {{single_vehicle.driver_name}}
+                                    </span>
+                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('司机', single_vehicle)">修改</el-button>
+                                </el-descriptions-item>
+                                <el-descriptions-item label="电话">
+                                    <span>
+                                        {{single_vehicle.driver_phone}}
+                                    </span>
+                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('电话', single_vehicle)">修改</el-button>
+                                </el-descriptions-item>
+                                <el-descriptions-item label="身份证">
+                                    <span>
+                                        {{single_vehicle.driver_id}}
+                                    </span>
+                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('身份证', single_vehicle)">修改</el-button>
+                                </el-descriptions-item>
+                                <el-descriptions-item label="最大净重">
+                                    <span>
+                                        {{single_vehicle.max_count}}
+                                    </span>
+                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('最大净重', single_vehicle)">修改</el-button>
+                                </el-descriptions-item>
                             </el-descriptions>
                         </div>
                     </div>
@@ -217,6 +242,7 @@
             <el-table-column sortable property="driver_id" label="司机身份证" width="150"></el-table-column>
             <el-table-column sortable property="company_name" label="所属公司" width="150"></el-table-column>
             <el-table-column sortable property="group_name" label="分组名" width="100"></el-table-column>
+            <el-table-column sortable property="max_count" label="最大净重" width="100"></el-table-column>
         </el-table>
         <div align="right" style="margin-right:10px;">
             <el-button type="primary" @click="push_ready_to_select">确认</el-button>
@@ -327,6 +353,11 @@ export default {
     },
     data: function () {
         return {
+            deliver_cost_time: function (_start_time) {
+                var start_time = new Date(_start_time);
+                var ms = new Date().getTime() - start_time.getTime();
+                return Math.floor(ms / 1000 / 60);
+            },
             pop_info_component: undefined,
             need_print_ticket: false,
             picker_option: {
@@ -414,6 +445,34 @@ export default {
         };
     },
     methods: {
+        tmp_change: function (_type, _vehicle) {
+            this.$prompt('请输入' + _type, '修改', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
+                inputErrorMessage: _type + '格式不正确'
+            }).then(({
+                value
+            }) => {
+                switch (_type) {
+                    case '司机':
+                        _vehicle.driver_name = value;
+                        break;
+                    case '电话':
+                        _vehicle.driver_phone = value;
+                        break;
+                    case '身份证':
+                        _vehicle.driver_id = value;
+                        break;
+                    case '最大净重':
+                        _vehicle.max_count = value;
+                        break;
+
+                    default:
+                        break;
+                }
+            });
+        },
         show_pop_info2: function (e, obj) {
             this.curObj2 = obj
             //关键代码
