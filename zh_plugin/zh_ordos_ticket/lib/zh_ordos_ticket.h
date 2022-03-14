@@ -7,6 +7,7 @@
 
 neb::CJsonObject zh_ordos_ticket_get_config();
 void zh_ordos_set_config(const std::string &_key, const std::string &_value);
+void zh_ordos_set_config(const std::string &_key, const neb::CJsonObject &_value);
 std::string zh_ordos_ticket_get_TIDs();
 std::string zh_ordos_ticket_get_verify_code();
 bool zh_ordos_ticket_login(const std::string &_username, const std::string &_password, const std::string &_verify_code);

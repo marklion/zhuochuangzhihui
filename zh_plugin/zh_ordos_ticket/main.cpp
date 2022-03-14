@@ -7,6 +7,7 @@ int main(int argc, char **argv)
 {
     int iret = -1;
     std::string json_string;
+    bool json_obj = false;
     std::string key;
     std::string cmd;
     std::string user_name;
@@ -16,7 +17,7 @@ int main(int argc, char **argv)
     using namespace clipp;
     auto cli = ((command("login").set(cmd) & (required("-g").set(need_verify_code) | required("-u") & value("username", user_name) & required("-p") & value("password", password) & required("-v") & value("verify_code", verify_code))) |
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
-                (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string)) |
+                (command("set").set(cmd) & required("-k") & value("json key", key)  & value("json value", json_string) & option("-o").set(json_obj)) |
                 command("init").set(cmd) |
                 command("refresh").set(cmd) |
                 command("tids").set(cmd) |
@@ -65,7 +66,14 @@ int main(int argc, char **argv)
     }
     else if (cmd == "set")
     {
-        zh_ordos_set_config(key, json_string);
+        if (json_obj)
+        {
+            zh_ordos_set_config(key, neb::CJsonObject(json_string));
+        }
+        else
+        {
+            zh_ordos_set_config(key, json_string);
+        }
         iret = 0;
     }
     else if (cmd == "tids")
@@ -83,7 +91,6 @@ int main(int argc, char **argv)
         {
             iret = 0;
         }
-
     }
     else if (cmd == "init")
     {
