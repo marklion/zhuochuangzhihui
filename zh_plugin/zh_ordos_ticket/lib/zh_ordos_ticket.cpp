@@ -147,12 +147,23 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     // zh_ordos_set_config("remote_url", "https://www.fastmock.site/mock/34e68b17ea9b4e8b3d37f02809fed8af/thirdParty");
     auto gross_info = neb::CJsonObject(_msg);
     neb::CJsonObject curb_weight;
+
     curb_weight.Add("VehicleNum", gross_info("VehicleNum"));
     curb_weight.Add("CurbWeight", gross_info("CurbWeight"));
     curb_weight.Add("Axes", gross_info("Axes"));
-    curb_weight.Add("GPS", zh_ordos_ticket_get_config()("gps"));
-    zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString());
+
+    auto additional_config = zh_ordos_ticket_get_config()["additional_config"];
+    for (auto i = 0; i < additional_config.GetArraySize(); i++)
+    {
+        auto additional_key = additional_config[i]("key");
+        auto additional_value = additional_config[i]("value");
+        gross_info.Add(additional_key, additional_value);
+        curb_weight.Add(additional_key, additional_value);
+    }
     gross_info.Add("GPS", zh_ordos_ticket_get_config()("gps"));
+    curb_weight.Add("GPS", zh_ordos_ticket_get_config()("gps"));
+
+    zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString());
     zh_ordos_req_with_token("/vehicles/supervisory_gross_weight", gross_info.ToString());
     //for debug
     // zh_ordos_set_config("remote_url", orig_url);

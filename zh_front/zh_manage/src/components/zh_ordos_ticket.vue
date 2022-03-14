@@ -29,6 +29,10 @@
                 <el-input v-model="runtime_config.gps"></el-input>
                 <el-button size="small" type="primary" @click="save_gps">保存</el-button>
             </el-form-item>
+            <el-form-item label="额外字段">
+                <el-input v-model="runtime_config.additional_config"></el-input>
+                <el-button size="small" type="primary" @click="save_additional_config">保存</el-button>
+            </el-form-item>
             <el-form-item label="自动开票">
                 <el-switch v-model="runtime_config.auto_print" @change="change_auto_switch"></el-switch>
             </el-form-item>
@@ -123,7 +127,8 @@ export default {
             runtime_config: {
                 auto_print: false,
                 device_uri: '',
-                gps:'',
+                gps: '',
+                additional_config: "",
             },
             verify_code: "",
             is_login: false,
@@ -182,6 +187,9 @@ export default {
             vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "get -k gps"]).then(function (resp) {
                 vue_this.runtime_config.gps = resp;
             });
+            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "get -k additional_config"]).then(function (resp) {
+                vue_this.runtime_config.additional_config = resp;
+            });
         },
         save_printer: function () {
             var vue_this = this;
@@ -192,7 +200,14 @@ export default {
         },
         save_gps: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "set -k gps '" + vue_this.runtime_config.gps+ "'"]).then(function () {
+            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "set -k gps '" + vue_this.runtime_config.gps + "'"]).then(function () {
+                vue_this.$message("保存成功");
+                vue_this.init_device();
+            });
+        },
+        save_additional_config: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "set -k additional_config '" + vue_this.runtime_config.additional_config + "' -o"]).then(function () {
                 vue_this.$message("保存成功");
                 vue_this.init_device();
             });
