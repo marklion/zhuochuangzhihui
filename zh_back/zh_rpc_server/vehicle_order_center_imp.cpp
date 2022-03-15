@@ -855,7 +855,7 @@ void scale_state_machine::open_scale_timer()
 {
     m_log.log("开启定时器");
     scale_stable_timer_fd = tdf_main::get_inst().start_timer(
-        20,
+        240,
         [](void *_private)
         {
             auto ssm = (scale_state_machine *)_private;
