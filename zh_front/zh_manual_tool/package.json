@@ -3,16 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "serve": "vue-cli-service serve --mode test_serve",
+    "build": "vue-cli-service build --mode prod",
+    "test-build": "vue-cli-service build --mode test",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "axios": "^0.26.1",
     "core-js": "^3.6.5",
     "element-ui": "^2.4.5",
+    "idb-keyval": "^6.1.0",
     "pinyin-match": "^1.2.2",
     "v-input-sevenseg": "^1.0.3",
     "vue": "^2.6.11",
+    "vue-cookies": "^1.7.4",
     "vue-drag-resize": "^1.5.4",
     "vue-print-nb": "^1.7.5"
   },
