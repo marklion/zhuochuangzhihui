@@ -63,7 +63,7 @@
                 </el-descriptions>
             </div>
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :column="4" :title="single_scale.name">
+                <el-descriptions border :column="3" :title="single_scale.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 NVR IP">{{single_scale.entry_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 通道">{{single_scale.entry_channel}}</el-descriptions-item>
@@ -80,6 +80,7 @@
                     <el-descriptions-item label="出口二维码IP">{{single_scale.exit_qr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
                     <el-descriptions-item label="衡器品牌">{{single_scale.scale_brand}}</el-descriptions-item>
+                    <el-descriptions-item label="读数系数">{{single_scale.coefficient}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
                     <el-descriptions-item label="身份证验证">
@@ -188,6 +189,9 @@
                     </el-form-item>
                     <el-form-item label="衡器品牌" prop="scale_brand">
                         <item-for-select v-model="scale_for_edit.scale_brand" search_key="scale_brand"></item-for-select>
+                    </el-form-item>
+                    <el-form-item label="衡器读数系数" prop="coefficient">
+                        <el-input v-model="scale_for_edit.coefficient" type="number" placeholder="请输入衡器系数"></el-input>
                     </el-form-item>
                     <el-form-item label="光栅IP-1" prop="raster_ip">
                         <el-input v-model="scale_for_edit.raster_ip[0]" placeholder="请输入光栅IP-1"></el-input>
@@ -581,6 +585,7 @@ export default {
             var vue_this = this;
             vue_this.scale_for_edit.entry_channel = parseInt(vue_this.scale_for_edit.entry_channel);
             vue_this.scale_for_edit.exit_channel = parseInt(vue_this.scale_for_edit.exit_channel);
+            vue_this.scale_for_edit.coefficient = parseFloat(vue_this.scale_for_edit.coefficient);
             vue_this.$refs.edit_scale_form.validate((valid) => {
                 if (valid) {
                     vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {

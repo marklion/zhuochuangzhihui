@@ -101,7 +101,19 @@ std::string zh_ordos_ticket_get_verify_code()
 static void zh_ordos_fetch_basic()
 {
     auto res = zh_ordos_req_with_token("/vehicles/test_args");
-    zh_ordos_set_config("basic_data", neb::CJsonObject(res));
+    auto basic_config = neb::CJsonObject(res);
+    basic_config.Delete("commonlyDestinations");
+    basic_config.AddEmptySubArray("commonlyDestinations");
+    auto all_location = zh_ordos_req_with_token("/getFilterLocations");
+    auto location_config = neb::CJsonObject(all_location)["locations"];
+    for (auto i =0; i <  location_config.GetArraySize(); i++)
+    {
+        neb::CJsonObject tmp;
+        tmp.Add("DestinationID", location_config[i]("ID"));
+        tmp.Add("DestinationName", location_config[i]("Name"));
+        basic_config["commonlyDestinations"].Add(tmp);
+    }
+    zh_ordos_set_config("basic_data", basic_config);
 }
 bool zh_ordos_ticket_login(const std::string &_username, const std::string &_password, const std::string &_verify_code)
 {

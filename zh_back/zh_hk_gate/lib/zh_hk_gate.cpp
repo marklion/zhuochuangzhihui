@@ -479,7 +479,7 @@ std::string hk_led_make_text_block(const std::string &_msg, char _pos, char _col
     unsigned char zone_position[] = {0x00,0x00,16*_pos,0x00,0x3f,0x00,0x0f + 16*_pos,0x00};
     unsigned char zone_color[] = {_color};
     unsigned char reserved[2] = {0};
-    unsigned char zone_action[] = {_action, 0x00};
+    unsigned char zone_action[] = {_action, 0xff};
     unsigned char zone_speed[] = {15};
     unsigned char zone_stay[] = {3};
     unsigned char zone_font[] = {0x10};
@@ -515,7 +515,7 @@ std::string hk_led_make_program_time_data()
 {
     std::string ret;
     auto time_string = zh_rpc_util_get_timestring();
-    ret = hk_led_make_text_block(time_string, 1, 8, 0x20);
+    ret = hk_led_make_text_block(time_string, 1, 1, 0x20);
     g_log.log("make time_block");
     g_log.log_package(ret.data(), ret.length());
     return ret;
@@ -526,14 +526,14 @@ std::string hk_led_make_program_msg_data(const std::string &_msg)
 }
 std::string hk_led_make_program_plate_data(const std::string &_plate_no)
 {
-    return hk_led_make_text_block(_plate_no, 3, 8);
+    return hk_led_make_text_block(_plate_no, 3, 1);
 }
 
 std::string hk_led_make_program_voice_data(const std::string &_voice)
 {
     std::string ret;
     unsigned char zone_no[] = {0x05};
-    int zone_len = 27;
+    int zone_len = 26;
     unsigned char zone_type[] = {0x2D};
     unsigned char zone_reserved[15] = {0};
     unsigned char zone_circle[] = {0x01};
@@ -563,7 +563,7 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
     unsigned char program_count[] = {0x01};
     unsigned char program_no[] = {0x01};
     unsigned int program_len = 0;
-    unsigned char zone_count[] = {0x02};
+    unsigned char zone_count[] = {0x01};
     unsigned char reserve[18] = {0};
 
     if (_msg.length() > 0)
@@ -575,7 +575,7 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
         }
     }
     auto program_blocks = hk_led_make_program_oem_data();
-    if (_plate_no.length() > 0 || _msg.length() > 0)
+    if (_msg.length() > 0)
     {
         program_blocks += hk_led_make_program_time_data();
     }
@@ -588,7 +588,7 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
         }
         program_blocks += hk_led_make_program_voice_data(_msg + _plate_no);
     }
-    program_len = program_blocks.length();
+    program_len = program_blocks.length() + 24;
 
     ZH_HK_ORIGINAL_FRAME(ret, program_count);
     ZH_HK_ORIGINAL_FRAME(ret, program_no);
@@ -612,10 +612,6 @@ std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_n
     unsigned int data_len = 0;
     unsigned char frame_reserve[] = {0x00, 0x00};
 
-    if (_msg.length() > 0)
-    {
-        op_code[0] = 0xdb;
-    }
     auto frame_data = hk_led_make_frame_data(_msg, _plate_no);
     if (frame_data.length() > 0)
     {
@@ -637,20 +633,6 @@ std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_n
 bool zh_hk_cast_empty(const std::string &_led_ip)
 {
     hk_led_connector hkc(_led_ip);
-    unsigned char sample_date[]{0x55, 0xaa, 0x00, 0x00, 0x01, 0x00, 0x00, 0xc5, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x21, 0x01, 0x12, 0x20, 0x10, 0x32, 0x33, 0x00, 0x00, 0x0d, 0x0a};
-    time_t cur_time;
-    time(&cur_time);
-    tm time_str;
-    localtime_r(&cur_time, &time_str);
-    sample_date[20] = ((time_str.tm_year + 1900 - 2000) % 10) | ((time_str.tm_year + 1900 - 2000) / 10 * 16);
-    sample_date[21] = time_str.tm_wday;
-    sample_date[22] = ((time_str.tm_mon + 1) % 10) | ((time_str.tm_mon + 1) / 10 * 16);
-    sample_date[23] = (time_str.tm_mday % 10) | (time_str.tm_mday / 10 * 16);
-    sample_date[24] = (time_str.tm_hour % 10) | (time_str.tm_hour / 10 * 16);
-    sample_date[25] = (time_str.tm_min % 10) | (time_str.tm_min / 10 * 16);
-    sample_date[26] = (time_str.tm_sec % 10) | (time_str.tm_sec / 10 * 16);
-    std::string time_cor_cmd((char *)sample_date, sizeof(sample_date));
-    hkc.send_cmd(time_cor_cmd);
     return hkc.send_cmd(hk_led_make_cmd("", ""));
 }
 

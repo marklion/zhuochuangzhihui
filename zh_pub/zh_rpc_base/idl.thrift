@@ -44,6 +44,7 @@ struct device_scale_config {
     16:string exit_nvr_ip,
     17:i64 entry_channel,
     18:i64 exit_channel,
+    19:double coefficient = 1,
 }
 
 struct device_config {

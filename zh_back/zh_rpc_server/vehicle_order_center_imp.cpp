@@ -859,8 +859,9 @@ void scale_state_machine::open_scale_timer()
         [](void *_private)
         {
             auto ssm = (scale_state_machine *)_private;
-            ssm->m_log.log("20秒未稳定，超时");
+            ssm->m_log.log("240秒未稳定，超时");
             ssm->scale_force_stable = true;
+            ssm->trigger_sm();
         },
         this);
     timer_fd = tdf_main::get_inst().start_timer(
@@ -871,6 +872,7 @@ void scale_state_machine::open_scale_timer()
             if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
             {
                 auto scale_ret = get_current_weight(ssm->bound_scale.scale_ip, ZH_SCALE_PORT, ssm->bound_scale.scale_brand);
+                scale_ret *= ssm->bound_scale.coefficient;
                 ssm->continue_weight.push_back(scale_ret);
                 auto ava = [=]() -> double
                 {
@@ -1248,35 +1250,13 @@ void scale_state_machine::record_entry_exit()
 
 void scale_state_machine::broadcast_enter_scale()
 {
-    std::string hold_led_ip;
-    if (bound_scale.entry_config.cam_ip == enter_cam_ip)
-    {
-        hold_led_ip = bound_scale.exit_config.led_ip;
-    }
-    else if (bound_scale.exit_config.cam_ip == enter_cam_ip)
-    {
-        hold_led_ip = bound_scale.entry_config.led_ip;
-    }
-    if (hold_led_ip.length() > 0)
-    {
-        zh_hk_cast_holding(hold_led_ip);
-    }
+    zh_hk_cast_holding(bound_scale.entry_config.led_ip);
+    zh_hk_cast_holding(bound_scale.exit_config.led_ip);
 }
 void scale_state_machine::broadcast_leave_scale()
 {
-    std::string led_ip;
-    if (bound_scale.entry_config.cam_ip == exit_cam_ip)
-    {
-        led_ip = bound_scale.entry_config.led_ip;
-    }
-    else if (bound_scale.exit_config.cam_ip == exit_cam_ip)
-    {
-        led_ip = bound_scale.exit_config.led_ip;
-    }
-    if (led_ip.length() > 0)
-    {
-        zh_hk_cast_exit_scale(led_ip, zh_double2string_reserve2(fin_weight));
-    }
+    zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight));
+    zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight));
 }
 
 std::unique_ptr<tdf_state_machine_state> scale_sm_vehicle_come::change_state(tdf_state_machine &_sm)
@@ -1682,6 +1662,11 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
         judge_permit = false;
     }
     if (need_qr && _qr_code.length() <= 0)
+    {
+        judge_permit = false;
+    }
+
+    if (_qr_code.empty() && _id_no.empty() && _vehicle_number.empty())
     {
         judge_permit = false;
     }

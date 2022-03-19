@@ -83,6 +83,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         scale_config[i].Get("exit_nvr_ip", tmp.exit_nvr_ip);
         scale_config[i].Get("entry_channel", tmp.entry_channel);
         scale_config[i].Get("exit_channel", tmp.exit_channel);
+        scale_config[i].Get("coefficient", tmp.coefficient);
         _return.scale.push_back(tmp);
     }
     config.Get("auto_order", _return.auto_order);
@@ -162,6 +163,7 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("exit_nvr_ip", itr.exit_nvr_ip);
         scale.Add("entry_channel", itr.entry_channel);
         scale.Add("exit_channel", itr.exit_channel);
+        scale.Add("coefficient", itr.coefficient);
         tmp["scale"].Add(scale);
     }
     tmp.Add("auto_order", config.auto_order, config.auto_order);
@@ -258,6 +260,7 @@ double system_management_handler::read_scale(const std::string &scale_ip)
         if (itr.scale_ip == scale_ip)
         {
             ret = get_current_weight(scale_ip, ZH_SCALE_PORT, itr.scale_brand);
+            ret *= itr.coefficient;
             break;
         }
     }
