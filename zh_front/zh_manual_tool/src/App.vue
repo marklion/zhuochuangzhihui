@@ -21,6 +21,26 @@
                     <el-container>
                         <el-header>称重</el-header>
                         <el-main>
+                            <el-collapse v-model="activeNames">
+                                <el-collapse-item title="串口配置" name="1">
+                                    <el-form :inline="true" :model="ser_port_config" class="demo-form-inline">
+                                        <el-form-item label="串口号">
+                                            <el-input v-model="ser_port_config.port_path" placeholder="串口号"></el-input>
+                                        </el-form-item>
+                                        <el-form-item label="波特率">
+                                            <el-input v-model="ser_port_config.bound_rate" placeholder="波特率"></el-input>
+                                        </el-form-item>
+                                        <el-form-item>
+                                            <el-button type="primary" @click="save_port_config">保存</el-button>
+                                        </el-form-item>
+                                    </el-form>
+                                </el-collapse-item>
+                                <el-collapse-item title="解析脚本" name="2">
+                                    <el-input type="textarea" :rows="50" placeholder="请输入解析函数" v-model="usr_parse_func">
+                                    </el-input>
+                                    <el-button type="primary" @click="save_parse">保存</el-button>
+                                </el-collapse-item>
+                            </el-collapse>
                             <div>
                                 <v-input-sevenseg v-model="cur_weight" height="80" digits="7" :buttons="false"></v-input-sevenseg>
                             </div>
@@ -91,6 +111,12 @@ export default {
     name: 'App',
     data: function () {
         return {
+            activeNames: '',
+            usr_parse_func: '',
+            ser_port_config: {
+                port_path: '',
+                bound_rate: '',
+            },
             print_obj: {
                 id: "weight_ticket",
                 openCallback: function (vue_this) {
@@ -186,10 +212,27 @@ export default {
         },
     },
     methods: {
-        push_weight: function (_vehicle) {
+        save_parse: function () {
+            var vue_this = this;
+            const idb = require('idb-keyval');
+            idb.set("parse_script", vue_this.usr_parse_func).then(function () {
+                window.location.reload();
+            });
+        },
+        save_port_config: async function () {
+            var vue_this = this;
+
+            const idb = require('idb-keyval');
+            await idb.set("port_path", vue_this.ser_port_config.port_path);
+            await idb.set("bound_rate", vue_this.ser_port_config.bound_rate);
+            window.location.reload();
+        },
+        push_weight: async function (_vehicle) {
             var vue_this = this;
             const axios = require('axios');
-            axios.post(vue_this.remote_path() + "/pa_web/pa_rest/push_weight?token=" + vue_this.$cookies.get("zy_token"), {
+            const idb = require('idb-keyval');
+            var token_from_idb = await idb.get("zy_token");
+            axios.post(vue_this.remote_path() + "/pa_web/pa_rest/push_weight?token=" + token_from_idb, {
                 id: _vehicle.id,
                 pWeight: _vehicle.p_weight,
                 mWeight: _vehicle.m_weight,
@@ -241,7 +284,7 @@ export default {
             vue_this.is_scaling = false;
         },
         remote_path: function () {
-            return this.$remote_url;
+            return "http://localhost:32800"
         },
         init_token: function () {
             var vue_this = this;
@@ -254,14 +297,18 @@ export default {
             }).then(function ({
                 value
             }) {
-                vue_this.$cookies.set("zy_token", value, -1);
-                vue_this.init_cur_plan_data();
+                const idb = require('idb-keyval');
+                idb.set("zy_token", value).then(function () {
+                    vue_this.init_cur_plan_data();
+                });
             });
         },
-        init_cur_plan_data: function () {
+        init_cur_plan_data: async function () {
             const axios = require('axios').default;
             var vue_this = this;
-            axios.get(vue_this.remote_path() + "/pa_web/pa_rest/all_vehicle_info?token=" + vue_this.$cookies.get("zy_token")).then(function (resp) {
+            const idb = require('idb-keyval');
+            var token_from_idb = await idb.get("zy_token");
+            axios.get(vue_this.remote_path() + "/pa_web/pa_rest/all_vehicle_info?token=" + token_from_idb).then(function (resp) {
                 if (resp.data.err_msg != "") {
                     vue_this.init_token();
                 } else {
@@ -277,8 +324,62 @@ export default {
             });
         },
     },
-    beforeMount: function () {
+    beforeMount: async function () {
         this.init_cur_plan_data();
+        var vue_this = this;
+        const {
+            SerialPort
+        } = require('serialport')
+        const idb = require('idb-keyval');
+        var port_path = await idb.get("port_path");
+        var bound_rate = await idb.get("bound_rate");
+        var usr_parse_func = await idb.get("parse_script");
+        this.ser_port_config.port_path = port_path ? port_path : 'COM1';
+        this.ser_port_config.bound_rate = port_path ? bound_rate : '9600';
+        this.usr_parse_func = usr_parse_func ? usr_parse_func : `function (buff) {
+    var ret = 0;
+    var last_byte_pos = buff.length - 1;
+    var first_byte_pos = 0;
+    while (last_byte_pos >= 11)
+    {
+        first_byte_pos = last_byte_pos - 11;
+        if (buff[first_byte_pos] == 0x02 && buff[last_byte_pos] == 0x03)
+        {
+            var sign_flag = buff[first_byte_pos + 1];
+            var ten_flag = (buff[first_byte_pos + 8] - 0x30);
+            ret += (buff[first_byte_pos + 2] - 0x30) * (10**5);
+            ret += (buff[first_byte_pos + 3] - 0x30) * (10**4);
+            ret += (buff[first_byte_pos + 4] - 0x30) * (10**3);
+            ret += (buff[first_byte_pos + 5] - 0x30) * (10**2);
+            ret += (buff[first_byte_pos + 6] - 0x30) * (10**1);
+            ret += (buff[first_byte_pos + 7] - 0x30) * (10**0);
+            ret /= 10**(ten_flag);
+            if (0x2b != sign_flag)
+            {
+                ret = 0 - ret;
+            }
+            break;
+        }
+        else {
+            last_byte_pos--;
+        }
+    }
+
+    return ret;
+};`;
+        const port = new SerialPort({
+            path: this.ser_port_config.port_path,
+            baudRate: parseInt(this.ser_port_config.bound_rate),
+        }, function (err) {
+            if (err) {
+                return console.log('Error: ', err.message)
+            }
+        })
+        port.on("data", function (_data) {
+            console.log(_data);
+            let parse_func = new Function('return ' + vue_this.usr_parse_func);
+            vue_this.cur_weight = parse_func()(_data);
+        });
     },
 }
 </script>
