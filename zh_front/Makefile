@@ -10,9 +10,7 @@ $(DELIVER_PATH)/manage_dist:$(DELIVER_PATH)
 	if [ "$(ONLY_BACK_END)" != "y" ]; then rm -rf $@; pushd $(SRC_DIR)/zh_manage;[ -d node_modules ] || npm install; npm run $(BUILD_MODE); cp ./dist -a $@; popd; fi
 
 $(DELIVER_PATH)/manual_tool:$(DELIVER_PATH)
-	if [ "$(ONLY_BACK_END)" != "y" ]; then rm -rf $@; pushd $(SRC_DIR)/zh_manual_tool;[ -d node_modules ] || npm install; npm run $(BUILD_MODE); cp ./dist -a $@; popd; fi
-	cp $(SRC_DIR)/zh_manual_tool/public/package.json $@/
-	cp $(SRC_DIR)/zh_manual_tool/public/main.js $@/
+	if [ "$(ONLY_BACK_END)" != "y" ]; then rm -rf $@; pushd $(SRC_DIR)/zh_manual_tool;[ -d node_modules ] || npm install; popd; fi
 clean:
 	rm -rf $(DELIVER_PATH)
 
