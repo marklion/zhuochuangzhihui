@@ -302,6 +302,7 @@ struct hk_led_connector
             if (_cmd.size() == send(socket_fd, _cmd.data(), _cmd.size(), 0))
             {
                 char buff[1024];
+                usleep(300000);
                 auto recv_len = recv(socket_fd, buff, sizeof(buff), MSG_DONTWAIT);
                 if (recv_len > 0)
                 {
