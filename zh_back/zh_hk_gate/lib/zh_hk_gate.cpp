@@ -141,6 +141,11 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         plate_no = plate_no.substr(2, plate_no.length() - 2);
                     }
                     plate_no = gbk2utf(plate_no);
+                    if (plate_no == "车牌")
+                    {
+                        g_log.log("cap no plate no");
+                        return TRUE;
+                    }
                     auto hk_duh = g_device_user_map[cam_ip];
                     if (hk_duh.callback_cfg.callback)
                     {
@@ -225,7 +230,8 @@ void zh_hk_clear_event()
     g_device_user_map.clear();
 }
 
-struct hk_gate_ctrl_param {
+struct hk_gate_ctrl_param
+{
     std::string road_ip;
     zh_hk_gate_control_cmd cmd;
 };
@@ -354,13 +360,14 @@ void __attribute__((destructor)) zh_hk_fini(void)
 }
 void zh_hk_manual_trigger(const std::string &_road_ip)
 {
+    g_log.log("manual trigger %s", _road_ip.c_str());
     auto hk_duh = g_device_user_map[_road_ip];
     if (hk_duh.user_id != -1)
     {
         NET_DVR_SNAPCFG tmp = {0};
         tmp.dwSize = sizeof(tmp);
         tmp.bySnapTimes = 3;
-        tmp.wSnapWaitTime = 1000;
+        tmp.wSnapWaitTime = 1;
         tmp.wIntervalTime[0] = 1000;
         tmp.wIntervalTime[1] = 1000;
         tmp.byRelatedDriveWay = 0;
@@ -558,7 +565,8 @@ std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_n
     return ret;
 }
 
-struct hk_led_param {
+struct hk_led_param
+{
     std::string led_ip;
     std::string cmd;
 };
@@ -623,15 +631,15 @@ bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate
     async_led_post(_led_ip, hk_led_make_cmd("未确认装卸货", _plate_no));
     return true;
 }
-bool zh_hk_cast_holding(const std::string &_led_ip)
+bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no)
 {
-    async_led_post(_led_ip, hk_led_make_cmd("请保持静止，等待提示", ""));
+    async_led_post(_led_ip, hk_led_make_cmd("请保持静止，等待提示", _plate_no));
     return true;
 }
-bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight)
+bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(10, _led_ip);
-    async_led_post(_led_ip, hk_led_make_cmd("请取称重小票后下榜", _weight + "吨"));
+    async_led_post(_led_ip, hk_led_make_cmd("请取称重小票后下榜" + _weight + "吨", _plate_no));
     return true;
 }
 bool zh_hk_cast_exit_busy(const std::string &_led_ip)

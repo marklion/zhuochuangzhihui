@@ -35,8 +35,8 @@ bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plat
 bool zh_hk_cast_no_order(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no);
-bool zh_hk_cast_holding(const std::string &_led_ip);
-bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight);
+bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no);
+bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no);
 bool zh_hk_cast_exit_busy(const std::string &_led_ip);
 bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no);

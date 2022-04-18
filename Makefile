@@ -3,11 +3,10 @@ SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
 SUB_DIR=zh_pub zh_back zh_external zh_front zh_plugin
 BUILD_MODE=build
-VERSION_TAG=internal
 export BUILD_MODE
 
 pack:all
-	echo $(VERSION_TAG) > $(DELIVER_PATH)/conf/version.txt
+	date '+%Y-%m-%d %H:%M:%S' > $(DELIVER_PATH)/conf/version.txt
 	tar zcf zh_deliver.tar.gz -C $(DELIVER_PATH) bin lib conf manage_dist zh_rest_node script
 	cat $(SRC_DIR)/deploy.sh zh_deliver.tar.gz > $(DELIVER_PATH)/install.sh
 	chmod +x $(DELIVER_PATH)/install.sh

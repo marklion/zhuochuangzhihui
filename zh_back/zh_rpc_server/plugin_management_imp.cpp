@@ -64,10 +64,16 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
 {
     int pipfd[2];
     int pipfd_err[2];
+    std::string plug_cmd = "/plugin/" + _plugin_name + "/bin/" + _plugin_name + "_plugin";
+    if (access(plug_cmd.c_str(), X_OK) != 0)
+    {
+        tdf_log tmp("plugin_exe");
+        tmp.err("cannot exec plugin");
+        return;
+    }
+    int ipid = fork();
     pipe(pipfd);
     pipe(pipfd_err);
-    std::string plug_cmd = "/plugin/" + _plugin_name + "/bin/" + _plugin_name + "_plugin";
-    int ipid = fork();
     if (ipid > 0)
     {
         close(pipfd[1]);

@@ -35,7 +35,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 128`
+    line=`expr $line - 131`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -47,6 +47,9 @@ start_all_server() {
     pm2 start index.js
     popd
     wetty &
+    ulimit -c unlimited
+    sysctl -w kernel.core_pattern=/database/core.%e.%p.%s.%E
+    ulimit -c
     zh_daemon
 }
 

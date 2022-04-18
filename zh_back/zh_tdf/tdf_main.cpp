@@ -142,26 +142,39 @@ struct tdf_timer_node : public Itdf_io_channel
     void *m_private = nullptr;
     int m_handle = -1;
     bool m_one_time = false;
+    bool need_delete = false;
     void proc_in()
     {
-        uint64_t times = 0;
-        if (sizeof(uint64_t) == read(m_handle, &times, sizeof(times)))
+        if (need_delete)
         {
-            int cur_handle = m_handle;
-            while (times--)
+            tdf_timer_lock a;
+            close(m_handle);
+            g_timer_map.erase(m_handle);
+            epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, m_handle, nullptr);
+            g_pause_epoll = true;
+            delete this;
+        }
+        else
+        {
+            uint64_t times = 0;
+            if (sizeof(uint64_t) == read(m_handle, &times, sizeof(times)))
             {
+                int cur_handle = m_handle;
+                while (times--)
                 {
-                    tdf_timer_lock a;
-                    if (nullptr == g_timer_map[cur_handle])
                     {
-                        break;
+                        tdf_timer_lock a;
+                        if (nullptr == g_timer_map[cur_handle])
+                        {
+                            break;
+                        }
                     }
-                }
-                m_proc(m_private);
-                if (m_one_time)
-                {
-                    tdf_main::get_inst().stop_timer(m_handle);
-                    return;
+                    m_proc(m_private);
+                    if (m_one_time)
+                    {
+                        tdf_main::get_inst().stop_timer(m_handle);
+                        return;
+                    }
                 }
             }
         }
@@ -472,9 +485,9 @@ int connect_timeout(int sockfd, struct sockaddr *serv_addr, int addrlen, int tim
     if (n < 0)
     {
         /*
-		EINPROGRESS表示connect正在尝试连接
-		#define EWOULDBLOCK EAGAIN Operation would block
-		*/
+        EINPROGRESS表示connect正在尝试连接
+        #define EWOULDBLOCK EAGAIN Operation would block
+        */
         if (errno != EINPROGRESS && errno != EWOULDBLOCK)
         {
             ret = -1;
@@ -593,10 +606,7 @@ void tdf_main::stop_timer(int _timer_handle)
     auto pnode = g_timer_map[_timer_handle];
     if (nullptr != pnode)
     {
-        close(_timer_handle);
-        g_timer_map.erase(_timer_handle);
-        delete pnode;
-        epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, _timer_handle, nullptr);
+        pnode->need_delete = true;
     }
 }
 

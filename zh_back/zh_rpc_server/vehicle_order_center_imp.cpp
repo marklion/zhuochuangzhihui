@@ -854,16 +854,6 @@ void scale_state_machine::scale_zero()
 void scale_state_machine::open_scale_timer()
 {
     m_log.log("开启定时器");
-    scale_stable_timer_fd = tdf_main::get_inst().start_timer(
-        240,
-        [](void *_private)
-        {
-            auto ssm = (scale_state_machine *)_private;
-            ssm->m_log.log("240秒未稳定，超时");
-            ssm->scale_force_stable = true;
-            ssm->trigger_sm();
-        },
-        this);
     timer_fd = tdf_main::get_inst().start_timer(
         1,
         [](void *_private)
@@ -916,16 +906,11 @@ void scale_state_machine::close_timer()
         continue_weight.clear();
         fin_weight = 0;
     }
-    if (scale_stable_timer_fd >= 0)
-    {
-        tdf_main::get_inst().stop_timer(scale_stable_timer_fd);
-        scale_stable_timer_fd = -1;
-        scale_force_stable = false;
-    }
 }
 void scale_state_machine::clean_bound_info()
 {
     m_log.log("清理绑定数据");
+    last_enter_cam_ip = enter_cam_ip;
     enter_cam_ip = "";
     exit_cam_ip = "";
     entry_param.clear();
@@ -971,7 +956,7 @@ bool scale_state_machine::should_open()
 bool scale_state_machine::scale_stable()
 {
     bool ret = false;
-    if (continue_weight.size() > 8 || scale_force_stable)
+    if (continue_weight.size() > 8)
     {
         auto cur_weight = [=]() -> double
         {
@@ -986,7 +971,7 @@ bool scale_state_machine::scale_stable()
             }
             return scale_ret;
         }();
-        if (cur_weight > 1 || scale_force_stable)
+        if (cur_weight > 1)
         {
             ret = true;
         }
@@ -997,22 +982,10 @@ bool scale_state_machine::scale_stable()
 bool scale_state_machine::scale_clear()
 {
     bool ret = false;
-    if (continue_weight.size() > 8 || scale_force_stable)
+    if (continue_weight.size() > 0)
     {
-        auto cur_weight = [=]() -> double
-        {
-            double scale_ret = 0;
-            for (auto &itr : continue_weight)
-            {
-                scale_ret += itr;
-            }
-            if (continue_weight.size() > 0)
-            {
-                scale_ret /= continue_weight.size();
-            }
-            return scale_ret;
-        }();
-        if (cur_weight < 1 || scale_force_stable)
+        auto cur_weight = continue_weight[continue_weight.size() - 1];
+        if (cur_weight < 1)
         {
             ret = true;
         }
@@ -1129,8 +1102,7 @@ void scale_state_machine::open_trigger_switch()
 {
     m_log.log("开启触发开关");
     trigger_switch = true;
-    zh_hk_manual_trigger(enter_cam_ip);
-    zh_hk_manual_trigger(exit_cam_ip);
+    zh_hk_manual_trigger(last_enter_cam_ip);
 }
 #define SCALE_BUSY_MSG_CONTENT "正在称重，请稍候"
 void scale_state_machine::proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip)
@@ -1250,13 +1222,13 @@ void scale_state_machine::record_entry_exit()
 
 void scale_state_machine::broadcast_enter_scale()
 {
-    zh_hk_cast_holding(bound_scale.entry_config.led_ip);
-    zh_hk_cast_holding(bound_scale.exit_config.led_ip);
+    zh_hk_cast_holding(bound_scale.entry_config.led_ip, bound_vehicle_number);
+    zh_hk_cast_holding(bound_scale.exit_config.led_ip, bound_vehicle_number);
 }
 void scale_state_machine::broadcast_leave_scale()
 {
-    zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight));
-    zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight));
+    zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
+    zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
 }
 
 std::unique_ptr<tdf_state_machine_state> scale_sm_vehicle_come::change_state(tdf_state_machine &_sm)
@@ -1703,9 +1675,13 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
             {
                 continue;
             }
-            ret = itr.main_vehicle_number;
-
-            break;
+            if ((_id_no.length() > 0 && _id_no == itr.driver_id) ||
+                (_qr_code.length() > 0 && itr.order_number == _qr_code) ||
+                (_vehicle_number.length() > 0 && itr.main_vehicle_number == _vehicle_number))
+            {
+                ret = itr.main_vehicle_number;
+                break;
+            }
         }
         if (ret.empty())
         {
