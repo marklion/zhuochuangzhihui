@@ -92,6 +92,7 @@ service system_management {
     string get_oem_name() throws (1:gen_exp e),
     list<string> get_all_scale_brand() throws (1:gen_exp e),
     list<device_health> get_device_health(1:string ssid) throws (1:gen_exp e),
+    void trigger_cap(1:string ssid, 2:string cam_ip) throws (1:gen_exp e),
 }
 
 struct user_info {

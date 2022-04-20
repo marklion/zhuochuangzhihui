@@ -371,3 +371,13 @@ bool system_management_handler::led_cast_welcome(const std::string &led_ip)
 {
     return zh_hk_cast_welcome(led_ip, "蒙A12345");
 }
+
+void system_management_handler::trigger_cap(const std::string &ssid, const std::string &cam_ip)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    zh_hk_manual_trigger(cam_ip);
+}

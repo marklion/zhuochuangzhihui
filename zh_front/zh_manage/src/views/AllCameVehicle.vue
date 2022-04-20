@@ -1,6 +1,6 @@
 <template>
 <div class="all_came_vehicle_show">
-    <van-nav-bar class="nav_bar_show" title="现场车辆管理" @click-right="init_all_vehicle" right-text="刷新" />
+    <van-nav-bar class="nav_bar_show" title="现场车辆管理" @click-left="show_opt_cell = true" left-text="现场" @click-right="init_all_vehicle" right-text="刷新" />
     <van-dropdown-menu>
         <van-dropdown-item v-model="company_filter" :options="company_options" />
         <van-dropdown-item v-model="stuff_filter" :options="stuff_options" />
@@ -23,6 +23,13 @@
         </van-cell>
         <van-cell v-if="single_vehicle.has_called" title="详细信息" is-link :to="{name:'FieldOpt', params:{order_no:single_vehicle.basic_info.order_number}}"></van-cell>
     </div>
+    <van-popup v-model="show_opt_cell" position="bottom">
+        <van-collapse v-model="device_opt_show" accordion>
+            <van-collapse-item v-for="(single_cam, index) in all_cam_ips" :key="index" :title="single_cam.name" :name="index">
+                <van-button type="info" size="small" @click="trigger_cap(single_cam.ip)">触发识别</van-button>
+            </van-collapse-item>
+        </van-collapse>
+    </van-popup>
 
 </div>
 </template>
@@ -40,6 +47,8 @@ export default {
     name: 'AllCameVehicle',
     data: function () {
         return {
+            show_opt_cell: false,
+            device_opt_show: '',
             search_key: '',
             all_vehicle: [],
             company_filter: '全部',
@@ -52,9 +61,39 @@ export default {
                 text: '全部物料',
                 value: '全部'
             }],
+            device_config: {
+                gate: [],
+                scale: [],
+            },
         };
     },
     computed: {
+        all_cam_ips: function () {
+            var ret = [];
+
+            this.device_config.gate.forEach((element) => {
+                ret.push({
+                    name: element.name + ' 入口',
+                    ip: element.entry_config.cam_ip
+                });
+                ret.push({
+                    name: element.name + ' 出口',
+                    ip: element.exit_config.cam_ip
+                });
+            });
+            this.device_config.scale.forEach((element) => {
+                ret.push({
+                    name: element.name + ' 入口',
+                    ip: element.entry_config.cam_ip
+                });
+                ret.push({
+                    name: element.name + ' 出口',
+                    ip: element.exit_config.cam_ip
+                });
+            });
+
+            return ret;
+        },
         vehicle_need_show: function () {
             var ret = [];
             var vue_this = this;
@@ -86,6 +125,18 @@ export default {
         },
     },
     methods: {
+        trigger_cap: function (_cam_ip) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "trigger_cap", [vue_this.$cookies.get("zh_ssid"), _cam_ip]).then(function () {
+                vue_this.show_opt_cell = false;
+            });
+        },
+        get_device_config: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_device_config", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.device_config = resp;
+            });
+        },
         preview_attachment: function (_attachment) {
             ImagePreview({
                 images: [this.$remote_file_url + _attachment],
@@ -141,6 +192,7 @@ export default {
     },
     beforeMount: function () {
         this.init_all_vehicle();
+        this.get_device_config();
     },
 }
 </script>

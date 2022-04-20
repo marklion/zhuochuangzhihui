@@ -470,6 +470,11 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (!vo->m_registered)
     {
         vo->m_called = 0;
+        vo->check_in_timestamp = 0;
+    }
+    else
+    {
+        vo->check_in_timestamp = time(nullptr);
     }
     ret = vo->update_record();
 
@@ -533,7 +538,7 @@ void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_or
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status >= 1 AND status != 100 AND m_registered == 1");
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status >= 1 AND status != 100 AND m_registered == 1 ORDER BY check_in_timestamp");
     for (auto &itr : vos)
     {
         vehicle_order_detail tmp;
