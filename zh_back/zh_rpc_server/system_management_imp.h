@@ -46,6 +46,7 @@ public:
     virtual void get_device_health(std::vector<device_health> &_return, const std::string &ssid);
     virtual void read_qr(std::string &_return, const std::string &id_reader_ip);
     virtual bool led_cast_welcome(const std::string &led_ip);
+    virtual void trigger_cap(const std::string &ssid, const std::string &cam_ip);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

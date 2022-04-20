@@ -250,6 +250,7 @@ public:
     std::string company_address;
     std::string use_for;
     double max_count = 35;
+    long check_in_timestamp = 0;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -287,6 +288,7 @@ public:
         ret.push_back(sqlite_orm_column("company_address", sqlite_orm_column::STRING, &company_address));
         ret.push_back(sqlite_orm_column("use_for", sqlite_orm_column::STRING, &use_for));
         ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
+        ret.push_back(sqlite_orm_column("check_in_timestamp", sqlite_orm_column::INTEGER, &check_in_timestamp));
 
         return ret;
     }
