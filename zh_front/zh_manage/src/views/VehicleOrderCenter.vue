@@ -245,7 +245,7 @@
             </van-tabs>
             <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
             <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
-                <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :value="single_vehicle.stuff_name" :label="single_vehicle.company_name">
+                <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :to="{name:'MobileVehicleDetail', params:{order_no:single_vehicle.order_number}}" :value="single_vehicle.stuff_name" :label="single_vehicle.company_name">
                     <template #right-icon>
                         <div style="margin-left:10px;" v-if="single_vehicle.status != 100">
                             <van-button v-if="$store.state.user_info.permission <= 1 && single_vehicle.status == 0" type="primary" size="mini" @click="confirm_order([single_vehicle])">确认</van-button>
@@ -546,7 +546,7 @@ export default {
             });
         },
         onRefresh: function () {
-            this.$router.go(0);
+            this.refresh_order()
         },
         tmp_change: function (_type, _vehicle) {
             this.$prompt('请输入' + _type, '修改', {
@@ -804,6 +804,7 @@ export default {
                 }
             }).finally(function () {
                 vue_this.is_loading = false;
+                vue_this.isLoading = false;
             });
 
         },

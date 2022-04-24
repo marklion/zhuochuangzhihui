@@ -87,6 +87,13 @@ const routes = [
     meta: {
       mobile: true,
     },
+  },{
+    path: '/mobile/vehicle_detail/:order_no',
+    name: 'MobileVehicleDetail',
+    component: () => import('../views/VehicleDetail.vue'),
+    meta: {
+      mobile: true,
+    },
   },
 ]
 

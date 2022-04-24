@@ -270,7 +270,7 @@ export default {
     },
     methods: {
         onRefresh: function () {
-            this.$router.go(0);
+            this.init_all_vehicle();
         },
         proc_upload_vehicle: async function (_array) {
             var vue_this = this;
@@ -326,6 +326,7 @@ export default {
                 resp.forEach((element, index) => {
                     vue_this.$set(vue_this.all_vehicle, index, element);
                 });
+                vue_this.isLoading = false;
             });
         },
         clean_vehicle: function () {
