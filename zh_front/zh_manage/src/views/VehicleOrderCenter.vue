@@ -1,232 +1,289 @@
 <template>
 <div class="vehicle_order_center_show">
-    <el-row type="flex" justify="space-between" align="middle">
-        <el-col>
-            <div class="block_title_show">派车中心</div>
-        </el-col>
-        <el-col>
-            <div align="right" style="margin-right:10px;">
-                <el-button size="mini" type="primary" icon="el-icon-notebook-2" v-if="order_selected.length > 0" @click="export_xlsx">导出所选{{order_selected.length}}项</el-button>
-                <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_order_diag = true">新增</el-button>
-            </div>
-        </el-col>
-    </el-row>
-    <el-row type="flex" justify="space-between">
-        <el-col :span="12">
-            <el-tabs v-model="activeName" @tab-click="refresh_order">
-                <el-tab-pane label="所有派车单" name="all">
-                </el-tab-pane>
-                <el-tab-pane label="未确认" name="need_confirm">
-                    <template slot="label">
-                        <span>未确认</span>
-                        <el-badge :value="cur_statistic.unconfirm" v-if="cur_statistic.unconfirm>0" size="mini"></el-badge>
-                    </template>
-                </el-tab-pane>
-                <el-tab-pane name="has_not_come">
-                    <template slot="label">
-                        <span>未入场</span>
-                        <el-badge :value="cur_statistic.not_in_yet" v-if="cur_statistic.not_in_yet>0" size="mini"></el-badge>
-                    </template>
-                </el-tab-pane>
-                <el-tab-pane name="insite">
-                    <template slot="label">
-                        <span>已入场</span>
-                        <el-badge :value="cur_statistic.already_in" v-if="cur_statistic.already_in>0" size="mini"></el-badge>
-                    </template>
-                </el-tab-pane>
-                <el-tab-pane label="已完成" name="end">
-                </el-tab-pane>
-            </el-tabs>
-        </el-col>
-        <el-col :span="6">
-            <div align="right" style="margin-right:10px;">
-                <el-date-picker @change="choose_date" v-model="enter_date_filter" align="right" type="date" placeholder="过滤进厂日期" :picker-options="picker_option" value-format="yyyy-MM-dd">
-                </el-date-picker>
-            </div>
-        </el-col>
-        <el-col :span="6">
-            <div align="right" style="margin-right:10px;">
-                <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
-            </div>
-        </el-col>
-    </el-row>
-    <el-popover ref="pop1" v-model="visible1" width="200">
-        <company-balance :company_name="curObj1"></company-balance>
-    </el-popover>
-    <el-popover ref="pop2" v-model="visible2" width="200">
-        <stuff-price :stuff_name="curObj2"></stuff-price>
-    </el-popover>
-    <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
-        <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
-            <el-table-column type="selection" width="30px">
-            </el-table-column>
-            <el-table-column label="单号" width="130px">
-                <template slot-scope="scope">
-                    <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
-                        <el-link type="primary">{{scope.row.order_number}}</el-link>
-                    </router-link>
-                </template>
-            </el-table-column>
-            <el-table-column label="公司" width="250px">
-                <template slot-scope="scope">
-                    <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
-                </template>
-            </el-table-column>
-            <el-table-column label="运输货物" width="130px">
-                <template slot-scope="scope">
-                    <div slot="reference" @mouseenter="e=> show_pop_info2(e, scope.row.stuff_name)" @mouseleave="visible2 = false">{{scope.row.stuff_name}}</div>
-                </template>
-            </el-table-column>
-            <el-table-column label="状态" width="200px">
-                <template slot-scope="scope">
-                    <div>
-                        {{scope.row.status_details[scope.row.status_details.length - 1].name}}
-                    </div>
-                    <div v-if="scope.row.status == 0" style="color:red;">
-                        {{scope.row.balance_warn}}
-                    </div>
-                    <div v-if="scope.row.status == 3 && deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)) > 30" style="color:red">
-                        装卸货消耗{{deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3))}}分钟
-                    </div>
-                </template>
-            </el-table-column>
-            <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
-            </el-table-column>
-            <el-table-column width="40px" type="expand">
-                <template slot-scope="scope">
-                    <div style="width:600px;">
-                        <el-descriptions size="mini" :column="4" border>
-                            <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
-                            <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
-                            <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
-                            <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
-                            <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
-                            <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
-                            <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
-                            <el-descriptions-item label="最大净重">{{scope.row.max_count}}</el-descriptions-item>
-                        </el-descriptions>
-                    </div>
-                </template>
-            </el-table-column>
-            <el-table-column label="进厂时间" width="180px">
-                <template slot-scope="scope">
-                    {{calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)}}
-                </template>
-            </el-table-column>
-            <el-table-column label="出厂时间" width="180px">
-                <template slot-scope="scope">
-                    {{calc_status_date(scope.row, 100)}}
-                </template>
-            </el-table-column>
-            <el-table-column label="附件" width="100px">
-                <template slot-scope="scope">
-                    <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
-                    </el-image>
-                    <div v-else>
-                        无附件
-                    </div>
-                    <div v-if="scope.row.status <= 1">
-                        <el-button v-if="scope.row.attachment" icon="el-icon-delete" type="warning" size="mini" @click="delete_attachment(scope.row)">删除</el-button>
-                        <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
-                            <el-button size="mini" type="primary" icon="el-icon-paperclip">上传</el-button>
-                        </el-upload>
-                    </div>
-                </template>
-            </el-table-column>
-            <el-table-column fixed="right" label="操作" width="120px">
-                <template slot-scope="scope">
-
-                    <span v-if="scope.row.status < 2">
-                        <el-tooltip class="item" effect="dark" content="取消派车" placement="top">
-                            <el-button type="danger" size="small" icon="el-icon-s-release" @click="cancel_order([scope.row])" circle></el-button>
-                        </el-tooltip>
-                    </span>
-                    <span v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
-                        <el-tooltip class="item" effect="dark" content="确认派车" placement="top">
-                            <el-button type="success" size="small" icon="el-icon-check" circle @click="confirm_order([scope.row])"></el-button>
-                        </el-tooltip>
-                    </span>
-                    <span v-if="scope.row.status == 1">
-                        <el-tooltip class="item" effect="dark" content="拷贝排号连接" placement="top">
-                            <el-button type="warning" size="small" icon="el-icon-postcard" circle @click="copy_check_in_link(scope.row)"></el-button>
-                        </el-tooltip>
-                    </span>
-                </template>
-            </el-table-column>
-        </el-table>
-    </van-list>
-    <el-dialog @open="fill_company_name" @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
+    <div v-if="!$route.meta.mobile">
         <el-row type="flex" justify="space-between" align="middle">
-            <el-col :span="10">
-                <el-row type="flex" justify="space-between" align="middle">
-                    <el-col :span="12" v-if="focus_order.company_name">
-                        <company-balance :company_name="focus_order.company_name"></company-balance>
-                    </el-col>
-                    <el-col :span="12" v-if="focus_order.stuff_name">
-                        <stuff-price :stuff_name="focus_order.stuff_name"></stuff-price>
-                    </el-col>
-                </el-row>
-                <el-form :model="focus_order" ref="edit_order_form" :rules="rules" label-width="120px">
-                    <el-form-item label="派车公司" prop="company_name">
-                        <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_order.company_name" search_key="company_name"></item-for-select>
-                    </el-form-item>
-                    <el-form-item label="运输货物" prop="stuff_name">
-                        <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
-                    </el-form-item>
-                    <div v-if="need_print_ticket">
-                        <el-form-item label="运往地点" prop="company_address">
-                            <item-for-select v-model="focus_order.company_address" search_key="company_address"></item-for-select>
-                        </el-form-item>
-                        <el-form-item label="用途" prop="use_for">
-                            <item-for-select v-model="focus_order.use_for" search_key="use_for"></item-for-select>
-                        </el-form-item>
-                    </div>
-                    <el-form-item>
-                        <el-button type="primary" @click="edit_order">确认</el-button>
-                    </el-form-item>
-                </el-form>
+            <el-col>
+                <div class="block_title_show">派车中心</div>
             </el-col>
-            <el-col :span="12">
-                <div class="all_vehicle_select_show">
-                    <el-button type="success" size="mini" @click="show_vehicle_select = true">增加</el-button>
-                    <el-empty v-if="vehicle_selected.length <= 0" description="未添加车辆"></el-empty>
-                    <div v-else>
-                        <div class="single_vehicle_show" v-for="(single_vehicle, index) in vehicle_selected" :key="index">
-                            <el-descriptions size="mini" :column="2" border :title="single_vehicle.main_vehicle_number + '-' + single_vehicle.behind_vehicle_number">
-                                <template slot="extra">
-                                    <el-button type="danger" size="mini" @click="remove_single_vehicle(index)">移除</el-button>
-                                </template>
-                                <el-descriptions-item label="司机">
-                                    <span>
-                                        {{single_vehicle.driver_name}}
-                                    </span>
-                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('司机', single_vehicle)">修改</el-button>
-                                </el-descriptions-item>
-                                <el-descriptions-item label="电话">
-                                    <span>
-                                        {{single_vehicle.driver_phone}}
-                                    </span>
-                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('电话', single_vehicle)">修改</el-button>
-                                </el-descriptions-item>
-                                <el-descriptions-item label="身份证">
-                                    <span>
-                                        {{single_vehicle.driver_id}}
-                                    </span>
-                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('身份证', single_vehicle)">修改</el-button>
-                                </el-descriptions-item>
-                                <el-descriptions-item label="最大净重">
-                                    <span>
-                                        {{single_vehicle.max_count}}
-                                    </span>
-                                    <el-button style="float:right;padding:0;" type="text" @click="tmp_change('最大净重', single_vehicle)">修改</el-button>
-                                </el-descriptions-item>
-                            </el-descriptions>
-                        </div>
-                    </div>
+            <el-col>
+                <div align="right" style="margin-right:10px;">
+                    <el-button size="mini" type="info" icon="el-icon-notebook-2" v-if="order_selected.length > 0" @click="export_xlsx">导出所选{{order_selected.length}}项</el-button>
+                    <el-button size="mini" type="primary" icon="el-icon-check" v-if="order_selected.length > 0" @click="confirm_multi">批量确认{{order_selected.length}}项</el-button>
+                    <el-button size="mini" type="danger" icon="el-icon-s-release" v-if="order_selected.length > 0" @click="cancle_multi">批量取消{{order_selected.length}}项</el-button>
+                    <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_order_diag = true">新增</el-button>
                 </div>
             </el-col>
         </el-row>
-    </el-dialog>
+        <el-row type="flex" justify="space-between">
+            <el-col :span="12">
+                <el-tabs v-model="activeName" @tab-click="refresh_order">
+                    <el-tab-pane label="所有派车单" name="all">
+                    </el-tab-pane>
+                    <el-tab-pane label="未确认" name="need_confirm">
+                        <template slot="label">
+                            <span>未确认</span>
+                            <el-badge :value="cur_statistic.unconfirm" v-if="cur_statistic.unconfirm>0" size="mini"></el-badge>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane name="has_not_came">
+                        <template slot="label">
+                            <span>未入场</span>
+                            <el-badge :value="cur_statistic.not_in_yet" v-if="cur_statistic.not_in_yet>0" size="mini"></el-badge>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane name="insite">
+                        <template slot="label">
+                            <span>已入场</span>
+                            <el-badge :value="cur_statistic.already_in" v-if="cur_statistic.already_in>0" size="mini"></el-badge>
+                        </template>
+                    </el-tab-pane>
+                    <el-tab-pane label="已完成" name="end">
+                    </el-tab-pane>
+                </el-tabs>
+            </el-col>
+            <el-col :span="6">
+                <div align="right" style="margin-right:10px;">
+                    <el-date-picker @change="choose_date" v-model="enter_date_filter" align="right" type="date" placeholder="过滤进厂日期" :picker-options="picker_option" value-format="yyyy-MM-dd">
+                    </el-date-picker>
+                </div>
+            </el-col>
+            <el-col :span="6">
+                <div align="right" style="margin-right:10px;">
+                    <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
+                </div>
+            </el-col>
+        </el-row>
+        <el-popover ref="pop1" v-model="visible1" width="200">
+            <company-balance :company_name="curObj1"></company-balance>
+        </el-popover>
+        <el-popover ref="pop2" v-model="visible2" width="200">
+            <stuff-price :stuff_name="curObj2"></stuff-price>
+        </el-popover>
+        <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
+            <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
+                <el-table-column type="selection" width="30px">
+                </el-table-column>
+                <el-table-column label="单号" width="130px">
+                    <template slot-scope="scope">
+                        <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
+                            <el-link type="primary">{{scope.row.order_number}}</el-link>
+                        </router-link>
+                    </template>
+                </el-table-column>
+                <el-table-column label="公司" width="250px">
+                    <template slot-scope="scope">
+                        <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
+                    </template>
+                </el-table-column>
+                <el-table-column label="运输货物" width="130px">
+                    <template slot-scope="scope">
+                        <div slot="reference" @mouseenter="e=> show_pop_info2(e, scope.row.stuff_name)" @mouseleave="visible2 = false">{{scope.row.stuff_name}}</div>
+                    </template>
+                </el-table-column>
+                <el-table-column label="状态" width="200px">
+                    <template slot-scope="scope">
+                        <div>
+                            {{scope.row.status_details[scope.row.status_details.length - 1].name}}
+                        </div>
+                        <div v-if="scope.row.status == 0" style="color:red;">
+                            {{scope.row.balance_warn}}
+                        </div>
+                        <div v-if="scope.row.status == 3 && deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)) > 30" style="color:red">
+                            装卸货消耗{{deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3))}}分钟
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
+                </el-table-column>
+                <el-table-column width="40px" type="expand">
+                    <template slot-scope="scope">
+                        <div style="width:600px;">
+                            <el-descriptions size="mini" :column="4" border>
+                                <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
+                                <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
+                                <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
+                                <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
+                                <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
+                                <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
+                                <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
+                                <el-descriptions-item label="最大净重">{{scope.row.max_count}}</el-descriptions-item>
+                            </el-descriptions>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column label="进厂时间" width="180px">
+                    <template slot-scope="scope">
+                        {{calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)}}
+                    </template>
+                </el-table-column>
+                <el-table-column label="出厂时间" width="180px">
+                    <template slot-scope="scope">
+                        {{calc_status_date(scope.row, 100)}}
+                    </template>
+                </el-table-column>
+                <el-table-column label="附件" width="100px">
+                    <template slot-scope="scope">
+                        <el-image v-if="scope.row.attachment" style="width: 100%; height: 40px;" :src="$remote_file_url + scope.row.attachment" :preview-src-list="[$remote_file_url + scope.row.attachment]">
+                        </el-image>
+                        <div v-else>
+                            无附件
+                        </div>
+                        <div v-if="scope.row.status <= 1">
+                            <el-button v-if="scope.row.attachment" icon="el-icon-delete" type="warning" size="mini" @click="delete_attachment(scope.row)">删除</el-button>
+                            <el-upload v-else accept="image/*" :action="$remote_url + '/upload/'" :show-file-list="false" :limit="1" :on-success="upload_attachment(scope.row)">
+                                <el-button size="mini" type="primary" icon="el-icon-paperclip">上传</el-button>
+                            </el-upload>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column fixed="right" label="操作" width="120px">
+                    <template slot-scope="scope">
+
+                        <span v-if="scope.row.status < 2">
+                            <el-tooltip class="item" effect="dark" content="取消派车" placement="top">
+                                <el-button type="danger" size="small" icon="el-icon-s-release" @click="cancel_order([scope.row])" circle></el-button>
+                            </el-tooltip>
+                        </span>
+                        <span v-if="$store.state.user_info.permission <= 1 && scope.row.status == 0">
+                            <el-tooltip class="item" effect="dark" content="确认派车" placement="top">
+                                <el-button type="success" size="small" icon="el-icon-check" circle @click="confirm_order([scope.row])"></el-button>
+                            </el-tooltip>
+                        </span>
+                        <span v-if="scope.row.status > 0">
+                            <el-tooltip class="item" effect="dark" content="拷贝排号连接" placement="top">
+                                <el-button type="warning" size="small" icon="el-icon-postcard" circle @click="copy_check_in_link(scope.row)"></el-button>
+                            </el-tooltip>
+                        </span>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </van-list>
+        <el-dialog @open="fill_company_name" @close="clean_order" :title="(current_opt_add?'新增':'修改') + '派车单'" :visible.sync="show_edit_order_diag" width="60%" @keyup.enter.native="edit_order">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col :span="10">
+                    <el-row type="flex" justify="space-between" align="middle">
+                        <el-col :span="12" v-if="focus_order.company_name">
+                            <company-balance :company_name="focus_order.company_name"></company-balance>
+                        </el-col>
+                        <el-col :span="12" v-if="focus_order.stuff_name">
+                            <stuff-price :stuff_name="focus_order.stuff_name"></stuff-price>
+                        </el-col>
+                    </el-row>
+                    <el-form :model="focus_order" ref="edit_order_form" :rules="rules" label-width="120px">
+                        <el-form-item label="派车公司" prop="company_name">
+                            <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_order.company_name" search_key="company_name"></item-for-select>
+                        </el-form-item>
+                        <el-form-item label="运输货物" prop="stuff_name">
+                            <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
+                        </el-form-item>
+                        <div v-if="need_print_ticket">
+                            <el-form-item label="运往地点" prop="company_address">
+                                <item-for-select v-model="focus_order.company_address" search_key="company_address"></item-for-select>
+                            </el-form-item>
+                            <el-form-item label="用途" prop="use_for">
+                                <item-for-select v-model="focus_order.use_for" search_key="use_for"></item-for-select>
+                            </el-form-item>
+                        </div>
+                        <el-form-item>
+                            <el-button type="primary" @click="edit_order">确认</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+                <el-col :span="12">
+                    <div class="all_vehicle_select_show">
+                        <el-button type="success" size="mini" @click="show_vehicle_select = true">增加</el-button>
+                        <el-empty v-if="vehicle_selected.length <= 0" description="未添加车辆"></el-empty>
+                        <div v-else>
+                            <div class="single_vehicle_show" v-for="(single_vehicle, index) in vehicle_selected" :key="index">
+                                <el-descriptions size="mini" :column="2" border :title="single_vehicle.main_vehicle_number + '-' + single_vehicle.behind_vehicle_number">
+                                    <template slot="extra">
+                                        <el-button type="danger" size="mini" @click="remove_single_vehicle(index)">移除</el-button>
+                                    </template>
+                                    <el-descriptions-item label="司机">
+                                        <span>
+                                            {{single_vehicle.driver_name}}
+                                        </span>
+                                        <el-button style="float:right;padding:0;" type="text" @click="tmp_change('司机', single_vehicle)">修改</el-button>
+                                    </el-descriptions-item>
+                                    <el-descriptions-item label="电话">
+                                        <span>
+                                            {{single_vehicle.driver_phone}}
+                                        </span>
+                                        <el-button style="float:right;padding:0;" type="text" @click="tmp_change('电话', single_vehicle)">修改</el-button>
+                                    </el-descriptions-item>
+                                    <el-descriptions-item label="身份证">
+                                        <span>
+                                            {{single_vehicle.driver_id}}
+                                        </span>
+                                        <el-button style="float:right;padding:0;" type="text" @click="tmp_change('身份证', single_vehicle)">修改</el-button>
+                                    </el-descriptions-item>
+                                    <el-descriptions-item label="最大净重">
+                                        <span>
+                                            {{single_vehicle.max_count}}
+                                        </span>
+                                        <el-button style="float:right;padding:0;" type="text" @click="tmp_change('最大净重', single_vehicle)">修改</el-button>
+                                    </el-descriptions-item>
+                                </el-descriptions>
+                            </div>
+                        </div>
+                    </div>
+                </el-col>
+            </el-row>
+        </el-dialog>
+
+    </div>
+    <div v-else>
+        <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
+            <van-nav-bar title="派车中心" right-text="新增" @click-right="create_mobile_vehicle_diag = true" />
+            <van-tabs v-model="activeName" @change="refresh_order">
+                <van-tab title="所有" name="all"></van-tab>
+                <van-tab title="未确认" name="need_confirm" :badge="cur_statistic.unconfirm>0?cur_statistic.unconfirm:''"></van-tab>
+                <van-tab title="未入场" name="has_not_came" :badge="cur_statistic.not_in_yet>0?cur_statistic.not_in_yet:''"></van-tab>
+                <van-tab title="已入场" name="insite" :badge="cur_statistic.already_in>0?cur_statistic.already_in:''"></van-tab>
+                <van-tab title="结束" name="end"></van-tab>
+
+            </van-tabs>
+            <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
+            <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
+                <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :value="single_vehicle.stuff_name" :label="single_vehicle.company_name">
+                    <template #right-icon>
+                        <div style="margin-left:10px;" v-if="single_vehicle.status != 100">
+                            <van-button v-if="$store.state.user_info.permission <= 1 && single_vehicle.status == 0" type="primary" size="mini" @click="confirm_order([single_vehicle])">确认</van-button>
+                            <van-button v-if="single_vehicle.status > 0" size="mini" type="info" @click="copy_check_in_link(single_vehicle)">拷贝排号连接</van-button>
+                            <van-button v-if="single_vehicle.status <= 1" size="mini" type="danger" @click="cancel_order([single_vehicle])">取消</van-button>
+                        </div>
+                    </template>
+                    <template #title>
+                        <span>{{single_vehicle.main_vehicle_number}}-{{single_vehicle.driver_name}}</span>
+                        <van-tag size="mini" type="danger">
+                            {{single_vehicle.status_details[single_vehicle.status_details.length - 1].name}}
+                        </van-tag>
+                        <div v-if="single_vehicle.status == 0" style="color:red;">
+                            {{single_vehicle.balance_warn}}
+                        </div>
+                        <div v-if="single_vehicle.status == 3 && deliver_cost_time(calc_status_date(single_vehicle, 2)?calc_status_date(single_vehicle,2):calc_status_date(single_vehicle,3)) > 30" style="color:red">
+                            装卸货消耗{{deliver_cost_time(calc_status_date(single_vehicle, 2)?calc_status_date(single_vehicle,2):calc_status_date(single_vehicle,3))}}分钟
+                        </div>
+                    </template>
+                </van-cell>
+            </van-list>
+
+            <van-dialog v-model="create_mobile_vehicle_diag" title="新建派车" :showConfirmButton="false" closeOnClickOverlay>
+                <van-form @submit="mobile_create_order">
+                    <item-for-select label="派车公司" v-model="focus_order.company_name" :rules="[{required:true, message:'请指定公司'}]" search_key="company_name"></item-for-select>
+                    <item-for-select label="运输货物" v-model="focus_order.stuff_name" :rules="[{required:true, message:'请指定货物'}]" search_key="stuff_name"></item-for-select>
+                    <van-field readonly clickable name="picker" label="选择车辆" placeholder="点击选择车辆" @click="show_vehicle_select = true">
+                    </van-field>
+                    <van-tag v-for="(single_vehicle,index) in vehicle_selected" :key="index" closeable size="mini" type="primary" @close="remove_single_vehicle(index)">
+                        {{single_vehicle.main_vehicle_number}}
+                    </van-tag>
+                    <div style="margin: 16px;">
+                        <van-button round block type="info" native-type="submit">提交</van-button>
+                    </div>
+                </van-form>
+            </van-dialog>
+        </van-pull-refresh>
+    </div>
     <el-drawer @closed="clean_select" :visible.sync="show_vehicle_select" direction="rtl" size="70%">
         <div slot="title">
             <div>请选择车辆</div>
@@ -300,7 +357,7 @@ export default {
                             ret.push(element);
                         }
                         break;
-                    case 'has_not_come':
+                    case 'has_not_came':
                         if (element.status == 1) {
                             ret.push(element);
                         }
@@ -353,6 +410,8 @@ export default {
     },
     data: function () {
         return {
+            create_mobile_vehicle_diag: false,
+            isLoading: false,
             deliver_cost_time: function (_start_time) {
                 var start_time = new Date(_start_time);
                 var ms = new Date().getTime() - start_time.getTime();
@@ -445,6 +504,50 @@ export default {
         };
     },
     methods: {
+        cancle_multi: function () {
+            this.cancel_order(this.order_selected);
+        },
+        confirm_multi: function () {
+            this.confirm_order(this.order_selected);
+        },
+        diag_func: function (_message, _title) {
+            if (this.$route.meta.mobile) {
+                return this.$dialog.confirm({
+                    title: _title,
+                    message: _message
+                });
+            } else {
+                return this.$confirm(_message, _title, {
+                    confirmButtonText: '确认',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                });
+            }
+        },
+        mobile_create_order: function () {
+            var vue_this = this;
+            var req_body = {};
+            var func_name = "";
+            req_body = [];
+            vue_this.vehicle_selected.forEach(element => {
+                var single_req = element;
+                single_req.company_name = vue_this.focus_order.company_name;
+                single_req.stuff_name = vue_this.focus_order.stuff_name;
+                single_req.company_address = vue_this.focus_order.company_address;
+                single_req.use_for = vue_this.focus_order.use_for;
+                req_body.push(single_req);
+            });
+            func_name = "create_vehicle_order";
+            vue_this.$call_remote_process("vehicle_order_center", func_name, [vue_this.$cookies.get("zh_ssid"), req_body]).then(function (resp) {
+                if (resp) {
+                    vue_this.refresh_order();
+                    vue_this.create_mobile_vehicle_diag = false;
+                }
+            });
+        },
+        onRefresh: function () {
+            this.$router.go(0);
+        },
         tmp_change: function (_type, _vehicle) {
             this.$prompt('请输入' + _type, '修改', {
                 confirmButtonText: '确定',
@@ -548,7 +651,7 @@ export default {
         },
         cancel_order: function (orders) {
             var vue_this = this;
-            vue_this.$confirm('确定要取消吗', '提示', {
+            vue_this.diag_func('确定要取消吗', '提示', {
                 confirmButtonText: '确认',
                 cancelButtonText: '取消',
                 type: 'warning'
@@ -576,7 +679,7 @@ export default {
                 });
             };
             if (need_confirm_balance) {
-                vue_this.$confirm('车辆所属的公司余额不足，确定要确认派车吗', '提示', {
+                vue_this.diag_func('车辆所属的公司余额不足，确定要确认派车吗', '提示', {
                     confirmButtonText: '强制确认',
                     cancelButtonText: '取消',
                     type: 'warning'
@@ -675,7 +778,7 @@ export default {
                     };
                     vue_this.$call_remote_process("vehicle_order_center", "check_price_balance", [vue_this.$cookies.get("zh_ssid"), req_body]).then(function (balance_msg) {
                         if (balance_msg) {
-                            vue_this.$confirm(balance_msg, '提示', {
+                            vue_this.diag_func(balance_msg, '提示', {
                                 confirmButtonText: '仍然派车',
                                 cancelButtonText: '取消',
                                 type: 'warning'

@@ -67,16 +67,18 @@
                 </el-form-item>
             </el-form>
         </el-dialog>
-        <el-dialog title="修改密码" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="need_show_change_password" width="60%">
-            <change-password></change-password>
-        </el-dialog>
     </div>
     <div v-else>
         <div v-if="$store.state.is_login || $route.meta.no_need_login">
             <router-view></router-view>
+            <van-tabbar placeholder safe-area-inset-bottom route v-if="!$route.meta.no_tabbar">
+                <van-tabbar-item replace to="/mobile/vehicle_order_center" icon="search">派车中心</van-tabbar-item>
+                <van-tabbar-item replace to="/mobile/vehicle_management" icon="newspaper-o">车辆管理</van-tabbar-item>
+                <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/all_came_vehicle" icon="label-o">现场管理</van-tabbar-item>
+            </van-tabbar>
         </div>
         <div v-else>
-            <el-button v-if="!$store.state.is_login" @click="show_login_diag = true">登录</el-button>
+            <van-button class="login_button_show" type="primary" size="large" block circle v-if="!$store.state.is_login" @click="show_login_diag = true">登录</van-button>
             <van-dialog v-model="show_login_diag" title="登录" :show-cancel-button="false" :show-confirm-button="false" :close-on-click-overlay="true">
                 <van-form @submit="user_login">
                     <van-field v-model="login_form.phone" name="手机号" label="用户名" placeholder="用户名" :rules="[{ required: true, message: '请填写用户名' }]" />
@@ -88,10 +90,18 @@
             </van-dialog>
         </div>
     </div>
+
+    <el-dialog title="修改密码" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="need_show_change_password" width="60%">
+        <change-password></change-password>
+    </el-dialog>
 </div>
 </template>
 
 <script>
+import Vue from 'vue';
+import Vant from 'vant';
+import 'vant/lib/index.css';
+Vue.use(Vant);
 import ChangePassword from './components/ChangePassword.vue'
 export default {
     name: 'App',
@@ -119,6 +129,13 @@ export default {
     },
     data: function () {
         return {
+            isMobile() {
+                if (window.navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)) {
+                    return true; // 移动端
+                } else {
+                    return false; // PC端
+                }
+            },
             cmd_queue: [],
             oem_name: "卓创智汇",
             cur_menu: [{
@@ -177,6 +194,7 @@ export default {
         };
     },
     methods: {
+
         go_back: function () {
             this.$router.go(-1);
         },
@@ -228,6 +246,13 @@ export default {
         "$route": function (to) {
             if (!to.meta.no_need_login) {
                 this.init_user_info();
+            }
+            if (this.isMobile() && to.path.substr(0, 7) != '/mobile') {
+                var target_path = to.path;
+                if (target_path == '/') {
+                    target_path = '/vehicle_order_center';
+                }
+                this.$router.replace('/mobile' + target_path);
             }
         },
     },
@@ -281,5 +306,10 @@ export default {
 .content_show {
     height: 88vh;
     overflow-y: auto;
+}
+
+.login_button_show {
+    position: absolute;
+    top: 50%;
 }
 </style>

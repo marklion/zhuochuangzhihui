@@ -205,4 +205,8 @@ export default {
 .single_vehicle_show {
     border-bottom: 1px solid black;
 }
+
+.all_came_vehicle_show {
+    overflow-y: scroll;
+}
 </style>

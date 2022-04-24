@@ -340,7 +340,7 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
     for (auto &itr : order)
     {
         auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
-        if (!single_order || single_order->status == 2)
+        if (!single_order || single_order->status >= 2)
         {
             ZH_RETURN_ORDER_CANNOT_CANCEL(itr.main_vehicle_number);
         }

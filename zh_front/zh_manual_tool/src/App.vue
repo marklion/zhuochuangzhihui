@@ -58,26 +58,28 @@
                                 <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" h="auto" w="auto" :isResizable="true" parentLimitation>
                                     <div>称重单</div>
                                 </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="30" :y="130" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div class="item_in_ticket">公司名:</div>
-                                    <div class="item_in_ticket">车牌号:</div>
-                                    <div class="item_in_ticket">货物名称:</div>
-                                    <div class="item_in_ticket">净重:</div>
-                                    <div class="item_in_ticket">皮重:</div>
-                                    <div class="item_in_ticket">过皮时间:</div>
-                                    <div class="item_in_ticket">毛重:</div>
-                                    <div class="item_in_ticket">过毛时间:</div>
+                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="30" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                    <div>磅单号:xxxx</div>
                                 </vue-drag-resize>
-
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="300" :y="130" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div class="item_in_ticket">{{print_weight_content.companyName}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.plateNo}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.stuffName}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.j_weight}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.p_weight}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.p_time}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.m_weight}}</div>
-                                    <div class="item_in_ticket">{{print_weight_content.m_time}}</div>
+                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="200" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                    <div>日期:{{print_weight_content.m_time}}</div>
+                                </vue-drag-resize>
+                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="400" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                    <div>单位:吨</div>
+                                </vue-drag-resize>
+                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="30" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                    <div class="item_in_ticket">客户名称:{{print_weight_content.companyName}}</div>
+                                    <div class="item_in_ticket">产品名称:{{print_weight_content.stuffName}}</div>
+                                    <div class="item_in_ticket">车号:{{print_weight_content.plateNo}}</div>
+                                    <div class="item_in_ticket">挂车号:{{print_weight_content.backPlateNo}}</div>
+                                    <div class="item_in_ticket">提货人身份证号:{{print_weight_content.driverId}}</div>
+                                </vue-drag-resize>
+                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="330" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                    <div class="item_in_ticket">毛重:{{print_weight_content.m_weight}}</div>
+                                    <div class="item_in_ticket">皮重:{{print_weight_content.m_weight}}</div>
+                                    <div class="item_in_ticket">净重:{{print_weight_content.m_weight}}</div>
+                                    <div class="item_in_ticket">目的地:</div>
+                                    <div class="item_in_ticket">提货人签字:</div>
                                 </vue-drag-resize>
                             </div>
                         </el-main>
@@ -284,7 +286,7 @@ export default {
             vue_this.is_scaling = false;
         },
         remote_path: function () {
-            return "http://localhost:32800"
+            return "https://www.d8sis.cn"
         },
         init_token: function () {
             var vue_this = this;
@@ -424,14 +426,16 @@ export default {
 }
 
 .print_content_show {
-    height: 570px;
+    height: 250px;
     width: 770px;
     margin: 15px;
-    border: 1px solid;
     position: relative;
 }
 
 .item_in_ticket {
-    line-height: 48px;
+    line-height: 30px;
+    width: 300px;
+    text-align: justify;
+    border: 1px solid;
 }
 </style>

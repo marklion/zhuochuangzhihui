@@ -40,7 +40,7 @@ const routes = [
     component: () => import('../views/VehicleOrderCenter.vue')
   },
   {
-    path:'/field_opt/:order_no',
+    path:'/mobile/field_opt/:order_no',
     name:'FieldOpt',
     component: () => import('../views/FieldOpt.vue'),
     meta: {
@@ -48,7 +48,7 @@ const routes = [
     },
   },
   {
-    path: '/all_came_vehicle',
+    path: '/mobile/all_came_vehicle',
     name: 'AllCameVehicle',
     component: () => import('../views/AllCameVehicle.vue'),
     meta: {
@@ -56,12 +56,13 @@ const routes = [
     },
   },
   {
-    path: '/check_in/:order_no',
+    path: '/mobile/check_in/:order_no',
     name: 'CheckIn',
     component: () => import('../views/CheckIn.vue'),
     meta: {
       mobile: true,
       no_need_login:true,
+      no_tabbar:true,
     },
   },{
     path: '/vehicle_detail/:order_no',
@@ -70,6 +71,21 @@ const routes = [
     meta: {
       is_sub:true,
       subtitle:'派车单',
+    },
+  },{
+    path: '/mobile/vehicle_order_center',
+    name: 'MobileVehicleOrderCenter',
+    component: () => import('../views/VehicleOrderCenter.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
+  {
+    path: '/mobile/vehicle_management',
+    name: 'MobileVehicleManagement',
+    component: () => import('../views/VehicleManagement.vue'),
+    meta: {
+      mobile: true,
     },
   },
 ]
