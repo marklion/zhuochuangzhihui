@@ -24,7 +24,7 @@ export default {
         search_key: String,
         disabled: Boolean,
         rules: [],
-        label: '',
+        label: String,
     },
     model: {
         prop: 'value',
