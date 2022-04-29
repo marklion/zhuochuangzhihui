@@ -167,7 +167,7 @@ zh_read_id_api::~zh_read_id_api()
     need_exit = true;
     if (id_thread != 0)
     {
-        pthread_join(id_thread, NULL);
+        pthread_join(id_thread, nullptr);
     }
     tdf_log tmp_log("id_read_api");
     tmp_log.log("id_read api destroy");

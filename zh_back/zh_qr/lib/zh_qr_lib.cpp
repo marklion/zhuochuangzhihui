@@ -28,7 +28,7 @@ bool zh_qr_subscribe(const std::string &_ip, zh_sub_callback_cfg _cfg)
                     tdf_main::get_inst().start_timer(5, [](void *_private){
                         auto ip = (std::string *)_private;
                         zh_qr_subscribe(*ip, g_callback_map[*ip].cfg);
-                        delete(ip);
+                        delete ip;
                     }, new std::string(ip), true);
                     zh_runtime_get_device_health()[ip] = 2;
                 }
@@ -55,7 +55,7 @@ bool zh_qr_subscribe(const std::string &_ip, zh_sub_callback_cfg _cfg)
             {
                 auto ip = (std::string *)_private;
                 zh_qr_subscribe(*ip, g_callback_map[*ip].cfg);
-                delete(ip); },
+                delete ip; },
             new std::string(_ip), true);
     }
     if (ret)
