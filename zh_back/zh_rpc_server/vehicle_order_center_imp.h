@@ -7,6 +7,7 @@
 #include "../zh_tdf/tdf_include.h"
 #include "../zh_database/zh_db_config.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
+#include "../zh_id_reader/lib/zh_id_reader.h"
 
 
 class scale_sm_vehicle_come:public tdf_state_machine_state {
@@ -79,6 +80,8 @@ public:
     scale_gate_trigger_param exit_param;
     bool trigger_switch = true;
     gate_ctrl_policy ctrl_policy;
+    zh_read_id_api entry_id_api;
+    zh_read_id_api exit_id_api;
     void open_trigger_switch();
     void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);
     void proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip);
@@ -125,6 +128,7 @@ public:
     }
     scale_gate_trigger_param param;
     gate_ctrl_policy ctrl_policy;
+    zh_read_id_api id_api;
     gate_state_machine(const std::string &_road_way, const std::string &_id_reader_ip, const std::string &_qr_ip, bool _is_entry);
     virtual ~gate_state_machine();
     void clean_bound_info();
