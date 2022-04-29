@@ -751,30 +751,24 @@ void vehicle_order_center_handler::check_price_balance(std::string &_return, con
     _return = ret;
 }
 
-scale_state_machine::scale_state_machine(const device_scale_config &_config) : m_log(_config.name + " scale sm"), bound_scale(_config)
+scale_state_machine::scale_state_machine(const device_scale_config &_config)
+    : m_log(_config.name + " scale sm"),
+      bound_scale(_config),
+      entry_id_api(bound_scale.entry_id_reader_ip, ZH_ID_READER_PORT,
+                   [this](const std::string &_id)
+                   {
+                       this->proc_trigger_id_read(_id, this->bound_scale.entry_id_reader_ip);
+                       system_management_handler::get_inst()->id_result[this->bound_scale.entry_id_reader_ip] = _id;
+                       this->trigger_sm();
+                   }),
+      exit_id_api(bound_scale.exit_id_reader_ip, ZH_ID_READER_PORT,
+                  [this](const std::string &_id)
+                  {
+                      this->proc_trigger_id_read(_id, this->bound_scale.exit_id_reader_ip);
+                      system_management_handler::get_inst()->id_result[this->bound_scale.entry_id_reader_ip] = _id;
+                      this->trigger_sm();
+                  })
 {
-    auto id_read_call_back_entry = [](void *_private)
-    {
-        auto ssm = (scale_state_machine *)_private;
-        auto id_ret = zh_read_id_no(ssm->bound_scale.entry_id_reader_ip, ZH_ID_READER_PORT);
-        system_management_handler::get_inst()->id_result[ssm->bound_scale.entry_id_reader_ip] = id_ret;
-        if (id_ret.length() > 0)
-        {
-            ssm->proc_trigger_id_read(id_ret, ssm->bound_scale.entry_id_reader_ip);
-            ssm->trigger_sm();
-        }
-    };
-    auto id_read_call_back_exit = [](void *_private)
-    {
-        auto ssm = (scale_state_machine *)_private;
-        auto id_ret = zh_read_id_no(ssm->bound_scale.exit_id_reader_ip, ZH_ID_READER_PORT);
-        system_management_handler::get_inst()->id_result[ssm->bound_scale.exit_id_reader_ip] = id_ret;
-        if (id_ret.length() > 0)
-        {
-            ssm->proc_trigger_id_read(id_ret, ssm->bound_scale.exit_id_reader_ip);
-            ssm->trigger_sm();
-        }
-    };
     auto hk_call_back = [](const std::string &_plate_no, const std::string &_road_ip, void *_pdata)
     {
         system_management_handler::get_inst()->cam_result[_road_ip] = _plate_no;
@@ -798,14 +792,6 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config) : m
     zh_sub_callback_cfg tmp_cfg;
     tmp_cfg.pData = this;
     tmp_cfg.callback = hk_call_back;
-    if (_config.entry_id_reader_ip.length() > 0)
-    {
-        id_read_timer.push_back(tdf_main::get_inst().start_timer(1, id_read_call_back_entry, this));
-    }
-    if (_config.exit_id_reader_ip.length() > 0)
-    {
-        id_read_timer.push_back(tdf_main::get_inst().start_timer(1, id_read_call_back_exit, this));
-    }
     if (_config.entry_config.cam_ip.length() > 0)
     {
         zh_hk_subcribe_event(_config.entry_config.cam_ip, tmp_cfg);
@@ -1337,25 +1323,15 @@ gate_state_machine::gate_state_machine(
     const std::string &_id_reader_ip,
     const std::string &_qr_ip,
     bool _is_entry) : m_log("gate sm " + _road_ip),
-                      road_ip(_road_ip), id_reader_ip(_id_reader_ip), qr_ip(_qr_ip), is_entry(_is_entry)
+                      road_ip(_road_ip), id_reader_ip(_id_reader_ip), qr_ip(_qr_ip), is_entry(_is_entry),
+                      id_api(_id_reader_ip, ZH_ID_READER_PORT,
+                             [this](const std::string &_id)
+                             {
+                                 system_management_handler::get_inst()->id_result[this->id_reader_ip] = _id;
+                                 this->proc_trigger_id_no(_id);
+                                 this->trigger_sm();
+                             })
 {
-    if (_id_reader_ip.length() > 0)
-    {
-        id_reader_timer = tdf_main::get_inst().start_timer(
-            1,
-            [](void *_private)
-            {
-                auto gsm = (gate_state_machine *)_private;
-                auto id_no = zh_read_id_no(gsm->id_reader_ip, ZH_ID_READER_PORT);
-                system_management_handler::get_inst()->id_result[gsm->id_reader_ip] = id_no;
-                if (id_no.length() > 0)
-                {
-                    gsm->proc_trigger_id_no(id_no);
-                    gsm->trigger_sm();
-                }
-            },
-            this);
-    }
     if (_road_ip.length() > 0)
     {
         zh_sub_callback_cfg tmp_cfg;

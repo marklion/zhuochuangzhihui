@@ -611,7 +611,7 @@ export default {
             }
         },
         copy_check_in_link: function (_order) {
-            this.$copyText(this.domain_name + '/#/check_in/' + _order.order_number);
+            this.$copyText('http://' + this.domain_name + '/#/mobile/check_in/' + _order.order_number);
             this.$message('链接已复制，建议发送给司机');
         },
         upload_attachment: function (_order) {
