@@ -20,7 +20,7 @@ bool system_management_handler::reboot_system(const std::string &ssid)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    exit(-1);
+    _exit(-1);
 }
 void system_management_handler::current_version(std::string &_return)
 {
@@ -111,8 +111,6 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
 
     std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
     neb::CJsonObject tmp;
-    vehicle_order_center_handler::gsm_map.clear();
-    vehicle_order_center_handler::ssm_map.clear();
     tmp.AddEmptySubArray("gate");
     tmp.AddEmptySubArray("scale");
     for (auto &itr : config.gate)
@@ -170,6 +168,8 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
     config_file << tmp.ToFormattedString();
     config_file.close();
 
+    vehicle_order_center_handler::gsm_map.clear();
+    vehicle_order_center_handler::ssm_map.clear();
     for (auto &itr:config.gate)
     {
         vehicle_order_center_handler::gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, itr.entry_qr_ip, true);
@@ -294,7 +294,7 @@ void system_management_handler::run_update(const std::string &ssid, const std::s
     {
         close(new_fd);
     }
-    exit(-1);
+    _exit(-1);
 }
 
 void system_management_handler::get_domain_name(std::string &_return)

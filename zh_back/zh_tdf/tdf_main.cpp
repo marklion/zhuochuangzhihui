@@ -24,10 +24,11 @@
 #include <sys/timerfd.h>
 #include <list>
 #include <thread>
+#include <execinfo.h>
 
 tdf_main tdf_main::m_inst;
 static int g_main2work[2];
-static int g_work2main[2];
+static int g_mq_main_fd = -1;
 
 struct tdf_async_data {
     tdf_async_proc m_proc;
@@ -87,6 +88,17 @@ class Itdf_io_channel
 public:
     virtual void proc_in() = 0;
     virtual void proc_out() = 0;
+    virtual ~Itdf_io_channel()
+    {
+        void *buffer[128];
+        auto bt_deep = backtrace(buffer, 128);
+        auto bt = backtrace_symbols(buffer, bt_deep);
+        for (auto i = 0; i < bt_deep; i++)
+        {
+            printf("+++%s+++\n", bt[i]);
+        }
+        free(bt);
+    }
 };
 
 struct tdf_work_pipe_channel : public Itdf_io_channel
@@ -94,7 +106,10 @@ struct tdf_work_pipe_channel : public Itdf_io_channel
     virtual void proc_in()
     {
         tdf_async_data *pcoming = nullptr;
-        read(g_work2main[0], &pcoming, sizeof(pcoming));
+        mq_attr tmp;
+        mq_getattr(g_mq_main_fd, &tmp);
+        unsigned int priority = 0;
+        auto recv_len = mq_receive(g_mq_main_fd, (char *)&pcoming, tmp.mq_msgsize, &priority);
         if (pcoming->m_proc)
         {
             pcoming->m_proc(pcoming->m_private, pcoming->m_chrct);
@@ -104,6 +119,14 @@ struct tdf_work_pipe_channel : public Itdf_io_channel
     virtual void proc_out()
     {
     }
+    std::string channel_type()
+    {
+        return "work_pipe";
+    }
+    virtual ~tdf_work_pipe_channel()
+    {
+        puts(channel_type().c_str());
+    }
 } g_proc_work_coming_data;
 
 static pthread_mutex_t g_timer_lock;
@@ -112,13 +135,39 @@ tdf_main::tdf_main()
 {
     g_epoll_fd = epoll_create(1);
     pipe(g_main2work);
-    pipe(g_work2main);
+    mq_attr tmp_mq_attr = {
+        .mq_flags = 0,
+        .mq_maxmsg = 100,
+        .mq_msgsize = sizeof(void *),
+        .mq_curmsgs = 0};
+    int fd = mq_open("/main_mq", O_RDWR);
+    if (fd >= 0)
+    {
+        mq_setattr(fd, &tmp_mq_attr, nullptr);
+        g_mq_main_fd = fd;
+    }
+    else
+    {
+        tdf_log tmp_log("tdf_main_mq");
+        tmp_log.err("failed to open mq:%s", strerror(errno));
+        fd = mq_open("/main_mq", O_RDWR | O_CREAT, 0666, &tmp_mq_attr);
+        if (fd >= 0)
+        {
+            g_mq_main_fd = fd;
+        }
+        else
+        {
+            tmp_log.err("failed to create mq:%s", strerror(errno));
+        }
+    }
+    if (fd >= 0)
+    {
+        struct epoll_event ev = {
+            .events = EPOLLIN,
+            .data = {.ptr = &g_proc_work_coming_data}};
 
-    struct epoll_event ev = {
-        .events = EPOLLIN,
-        .data = {.ptr = &g_proc_work_coming_data}};
-
-    epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, g_work2main[0], &ev);
+        epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, g_mq_main_fd, &ev);
+    }
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -137,16 +186,25 @@ struct tdf_timer_lock
 };
 struct tdf_timer_node : public Itdf_io_channel
 {
-    int m_sec = -1;
     tdf_timer_proc m_proc = nullptr;
     void *m_private = nullptr;
     int m_handle = -1;
     bool m_one_time = false;
     bool need_delete = false;
+    std::string channel_type()
+    {
+        return "timer fd : " + std::to_string(m_handle);
+    }
+    virtual ~tdf_timer_node()
+    {
+        puts(channel_type().c_str());
+    }
     void proc_in()
     {
         if (need_delete)
         {
+            uint64_t times = 0;
+            read(m_handle, &times, sizeof(times));
             tdf_timer_lock a;
             close(m_handle);
             g_timer_map.erase(m_handle);
@@ -192,10 +250,14 @@ public:
     tdf_data_proc m_data_proc;
     tdf_before_hup_hook m_hup_hook;
     std::string out_buff;
-
+    std::string channel_type()
+    {
+        return "data tcp :" + std::to_string(m_fd);
+    }
     tdf_data(int _fd, const std::string &_chrct, tdf_data_proc _data_proc, tdf_before_hup_hook _hup_hook) : m_fd(_fd), m_chrct(_chrct), m_data_proc(_data_proc), m_hup_hook(_hup_hook) {}
     ~tdf_data()
     {
+        puts(channel_type().c_str());
         if (m_fd >= 0)
         {
             close(m_fd);
@@ -253,6 +315,10 @@ public:
     tdf_before_hup_hook m_hup_hook;
     tdf_data_proc m_data_proc;
     int m_fd = -1;
+    std::string channel_type()
+    {
+        return "listen fd:" + std::to_string(m_fd);
+    }
     tdf_listen(unsigned short _port,
                tdf_after_con_hook _con_hook,
                tdf_before_hup_hook _hup_hook,
@@ -261,6 +327,10 @@ public:
                                            m_hup_hook(_hup_hook),
                                            m_data_proc(_data_proc)
     {
+    }
+    virtual ~tdf_listen()
+    {
+        puts(channel_type().c_str());
     }
     bool set_listen()
     {
@@ -377,7 +447,7 @@ bool tdf_main::run()
     bool ret = true;
     epoll_event evs[128];
     std::thread(work_thread_main_loop).detach();
-
+    self_tid = pthread_self();
     while (false == g_exit_flag)
     {
         int ev_num = epoll_wait(g_epoll_fd, evs, 128, -1);
@@ -439,18 +509,23 @@ void tdf_main::send_data(const std::string &_conn_chrct, const std::string &_dat
 void tdf_main::close_data(const std::string &_charct)
 {
     std::string tmp_chrct(_charct);
-    auto channel = g_data_map[tmp_chrct];
-    if (nullptr != channel)
-    {
-        if (channel->m_hup_hook)
+    tdf_main::get_inst().Async_to_mainthread(
+        [](void *_private, const std::string &_chrct)
         {
-            channel->m_hup_hook(tmp_chrct);
-        }
-        g_data_map.erase(tmp_chrct);
-        epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, channel->m_fd, nullptr);
-        g_pause_epoll = true;
-        delete channel;
-    }
+            auto channel = g_data_map[_chrct];
+            if (nullptr != channel)
+            {
+                if (channel->m_hup_hook)
+                {
+                    channel->m_hup_hook(_chrct);
+                }
+                g_data_map.erase(_chrct);
+                epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, channel->m_fd, nullptr);
+                g_pause_epoll = true;
+                delete channel;
+            }
+        },
+        nullptr, tmp_chrct);
 }
 void tdf_main::stop()
 {
@@ -554,6 +629,10 @@ bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_
                 delete data_channel;
             }
         }
+        else
+        {
+            close(socket_fd);
+        }
     }
 
     return ret;
@@ -562,7 +641,6 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _
 {
     int ret = -1;
     int timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-
     if (timer_fd >= 0)
     {
         timespec tv = {
@@ -572,29 +650,43 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _
             .it_interval = tv,
             .it_value = tv};
         ret = timerfd_settime(timer_fd, 0, &itv, nullptr);
-
-        auto pnode = new tdf_timer_node();
-        pnode->m_private = _private;
-        pnode->m_proc = _proc;
-        pnode->m_sec = _sec;
-        pnode->m_handle = timer_fd;
-        pnode->m_one_time = _one_time;
-
-        struct epoll_event ev = {
-            .events = EPOLLIN,
-            .data = {.ptr = pnode}};
-
-        if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, timer_fd, &ev))
+        struct timer_async_param
         {
-            tdf_timer_lock a;
-            g_timer_map[timer_fd] = pnode;
-            ret = timer_fd;
-        }
-        else
-        {
-            close(timer_fd);
-            delete pnode;
-        }
+            int fd = 0;
+            tdf_timer_proc proc = nullptr;
+            void *m_private = nullptr;
+            bool one_time = false;
+        } *async_param = new timer_async_param();
+        async_param->fd = timer_fd;
+        async_param->proc = _proc;
+        async_param->m_private = _private;
+        async_param->one_time = _one_time;
+        tdf_main::get_inst().Async_to_mainthread(
+            [](void *_private, const std::string &_chrct)
+            {
+                auto pasync_param = (timer_async_param *)(_private);
+                auto pnode = new tdf_timer_node();
+                pnode->m_private = pasync_param->m_private;
+                pnode->m_proc = pasync_param->proc;
+                pnode->m_handle = pasync_param->fd;
+                pnode->m_one_time = pasync_param->one_time;
+
+                struct epoll_event ev = {
+                    .events = EPOLLIN,
+                    .data = {.ptr = pnode}};
+
+                if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, pasync_param->fd, &ev))
+                {
+                    g_timer_map[pasync_param->fd] = pnode;
+                }
+                else
+                {
+                    close(pasync_param->fd);
+                    delete pnode;
+                }
+                delete pasync_param;
+            },
+            async_param, "");
     }
 
     return ret;
@@ -602,12 +694,25 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _
 
 void tdf_main::stop_timer(int _timer_handle)
 {
-    tdf_timer_lock a;
-    auto pnode = g_timer_map[_timer_handle];
-    if (nullptr != pnode)
+    struct stop_timer_param
     {
-        pnode->need_delete = true;
-    }
+        int fd = -1;
+    } *async_param = new stop_timer_param();
+    async_param->fd = _timer_handle;
+
+    tdf_main::get_inst().Async_to_mainthread(
+        [](void *_private, const std::string &_chrct)
+        {
+            auto pasync_param = (stop_timer_param *)(_private);
+
+            auto pnode = g_timer_map[pasync_param->fd];
+            if (nullptr != pnode)
+            {
+                pnode->need_delete = true;
+            }
+            delete pasync_param;
+        },
+        async_param, "");
 }
 
 tdf_main::~tdf_main()
@@ -623,11 +728,18 @@ void tdf_main::Async_to_workthread(tdf_async_proc _func, void *_private, const s
 }
 void tdf_main::Async_to_mainthread(tdf_async_proc _func, void *_private, const std::string &_chrct)
 {
-    auto pout = new tdf_async_data();
-    pout->m_private = _private;
-    pout->m_proc = _func;
-    pout->m_chrct = _chrct;
-    write(g_work2main[1], &pout, sizeof(pout));
+    if (self_tid == pthread_self())
+    {
+        _func(_private, _chrct);
+    }
+    else
+    {
+        auto pout = new tdf_async_data();
+        pout->m_private = _private;
+        pout->m_proc = _func;
+        pout->m_chrct = _chrct;
+        mq_send(g_mq_main_fd, (const char *)&pout, sizeof(pout), 1);
+    }
 }
 std::string get_string_from_format(const char *format, va_list vl_orig)
 {

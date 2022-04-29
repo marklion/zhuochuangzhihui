@@ -3,6 +3,7 @@
 #include <iconv.h>
 #include <vector>
 #include "../../zh_database/zh_db_config.h"
+#include <sys/wait.h>
 
 tdf_log g_log("id_reader");
 std::vector<std::string> split_string(const std::string &s, const std::string &seperator)
@@ -92,7 +93,6 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
                         {
                             g_log.err("iconv open failed: %s", strerror(errno));
                         }
-                        read_ret = true;
                     }
                     else
                     {
@@ -108,17 +108,18 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
             {
                 g_log.err("find card failed");
             }
+            read_ret = true;
         }
         else
         {
             g_log.err("get samid failed");
         }
-        CloseComm();
     }
     else
     {
         g_log.err("open id reader failed");
     }
+    CloseComm();
 
     auto all_info = split_string(ret, "|");
     if (all_info.size() > 5)
@@ -134,4 +135,68 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
         zh_runtime_get_device_health()[ip] = 2;
     }
     return ret;
+}
+
+zh_read_id_api::zh_read_id_api(const std::string &_ip, unsigned short _port, std::function<void(const std::string &_id)> _func) : m_ip(_ip), m_port(_port), m_func(_func)
+{
+    if (m_ip.length() > 0)
+    {
+        pthread_create(
+            &id_thread, nullptr,
+            [](void *_private) -> void *
+            {
+                tdf_log tmp_log("id_read_api");
+                tmp_log.log("start id_reader thread loop");
+                auto api_this = (zh_read_id_api *)(_private);
+                while (!api_this->need_exit)
+                {
+                    int pipfd[2] = {-1};
+                    pipe(pipfd);
+                    auto child_pid = fork();
+                    if (child_pid > 0)
+                    {
+                        close(pipfd[1]);
+                        int ret_status = 0;
+                        char buf[1024] = {0};
+                        if (0 < read(pipfd[0], buf, sizeof(buf)))
+                        {
+                            if (buf[0] != 'c')
+                            {
+                                auto func = api_this->m_func;
+                                func(buf);
+                            }
+                        }
+                        close(pipfd[0]);
+                        waitpid(child_pid, &ret_status, 0);
+                    }
+                    else
+                    {
+                        close(pipfd[0]);
+                        auto id_read = zh_read_id_no(api_this->m_ip, api_this->m_port);
+                        if (id_read.length() > 0)
+                        {
+                            write(pipfd[1], id_read.data(), id_read.length());
+                        }
+                        else
+                        {
+                            write(pipfd[1], "c", 1);
+                        }
+                        _exit(0);
+                    }
+                    sleep(1);
+                }
+                tmp_log.log("id_reader thread loop was stopped");
+            },
+            this);
+    }
+}
+zh_read_id_api::~zh_read_id_api()
+{
+    need_exit = true;
+    if (id_thread != 0)
+    {
+        pthread_join(id_thread, nullptr);
+    }
+    tdf_log tmp_log("id_read_api");
+    tmp_log.log("id_read api destroy");
 }

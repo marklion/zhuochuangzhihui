@@ -171,6 +171,7 @@ typedef void (*tdf_async_proc)(void *_private, const std::string &_chrct);
 class tdf_main {
     static tdf_main m_inst;
     tdf_main();
+    pthread_t self_tid = 0;
 public:
     bool open_listen(unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
     bool connect_remote(const std::string &_ip, unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
