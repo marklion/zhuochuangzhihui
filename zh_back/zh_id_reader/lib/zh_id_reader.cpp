@@ -138,6 +138,7 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
 }
 
 zh_read_id_api::zh_read_id_api(const std::string &_ip, unsigned short _port, std::function<void(const std::string &_id)> _func) : m_ip(_ip), m_port(_port), m_func(_func)
+
 {
     if (m_ip.length() > 0)
     {
