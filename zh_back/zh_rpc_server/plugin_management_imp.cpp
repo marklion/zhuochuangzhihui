@@ -71,9 +71,9 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
         tmp.err("cannot exec plugin");
         return;
     }
-    int ipid = fork();
     pipe(pipfd);
     pipe(pipfd_err);
+    int ipid = fork();
     if (ipid > 0)
     {
         close(pipfd[1]);
@@ -130,7 +130,7 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
         dup2(pipfd[1], 1);
         dup2(pipfd_err[1], 2);
         execv(plug_cmd.c_str(), argv);
-        exit(0);
+        _exit(0);
     }
 }
 void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::string &ssid, const std::string &plugin_name, const std::string &cmd)

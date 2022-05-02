@@ -15,7 +15,7 @@ public:
     bool need_exit = false;
     std::string m_ip;
     unsigned short m_port = 0;
-    std::function<void(const std::string &_id)> *m_func = nullptr;
+    std::function<void(const std::string &_id)> m_func;
     zh_read_id_api(const std::string &_ip, unsigned short _port, std::function<void(const std::string &_id)> _func);
     virtual ~zh_read_id_api();
 };

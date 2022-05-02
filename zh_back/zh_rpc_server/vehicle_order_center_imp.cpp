@@ -765,7 +765,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config)
                   [this](const std::string &_id)
                   {
                       this->proc_trigger_id_read(_id, this->bound_scale.exit_id_reader_ip);
-                      system_management_handler::get_inst()->id_result[this->bound_scale.entry_id_reader_ip] = _id;
+                      system_management_handler::get_inst()->id_result[this->bound_scale.exit_id_reader_ip] = _id;
                       this->trigger_sm();
                   })
 {
