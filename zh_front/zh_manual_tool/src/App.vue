@@ -92,7 +92,7 @@
                                 <div class="item_in_ticket">毛重:{{print_weight_content.m_weight}}</div>
                                 <div class="item_in_ticket">皮重:{{print_weight_content.p_weight}}</div>
                                 <div class="item_in_ticket">净重:{{print_weight_content.j_weight}}</div>
-                                <div class="item_in_ticket">目的地:</div>
+                                <div class="item_in_ticket">目的地:{{print_weight_content.sale_address}}</div>
                                 <div class="item_in_ticket">提货人签字:</div>
                             </vue-drag-resize>
                         </div>
@@ -212,7 +212,8 @@ export default {
                 m_weight: '未知',
                 m_time: '未知',
                 j_weight: '未知',
-                ticket_no: 'XXXX'
+                ticket_no: 'XXXX',
+                sale_address:'未知',
             };
             var tmp = this.all_vehicle.find(element => {
                 return element.plateNo == this.selected_vehicle;
@@ -296,7 +297,7 @@ export default {
             let loadingInstance = Loading.service({
                 fullscreen: true
             });
-            axios.post(vue_this.remote_path() + "/pa_web/pa_rest/push_weight?token=" + token_from_idb, {
+            axios.post(vue_this.remote_path() + "/pa_rest/push_weight?token=" + token_from_idb, {
                 id: _vehicle.id,
                 pWeight: _vehicle.p_weight,
                 mWeight: _vehicle.m_weight,
@@ -377,7 +378,7 @@ export default {
             vue_this.is_scaling = false;
         },
         remote_path: function () {
-            return "https://www.d8sis.cn"
+            return this.$remote_url;
         },
         init_token: function () {
             var vue_this = this;
@@ -404,7 +405,7 @@ export default {
             let loadingInstance = Loading.service({
                 fullscreen: true
             });
-            axios.get(vue_this.remote_path() + "/pa_web/pa_rest/all_vehicle_info?token=" + token_from_idb).then(function (resp) {
+            axios.get(vue_this.remote_path() + "/pa_rest/all_vehicle_info?token=" + token_from_idb).then(function (resp) {
                 if (resp.data.err_msg != "") {
                     vue_this.init_token();
                 } else {
