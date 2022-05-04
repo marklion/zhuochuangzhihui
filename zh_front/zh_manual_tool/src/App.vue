@@ -48,7 +48,7 @@
                                 </el-collapse-item>
                             </el-collapse>
                             <div>
-                                <v-input-sevenseg v-model="cur_weight" height="80" digits="7" :buttons="false"></v-input-sevenseg>
+                                <v-input-sevenseg v-model="weight_dig_show" height="80" digits="7" :buttons="false"></v-input-sevenseg>
                             </div>
                             <el-button type="primary">清零</el-button>
                             <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
@@ -69,37 +69,42 @@
                     <el-header>磅单打印</el-header>
                     <el-main>
                         <div id="weight_ticket" class="print_content_show">
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div>称重单</div>
-                            </vue-drag-resize>
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div>磅单号:{{print_weight_content.ticket_no}}</div>
-                            </vue-drag-resize>
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div>日期:{{print_weight_content.m_time}}</div>
-                            </vue-drag-resize>
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="600" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div>单位:千克</div>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="130" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div class="ticket_title_show">{{ticket_param.title}}</div>
                             </vue-drag-resize>
                             <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>磅单号:{{print_weight_content.ticket_no}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>日期:{{print_weight_content.m_time}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="600" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>单位:{{ticket_param.unit}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="60" h="auto" w="auto" :isResizable="true" parentLimitation>
                                 <div class="item_in_ticket">客户名称:{{print_weight_content.companyName}}</div>
                                 <div class="item_in_ticket">产品名称:{{print_weight_content.stuffName}}</div>
                                 <div class="item_in_ticket">车号:{{print_weight_content.plateNo}}</div>
                                 <div class="item_in_ticket">挂车号:{{print_weight_content.backPlateNo}}</div>
                                 <div class="item_in_ticket">提货人身份证号:{{print_weight_content.driverId}}</div>
                             </vue-drag-resize>
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="425" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div class="item_in_ticket">毛重:{{print_weight_content.m_weight}}</div>
-                                <div class="item_in_ticket">皮重:{{print_weight_content.p_weight}}</div>
-                                <div class="item_in_ticket">净重:{{print_weight_content.j_weight}}</div>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="425" :y="60" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div class="item_in_ticket">毛重:{{calc_weight_show( print_weight_content.m_weight)}}</div>
+                                <div class="item_in_ticket">皮重:{{calc_weight_show(print_weight_content.p_weight)}}</div>
+                                <div class="item_in_ticket">净重:{{calc_weight_show(print_weight_content.j_weight)}}</div>
                                 <div class="item_in_ticket">目的地:{{print_weight_content.sale_address}}</div>
                                 <div class="item_in_ticket">提货人签字:</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="230" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div class="ticket_comment_show">
+                                    {{ticket_param.comment}}
+                                </div>
                             </vue-drag-resize>
                         </div>
                     </el-main>
                     <el-footer>
                         <div v-if="!adjust_position">
-                            <el-button type="primary" @click="adjust_position = true">调整打印位置</el-button>
+                            <el-button type="primary" @click="show_ticket_param_diag = true">修改参数</el-button>
                             <el-button type="success" v-print="print_obj">打印</el-button>
                         </div>
                         <div v-else>
@@ -110,6 +115,22 @@
             </div>
         </el-main>
     </el-container>
+    <el-dialog title="修改参数" :visible.sync="show_ticket_param_diag" width="60%" @keyup.enter.native="save_ticket_param">
+        <el-form :model="ticket_param" ref="edit_ticket_form" label-width="150px">
+            <el-form-item label="磅单标题" prop="title">
+                <el-input v-model="ticket_param.title" placeholder="请输入磅单标题"></el-input>
+            </el-form-item>
+            <el-form-item label="底部提示" prop="comment">
+                <el-input v-model="ticket_param.comment" placeholder="请输入底部提示"></el-input>
+            </el-form-item>
+            <el-form-item label="单位" prop="unit">
+                <el-input v-model="ticket_param.unit" placeholder="请输入单位"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="save_ticket_param">确认</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
 </div>
 </template>
 
@@ -137,6 +158,19 @@ export default {
     },
     data: function () {
         return {
+            calc_weight_show: function (_weight) {
+                var ret = _weight;
+                if (this.ticket_param.unit == '千克') {
+                    ret *= 1000;
+                }
+                return ret;
+            },
+            show_ticket_param_diag: false,
+            ticket_param: {
+                title: '',
+                comment: '',
+                unit: '',
+            },
             activeNames: '',
             usr_parse_func: '',
             ticket_prev: '',
@@ -190,6 +224,15 @@ export default {
         },
     },
     computed: {
+        weight_dig_show: {
+            get() {
+                return this.calc_weight_show(this.cur_weight);
+            },
+            set(_value) {
+                console.log(_value);
+            },
+
+        },
         all_licenses: function () {
             var ret = [];
             var tmp = this.all_vehicle.find(element => {
@@ -213,7 +256,7 @@ export default {
                 m_time: '未知',
                 j_weight: '未知',
                 ticket_no: 'XXXX',
-                sale_address:'未知',
+                sale_address: '未知',
             };
             var tmp = this.all_vehicle.find(element => {
                 return element.plateNo == this.selected_vehicle;
@@ -422,8 +465,30 @@ export default {
                 loadingInstance.close();
             });
         },
+        init_ticket_param: async function () {
+            const idb = require('idb-keyval');
+            var stored_param = await idb.get("ticket_param");
+            if (stored_param) {
+                this.ticket_param = stored_param;
+            } else {
+                this.ticket_param = {
+                    title: '称重单',
+                    comment: '第一联：生产留存    第二联：销售留存    第三联：财务留存     第四联：客户留存    第五联：运输公司留存',
+                    unit: '吨',
+                };
+            }
+        },
+        save_ticket_param: function () {
+            const idb = require('idb-keyval');
+            var vue_this = this;
+            idb.set("ticket_param", vue_this.ticket_param).then(function () {
+                vue_this.init_ticket_param();
+                vue_this.show_ticket_param_diag = false;
+            });
+        },
     },
     beforeMount: async function () {
+        this.init_ticket_param();
         this.init_cur_plan_data();
         var vue_this = this;
         const {
@@ -534,5 +599,15 @@ export default {
     width: 420px;
     text-align: justify;
     border: 1px solid;
+}
+
+.ticket_title_show {
+    line-height: 40px;
+    font-size: 35px;
+}
+
+.ticket_comment_show {
+    line-height: 10px;
+    font-size: 15px;
 }
 </style>
