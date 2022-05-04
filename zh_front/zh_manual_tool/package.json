@@ -25,6 +25,7 @@
     "vue": "^2.6.11",
     "vue-cookies": "^1.7.4",
     "vue-drag-resize": "^1.5.4",
+    "vue-grd": "^1.3.0",
     "vue-print-nb": "^1.7.5"
   },
   "devDependencies": {

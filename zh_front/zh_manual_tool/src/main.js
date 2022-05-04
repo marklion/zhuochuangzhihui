@@ -21,6 +21,7 @@ Vue.prototype.$make_time_string = function(date, _splite) {
   second = second < 10 ? ('0' + second) : second;
   return y + _splite + m + _splite + d + ' ' + h + ':' + minute + ':' + second;
 };
+
 new Vue({
   render: h => h(App),
 }).$mount('#app')

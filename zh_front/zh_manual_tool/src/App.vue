@@ -4,10 +4,11 @@
         <el-header class="title_header">卓创智汇称重客户端</el-header>
         <el-main>
             <el-container>
-                <el-aside width="200px" class="vehicle_search">
+                <el-aside width="350px" class="vehicle_search">
                     <el-container>
                         <el-header>车辆检索</el-header>
                         <el-main>
+                            <el-button type="primary" @click="init_cur_plan_data">刷新</el-button>
                             <el-input v-model="search_key" placeholder="输入部分或全部车牌搜索"></el-input>
                             <el-radio-group v-model="selected_vehicle" size="small">
                                 <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index">
@@ -17,7 +18,7 @@
                         </el-main>
                     </el-container>
                 </el-aside>
-                <el-aside width="400px" class="scale_weight">
+                <el-aside width="450px" class="scale_weight">
                     <el-container>
                         <el-header>称重</el-header>
                         <el-main>
@@ -40,6 +41,11 @@
                                     </el-input>
                                     <el-button type="primary" @click="save_parse">保存</el-button>
                                 </el-collapse-item>
+                                <el-collapse-item title="磅单前缀" name="3">
+                                    <el-input placeholder="请输入磅单前缀" v-model="ticket_prev">
+                                    </el-input>
+                                    <el-button type="primary" @click="save_ticket_prev">保存</el-button>
+                                </el-collapse-item>
                             </el-collapse>
                             <div>
                                 <v-input-sevenseg v-model="cur_weight" height="80" digits="7" :buttons="false"></v-input-sevenseg>
@@ -47,54 +53,61 @@
                             <el-button type="primary">清零</el-button>
                             <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
                             <el-button v-else type="danger" @click="record_weight">停止称重</el-button>
+                            <el-divider></el-divider>
+                            <vue-grid align="stretch" justify="start">
+                                <vue-cell v-for="(single_license, index) in all_licenses" :key="index" width="6of12">
+                                    <el-image :preview-src-list="getPrivewImages(index)" style="width: 100px; height: 100px" :src="remote_path() + single_license.attachment_path" fit="fill"></el-image>
+                                    <div>到期时间:{{single_license.expire_date}}</div>
+                                </vue-cell>
+                            </vue-grid>
                         </el-main>
-                    </el-container>
-                </el-aside>
-                <el-aside width="800px" class="print_ticket">
-                    <el-container>
-                        <el-header>磅单打印</el-header>
-                        <el-main>
-                            <div id="weight_ticket" class="print_content_show">
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div>称重单</div>
-                                </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="30" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div>磅单号:xxxx</div>
-                                </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="200" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div>日期:{{print_weight_content.m_time}}</div>
-                                </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="400" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div>单位:吨</div>
-                                </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="30" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div class="item_in_ticket">客户名称:{{print_weight_content.companyName}}</div>
-                                    <div class="item_in_ticket">产品名称:{{print_weight_content.stuffName}}</div>
-                                    <div class="item_in_ticket">车号:{{print_weight_content.plateNo}}</div>
-                                    <div class="item_in_ticket">挂车号:{{print_weight_content.backPlateNo}}</div>
-                                    <div class="item_in_ticket">提货人身份证号:{{print_weight_content.driverId}}</div>
-                                </vue-drag-resize>
-                                <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="330" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                    <div class="item_in_ticket">毛重:{{print_weight_content.m_weight}}</div>
-                                    <div class="item_in_ticket">皮重:{{print_weight_content.m_weight}}</div>
-                                    <div class="item_in_ticket">净重:{{print_weight_content.m_weight}}</div>
-                                    <div class="item_in_ticket">目的地:</div>
-                                    <div class="item_in_ticket">提货人签字:</div>
-                                </vue-drag-resize>
-                            </div>
-                        </el-main>
-                        <el-footer>
-                            <div v-if="!adjust_position">
-                                <el-button type="primary" @click="adjust_position = true">调整打印位置</el-button>
-                                <el-button type="success" v-print="print_obj">打印</el-button>
-                            </div>
-                            <div v-else>
-                                <el-button type="danger" @click="adjust_position = false">完成调整</el-button>
-                            </div>
-                        </el-footer>
                     </el-container>
                 </el-aside>
             </el-container>
+            <div width="800px" class="print_ticket">
+                <el-container>
+                    <el-header>磅单打印</el-header>
+                    <el-main>
+                        <div id="weight_ticket" class="print_content_show">
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>称重单</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>磅单号:{{print_weight_content.ticket_no}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>日期:{{print_weight_content.m_time}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="600" :y="20" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div>单位:千克</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div class="item_in_ticket">客户名称:{{print_weight_content.companyName}}</div>
+                                <div class="item_in_ticket">产品名称:{{print_weight_content.stuffName}}</div>
+                                <div class="item_in_ticket">车号:{{print_weight_content.plateNo}}</div>
+                                <div class="item_in_ticket">挂车号:{{print_weight_content.backPlateNo}}</div>
+                                <div class="item_in_ticket">提货人身份证号:{{print_weight_content.driverId}}</div>
+                            </vue-drag-resize>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="425" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                                <div class="item_in_ticket">毛重:{{print_weight_content.m_weight}}</div>
+                                <div class="item_in_ticket">皮重:{{print_weight_content.p_weight}}</div>
+                                <div class="item_in_ticket">净重:{{print_weight_content.j_weight}}</div>
+                                <div class="item_in_ticket">目的地:</div>
+                                <div class="item_in_ticket">提货人签字:</div>
+                            </vue-drag-resize>
+                        </div>
+                    </el-main>
+                    <el-footer>
+                        <div v-if="!adjust_position">
+                            <el-button type="primary" @click="adjust_position = true">调整打印位置</el-button>
+                            <el-button type="success" v-print="print_obj">打印</el-button>
+                        </div>
+                        <div v-else>
+                            <el-button type="danger" @click="adjust_position = false">完成调整</el-button>
+                        </div>
+                    </el-footer>
+                </el-container>
+            </div>
         </el-main>
     </el-container>
 </div>
@@ -106,15 +119,27 @@ import Vue from 'vue'
 import VueDragResize from 'vue-drag-resize'
 import InputSevenseg from 'v-input-sevenseg'
 import Print from 'vue-print-nb'
+import {
+    Loading
+} from 'element-ui';
 Vue.use(Print);
 Vue.component('v-input-sevenseg', InputSevenseg)
 Vue.component('vue-drag-resize', VueDragResize)
+import {
+    VueGrid,
+    VueCell
+} from 'vue-grd';
 export default {
     name: 'App',
+    components: {
+        VueGrid,
+        VueCell
+    },
     data: function () {
         return {
             activeNames: '',
             usr_parse_func: '',
+            ticket_prev: '',
             ser_port_config: {
                 port_path: '',
                 bound_rate: '',
@@ -165,6 +190,17 @@ export default {
         },
     },
     computed: {
+        all_licenses: function () {
+            var ret = [];
+            var tmp = this.all_vehicle.find(element => {
+                return element.plateNo == this.selected_vehicle;
+            });
+            if (tmp) {
+                ret = tmp.allLicenseInfo;
+            }
+
+            return ret;
+        },
         print_weight_content: function () {
             var vue_this = this;
             var ret = {
@@ -176,6 +212,7 @@ export default {
                 m_weight: '未知',
                 m_time: '未知',
                 j_weight: '未知',
+                ticket_no: 'XXXX'
             };
             var tmp = this.all_vehicle.find(element => {
                 return element.plateNo == this.selected_vehicle;
@@ -194,8 +231,11 @@ export default {
                 } else {
                     ret.j_weight = ret.m_weight - ret.p_weight;
                 }
+                if (vue_this.stored_weight.ticketNo) {
+                    ret.ticket_no = vue_this.stored_weight.ticketNo
+                }
             }
-
+            console.log(ret);
             return ret;
         },
         vehicle_need_show: function () {
@@ -214,6 +254,25 @@ export default {
         },
     },
     methods: {
+        getPrivewImages: function (_index) {
+            var li_array = [];
+            this.all_licenses.forEach(element => {
+                li_array.push(this.remote_path() + element.attachment_path);
+            });
+            let tempImgList = [...li_array];
+            if (_index == 0) return tempImgList;
+            let start = tempImgList.splice(_index);
+            let remain = tempImgList.splice(0, _index);
+            return start.concat(remain);
+
+        },
+        save_ticket_prev: function () {
+            var vue_this = this;
+            const idb = require('idb-keyval');
+            idb.set("ticket_prev", vue_this.ticket_prev).then(function () {
+                window.location.reload();
+            });
+        },
         save_parse: function () {
             var vue_this = this;
             const idb = require('idb-keyval');
@@ -234,27 +293,57 @@ export default {
             const axios = require('axios');
             const idb = require('idb-keyval');
             var token_from_idb = await idb.get("zy_token");
+            let loadingInstance = Loading.service({
+                fullscreen: true
+            });
             axios.post(vue_this.remote_path() + "/pa_web/pa_rest/push_weight?token=" + token_from_idb, {
                 id: _vehicle.id,
                 pWeight: _vehicle.p_weight,
                 mWeight: _vehicle.m_weight,
-                pTime: _vehicle.pTime,
-                mTime: _vehicle.mTime,
+                pTime: _vehicle.p_time,
+                mTime: _vehicle.m_time,
                 jWeight: _vehicle.j_weight,
+                ticketNo: _vehicle.ticketNo,
             }).then(function (resp) {
                 console.log(resp);
             }).catch(function (err) {
                 console.log(err);
+            }).finally(function () {
+                loadingInstance.close();
             });
         },
-        record_weight: function () {
+        generate_ticket_no: async function () {
+            const idb = require('idb-keyval');
+            var ret = "";
+            var date = new Date();
+            var y = date.getFullYear();
+            var m = date.getMonth() + 1;
+            m = m < 10 ? ('0' + m) : m;
+            var d = date.getDate();
+            d = d < 10 ? ('0' + d) : d;
+
+            ret = y + m + d;
+            var last_date = await idb.get("last_date");
+            var last_no = await idb.get("last_no");
+            if (last_date && last_no && last_date.getDay() == date.getDay()) {
+                await idb.set("last_no", last_no + 1);
+                ret += String(last_no + 1).padStart(4, '0');
+            } else {
+                await idb.set("last_date", date);
+                await idb.set("last_no", 1);
+                ret += '1'.padStart(4, '0');
+            }
+            console.log(ret);
+            return ret;
+        },
+        record_weight: async function () {
             var vue_this = this;
             const idb = require('idb-keyval');
             var tmp = this.all_vehicle.find(element => {
                 return element.plateNo == this.selected_vehicle;
             });
             if (tmp) {
-                idb.get(tmp.id).then(function (resp) {
+                idb.get(tmp.id).then(async function (resp) {
                     if (resp) {
                         var new_weight = {
                             ...resp
@@ -277,6 +366,8 @@ export default {
                         new_weight.p_weight = vue_this.cur_weight;
                         new_weight.p_time = vue_this.$make_time_string(new Date(), "-");
                         new_weight.id = tmp.id;
+                        new_weight.ticketNo = await idb.get("ticket_prev");
+                        new_weight.ticketNo += await vue_this.generate_ticket_no();
                         idb.set(tmp.id, new_weight).then(function () {
                             vue_this.stored_weight = new_weight;
                         });
@@ -310,6 +401,9 @@ export default {
             var vue_this = this;
             const idb = require('idb-keyval');
             var token_from_idb = await idb.get("zy_token");
+            let loadingInstance = Loading.service({
+                fullscreen: true
+            });
             axios.get(vue_this.remote_path() + "/pa_web/pa_rest/all_vehicle_info?token=" + token_from_idb).then(function (resp) {
                 if (resp.data.err_msg != "") {
                     vue_this.init_token();
@@ -323,6 +417,8 @@ export default {
                 }
             }).catch(function (err) {
                 console.log(err);
+            }).finally(function () {
+                loadingInstance.close();
             });
         },
     },
@@ -434,7 +530,7 @@ export default {
 
 .item_in_ticket {
     line-height: 30px;
-    width: 300px;
+    width: 420px;
     text-align: justify;
     border: 1px solid;
 }
