@@ -283,7 +283,8 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
             tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
             auto create_status = zh_sql_order_status::make_create_status(ssid);
             tmp.push_status(create_status);
-            if (!opt_user->get_parent<zh_sql_contract>("belong_contract"))
+            auto auto_confirm = system_management_handler::get_inst()->is_auto_confirm(ssid);
+            if (!opt_user->get_parent<zh_sql_contract>("belong_contract") || auto_confirm)
             {
                 auto before_come_status = zh_sql_order_status::make_before_come_status();
                 tmp.push_status(before_come_status);
@@ -1762,7 +1763,7 @@ void vehicle_order_center_handler::get_all_self_order(std::vector<driver_self_or
         ZH_RETURN_NO_PRAVILIGE();
     }
     auto orders = user->get_all_children<zh_sql_driver_self_order>("belong_user");
-    for (auto &itr:orders)
+    for (auto &itr : orders)
     {
         driver_self_order tmp;
         tmp.belong_user_name = user->name;

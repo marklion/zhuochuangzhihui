@@ -4,6 +4,9 @@
         <el-tab-pane label="设备配置" name="device_config">
             <el-switch v-model="device_config.auto_order" @change="change_auto_order" active-text="自由过车" inactive-text="严格过车">
             </el-switch>
+            <el-divider direction="vertical"></el-divider>
+            <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
+            </el-switch>
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
@@ -351,6 +354,7 @@ export default {
     },
     data: function () {
         return {
+            auto_confirm: false,
             get_component_from_plugin_name: function (_plugin_name) {
                 var comp = require(`../components/${_plugin_name}.vue`);
                 return comp.default;
@@ -619,6 +623,10 @@ export default {
                 });
             });
         },
+        change_auto_confirm: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "set_auto_confirm", [vue_this.$cookies.get("zh_ssid"), vue_this.auto_confirm]);
+        },
     },
     beforeMount: function () {
         var vue_this = this;
@@ -627,6 +635,9 @@ export default {
         });
         this.init_device_info();
         this.init_plugins();
+        vue_this.$call_remote_process("system_management", "is_auto_confirm", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+            vue_this.auto_confirm = resp;
+        });
     },
 }
 </script>

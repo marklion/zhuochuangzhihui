@@ -381,3 +381,42 @@ void system_management_handler::trigger_cap(const std::string &ssid, const std::
     }
     zh_hk_manual_trigger(cam_ip);
 }
+
+
+static neb::CJsonObject get_cur_config_json()
+{
+    std::ifstream config_file("/conf/device/device_config.json", std::ios::in);
+    std::istreambuf_iterator<char> beg(config_file), end;
+    std::string config_string(beg, end);
+    neb::CJsonObject config(config_string);
+
+    return config;
+}
+
+bool system_management_handler::is_auto_confirm(const std::string &ssid)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto config = get_cur_config_json();
+    config.Get("auto_confirm", ret);
+
+    return ret;
+}
+void system_management_handler::set_auto_confirm(const std::string &ssid, const bool auto_set)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto config = get_cur_config_json();
+    config.Delete("auto_confirm");
+    config.Add("auto_confirm", auto_set, auto_set);
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
+    config_file << config.ToFormattedString();
+    config_file.close();
+}

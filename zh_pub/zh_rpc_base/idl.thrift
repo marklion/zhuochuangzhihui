@@ -93,6 +93,8 @@ service system_management {
     list<string> get_all_scale_brand() throws (1:gen_exp e),
     list<device_health> get_device_health(1:string ssid) throws (1:gen_exp e),
     void trigger_cap(1:string ssid, 2:string cam_ip) throws (1:gen_exp e),
+    bool is_auto_confirm(1:string ssid) throws (1:gen_exp e),
+    void set_auto_confirm(1:string ssid, 2:bool auto_set) throws (1:gen_exp e),
 }
 
 struct user_info {
