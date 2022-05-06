@@ -149,11 +149,6 @@
                                 <el-button type="success" size="small" icon="el-icon-check" circle @click="confirm_order([scope.row])"></el-button>
                             </el-tooltip>
                         </span>
-                        <span v-if="scope.row.status > 0">
-                            <el-tooltip class="item" effect="dark" content="拷贝排号连接" placement="top">
-                                <el-button type="warning" size="small" icon="el-icon-postcard" circle @click="copy_check_in_link(scope.row)"></el-button>
-                            </el-tooltip>
-                        </span>
                     </template>
                 </el-table-column>
             </el-table>
@@ -234,7 +229,7 @@
     </div>
     <div v-else>
         <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
-            <van-nav-bar title="派车中心" right-text="新增" @click-right="create_mobile_vehicle_diag = true" />
+            <van-nav-bar title="派车中心" right-text="新增" left-text="退出" @click-right="create_mobile_vehicle_diag = true" @click-left="user_logoff" />
             <van-tabs v-model="activeName" @change="refresh_order">
                 <van-tab title="所有" name="all"></van-tab>
                 <van-tab title="未确认" name="need_confirm" :badge="cur_statistic.unconfirm>0?cur_statistic.unconfirm:''"></van-tab>
@@ -249,7 +244,6 @@
                     <template #right-icon>
                         <div style="margin-left:10px;" v-if="single_vehicle.status != 100">
                             <van-button v-if="$store.state.user_info.permission <= 1 && single_vehicle.status == 0" type="primary" size="mini" @click="confirm_order([single_vehicle])">确认</van-button>
-                            <van-button v-if="single_vehicle.status > 0" size="mini" type="info" @click="copy_check_in_link(single_vehicle)">拷贝排号连接</van-button>
                             <van-button v-if="single_vehicle.status <= 1" size="mini" type="danger" @click="cancel_order([single_vehicle])">取消</van-button>
                         </div>
                     </template>
@@ -504,6 +498,13 @@ export default {
         };
     },
     methods: {
+        user_logoff: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("user_management", 'user_logoff', [vue_this.$cookies.get('zh_ssid')]).then(function () {
+                vue_this.$cookies.set('zh_ssid', "");
+                vue_this.$router.go(0);
+            });
+        },
         cancle_multi: function () {
             this.cancel_order(this.order_selected);
         },

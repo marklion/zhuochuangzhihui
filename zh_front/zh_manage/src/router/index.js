@@ -56,15 +56,6 @@ const routes = [
     },
   },
   {
-    path: '/mobile/check_in/:order_no',
-    name: 'CheckIn',
-    component: () => import('../views/CheckIn.vue'),
-    meta: {
-      mobile: true,
-      no_need_login:true,
-      no_tabbar:true,
-    },
-  },{
     path: '/vehicle_detail/:order_no',
     name: 'VehicleDetail',
     component: () => import('../views/VehicleDetail.vue'),
@@ -91,6 +82,22 @@ const routes = [
     path: '/mobile/vehicle_detail/:order_no',
     name: 'MobileVehicleDetail',
     component: () => import('../views/VehicleDetail.vue'),
+    meta: {
+      mobile: true,
+    },
+  },{
+    path: '/mobile/self_order',
+    name: 'DriverSelfOpt',
+    component: () => import('../views/DriverSelfOpt.vue'),
+    meta: {
+      mobile: true,
+      no_need_login:true,
+      no_tabbar:true,
+    },
+  },{
+    path: '/mobile/self_order_opt',
+    name: 'SelfOrderOpt',
+    component: () => import('../views/SelfOrderOpt.vue'),
     meta: {
       mobile: true,
     },

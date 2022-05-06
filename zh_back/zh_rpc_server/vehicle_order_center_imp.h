@@ -196,6 +196,11 @@ public:
     virtual bool upload_enter_weight_attachment(const int64_t order_id, const std::string &attachment, const double enter_weight);
     virtual bool print_weight_ticket(const std::string &ssid, const int64_t order_id, const std::string &printer_ip);
     virtual void check_price_balance(std::string &_return, const std::string &ssid, const std::vector<vehicle_order_info> &order);
+    virtual bool create_driver_self_order(const driver_self_order &order);
+    virtual bool confirm_driver_self_order(const std::string &ssid, const int64_t order_id);
+    virtual bool cancel_driver_self_order(const std::string &ssid, const int64_t order_id);
+    virtual void get_all_self_order(std::vector<driver_self_order> &_return, const std::string &ssid);
+    virtual void get_self_order_by_phone(driver_self_order &_return, const std::string &driver_phone);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

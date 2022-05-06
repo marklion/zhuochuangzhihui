@@ -184,6 +184,22 @@ public:
     void remove_record(const std::string &ssid);
 };
 
+class zh_sql_follow_stuff:public sql_tree_base{
+public:
+    zh_sql_follow_stuff() {
+        add_parent_type<zh_sql_contract>("belong_contract");
+        add_parent_type<zh_sql_stuff>("belong_stuff");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "follow_stuff_table";
+    }
+};
 class zh_sql_vehicle : public sql_tree_base
 {
 public:
@@ -303,7 +319,8 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
 std::string zh_rpc_util_gen_ssid();
 
-class zh_sql_history_data:public sql_tree_base {
+class zh_sql_history_data : public sql_tree_base
+{
 public:
     double change_value = 0;
     double new_value = 0;
@@ -320,7 +337,8 @@ public:
         return ret;
     }
 };
-class zh_sql_balance_point : public zh_sql_history_data{
+class zh_sql_balance_point : public zh_sql_history_data
+{
 public:
     zh_sql_balance_point()
     {
@@ -521,6 +539,35 @@ public:
         ret.insert_record();
 
         return ret;
+    }
+};
+
+class zh_sql_driver_self_order : public sql_tree_base
+{
+public:
+    std::string main_vehicle_number;
+    std::string driver_id;
+    std::string driver_name;
+    std::string driver_phone;
+    std::string stuff_name;
+    zh_sql_driver_self_order()
+    {
+        add_parent_type<zh_sql_user_info>("belong_user");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("main_vehicle_number", sqlite_orm_column::STRING, &main_vehicle_number));
+        ret.push_back(sqlite_orm_column("driver_id", sqlite_orm_column::STRING, &driver_id));
+        ret.push_back(sqlite_orm_column("driver_name", sqlite_orm_column::STRING, &driver_name));
+        ret.push_back(sqlite_orm_column("driver_phone", sqlite_orm_column::STRING, &driver_phone));
+        ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "driver_self_order_table";
     }
 };
 

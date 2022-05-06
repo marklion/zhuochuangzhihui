@@ -135,6 +135,7 @@ struct contract_info {
     9:string company_address,
     10:double balance,
     11:double credit,
+    12:list<string> follow_stuffs,
 }
 
 struct number_change_point{
@@ -178,7 +179,7 @@ service stuff_management {
     bool add_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool del_stuff(1:string ssid, 2:i64 id) throws (1:gen_exp e),
-    list<stuff_info> get_all_stuff(1:string ssid) throws (1:gen_exp e),
+    list<stuff_info> get_all_stuff(1:string ssid, 2:string user_name) throws (1:gen_exp e),
     stuff_info get_stuff(1:string ssid, 2:string stuff_name) throws (1:gen_exp e),
     list<stuff_history> get_change_points_for_range(1:string ssid, 2:string start_date, 3:string end_date) throws (1:gen_exp e),
     string get_last_active(1:string ssid) throws (1:gen_exp e),
@@ -276,6 +277,16 @@ struct vehicle_order_statistics {
     6:i64 second_weight,
 }
 
+struct driver_self_order {
+    1:i64 id,
+    2:string main_vehicle_number,
+    3:string driver_name,
+    4:string driver_phone,
+    5:string driver_id,
+    6:string stuff_name,
+    7:string belong_user_name,
+}
+
 service vehicle_order_center {
     list<vehicle_order_info> get_order_by_anchor(1:string ssid, 2:i64 anchor, 3:string status_name, 4:string enter_date) throws (1:gen_exp e),
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
@@ -297,6 +308,11 @@ service vehicle_order_center {
     bool upload_enter_weight_attachment(1:i64 order_id, 2:string attachment, 3:double enter_weight) throws (1:gen_exp e),
     bool print_weight_ticket(1:string ssid, 2:i64 order_id, 3:string scale_name) throws (1:gen_exp e),
     string check_price_balance(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    bool create_driver_self_order(1:driver_self_order order) throws (1:gen_exp e),
+    bool confirm_driver_self_order(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    bool cancel_driver_self_order(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    list<driver_self_order> get_all_self_order(1:string ssid) throws (1:gen_exp e),
+    driver_self_order get_self_order_by_phone(1:string driver_phone) throws (1:gen_exp e),
 }
 
 service open_api {

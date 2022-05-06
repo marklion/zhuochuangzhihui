@@ -21,7 +21,7 @@ public:
     virtual bool add_stuff(const std::string &ssid, const stuff_info &stuff);
     virtual bool update_stuff(const std::string &ssid, const stuff_info &stuff);
     virtual bool del_stuff(const std::string &ssid, const int64_t id);
-    virtual void get_all_stuff(std::vector<stuff_info> &_return, const std::string &ssid);
+    virtual void get_all_stuff(std::vector<stuff_info> & _return, const std::string& ssid, const std::string& user_name);
     virtual void get_change_points_for_range(std::vector<stuff_history> &_return, const std::string &ssid, const std::string &start_date, const std::string &end_date);
     virtual void get_last_active(std::string &_return, const std::string &ssid);
     virtual void get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &stuff_name, const int64_t count);

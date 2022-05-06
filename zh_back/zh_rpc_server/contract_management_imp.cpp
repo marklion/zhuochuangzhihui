@@ -77,6 +77,18 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
         }
     }
 
+    for (auto &itr:contract.follow_stuffs)
+    {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", itr.c_str());
+        if (stuff)
+        {
+            zh_sql_follow_stuff tmp_follow;
+            tmp_follow.set_parent(tmp, "belong_contract");
+            tmp_follow.set_parent(*stuff, "belong_stuff");
+            tmp_follow.insert_record();
+        }
+    }
+
     return ret;
 }
 bool contract_management_handler::del_contract(const std::string &ssid, const int64_t contract_id)
@@ -101,6 +113,11 @@ bool contract_management_handler::del_contract(const std::string &ssid, const in
     }
 
     exist_record->remove_record();
+    auto followed_stuff = exist_record->get_all_children<zh_sql_follow_stuff>("belong_contract");
+    for (auto &itr:followed_stuff)
+    {
+        itr.remove_record();
+    }
     ret = true;
 
     return ret;
@@ -165,6 +182,22 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
         }
     }
     ret = exist_record->update_record();
+    auto followed_stuff = exist_record->get_all_children<zh_sql_follow_stuff>("belong_contract");
+    for (auto &itr:followed_stuff)
+    {
+        itr.remove_record();
+    }
+    for (auto &itr : contract.follow_stuffs)
+    {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", itr.c_str());
+        if (stuff)
+        {
+            zh_sql_follow_stuff tmp_follow;
+            tmp_follow.set_parent(*exist_record, "belong_contract");
+            tmp_follow.set_parent(*stuff, "belong_stuff");
+            tmp_follow.insert_record();
+        }
+    }
     return ret;
 }
 void contract_management_handler::get_all_contract(std::vector<contract_info> &_return, const std::string &ssid)
@@ -202,6 +235,15 @@ void contract_management_handler::get_all_contract(std::vector<contract_info> &_
         {
             tmp.admin_phone = ext_user->phone;
         }
+        auto followed_stuff = itr.get_all_children<zh_sql_follow_stuff>("belong_contract");
+        for (auto &single_stuff:followed_stuff)
+        {
+            auto stuff = single_stuff.get_parent<zh_sql_stuff>("belong_stuff");
+            if (stuff)
+            {
+                tmp.follow_stuffs.push_back(stuff->name);
+            }
+        }
         _return.push_back(tmp);
     }
 }
@@ -213,7 +255,7 @@ void contract_management_handler::get_history(std::vector<number_change_point> &
     {
         ZH_RETURN_NO_CONTRACT();
     }
-    auto user = zh_rpc_util_get_online_user(ssid,2);
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
     if (!user)
     {
         user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
@@ -223,7 +265,7 @@ void contract_management_handler::get_history(std::vector<number_change_point> &
         ZH_RETURN_NO_PRAVILIGE();
     }
     auto points = contract->get_all_children<zh_sql_balance_point>("belong_contract", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
-    for (auto &itr:points)
+    for (auto &itr : points)
     {
         number_change_point tmp;
         tmp.change_value = itr.change_value;
@@ -232,7 +274,6 @@ void contract_management_handler::get_history(std::vector<number_change_point> &
         tmp.timestamp = itr.timestamp;
         _return.push_back(tmp);
     }
-
 }
 
 bool contract_management_handler::internal_change_balance(const std::string &company_name, const double new_value, const std::string &reason)
@@ -262,7 +303,7 @@ bool contract_management_handler::internal_change_balance(const std::string &com
 
 bool contract_management_handler::change_balance(const std::string &ssid, const std::string &company_name, const double new_value, const std::string &reason)
 {
-    auto user = zh_rpc_util_get_online_user(ssid,1);
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();

@@ -18,6 +18,13 @@
         </el-table-column>
         <el-table-column prop="code" label="编码" width="150px">
         </el-table-column>
+        <el-table-column label="关注物料" width="150px">
+            <template slot-scope="scope">
+                <div v-for="(single_follow_stuff, index) in scope.row.follow_stuffs" :key="index">
+                    {{single_follow_stuff}}
+                </div>
+            </template>
+        </el-table-column>
         <el-table-column label="类型" width="50px" :formatter="get_type">
         </el-table-column>
         <el-table-column prop="attachment" label="附件" width="80px">
@@ -54,6 +61,19 @@
         <el-form :model="new_contract" ref="add_contract_form" :rules="rules" label-width="120px">
             <el-form-item label="对方公司名称" prop="name">
                 <el-input v-model="new_contract.name" placeholder="请输入对方公司名称"></el-input>
+            </el-form-item>
+            <el-form-item label="关注物料" prop="follow_stuffs">
+                <el-row>
+                    <el-col :span="12">
+                        <item-for-select v-model="follow_stuff_need_add" search_key="stuff_name"></item-for-select>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-button icon="el-icon-plus" type="primary" circle @click="new_contract.follow_stuffs.push(follow_stuff_need_add);follow_stuff_need_add = ''"></el-button>
+                    </el-col>
+                </el-row>
+                <el-tag v-for="(single_follow_stuff, index) in new_contract.follow_stuffs" :key="index" closable @close="new_contract.follow_stuffs.splice(index, 1)">
+                    {{single_follow_stuff}}
+                </el-tag>
             </el-form-item>
             <el-form-item label="公司地址" prop="company_address">
                 <el-input v-model="new_contract.company_address" placeholder="请输入对方公司地址"></el-input>
@@ -123,15 +143,18 @@ import TableImportExport from '../components/TableImportExport.vue'
 import VueClipboard from 'vue-clipboard2'
 import Vant from 'vant';
 import 'vant/lib/index.css';
+import ItemForSelect from "../components/ItemForSelect.vue"
 Vue.use(Vant);
 Vue.use(VueClipboard)
 export default {
     name: 'ContractManagement',
     components: {
         "table-import-export": TableImportExport,
+        "item-for-select": ItemForSelect,
     },
     data: function () {
         return {
+            follow_stuff_need_add: '',
             balance_history: [],
             balance_history_load_end: false,
             balance_history_loading: false,
@@ -160,7 +183,8 @@ export default {
                 is_sale: true,
                 admin_phone: '',
                 admin_password: '',
-                credit:0,
+                credit: 0,
+                follow_stuffs: [],
             },
             rules: {
                 name: [{
@@ -307,7 +331,8 @@ export default {
                 is_sale: true,
                 admin_phone: '',
                 admin_password: '',
-                credit:0,
+                credit: 0,
+                follow_stuffs: [],
             };
             this.old_admin_phone = "";
         },
