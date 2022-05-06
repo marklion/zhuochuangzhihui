@@ -95,17 +95,46 @@ bool stuff_management_handler::del_stuff(const std::string &ssid, const int64_t 
 
     exist_record->remove_record(ssid);
     ret = true;
+    auto followed_stuff = exist_record->get_all_children<zh_sql_follow_stuff>("belong_stuff");
+    for (auto &itr:followed_stuff)
+    {
+        itr.remove_record();
+    }
 
     return ret;
 }
-void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, const std::string &ssid)
+void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, const std::string &ssid, const std::string& user_name)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
-    if (!opt_user)
+    if (!opt_user && user_name.length() == 0)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    auto all_stuff = sqlite_orm::search_record_all<zh_sql_stuff>();
+    std::string query_cmd;
+    std::unique_ptr<zh_sql_contract> customer_contract;
+    if (opt_user)
+    {
+        customer_contract.reset(opt_user->get_parent<zh_sql_contract>("belong_contract").release());
+    }
+    else
+    {
+        customer_contract.reset(sqlite_orm::search_record<zh_sql_contract>("name == '%s'", user_name.c_str()).release());
+    }
+    if (customer_contract)
+    {
+        query_cmd = "(PRI_ID == 0";
+        auto followed_stuff = customer_contract->get_all_children<zh_sql_follow_stuff>("belong_contract");
+        for (auto &itr : followed_stuff)
+        {
+            auto stuff = itr.get_parent<zh_sql_stuff>("belong_stuff");
+            if (stuff)
+            {
+                query_cmd += " OR PRI_ID == " + std::to_string(stuff->get_pri_id());
+            }
+        }
+        query_cmd += ")";
+    }
+    auto all_stuff = sqlite_orm::search_record_all<zh_sql_stuff>(query_cmd);
     for (auto &itr : all_stuff)
     {
         stuff_info tmp;
@@ -239,7 +268,7 @@ void stuff_management_handler::get_history(std::vector<number_change_point> &_re
         ZH_RETURN_NO_STUFF();
     }
     auto points = stuff->get_all_children<zh_sql_price_point>("belong_stuff", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
-    for (auto &itr:points)
+    for (auto &itr : points)
     {
         number_change_point tmp;
         tmp.change_value = itr.change_value;

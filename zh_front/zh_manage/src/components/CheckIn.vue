@@ -1,6 +1,5 @@
 <template>
 <div class="check_in_show">
-    <van-nav-bar class="nav_bar_show" title="运输信息" />
     <van-cell :title="cur_vehicle.basic_info.main_vehicle_number" :label="cur_vehicle.basic_info.company_name" :value="cur_vehicle.basic_info.stuff_name"></van-cell>
     <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id"></van-cell>
     <van-cell title="当前状态" :value="status" center>
@@ -50,6 +49,15 @@ export default {
     name: 'CheckIn',
     components: {
         vueQr
+    },
+    props: {
+        driver_phone: String,
+    },
+    watch: {
+        driver_phone: function (_new_phone) {
+            console.log(_new_phone);
+            this.init_vehicle();
+        }
     },
     data: function () {
         return {
@@ -143,7 +151,7 @@ export default {
         },
         init_vehicle() {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "driver_get_order", [vue_this.$route.params.order_no]).then(function (resp) {
+            vue_this.$call_remote_process("vehicle_order_center", "driver_get_order", [vue_this.driver_phone]).then(function (resp) {
                 vue_this.cur_vehicle = resp;
                 vue_this.$set(vue_this.cur_vehicle, 'basic_info', resp.basic_info);
             });

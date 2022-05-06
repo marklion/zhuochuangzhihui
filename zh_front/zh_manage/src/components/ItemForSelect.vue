@@ -16,7 +16,7 @@ export default {
         return {
             all_item: [],
             show_picker: false,
-            value_show:'',
+            value_show: '',
         };
     },
     props: {
@@ -25,6 +25,7 @@ export default {
         disabled: Boolean,
         rules: [],
         label: String,
+        related_contract: String,
     },
     model: {
         prop: 'value',
@@ -79,7 +80,7 @@ export default {
                 });
                 break;
             case 'stuff_name':
-                vue_this.$call_remote_process("stuff_management", "get_all_stuff", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.$call_remote_process("stuff_management", "get_all_stuff", [vue_this.$cookies.get("zh_ssid"), vue_this.related_contract]).then(function (resp) {
                     resp.forEach(element => {
                         vue_this.all_item.push({
                             value: element.name

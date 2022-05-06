@@ -483,7 +483,7 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
 
 void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number)
 {
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s' AND status != 100 AND status != 0", order_number.c_str());
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_phone == '%s' AND status != 100 AND status != 0", order_number.c_str());
     if (!vo)
     {
         ZH_RETURN_NO_ORDER();
@@ -1675,4 +1675,121 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
     }
 
     return ret;
+}
+
+bool vehicle_order_center_handler::create_driver_self_order(const driver_self_order &order)
+{
+    bool ret = false;
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_driver_self_order>(
+        "driver_phone == '%s' OR main_vehicle_number == '%s' OR driver_id == '%s'", order.driver_phone.c_str(), order.main_vehicle_number.c_str(), order.driver_id.c_str());
+    if (exist_record)
+    {
+        ZH_RETURN_MSG("信息已存在");
+    }
+    zh_sql_driver_self_order tmp;
+    tmp.driver_id = order.driver_id;
+    tmp.driver_name = order.driver_name;
+    tmp.driver_phone = order.driver_phone;
+    tmp.main_vehicle_number = order.main_vehicle_number;
+    tmp.stuff_name = order.stuff_name;
+    auto user = sqlite_orm::search_record<zh_sql_user_info>("name == '%s'", order.belong_user_name.c_str());
+    if (user)
+    {
+        tmp.set_parent(*user, "belong_user");
+    }
+
+    ret = tmp.insert_record();
+
+    return ret;
+}
+bool vehicle_order_center_handler::confirm_driver_self_order(const std::string &ssid, const int64_t order_id)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto order = user->get_children<zh_sql_driver_self_order>("belong_user", "PRI_ID == %ld", order_id);
+    if (!order)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    std::vector<vehicle_order_info> tmp;
+    vehicle_order_info one_info;
+    one_info.company_name = user->name;
+    one_info.driver_id = order->driver_id;
+    one_info.driver_name = order->driver_name;
+    one_info.driver_phone = order->driver_phone;
+    one_info.main_vehicle_number = order->main_vehicle_number;
+    one_info.stuff_name = order->stuff_name;
+    one_info.max_count = 35;
+    tmp.push_back(one_info);
+    if (create_vehicle_order(ssid, tmp))
+    {
+        order->remove_record();
+        ret = true;
+    }
+
+    return ret;
+}
+bool vehicle_order_center_handler::cancel_driver_self_order(const std::string &ssid, const int64_t order_id)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto order = user->get_children<zh_sql_driver_self_order>("belong_user", "PRI_ID == %ld", order_id);
+    if (!order)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    order->remove_record();
+    ret = true;
+    return ret;
+}
+void vehicle_order_center_handler::get_all_self_order(std::vector<driver_self_order> &_return, const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto orders = user->get_all_children<zh_sql_driver_self_order>("belong_user");
+    for (auto &itr:orders)
+    {
+        driver_self_order tmp;
+        tmp.belong_user_name = user->name;
+        tmp.driver_id = itr.driver_id;
+        tmp.driver_name = itr.driver_name;
+        tmp.driver_phone = itr.driver_phone;
+        tmp.id = itr.get_pri_id();
+        tmp.main_vehicle_number = itr.main_vehicle_number;
+        tmp.stuff_name = itr.stuff_name;
+        _return.push_back(tmp);
+    }
+}
+void vehicle_order_center_handler::get_self_order_by_phone(driver_self_order &_return, const std::string &driver_phone)
+{
+    auto order = sqlite_orm::search_record<zh_sql_driver_self_order>("driver_phone == '%s'", driver_phone.c_str());
+    if (order)
+    {
+        auto user = order->get_parent<zh_sql_user_info>("belong_user");
+        if (user)
+        {
+            _return.belong_user_name = user->name;
+            _return.driver_id = order->driver_id;
+            _return.driver_name = order->driver_name;
+            _return.driver_phone = order->driver_phone;
+            _return.id = order->get_pri_id();
+            _return.main_vehicle_number = order->main_vehicle_number;
+            _return.stuff_name = order->stuff_name;
+        }
+    }
 }
