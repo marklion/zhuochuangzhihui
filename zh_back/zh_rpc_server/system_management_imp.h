@@ -47,6 +47,8 @@ public:
     virtual void read_qr(std::string &_return, const std::string &id_reader_ip);
     virtual bool led_cast_welcome(const std::string &led_ip);
     virtual void trigger_cap(const std::string &ssid, const std::string &cam_ip);
+    virtual bool is_auto_confirm(const std::string &ssid);
+    virtual void set_auto_confirm(const std::string &ssid, const bool auto_set);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
