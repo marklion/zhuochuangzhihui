@@ -8,10 +8,17 @@
                     <el-container>
                         <el-header>车辆检索</el-header>
                         <el-main>
-                            <el-button type="primary" @click="init_cur_plan_data">刷新</el-button>
+                            <el-row>
+                                <el-col :span="8">
+                                    <el-button type="primary" @click="init_cur_plan_data">刷新</el-button>
+                                </el-col>
+                                <el-col :span="16">
+                                    <div>今日总装车量:{{total_vehicle}}车,{{total_count}}吨</div>
+                                </el-col>
+                            </el-row>
                             <el-input v-model="search_key" placeholder="输入部分或全部车牌搜索"></el-input>
                             <el-radio-group v-model="selected_vehicle" size="small">
-                                <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index">
+                                <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
                                     <el-radio :label="single_vehicle.id" border>{{single_vehicle.plateNo}}</el-radio>
                                 </div>
                             </el-radio-group>
@@ -159,6 +166,8 @@ export default {
     },
     data: function () {
         return {
+            total_count: 0,
+            total_vehicle: 0,
             calc_weight_show: function (_weight) {
                 var ret = _weight;
                 if (this.ticket_param.unit == '千克') {
@@ -487,6 +496,14 @@ export default {
                                 }
                             }
                         }
+                        vue_this.total_vehicle = 0;
+                        vue_this.total_count = 0;
+                        vue_this.all_vehicle.forEach(element => {
+                            if (element.m_time && new Date(element.m_time).getDate() == new Date().getDate()) {
+                                vue_this.total_vehicle += 1;
+                                vue_this.total_count += element.m_weight - element.p_weight;
+                            }
+                        });
                         console.log('all');
                         console.log(vue_this.all_vehicle);
                     });
@@ -589,10 +606,12 @@ export default {
 
 .vehicle_search {
     background-color: rgb(192, 200, 158);
+    height: 580px;
 }
 
 .scale_weight {
     background-color: rgb(179, 255, 211);
+    height: 580px;
 }
 
 .print_ticket {
@@ -642,5 +661,9 @@ export default {
 .ticket_comment_show {
     line-height: 10px;
     font-size: 15px;
+}
+
+.finish_scale_vehicle_show {
+    background-color: rgb(175, 106, 106);
 }
 </style>
