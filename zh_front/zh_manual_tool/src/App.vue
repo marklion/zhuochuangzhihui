@@ -12,7 +12,7 @@
                             <el-input v-model="search_key" placeholder="输入部分或全部车牌搜索"></el-input>
                             <el-radio-group v-model="selected_vehicle" size="small">
                                 <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index">
-                                    <el-radio :label="single_vehicle.plateNo" border>{{single_vehicle.plateNo}}</el-radio>
+                                    <el-radio :label="single_vehicle.id" border>{{single_vehicle.plateNo}}</el-radio>
                                 </div>
                             </el-radio-group>
                         </el-main>
@@ -50,9 +50,10 @@
                             <div>
                                 <v-input-sevenseg v-model="weight_dig_show" height="80" digits="7" :buttons="false"></v-input-sevenseg>
                             </div>
-                            <el-button type="primary">清零</el-button>
-                            <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
-                            <el-button v-else type="danger" @click="record_weight">停止称重</el-button>
+                            <div v-if="focus_vehicle && !focus_vehicle.m_time">
+                                <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
+                                <el-button v-else type="danger" @click="record_weight">停止称重</el-button>
+                            </div>
                             <el-divider></el-divider>
                             <vue-grid align="stretch" justify="start">
                                 <vue-cell v-for="(single_license, index) in all_licenses" :key="index" width="6of12">
@@ -203,8 +204,15 @@ export default {
         selected_vehicle: function (_selected) {
             var vue_this = this;
             const idb = require('idb-keyval');
+            vue_this.stored_weight = {
+                id: "",
+                p_weight: '未知',
+                p_time: '未知',
+                m_weight: '未知',
+                m_time: '未知',
+            };
             var tmp = this.all_vehicle.find(element => {
-                return element.plateNo == _selected;
+                return element.id == _selected;
             });
             if (tmp) {
                 idb.get(tmp.id).then(function (resp) {
@@ -212,14 +220,6 @@ export default {
                         vue_this.stored_weight = resp;
                     }
                 });
-            } else {
-                vue_this.stored_weight = {
-                    id: "",
-                    p_weight: '未知',
-                    p_time: '未知',
-                    m_weight: '未知',
-                    m_time: '未知',
-                };
             }
         },
     },
@@ -235,9 +235,7 @@ export default {
         },
         all_licenses: function () {
             var ret = [];
-            var tmp = this.all_vehicle.find(element => {
-                return element.plateNo == this.selected_vehicle;
-            });
+            var tmp = this.focus_vehicle;
             if (tmp) {
                 ret = tmp.allLicenseInfo;
             }
@@ -258,9 +256,7 @@ export default {
                 ticket_no: 'XXXX',
                 sale_address: '未知',
             };
-            var tmp = this.all_vehicle.find(element => {
-                return element.plateNo == this.selected_vehicle;
-            });
+            var tmp = vue_this.focus_vehicle;
             console.log(tmp);
             if (tmp) {
                 ret = {
@@ -295,6 +291,11 @@ export default {
             });
 
             return ret;
+        },
+        focus_vehicle: function () {
+            return this.all_vehicle.find(element => {
+                return element.id == this.selected_vehicle;
+            });
         },
     },
     methods: {
@@ -350,6 +351,13 @@ export default {
                 ticketNo: _vehicle.ticketNo,
             }).then(function (resp) {
                 console.log(resp);
+                var tmp = vue_this.focus_vehicle;
+                tmp.p_weight = _vehicle.p_weight;
+                tmp.p_time = _vehicle.p_time;
+                tmp.m_weight = _vehicle.m_weight;
+                tmp.m_time = _vehicle.m_time;
+                tmp.ticketNo = _vehicle.ticketNo;
+                idb.set(_vehicle.id, tmp);
             }).catch(function (err) {
                 console.log(err);
             }).finally(function () {
@@ -383,9 +391,7 @@ export default {
         record_weight: async function () {
             var vue_this = this;
             const idb = require('idb-keyval');
-            var tmp = this.all_vehicle.find(element => {
-                return element.plateNo == this.selected_vehicle;
-            });
+            var tmp = vue_this.focus_vehicle;
             if (tmp) {
                 idb.get(tmp.id).then(async function (resp) {
                     if (resp) {
@@ -443,12 +449,20 @@ export default {
         init_cur_plan_data: async function () {
             const axios = require('axios').default;
             var vue_this = this;
+            vue_this.selected_vehicle = '';
+            vue_this.stored_weight = {
+                id: "",
+                p_weight: '未知',
+                p_time: '未知',
+                m_weight: '未知',
+                m_time: '未知',
+            };
             const idb = require('idb-keyval');
             var token_from_idb = await idb.get("zy_token");
             let loadingInstance = Loading.service({
                 fullscreen: true
             });
-            axios.get(vue_this.remote_path() + "/pa_rest/all_vehicle_info?token=" + token_from_idb).then(function (resp) {
+            axios.get(vue_this.remote_path() + "/pa_rest/all_vehicle_info?token=" + token_from_idb).then(async function (resp) {
                 if (resp.data.err_msg != "") {
                     vue_this.init_token();
                 } else {
@@ -458,12 +472,31 @@ export default {
                             vue_this.$set(vue_this.all_vehicle, index, element);
                         }
                     });
+                    var vehicle_after_scale = await idb.entries();
+                    vehicle_after_scale.forEach(element => {
+                        console.log(element);
+                        if (/^[0-9]*S$/.test(element[0])) {
+                            console.log('match');
+                            if (element[1].m_time) {
+                                if ((new Date().getTime() - new Date(element[1].m_time).getTime()) / 1000 / 60 / 60 / 24 >= 1) {
+                                    idb.del(element[0]);
+                                } else {
+                                    vue_this.$set(vue_this.all_vehicle, vue_this.all_vehicle.length, element[1]);
+                                    console.log('push to all');
+                                    console.log(vue_this.all_vehicle);
+                                }
+                            }
+                        }
+                        console.log('all');
+                        console.log(vue_this.all_vehicle);
+                    });
                 }
             }).catch(function (err) {
                 console.log(err);
             }).finally(function () {
                 loadingInstance.close();
             });
+
         },
         init_ticket_param: async function () {
             const idb = require('idb-keyval');

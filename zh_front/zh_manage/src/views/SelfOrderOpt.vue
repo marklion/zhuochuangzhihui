@@ -57,11 +57,21 @@ export default {
         },
         confirm_self_order: function (_order) {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "confirm_driver_self_order", [vue_this.$cookies.get("zh_ssid"), _order.id]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_self_order();
-                }
+            var func = function (continue_order) {
+                vue_this.$call_remote_process("vehicle_order_center", "confirm_driver_self_order", [vue_this.$cookies.get("zh_ssid"), _order.id, continue_order]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_self_order();
+                    }
+                });
+            }
+            vue_this.$dialog.confirm({
+                title: '是否连续派车?',
+            }).then(function () {
+                func(true);
+            }).catch(function () {
+                func(false);
             });
+
         },
         cancel_self_order: function (_order) {
             var vue_this = this;

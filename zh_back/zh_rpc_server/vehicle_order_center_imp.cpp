@@ -117,6 +117,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.exit_time = vo->exit_cam_time;
     _return.p_time = vo->p_cam_time;
     _return.m_time = vo->m_cam_time;
+    _return.basic_info.end_time = vo->end_time;
 }
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
@@ -199,7 +200,8 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
     return ret;
 }
 
-bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders)
+
+static bool pri_create_order(const std::vector<vehicle_order_info> &orders, const std::string &ssid = "")
 {
     bool ret = false;
     auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
@@ -211,7 +213,7 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
             opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
         }
     }
-    if (!opt_user)
+    if (!opt_user && ssid.length() > 0)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
@@ -263,28 +265,37 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
         tmp.company_address = order.company_address;
         tmp.use_for = order.use_for;
         tmp.max_count = order.max_count;
+        tmp.end_time = order.end_time;
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
         if (stuff && stuff->need_enter_weight)
         {
             tmp.need_enter_weight = 1;
         }
 
-        auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
         bool op_permit = true;
-        if (contract)
+        if (opt_user)
         {
-            if (contract->name != tmp.company_name)
+            auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+            if (contract)
             {
-                op_permit = false;
+                if (contract->name != tmp.company_name)
+                {
+                    op_permit = false;
+                }
             }
         }
+
         if (op_permit && tmp.insert_record())
         {
             tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
             auto create_status = zh_sql_order_status::make_create_status(ssid);
             tmp.push_status(create_status);
-            auto auto_confirm = system_management_handler::get_inst()->is_auto_confirm(ssid);
-            if (!opt_user->get_parent<zh_sql_contract>("belong_contract") || auto_confirm)
+            bool auto_confirm = false;
+            if (ssid.length() > 0)
+            {
+                auto_confirm = system_management_handler::get_inst()->is_auto_confirm(ssid);
+            }
+            if (!opt_user || !opt_user->get_parent<zh_sql_contract>("belong_contract") || auto_confirm)
             {
                 auto before_come_status = zh_sql_order_status::make_before_come_status();
                 tmp.push_status(before_come_status);
@@ -294,6 +305,35 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
     }
 
     return ret;
+}
+
+static void dup_one_order(zh_sql_vehicle_order &vo)
+{
+    vehicle_order_info tmp_order;
+    tmp_order.behind_vehicle_number = vo.behind_vehicle_number;
+    tmp_order.driver_id = vo.driver_id;
+    tmp_order.driver_name = vo.driver_name;
+    tmp_order.driver_phone = vo.driver_phone;
+    tmp_order.main_vehicle_number = vo.main_vehicle_number;
+    tmp_order.stuff_name = vo.stuff_name;
+    tmp_order.company_name = vo.company_name;
+    tmp_order.company_address = vo.company_address;
+    tmp_order.use_for = vo.use_for;
+    tmp_order.max_count = vo.max_count;
+    tmp_order.end_time = vo.end_time;
+
+    std::vector<vehicle_order_info> tmp;
+    tmp.push_back(tmp_order);
+    pri_create_order(tmp);
+}
+bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders)
+{
+    auto ssid_verify = ssid;
+    if (ssid_verify.length() <= 0)
+    {
+        ssid_verify = "xxx";
+    }
+    return pri_create_order(orders, ssid_verify);
 }
 
 bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
@@ -627,7 +667,7 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
         ZH_RETURN_NO_ORDER();
     }
     auto status = zh_sql_order_status::make_end_status(ssid);
-    vo->push_status(status);
+    vo->push_status(status, dup_one_order);
     recalcu_balance_inventory(*vo, ssid);
 
     ret = true;
@@ -1012,7 +1052,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             if (!vo->get_children<zh_sql_order_status>("belong_order", "step == 2"))
             {
                 auto end_status = zh_sql_order_status::make_end_status();
-                vo->push_status(end_status);
+                vo->push_status(end_status, dup_one_order);
             }
         }
     }
@@ -1553,7 +1593,7 @@ void gate_state_machine::record_vehicle_pass()
         auto out_status = zh_sql_order_status::make_out_status();
         vo->push_status(out_status);
         auto end_status = zh_sql_order_status::make_end_status();
-        vo->push_status(end_status);
+        vo->push_status(end_status, dup_one_order);
     }
 }
 
@@ -1704,7 +1744,7 @@ bool vehicle_order_center_handler::create_driver_self_order(const driver_self_or
 
     return ret;
 }
-bool vehicle_order_center_handler::confirm_driver_self_order(const std::string &ssid, const int64_t order_id)
+bool vehicle_order_center_handler::confirm_driver_self_order(const std::string &ssid, const int64_t order_id, const bool continue_order)
 {
     bool ret = false;
 
@@ -1728,6 +1768,10 @@ bool vehicle_order_center_handler::confirm_driver_self_order(const std::string &
     one_info.main_vehicle_number = order->main_vehicle_number;
     one_info.stuff_name = order->stuff_name;
     one_info.max_count = 35;
+    if (continue_order)
+    {
+        one_info.end_time = zh_rpc_util_get_datestring().substr(0, 10);
+    }
     tmp.push_back(one_info);
     if (create_vehicle_order(ssid, tmp))
     {

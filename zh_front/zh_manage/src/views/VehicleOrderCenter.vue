@@ -91,6 +91,9 @@
                         <div v-if="scope.row.status == 3 && deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)) > 30" style="color:red">
                             装卸货消耗{{deliver_cost_time(calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3))}}分钟
                         </div>
+                        <div v-if="scope.row.end_time && scope.row.status != 100">
+                            <el-tag type="success">{{scope.row.end_time}} 连续派车</el-tag>
+                        </div>
                     </template>
                 </el-table-column>
                 <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
@@ -179,6 +182,9 @@
                                 <item-for-select v-model="focus_order.use_for" search_key="use_for"></item-for-select>
                             </el-form-item>
                         </div>
+                        <el-form-item label="今天连续派车">
+                            <el-switch v-model="form_continue_switch"></el-switch>
+                        </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="edit_order">确认</el-button>
                         </el-form-item>
@@ -252,6 +258,9 @@
                         <van-tag size="mini" type="danger">
                             {{single_vehicle.status_details[single_vehicle.status_details.length - 1].name}}
                         </van-tag>
+                        <van-tag size="mini" type="primary" v-if="single_vehicle.end_time && single_vehicle.status != 100">
+                            {{single_vehicle.end_time}} 连续派车
+                        </van-tag>
                         <div v-if="single_vehicle.status == 0" style="color:red;">
                             {{single_vehicle.balance_warn}}
                         </div>
@@ -266,6 +275,11 @@
                 <van-form @submit="mobile_create_order">
                     <item-for-select label="派车公司" v-model="focus_order.company_name" :rules="[{required:true, message:'请指定公司'}]" search_key="company_name"></item-for-select>
                     <item-for-select label="运输货物" v-model="focus_order.stuff_name" :rules="[{required:true, message:'请指定货物'}]" search_key="stuff_name"></item-for-select>
+                    <van-field name="switch" label="连续派车">
+                        <template #input>
+                            <van-switch v-model="form_continue_switch" size="20" />
+                        </template>
+                    </van-field>
                     <van-field readonly clickable name="picker" label="选择车辆" placeholder="点击选择车辆" @click="show_vehicle_select = true">
                     </van-field>
                     <van-tag v-for="(single_vehicle,index) in vehicle_selected" :key="index" closeable size="mini" type="primary" @close="remove_single_vehicle(index)">
@@ -404,6 +418,7 @@ export default {
     },
     data: function () {
         return {
+            form_continue_switch: false,
             create_mobile_vehicle_diag: false,
             isLoading: false,
             deliver_cost_time: function (_start_time) {
@@ -536,6 +551,9 @@ export default {
                 single_req.stuff_name = vue_this.focus_order.stuff_name;
                 single_req.company_address = vue_this.focus_order.company_address;
                 single_req.use_for = vue_this.focus_order.use_for;
+                if (vue_this.form_continue_switch) {
+                    single_req.end_time = vue_this.$make_time_string(new Date(), '-').substr(0, 10);
+                }
                 req_body.push(single_req);
             });
             func_name = "create_vehicle_order";
@@ -720,6 +738,7 @@ export default {
             this.ready_vehicle = _value;
         },
         clean_order: function () {
+            this.form_continue_switch = false;
             this.focus_order = {
                 company_name: '',
                 company_address: '',
@@ -761,6 +780,9 @@ export default {
                     single_req.stuff_name = vue_this.focus_order.stuff_name;
                     single_req.company_address = vue_this.focus_order.company_address;
                     single_req.use_for = vue_this.focus_order.use_for;
+                    if (vue_this.form_continue_switch) {
+                        single_req.end_time = vue_this.$make_time_string(new Date(), '-').substr(0, 10);
+                    }
                     req_body.push(single_req);
                 });
                 func_name = "create_vehicle_order";

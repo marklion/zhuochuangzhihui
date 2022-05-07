@@ -3,6 +3,7 @@
 
 #include "sqlite_orm_tree.h"
 #include "../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
+#include <functional>
 
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
 std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));
@@ -267,6 +268,7 @@ public:
     std::string use_for;
     double max_count = 35;
     long check_in_timestamp = 0;
+    std::string end_time;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -305,6 +307,7 @@ public:
         ret.push_back(sqlite_orm_column("use_for", sqlite_orm_column::STRING, &use_for));
         ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
         ret.push_back(sqlite_orm_column("check_in_timestamp", sqlite_orm_column::INTEGER, &check_in_timestamp));
+        ret.push_back(sqlite_orm_column("end_time", sqlite_orm_column::STRING, &end_time));
 
         return ret;
     }
@@ -312,7 +315,8 @@ public:
     {
         return "vehicle_order_table";
     }
-    void push_status(zh_sql_order_status &_status);
+    void push_status(
+        zh_sql_order_status &_status, const std::function<void(zh_sql_vehicle_order &)> &call_back = [](zh_sql_vehicle_order &) {});
 };
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);

@@ -239,6 +239,7 @@ struct vehicle_order_info {
     19:string use_for,
     20:string balance_warn,
     21:double max_count,
+    22:string end_time,
 }
 
 struct gate_relate_info {
@@ -311,7 +312,7 @@ service vehicle_order_center {
     bool print_weight_ticket(1:string ssid, 2:i64 order_id, 3:string scale_name) throws (1:gen_exp e),
     string check_price_balance(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     bool create_driver_self_order(1:driver_self_order order) throws (1:gen_exp e),
-    bool confirm_driver_self_order(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
+    bool confirm_driver_self_order(1:string ssid, 2:i64 order_id, 3:bool continue_order) throws (1:gen_exp e),
     bool cancel_driver_self_order(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     list<driver_self_order> get_all_self_order(1:string ssid) throws (1:gen_exp e),
     driver_self_order get_self_order_by_phone(1:string driver_phone) throws (1:gen_exp e),
