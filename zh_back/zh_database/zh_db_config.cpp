@@ -86,7 +86,7 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
 
     return std::unique_ptr<zh_sql_user_info>();
 }
-void zh_sql_vehicle_order::push_status(zh_sql_order_status &_status)
+void zh_sql_vehicle_order::push_status(zh_sql_order_status &_status, const std::function<void(zh_sql_vehicle_order &)> &call_back)
 {
     if (_status.step > status)
     {
@@ -99,6 +99,21 @@ void zh_sql_vehicle_order::push_status(zh_sql_order_status &_status)
         _status.set_parent(*this, "belong_order");
         _status.update_record();
         update_record();
+        if (status == 100 && end_time.length() > 0)
+        {
+            auto now_date = zh_rpc_util_get_datestring().substr(0, 10);
+            auto end_date = end_time.substr(0, 10);
+            if (now_date == end_date)
+            {
+                try
+                {
+                    call_back(*this);
+                }
+                catch (...)
+                {
+                }
+            }
+        }
     }
     else
     {
