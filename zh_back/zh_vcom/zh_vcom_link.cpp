@@ -68,11 +68,17 @@ std::string zh_vcom_link::get_pts()
                                 FD_ZERO(&set);
                                 FD_SET(pipe_fd[0], &set);
                                 FD_SET(socket_fd, &set);
-                                FD_SET(ptm_fd, &set);
+                                if (ptm_fd >= 0)
+                                {
+                                    FD_SET(ptm_fd, &set);
+                                }
                                 FD_ZERO(&err_set);
                                 FD_SET(pipe_fd[0], &err_set);
                                 FD_SET(socket_fd, &err_set);
-                                FD_SET(ptm_fd, &err_set);
+                                if (ptm_fd >= 0)
+                                {
+                                    FD_SET(ptm_fd, &err_set);
+                                }
                                 if (0 < select(socket_fd + 1, &set, NULL, &err_set, NULL))
                                 {
                                     if (FD_ISSET(socket_fd, &set))
@@ -83,7 +89,8 @@ std::string zh_vcom_link::get_pts()
                                         read_len = recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT);
                                         if (read_len < 0)
                                         {
-                                            return;
+                                            close(ptm_fd);
+                                            ptm_fd = -1;
                                         }
                                         if (read_len > 0)
                                         {
@@ -109,12 +116,14 @@ std::string zh_vcom_link::get_pts()
                                     }
                                     if (FD_ISSET(ptm_fd, &err_set) || FD_ISSET(socket_fd, &err_set) || FD_ISSET(pipe_fd[0], &err_set))
                                     {
-                                        return;
+                                        close(ptm_fd);
+                                        ptm_fd = -1;
                                     }
                                 }
                                 else
                                 {
-                                    return;
+                                    close(ptm_fd);
+                                    ptm_fd = -1;
                                 }
                             }
                         });

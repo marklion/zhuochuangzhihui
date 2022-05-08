@@ -82,6 +82,7 @@ public:
     gate_ctrl_policy ctrl_policy;
     zh_read_id_api entry_id_api;
     zh_read_id_api exit_id_api;
+    bool manual_confirm_scale = true;
     void open_trigger_switch();
     void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);
     void proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip);
@@ -102,9 +103,12 @@ public:
     void broadcast_leave_scale();
     void print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &_order);
     std::unique_ptr<zh_sql_vehicle_order> record_order();
+    bool assume_stable_considering_manual();
+    void proc_manual_confirm_scale();
 };
 
-class gate_sm_vehicle_come:public tdf_state_machine_state {
+class gate_sm_vehicle_come : public tdf_state_machine_state
+{
 public:
     virtual std::unique_ptr<tdf_state_machine_state> change_state(tdf_state_machine &_sm);
     virtual void do_action(tdf_state_machine &_sm);
@@ -115,7 +119,8 @@ public:
         return "压线";
     }
 };
-class gate_state_machine:public tdf_state_machine {
+class gate_state_machine : public tdf_state_machine
+{
 public:
     tdf_log m_log;
     std::string road_ip;
@@ -123,7 +128,8 @@ public:
     std::string qr_ip;
     int id_reader_timer = -1;
     bool is_entry = false;
-    tdf_log &get_log() {
+    tdf_log &get_log()
+    {
         return m_log;
     }
     scale_gate_trigger_param param;
@@ -148,6 +154,7 @@ private:
     vehicle_order_center_handler()
     {
     }
+
 public:
     static std::map<std::string, std::shared_ptr<scale_state_machine>> ssm_map;
     static std::map<std::string, std::shared_ptr<gate_state_machine>> gsm_map;
@@ -158,23 +165,23 @@ public:
             m_inst = new vehicle_order_center_handler();
             device_config dc;
             system_management_handler::get_inst()->internal_get_device_config(dc);
-            for (auto &itr:dc.scale)
+            for (auto &itr : dc.scale)
             {
                 ssm_map[itr.name] = std::make_shared<scale_state_machine>(itr);
-                ssm_map[itr.name]->ctrl_policy.set_policy(itr.need_id,itr.need_qr);
+                ssm_map[itr.name]->ctrl_policy.set_policy(itr.need_id, itr.need_qr);
             }
-            for (auto &itr:dc.gate)
+            for (auto &itr : dc.gate)
             {
-                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip,itr.entry_qr_ip , true);
+                gsm_map[itr.entry_config.cam_ip] = std::make_shared<gate_state_machine>(itr.entry_config.cam_ip, itr.entry_id_reader_ip, itr.entry_qr_ip, true);
                 gsm_map[itr.entry_config.cam_ip]->ctrl_policy.set_policy(itr.entry_need_id, itr.entry_need_qr);
-                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip,itr.exit_qr_ip, false);
+                gsm_map[itr.exit_config.cam_ip] = std::make_shared<gate_state_machine>(itr.exit_config.cam_ip, itr.exit_id_reader_ip, itr.exit_qr_ip, false);
                 gsm_map[itr.exit_config.cam_ip]->ctrl_policy.set_policy(itr.exit_need_id, itr.exit_need_qr);
             }
         }
 
         return m_inst;
     }
-    virtual void get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string& enter_date);
+    virtual void get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date);
     virtual void get_gate_info(gate_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual void get_weight_info(weight_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);

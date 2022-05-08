@@ -638,32 +638,36 @@ bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no
 }
 bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no)
 {
-    zh_hk_cast_auto_empty(10, _led_ip);
     async_led_post(_led_ip, hk_led_make_cmd("请取称重小票后下榜" + _weight + "吨", _plate_no));
     return true;
 }
 bool zh_hk_cast_exit_busy(const std::string &_led_ip)
 {
-    zh_hk_cast_auto_empty(3, _led_ip);
+    zh_hk_cast_auto_empty(5, _led_ip);
     async_led_post(_led_ip, hk_led_make_cmd("正在称重，请稍后", ""));
     return true;
 }
 
 bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no)
 {
-    zh_hk_cast_auto_empty(3, _led_ip);
+    zh_hk_cast_auto_empty(8, _led_ip);
     async_led_post(_led_ip, hk_led_make_cmd("欢迎光临", _plate_no));
     return true;
 }
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no)
 {
-    zh_hk_cast_auto_empty(6, _led_ip);
+    zh_hk_cast_auto_empty(8, _led_ip);
     async_led_post(_led_ip, hk_led_make_cmd("未确认装卸货或未二次称重，不能离场", _plate_no));
+    return true;
+}
+bool zh_hk_cast_need_manual(const std::string &_led_ip, const std::string &_plate_no)
+{
+    async_led_post(_led_ip, hk_led_make_cmd("请联系管理员确认称重", _plate_no));
     return true;
 }
 bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no)
 {
-    zh_hk_cast_auto_empty(3, _led_ip);
+    zh_hk_cast_auto_empty(8, _led_ip);
     async_led_post(_led_ip, hk_led_make_cmd("一路顺风", _plate_no));
     return true;
 }

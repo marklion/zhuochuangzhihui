@@ -34,6 +34,67 @@
 #include <mqueue.h>
 #include <set>
 
+static int is_leap_year(time_t year)
+{
+    if (year % 4)
+        return 0; /* A year not divisible by 4 is not leap. */
+    else if (year % 100)
+        return 1; /* If div by 4 and not 100 is surely leap. */
+    else if (year % 400)
+        return 0; /* If div by 100 *and* 400 is not leap. */
+    else
+        return 1; /* If div by 100 and not by 400 is leap. */
+}
+
+static void nolocks_localtime(struct tm *tmp, time_t t)
+{
+    const time_t secs_min = 60;
+    const time_t secs_hour = 3600;
+    const time_t secs_day = 3600 * 24;
+
+    t -= timezone;                       /* Adjust for timezone. */
+    time_t days = t / secs_day;    /* Days passed since epoch. */
+    time_t seconds = t % secs_day; /* Remaining seconds. */
+
+    tmp->tm_isdst = 0;
+    tmp->tm_hour = seconds / secs_hour;
+    tmp->tm_min = (seconds % secs_hour) / secs_min;
+    tmp->tm_sec = (seconds % secs_hour) % secs_min;
+
+    /* 1/1/1970 was a Thursday, that is, day 4 from the POV of the tm structure
+     * where sunday = 0, so to calculate the day of the week we have to add 4
+     * and take the modulo by 7. */
+    tmp->tm_wday = (days + 4) % 7;
+
+    /* Calculate the current year. */
+    tmp->tm_year = 1970;
+    while (1)
+    {
+        /* Leap years have one day more. */
+        time_t days_this_year = 365 + is_leap_year(tmp->tm_year);
+        if (days_this_year > days)
+            break;
+        days -= days_this_year;
+        tmp->tm_year++;
+    }
+    tmp->tm_yday = days; /* Number of day of the current year. */
+    /* We need to calculate in which month and day of the month we are. To do
+     * so we need to skip days according to how many days there are in each
+     * month, and adjust for the leap year that has one more day in February. */
+    int mdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    mdays[1] += is_leap_year(tmp->tm_year);
+
+    tmp->tm_mon = 0;
+    while (days >= mdays[tmp->tm_mon])
+    {
+        days -= mdays[tmp->tm_mon];
+        tmp->tm_mon++;
+    }
+
+    tmp->tm_mday = days + 1; /* Add 1 since our 'days' is zero-based. */
+    tmp->tm_year -= 1900;    /* Surprisingly tm_year is year-1900. */
+}
+
 std::string get_string_from_format(const char *format, va_list vl);
 class tdf_log
 {
@@ -43,13 +104,20 @@ class tdf_log
     void output_2_fd(const std::string &_msg, int _fd) const
     {
         std::string output;
-        char time_buffer[48];
+        char time_buffer[64] = {0};
 
-        time_t now;
-        time(&now);
-        strftime(time_buffer, 48, "%Y/%m/%d %H:%M:%S", localtime(&now));
+        timeval usec_time;
+        gettimeofday(&usec_time, nullptr);
+        auto msec_time = usec_time.tv_usec / 1000;
+
+        tm tmp_tm;
+        nolocks_localtime(&tmp_tm, usec_time.tv_sec);
+        strftime(time_buffer, 48, "%Y/%m/%d %H:%M:%S", &tmp_tm);
+        char m_sec_string[4] = {0};
+        snprintf(m_sec_string, sizeof(m_sec_string), "%03d", msec_time);
 
         output.append(time_buffer);
+        output.append(":" + std::string(m_sec_string));
 
         if (m_module.length() != 0)
         {
@@ -122,7 +190,8 @@ public:
         va_end(vl);
         output_2_fd(tmpbuff, m_log_stdout);
     }
-    void log_package(const char *_data, int _len) const {
+    void log_package(const char *_data, int _len) const
+    {
         char tmp[4] = {0};
         std::string out_log;
         for (int i = 0; i < _len; i++)
@@ -146,16 +215,20 @@ public:
     }
 };
 
-class Itdf_epoll_channel {
+class Itdf_epoll_channel
+{
     bool need_remove = false;
+
 public:
     virtual bool proc_in() = 0;
     virtual void proc_err() = 0;
     virtual bool proc_out() = 0;
-    void set_remove_flag() {
+    void set_remove_flag()
+    {
         need_remove = true;
     }
-    bool get_remove_flag() {
+    bool get_remove_flag()
+    {
         return need_remove;
     }
 };
@@ -168,10 +241,12 @@ typedef void (*tdf_timer_proc)(void *_private);
 
 typedef void (*tdf_async_proc)(void *_private, const std::string &_chrct);
 
-class tdf_main {
+class tdf_main
+{
     static tdf_main m_inst;
     tdf_main();
     pthread_t self_tid = 0;
+
 public:
     bool open_listen(unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
     bool connect_remote(const std::string &_ip, unsigned short _port, tdf_after_con_hook _con_hook, tdf_before_hup_hook _hup_hook, tdf_data_proc _data_proc);
@@ -185,19 +260,22 @@ public:
     static tdf_main &get_inst();
     void Async_to_workthread(tdf_async_proc _func, void *_private, const std::string &_chrct);
     void Async_to_mainthread(tdf_async_proc _func, void *_private, const std::string &_chrct);
+    void close_mq();
     ~tdf_main();
 };
 
 class tdf_state_machine_state;
 class tdf_state_machine_lock;
-class tdf_state_machine {
+class tdf_state_machine
+{
     static std::thread sm_thread;
     static int sm_mq_fd;
-    static std::set<tdf_state_machine*> valid_sm;
+    static std::set<tdf_state_machine *> valid_sm;
     static pthread_mutex_t valid_sm_lock;
     void internal_trigger_sm();
     pthread_mutex_t sm_lock;
     virtual tdf_log &get_log() = 0;
+
 public:
     friend class tdf_state_machine_lock;
     tdf_state_machine()

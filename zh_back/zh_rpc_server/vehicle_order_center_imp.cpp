@@ -886,6 +886,7 @@ void scale_state_machine::scale_zero()
 void scale_state_machine::open_scale_timer()
 {
     m_log.log("开启定时器");
+    manual_confirm_scale = false;
     timer_fd = tdf_main::get_inst().start_timer(
         1,
         [](void *_private)
@@ -938,6 +939,7 @@ void scale_state_machine::close_timer()
         continue_weight.clear();
         fin_weight = 0;
     }
+    manual_confirm_scale = true;
 }
 void scale_state_machine::clean_bound_info()
 {
@@ -985,6 +987,27 @@ bool scale_state_machine::should_open()
     return ret;
 }
 
+bool scale_state_machine::assume_stable_considering_manual()
+{
+    bool ret = true;
+
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status > 0", bound_vehicle_number.c_str());
+    if (vo)
+    {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+        if (stuff && stuff->need_manual_scale)
+        {
+            ret = false;
+        }
+    }
+    if (false == ret)
+    {
+        ret = manual_confirm_scale;
+    }
+
+    return ret;
+}
+
 bool scale_state_machine::scale_stable()
 {
     bool ret = false;
@@ -1005,7 +1028,15 @@ bool scale_state_machine::scale_stable()
         }();
         if (cur_weight > 1)
         {
-            ret = true;
+            if (assume_stable_considering_manual())
+            {
+                ret = true;
+            }
+            else
+            {
+                zh_hk_cast_need_manual(bound_scale.entry_config.led_ip, bound_vehicle_number);
+                zh_hk_cast_need_manual(bound_scale.exit_config.led_ip, bound_vehicle_number);
+            }
         }
     }
 
@@ -1201,6 +1232,11 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
             zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
         }
     }
+}
+void scale_state_machine::proc_manual_confirm_scale()
+{
+    tdf_state_machine_lock a(*this);
+    manual_confirm_scale = true;
 }
 void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip)
 {

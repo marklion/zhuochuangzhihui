@@ -49,6 +49,8 @@ public:
     virtual void trigger_cap(const std::string &ssid, const std::string &cam_ip);
     virtual bool is_auto_confirm(const std::string &ssid);
     virtual void set_auto_confirm(const std::string &ssid, const bool auto_set);
+    virtual void manual_confirm_scale(const std::string &ssid, const std::string &scale_name);
+
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
