@@ -164,6 +164,7 @@ public:
     long need_enter_weight = 0;
     double price = 0;
     double expect_weight = 0;
+    long need_manual_scale = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -173,6 +174,7 @@ public:
         ret.push_back(sqlite_orm_column("need_enter_weight", sqlite_orm_column::INTEGER, &need_enter_weight));
         ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
         ret.push_back(sqlite_orm_column("expect_weight", sqlite_orm_column::REAL, &expect_weight));
+        ret.push_back(sqlite_orm_column("need_manual_scale", sqlite_orm_column::INTEGER, &need_manual_scale));
 
         return ret;
     }
@@ -185,9 +187,11 @@ public:
     void remove_record(const std::string &ssid);
 };
 
-class zh_sql_follow_stuff:public sql_tree_base{
+class zh_sql_follow_stuff : public sql_tree_base
+{
 public:
-    zh_sql_follow_stuff() {
+    zh_sql_follow_stuff()
+    {
         add_parent_type<zh_sql_contract>("belong_contract");
         add_parent_type<zh_sql_stuff>("belong_stuff");
     }

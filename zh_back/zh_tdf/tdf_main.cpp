@@ -90,14 +90,6 @@ public:
     virtual void proc_out() = 0;
     virtual ~Itdf_io_channel()
     {
-        void *buffer[128];
-        auto bt_deep = backtrace(buffer, 128);
-        auto bt = backtrace_symbols(buffer, bt_deep);
-        for (auto i = 0; i < bt_deep; i++)
-        {
-            printf("+++%s+++\n", bt[i]);
-        }
-        free(bt);
     }
 };
 
@@ -125,12 +117,15 @@ struct tdf_work_pipe_channel : public Itdf_io_channel
     }
     virtual ~tdf_work_pipe_channel()
     {
-        puts(channel_type().c_str());
     }
 } g_proc_work_coming_data;
 
 static pthread_mutex_t g_timer_lock;
 
+void tdf_main::close_mq()
+{
+    epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL,  g_mq_main_fd, nullptr);
+}
 tdf_main::tdf_main()
 {
     g_epoll_fd = epoll_create(1);
@@ -197,7 +192,6 @@ struct tdf_timer_node : public Itdf_io_channel
     }
     virtual ~tdf_timer_node()
     {
-        puts(channel_type().c_str());
     }
     void proc_in()
     {
@@ -206,9 +200,11 @@ struct tdf_timer_node : public Itdf_io_channel
             uint64_t times = 0;
             read(m_handle, &times, sizeof(times));
             tdf_timer_lock a;
+            epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, m_handle, nullptr);
             close(m_handle);
             g_timer_map.erase(m_handle);
-            epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, m_handle, nullptr);
+            tdf_log tmp("timer_start_stop");
+            tmp.log("close timer fd:%d, ct_p:%p", m_handle, this);
             g_pause_epoll = true;
             delete this;
         }
@@ -257,7 +253,6 @@ public:
     tdf_data(int _fd, const std::string &_chrct, tdf_data_proc _data_proc, tdf_before_hup_hook _hup_hook) : m_fd(_fd), m_chrct(_chrct), m_data_proc(_data_proc), m_hup_hook(_hup_hook) {}
     ~tdf_data()
     {
-        puts(channel_type().c_str());
         if (m_fd >= 0)
         {
             close(m_fd);
@@ -330,7 +325,6 @@ public:
     }
     virtual ~tdf_listen()
     {
-        puts(channel_type().c_str());
     }
     bool set_listen()
     {
@@ -469,6 +463,8 @@ bool tdf_main::run()
             auto channel = (Itdf_io_channel *)(evs[i].data.ptr);
             if (evs[i].events & EPOLLIN)
             {
+                tdf_log tmp_log("epoll_run");
+                tmp_log.log("proc channel:%p", channel);
                 channel->proc_in();
             }
             if (g_pause_epoll)
@@ -661,35 +657,40 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _
         async_param->proc = _proc;
         async_param->m_private = _private;
         async_param->one_time = _one_time;
-        tdf_main::get_inst().Async_to_mainthread(
-            [](void *_private, const std::string &_chrct)
-            {
-                auto pasync_param = (timer_async_param *)(_private);
-                auto pnode = new tdf_timer_node();
-                pnode->m_private = pasync_param->m_private;
-                pnode->m_proc = pasync_param->proc;
-                pnode->m_handle = pasync_param->fd;
-                pnode->m_one_time = pasync_param->one_time;
-
-                struct epoll_event ev = {
-                    .events = EPOLLIN,
-                    .data = {.ptr = pnode}};
-
-                if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, pasync_param->fd, &ev))
+        if (0 == ret)
+        {
+            tdf_main::get_inst().Async_to_mainthread(
+                [](void *_private, const std::string &_chrct)
                 {
-                    g_timer_map[pasync_param->fd] = pnode;
-                }
-                else
-                {
-                    close(pasync_param->fd);
-                    delete pnode;
-                }
-                delete pasync_param;
-            },
-            async_param, "");
+                    auto pasync_param = (timer_async_param *)(_private);
+                    auto pnode = new tdf_timer_node();
+                    pnode->m_private = pasync_param->m_private;
+                    pnode->m_proc = pasync_param->proc;
+                    pnode->m_handle = pasync_param->fd;
+                    pnode->m_one_time = pasync_param->one_time;
+
+                    struct epoll_event ev = {
+                        .events = EPOLLIN,
+                        .data = {.ptr = pnode}};
+
+                    if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, pasync_param->fd, &ev))
+                    {
+                        tdf_log tmp("timer_start_stop");
+                        tmp.log("open timer fd:%d, ct_p:%p", pasync_param->fd, pnode);
+                        g_timer_map[pasync_param->fd] = pnode;
+                    }
+                    else
+                    {
+                        close(pasync_param->fd);
+                        delete pnode;
+                    }
+                    delete pasync_param;
+                },
+                async_param, "");
+        }
     }
 
-    return ret;
+    return timer_fd;
 }
 
 void tdf_main::stop_timer(int _timer_handle)
@@ -827,4 +828,9 @@ void tdf_state_machine::trigger_sm()
     {
         get_log().err("failed to send msg to mq: %s", strerror(errno));
     }
+}
+
+void __attribute__((constructor)) tdf_lib_init(void)
+{
+    tzset();
 }

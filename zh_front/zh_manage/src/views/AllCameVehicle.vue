@@ -27,6 +27,7 @@
         <van-collapse v-model="device_opt_show" accordion>
             <van-collapse-item v-for="(single_cam, index) in all_cam_ips" :key="index" :title="single_cam.name" :name="index">
                 <van-button type="info" size="small" @click="trigger_cap(single_cam.ip)">触发识别</van-button>
+                <van-button type="primary" v-if="single_cam.is_scale" size="small" @click="manual_confirm_scale(single_cam.ip)">手动确认称重</van-button>
             </van-collapse-item>
         </van-collapse>
     </van-popup>
@@ -74,21 +75,25 @@ export default {
             this.device_config.gate.forEach((element) => {
                 ret.push({
                     name: element.name + ' 入口',
-                    ip: element.entry_config.cam_ip
+                    ip: element.entry_config.cam_ip,
+                    is_scale: false,
                 });
                 ret.push({
                     name: element.name + ' 出口',
-                    ip: element.exit_config.cam_ip
+                    ip: element.exit_config.cam_ip,
+                    is_scale: false,
                 });
             });
             this.device_config.scale.forEach((element) => {
                 ret.push({
                     name: element.name + ' 入口',
-                    ip: element.entry_config.cam_ip
+                    ip: element.entry_config.cam_ip,
+                    is_scale: true,
                 });
                 ret.push({
                     name: element.name + ' 出口',
-                    ip: element.exit_config.cam_ip
+                    ip: element.exit_config.cam_ip,
+                    is_scale: true,
                 });
             });
 
@@ -125,6 +130,19 @@ export default {
         },
     },
     methods: {
+        manual_confirm_scale: function (_scale_cam_ip) {
+            var vue_this = this;
+            var scale_name = "";
+            vue_this.device_config.scale.forEach(element => {
+                if (element.entry_config.cam_ip == _scale_cam_ip || _scale_cam_ip == element.exit_config.cam_ip) {
+                    scale_name = element.name;
+                }
+            });
+            vue_this.$call_remote_process("system_management", "manual_confirm_scale", [vue_this.$cookies.get("zh_ssid"), scale_name]).finally(function () {
+                vue_this.$toast("已确认称重");
+                vue_this.show_opt_cell = false;
+            });
+        },
         trigger_cap: function (_cam_ip) {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "trigger_cap", [vue_this.$cookies.get("zh_ssid"), _cam_ip]).then(function () {

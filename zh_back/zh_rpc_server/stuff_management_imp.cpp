@@ -37,6 +37,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.unit = stuff.unit;
     tmp.need_enter_weight = stuff.need_enter_weight;
     tmp.expect_weight = stuff.expect_weight;
+    tmp.need_manual_scale = stuff.need_manual_scale;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -69,6 +70,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->unit = stuff.unit;
     exist_record->need_enter_weight = stuff.need_enter_weight;
     exist_record->expect_weight = stuff.expect_weight;
+    exist_record->need_manual_scale = stuff.need_manual_scale;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -145,6 +147,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.need_enter_weight = itr.need_enter_weight;
         tmp.price = itr.price;
         tmp.expect_weight = itr.expect_weight;
+        tmp.need_manual_scale = itr.need_manual_scale;
 
         _return.push_back(tmp);
     }
@@ -327,4 +330,5 @@ void stuff_management_handler::get_stuff(stuff_info &_return, const std::string 
     _return.need_enter_weight = stuff->need_enter_weight;
     _return.price = stuff->price;
     _return.unit = stuff->unit;
+    _return.need_manual_scale = stuff->need_manual_scale;
 }

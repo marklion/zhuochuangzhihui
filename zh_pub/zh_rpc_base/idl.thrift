@@ -95,6 +95,7 @@ service system_management {
     void trigger_cap(1:string ssid, 2:string cam_ip) throws (1:gen_exp e),
     bool is_auto_confirm(1:string ssid) throws (1:gen_exp e),
     void set_auto_confirm(1:string ssid, 2:bool auto_set) throws (1:gen_exp e),
+    void manual_confirm_scale(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -165,6 +166,7 @@ struct stuff_info {
     5:bool need_enter_weight,
     6:double price,
     10:double expect_weight,
+    11:bool need_manual_scale,
 }
 
 struct stuff_change_point {

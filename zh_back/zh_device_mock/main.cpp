@@ -77,6 +77,7 @@ int main(int argc, char const *argv[])
         zh_device_mock::install_mock(tmp);
     }
 
+    tdf_main::get_inst().close_mq();
     tdf_main::get_inst().run();
 
     return 0;

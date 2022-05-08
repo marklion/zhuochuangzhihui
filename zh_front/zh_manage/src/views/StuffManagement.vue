@@ -39,6 +39,12 @@
         </el-table-column>
         <el-table-column prop="expect_weight" label="预计装车净重" width="120px">
         </el-table-column>
+        <el-table-column label="手动称重" width="80px">
+            <template slot-scope="scope">
+                {{scope.row.need_manual_scale?'是':'否'}}
+            </template>
+        </el-table-column>
+
         <el-table-column fixed="right" label="操作" width="150px">
             <template slot-scope="scope">
                 <el-button type="warning" size="mini" @click="trigger_update_stuff(scope.row)">修改</el-button>
@@ -62,6 +68,10 @@
             </el-form-item>
             <el-form-item label="需要矿(厂)发净重" prop="inventory">
                 <el-switch v-model="focus_stuff.need_enter_weight" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </el-form-item>
+            <el-form-item label="手动称重" prop="inventory">
+                <el-switch v-model="focus_stuff.need_manual_scale" active-color="#13ce66" inactive-color="#ff4949">
                 </el-switch>
             </el-form-item>
             <el-form-item>
@@ -110,7 +120,9 @@ export default {
                 name: '',
                 unit: '',
                 inventory: 0,
-                expect_weight:30,
+                expect_weight: 30,
+                need_enter_weight: false,
+                need_manual_scale: false,
             },
             all_stuff: [],
             rules: {
@@ -182,7 +194,7 @@ export default {
                 inventory: '104',
                 need_enter_weight: false,
                 price: 600,
-                expect_weight:30,
+                expect_weight: 30,
             }],
         };
     },
@@ -321,7 +333,9 @@ export default {
                 name: '',
                 unit: '',
                 inventory: 0,
-                expect_weight:30,
+                expect_weight: 30,
+                need_enter_weight: false,
+                need_manual_scale: false,
             };
         },
     },

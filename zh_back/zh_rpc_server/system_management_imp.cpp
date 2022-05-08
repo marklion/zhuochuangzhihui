@@ -374,7 +374,7 @@ bool system_management_handler::led_cast_welcome(const std::string &led_ip)
 
 void system_management_handler::trigger_cap(const std::string &ssid, const std::string &cam_ip)
 {
-    auto user = zh_rpc_util_get_online_user(ssid);
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -396,7 +396,7 @@ static neb::CJsonObject get_cur_config_json()
 bool system_management_handler::is_auto_confirm(const std::string &ssid)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid);
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -408,7 +408,7 @@ bool system_management_handler::is_auto_confirm(const std::string &ssid)
 }
 void system_management_handler::set_auto_confirm(const std::string &ssid, const bool auto_set)
 {
-    auto user = zh_rpc_util_get_online_user(ssid);
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -419,4 +419,19 @@ void system_management_handler::set_auto_confirm(const std::string &ssid, const 
     std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
     config_file << config.ToFormattedString();
     config_file.close();
+}
+
+void system_management_handler::manual_confirm_scale(const std::string &ssid, const std::string &scale_name)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto ssm = vehicle_order_center_handler::ssm_map[scale_name];
+    if (ssm)
+    {
+        ssm->proc_manual_confirm_scale();
+        ssm->trigger_sm();
+    }
 }
