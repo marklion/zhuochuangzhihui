@@ -396,7 +396,7 @@ static neb::CJsonObject get_cur_config_json()
 bool system_management_handler::is_auto_confirm(const std::string &ssid)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();

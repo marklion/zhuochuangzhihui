@@ -65,7 +65,9 @@ export default {
                 });
             }
             vue_this.$dialog.confirm({
-                title: '是否连续派车?',
+                title: '请指定派车方式?',
+                confirmButtonText: '连续派车',
+                cancelButtonText: '单次派车'
             }).then(function () {
                 func(true);
             }).catch(function () {

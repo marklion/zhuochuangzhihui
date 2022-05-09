@@ -28,6 +28,8 @@
             <van-collapse-item v-for="(single_cam, index) in all_cam_ips" :key="index" :title="single_cam.name" :name="index">
                 <van-button type="info" size="small" @click="trigger_cap(single_cam.ip)">触发识别</van-button>
                 <van-button type="primary" v-if="single_cam.is_scale" size="small" @click="manual_confirm_scale(single_cam.ip)">手动确认称重</van-button>
+                <van-button type="warning" size="small" @click="trigger_gate_opt(single_cam.ip, 1)">开闸</van-button>
+                <van-button type="danger" size="small" @click="trigger_gate_opt(single_cam.ip, 0)">关闸</van-button>
             </van-collapse-item>
         </van-collapse>
     </van-popup>
@@ -130,6 +132,22 @@ export default {
         },
     },
     methods: {
+        trigger_gate_opt: function (gate_code, _cmd) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", 'ctrl_gate', [gate_code, _cmd]).then(function (resp) {
+                if (resp) {
+                    vue_this.$message({
+                        message: '操作成功',
+                        type: 'success',
+                    });
+                } else {
+                    vue_this.$message({
+                        message: '操作失败',
+                        type: 'error',
+                    });
+                }
+            });
+        },
         manual_confirm_scale: function (_scale_cam_ip) {
             var vue_this = this;
             var scale_name = "";
