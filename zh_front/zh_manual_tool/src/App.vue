@@ -20,7 +20,10 @@
                             <el-input v-model="search_key" placeholder="输入部分或全部车牌搜索"></el-input>
                             <el-radio-group v-model="selected_vehicle" size="small">
                                 <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
-                                    <el-radio :label="single_vehicle.id" border>{{single_vehicle.plateNo}}</el-radio>
+                                    <el-radio :label="single_vehicle.id" border>
+                                        {{single_vehicle.plateNo}}-{{single_vehicle.driverName}}
+                                        {{single_vehicle.createTime.substr(0,10)}}-{{single_vehicle.driverPhone}}
+                                    </el-radio>
                                 </div>
                             </el-radio-group>
                         </el-main>
@@ -61,8 +64,8 @@
                             <div v-if="focus_vehicle && !focus_vehicle.m_time">
                                 <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
                                 <el-button v-else type="danger" @click="record_weight">停止称重</el-button>
-                                <el-button type="danger" @click="empty_exit">空车出厂</el-button>
                             </div>
+                            <el-button type="danger" v-if="could_be_undo" @click="undo_scale">撤销</el-button>
                             <el-divider></el-divider>
                             <vue-grid align="stretch" justify="start">
                                 <vue-cell v-for="(single_license, index) in all_licenses" :key="index" width="6of12">
@@ -171,6 +174,7 @@ export default {
             vehicle_should_arrive: 0,
             total_count: 0,
             total_vehicle: 0,
+            could_be_undo: false,
             calc_weight_show: function (_weight) {
                 var ret = _weight;
                 if (this.ticket_param.unit == '千克') {
@@ -226,16 +230,19 @@ export default {
             var tmp = this.all_vehicle.find(element => {
                 return element.id == _selected;
             });
+            vue_this.could_be_undo = false;
             if (tmp) {
                 idb.get(tmp.id).then(function (resp) {
                     if (resp) {
                         vue_this.stored_weight = resp;
+                        vue_this.could_be_undo = true;
                     }
                 });
             }
         },
     },
     computed: {
+
         weight_dig_show: {
             get() {
                 return this.calc_weight_show(this.cur_weight);
@@ -312,23 +319,49 @@ export default {
         },
     },
     methods: {
-        empty_exit: function () {
+        undo_scale: async function () {
             const idb = require('idb-keyval');
+            const axios = require('axios');
             var vue_this = this;
-            idb.get(vue_this.focus_vehicle.id).then(function (resp) {
-                if (resp) {
-                    vue_this.$confirm('确定要空车离场吗', '提示', {
-                        confirmButtonText: '确定',
-                        cancelButtonText: '取消',
-                        type: 'warning'
-                    }).then(function () {
-                        idb.del(this.focus_vehicle.id).then(function () {
-                            vue_this.init_cur_plan_data();
-                        });
-                    });
 
+            var tmp_vehicle = await idb.get(vue_this.focus_vehicle.id);
+            if (tmp_vehicle) {
+                var status_string = '一次称重(回皮)';
+                if (tmp_vehicle.m_time && tmp_vehicle.m_time != '未知') {
+                    status_string = '二次称重(过重)';
                 }
-            });
+                vue_this.$confirm('当前车辆 ' + vue_this.focus_vehicle.plateNo + ' 已经完成' + status_string + ',确定要撤销吗', '撤销确认', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(async function () {
+                    var undo_idb_func = function () {
+                        idb.del(vue_this.focus_vehicle.id).then(function () {
+                            vue_this.init_cur_plan_data();
+                            vue_this.$message('撤销成功');
+                        });
+
+                    };
+                    if (vue_this.focus_vehicle.m_time) {
+                        var token_from_idb = await idb.get("zy_token");
+                        var undo_ret = await axios.post(vue_this.remote_path() + "/pa_rest/undo_vehicle?token=" + token_from_idb, {
+                            id: vue_this.focus_vehicle.id
+                        });
+                        if (undo_ret.data.result) {
+                            tmp_vehicle.m_time = '';
+                            tmp_vehicle.m_weight = 0;
+                            await idb.set(tmp_vehicle.id, tmp_vehicle)
+                            vue_this.init_cur_plan_data();
+                            vue_this.$message('撤销成功');
+                        } else {
+                            vue_this.$message('无法撤销');
+                        }
+                    } else {
+                        undo_idb_func();
+                    }
+
+                });
+            }
         },
         calc_number_weight: function (_weight) {
             var ret = 0;
@@ -395,6 +428,7 @@ export default {
                 tmp.m_time = _vehicle.m_time;
                 tmp.ticketNo = _vehicle.ticketNo;
                 idb.set(_vehicle.id, tmp);
+                vue_this.$message('称重成功');
             }).catch(function (err) {
                 console.log(err);
             }).finally(function () {
@@ -430,39 +464,54 @@ export default {
             const idb = require('idb-keyval');
             var tmp = vue_this.focus_vehicle;
             if (tmp) {
-                idb.get(tmp.id).then(async function (resp) {
-                    if (resp) {
-                        var new_weight = {
-                            ...resp
-                        };
-                        new_weight.m_weight = vue_this.cur_weight;
-                        new_weight.m_time = vue_this.$make_time_string(new Date(), "-");
-                        idb.set(tmp.id, new_weight).then(function () {
-                            vue_this.stored_weight = new_weight;
-                            var push_req = {
+                var weight_turn = '一次称重（回皮）';
+                var weight_p_turn = await idb.get(tmp.id);
+                if (weight_p_turn) {
+                    weight_turn = '二次称重（过重）';
+                }
+                vue_this.$confirm('确定要完成 ' + tmp.plateNo + '的' + weight_turn + '吗？', "称重提示", {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    idb.get(tmp.id).then(async function (resp) {
+                        if (resp) {
+                            var new_weight = {
+                                ...resp
+                            };
+                            new_weight.m_weight = vue_this.cur_weight;
+                            new_weight.m_time = vue_this.$make_time_string(new Date(), "-");
+                            idb.set(tmp.id, new_weight).then(function () {
+                                vue_this.stored_weight = new_weight;
+                                var push_req = {
+                                    ...vue_this.stored_weight
+                                };
+                                push_req.j_weight = push_req.m_weight - push_req.p_weight;
+                                push_req.j_weight = vue_this.calc_number_weight(push_req.j_weight);
+                                vue_this.push_weight(push_req);
+
+                            });
+                        } else {
+                            new_weight = {
                                 ...vue_this.stored_weight
                             };
-                            push_req.j_weight = push_req.m_weight - push_req.p_weight;
-                            push_req.j_weight = vue_this.calc_number_weight(push_req.j_weight);
-                            vue_this.push_weight(push_req);
+                            new_weight.p_weight = vue_this.cur_weight;
+                            new_weight.p_time = vue_this.$make_time_string(new Date(), "-");
+                            new_weight.id = tmp.id;
+                            new_weight.ticketNo = await idb.get("ticket_prev");
+                            new_weight.ticketNo += await vue_this.generate_ticket_no();
+                            idb.set(tmp.id, new_weight).then(function () {
+                                vue_this.stored_weight = new_weight;
+                                vue_this.$message('称重成功');
+                            });
+                        }
+                        vue_this.is_scaling = false;
+                    })
+                }).catch(function () {
+                    vue_this.is_scaling = false;
+                });
 
-                        });
-                    } else {
-                        new_weight = {
-                            ...vue_this.stored_weight
-                        };
-                        new_weight.p_weight = vue_this.cur_weight;
-                        new_weight.p_time = vue_this.$make_time_string(new Date(), "-");
-                        new_weight.id = tmp.id;
-                        new_weight.ticketNo = await idb.get("ticket_prev");
-                        new_weight.ticketNo += await vue_this.generate_ticket_no();
-                        idb.set(tmp.id, new_weight).then(function () {
-                            vue_this.stored_weight = new_weight;
-                        });
-                    }
-                })
             }
-            vue_this.is_scaling = false;
         },
         remote_path: function () {
             return this.$remote_url;
