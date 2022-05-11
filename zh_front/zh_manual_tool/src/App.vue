@@ -13,6 +13,7 @@
                                     <el-button type="primary" @click="init_cur_plan_data">刷新</el-button>
                                 </el-col>
                                 <el-col :span="16">
+                                    <div>今日计划车量:{{vehicle_should_arrive}}车</div>
                                     <div>今日总装车量:{{total_vehicle}}车,{{total_count}}吨</div>
                                 </el-col>
                             </el-row>
@@ -60,6 +61,7 @@
                             <div v-if="focus_vehicle && !focus_vehicle.m_time">
                                 <el-button v-if="!is_scaling" type="success" @click="is_scaling = true">开始称重</el-button>
                                 <el-button v-else type="danger" @click="record_weight">停止称重</el-button>
+                                <el-button type="danger" @click="empty_exit">空车出厂</el-button>
                             </div>
                             <el-divider></el-divider>
                             <vue-grid align="stretch" justify="start">
@@ -166,6 +168,7 @@ export default {
     },
     data: function () {
         return {
+            vehicle_should_arrive: 0,
             total_count: 0,
             total_vehicle: 0,
             calc_weight_show: function (_weight) {
@@ -279,6 +282,7 @@ export default {
                     ret.j_weight = "未知";
                 } else {
                     ret.j_weight = ret.m_weight - ret.p_weight;
+                    ret.j_weight = vue_this.calc_number_weight(ret.j_weight);
                 }
                 if (vue_this.stored_weight.ticketNo) {
                     ret.ticket_no = vue_this.stored_weight.ticketNo
@@ -308,6 +312,30 @@ export default {
         },
     },
     methods: {
+        empty_exit: function () {
+            const idb = require('idb-keyval');
+            var vue_this = this;
+            idb.get(vue_this.focus_vehicle.id).then(function (resp) {
+                if (resp) {
+                    vue_this.$confirm('确定要空车离场吗', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(function () {
+                        idb.del(this.focus_vehicle.id).then(function () {
+                            vue_this.init_cur_plan_data();
+                        });
+                    });
+
+                }
+            });
+        },
+        calc_number_weight: function (_weight) {
+            var ret = 0;
+            ret = _weight.toFixed(3);
+
+            return ret;
+        },
         getPrivewImages: function (_index) {
             var li_array = [];
             this.all_licenses.forEach(element => {
@@ -415,6 +443,7 @@ export default {
                                 ...vue_this.stored_weight
                             };
                             push_req.j_weight = push_req.m_weight - push_req.p_weight;
+                            push_req.j_weight = vue_this.calc_number_weight(push_req.j_weight);
                             vue_this.push_weight(push_req);
 
                         });
@@ -471,6 +500,9 @@ export default {
             let loadingInstance = Loading.service({
                 fullscreen: true
             });
+            axios.get(vue_this.remote_path() + '/pa_rest/company_brief?token=' + token_from_idb).then(function (resp) {
+                vue_this.vehicle_should_arrive = resp.data.result.total_vehicle;
+            });
             axios.get(vue_this.remote_path() + "/pa_rest/all_vehicle_info?token=" + token_from_idb).then(async function (resp) {
                 if (resp.data.err_msg != "") {
                     vue_this.init_token();
@@ -486,7 +518,7 @@ export default {
                         console.log(element);
                         if (/^[0-9]*S$/.test(element[0])) {
                             console.log('match');
-                            if (element[1].m_time) {
+                            if (element[1].m_time && element[1].m_time != '未知') {
                                 if ((new Date().getTime() - new Date(element[1].m_time).getTime()) / 1000 / 60 / 60 / 24 >= 1) {
                                     idb.del(element[0]);
                                 } else {
@@ -501,9 +533,10 @@ export default {
                         vue_this.all_vehicle.forEach(element => {
                             if (element.m_time && new Date(element.m_time).getDate() == new Date().getDate()) {
                                 vue_this.total_vehicle += 1;
-                                vue_this.total_count += element.m_weight - element.p_weight;
+                                vue_this.total_count += (parseFloat(element.m_weight) - parseFloat(element.p_weight));
                             }
                         });
+                        vue_this.total_count = vue_this.calc_number_weight(vue_this.total_count);
                         console.log('all');
                         console.log(vue_this.all_vehicle);
                     });
