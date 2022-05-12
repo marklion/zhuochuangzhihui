@@ -89,9 +89,9 @@
                                 <div>磅单号:{{print_weight_content.ticket_no}}</div>
                             </vue-drag-resize>
                             <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="350" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
-                                <div>日期:{{print_weight_content.m_time}}</div>
+                                <div>日期:{{print_weight_content.p_time}}-{{print_weight_content.m_time.substr(11, 8)}}</div>
                             </vue-drag-resize>
-                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="600" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
+                            <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="700" :y="40" h="auto" w="auto" :isResizable="true" parentLimitation>
                                 <div>单位:{{ticket_param.unit}}</div>
                             </vue-drag-resize>
                             <vue-drag-resize preventActiveBehavior :isActive="adjust_position" :x="5" :y="60" h="auto" w="auto" :isResizable="true" parentLimitation>
@@ -235,7 +235,9 @@ export default {
                 idb.get(tmp.id).then(function (resp) {
                     if (resp) {
                         vue_this.stored_weight = resp;
-                        vue_this.could_be_undo = true;
+                        if (resp.p_time != '未知') {
+                            vue_this.could_be_undo = true;
+                        }
                     }
                 });
             }
@@ -336,7 +338,9 @@ export default {
                     type: 'warning'
                 }).then(async function () {
                     var undo_idb_func = function () {
-                        idb.del(vue_this.focus_vehicle.id).then(function () {
+                        tmp_vehicle.p_weight = '未知';
+                        tmp_vehicle.p_time = '未知';
+                        idb.set(tmp_vehicle.id, tmp_vehicle).then(async function () {
                             vue_this.init_cur_plan_data();
                             vue_this.$message('撤销成功');
                         });
@@ -466,7 +470,7 @@ export default {
             if (tmp) {
                 var weight_turn = '一次称重（回皮）';
                 var weight_p_turn = await idb.get(tmp.id);
-                if (weight_p_turn) {
+                if (weight_p_turn && weight_p_turn.p_time != '未知') {
                     weight_turn = '二次称重（过重）';
                 }
                 vue_this.$confirm('确定要完成 ' + tmp.plateNo + '的' + weight_turn + '吗？', "称重提示", {
@@ -475,7 +479,7 @@ export default {
                     type: 'warning'
                 }).then(function () {
                     idb.get(tmp.id).then(async function (resp) {
-                        if (resp) {
+                        if (resp && resp.p_time != '未知') {
                             var new_weight = {
                                 ...resp
                             };
@@ -498,8 +502,10 @@ export default {
                             new_weight.p_weight = vue_this.cur_weight;
                             new_weight.p_time = vue_this.$make_time_string(new Date(), "-");
                             new_weight.id = tmp.id;
-                            new_weight.ticketNo = await idb.get("ticket_prev");
-                            new_weight.ticketNo += await vue_this.generate_ticket_no();
+                            if (!new_weight.ticketNo) {
+                                new_weight.ticketNo = await idb.get("ticket_prev");
+                                new_weight.ticketNo += await vue_this.generate_ticket_no();
+                            }
                             idb.set(tmp.id, new_weight).then(function () {
                                 vue_this.stored_weight = new_weight;
                                 vue_this.$message('称重成功');
@@ -568,7 +574,7 @@ export default {
                         if (/^[0-9]*S$/.test(element[0])) {
                             console.log('match');
                             if (element[1].m_time && element[1].m_time != '未知') {
-                                if ((new Date().getTime() - new Date(element[1].m_time).getTime()) / 1000 / 60 / 60 / 24 >= 1) {
+                                if ((new Date().getDate() != new Date(element[1].m_time).getDate())) {
                                     idb.del(element[0]);
                                 } else {
                                     vue_this.$set(vue_this.all_vehicle, vue_this.all_vehicle.length, element[1]);
@@ -577,18 +583,26 @@ export default {
                                 }
                             }
                         }
-                        vue_this.total_vehicle = 0;
-                        vue_this.total_count = 0;
-                        vue_this.all_vehicle.forEach(element => {
-                            if (element.m_time && new Date(element.m_time).getDate() == new Date().getDate()) {
-                                vue_this.total_vehicle += 1;
-                                vue_this.total_count += (parseFloat(element.m_weight) - parseFloat(element.p_weight));
-                            }
-                        });
-                        vue_this.total_count = vue_this.calc_number_weight(vue_this.total_count);
-                        console.log('all');
-                        console.log(vue_this.all_vehicle);
                     });
+                    vue_this.total_vehicle = 0;
+                    vue_this.total_count = 0;
+                    var tmp_all_vehicle = [];
+                    vue_this.all_vehicle.forEach(element => {
+                        if (element.createTime.substr(0, 10) == vue_this.$make_time_string(new Date(), '-').substr(0, 10)) {
+                            tmp_all_vehicle.push(element);
+                        }
+                    });
+                    vue_this.all_vehicle = tmp_all_vehicle;
+                    vue_this.all_vehicle.forEach(element => {
+                        if (element.m_time && new Date(element.m_time).getDate() == new Date().getDate()) {
+                            vue_this.total_vehicle += 1;
+                            vue_this.total_count += (parseFloat(element.m_weight) - parseFloat(element.p_weight));
+                        }
+                    });
+                    vue_this.total_count = vue_this.calc_number_weight(vue_this.total_count);
+                    console.log('all');
+                    console.log(vue_this.all_vehicle);
+
                 }
             }).catch(function (err) {
                 console.log(err);
