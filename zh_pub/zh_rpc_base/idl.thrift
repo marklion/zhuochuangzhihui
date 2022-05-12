@@ -74,6 +74,11 @@ struct device_health {
     14:i64 scale = -1,
 }
 
+struct prompt_image_info{
+    1:i64 id,
+    2:string attachment_path,
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
@@ -96,6 +101,9 @@ service system_management {
     bool is_auto_confirm(1:string ssid) throws (1:gen_exp e),
     void set_auto_confirm(1:string ssid, 2:bool auto_set) throws (1:gen_exp e),
     void manual_confirm_scale(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
+    bool upload_prompt_image(1:string ssid, 2:string attachment) throws (1:gen_exp e),
+    list<prompt_image_info> get_all_prompt_image() throws (1:gen_exp e),
+    bool delete_prompt_image(1:string ssid, 2:i64 id) throws (1:gen_exp e),
 }
 
 struct user_info {

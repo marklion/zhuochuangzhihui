@@ -435,3 +435,55 @@ void system_management_handler::manual_confirm_scale(const std::string &ssid, co
         ssm->trigger_sm();
     }
 }
+
+bool system_management_handler::upload_prompt_image(const std::string &ssid, const std::string &attachment)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    if (attachment.length() > 0)
+    {
+        zh_sql_prompt_image tmp;
+        zh_sql_file att_file;
+        att_file.save_file(attachment.substr(0, attachment.find_last_of('.')), std::to_string(time(nullptr)) + attachment.substr(attachment.find_last_of('.'), attachment.length()));
+        att_file.insert_record();
+        tmp.set_parent(att_file, "attachment");
+        ret = tmp.insert_record();
+    }
+
+    return ret;
+}
+void system_management_handler::get_all_prompt_image(std::vector<prompt_image_info> &_return)
+{
+    auto all_img = sqlite_orm::search_record_all<zh_sql_prompt_image>();
+    for (auto &itr:all_img)
+    {
+        auto att_file = itr.get_parent<zh_sql_file>("attachment");
+        if (att_file)
+        {
+            prompt_image_info tmp;
+            tmp.id = itr.get_pri_id();
+            tmp.attachment_path = att_file->name;
+            _return.push_back(tmp);
+        }
+    }
+}
+bool system_management_handler::delete_prompt_image(const std::string &ssid, const int64_t id)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto prompt_img = sqlite_orm::search_record<zh_sql_prompt_image>(id);
+    if (prompt_img)
+    {
+        prompt_img->remove_record();
+    }
+
+    return true;
+}

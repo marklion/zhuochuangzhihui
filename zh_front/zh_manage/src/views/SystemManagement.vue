@@ -2,11 +2,6 @@
 <div class="system_management_show">
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
-            <el-switch v-model="device_config.auto_order" @change="change_auto_order" active-text="自由过车" inactive-text="严格过车">
-            </el-switch>
-            <el-divider direction="vertical"></el-divider>
-            <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
-            </el-switch>
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
@@ -296,7 +291,24 @@
                 </vue-grid>
             </el-dialog>
         </el-tab-pane>
-        <el-tab-pane label="系统维护" name="system_info">
+        <el-tab-pane label="规则和维护" name="system_info">
+            <el-divider>派车规则</el-divider>
+            <el-switch v-model="device_config.auto_order" @change="change_auto_order" active-text="自由过车" inactive-text="严格过车">
+            </el-switch>
+            <el-divider direction="vertical"></el-divider>
+            <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
+            </el-switch>
+            <el-divider>指引图片</el-divider>
+            <vue-grid align="stretch" justify="start">
+                <vue-cell width="2of12" v-for="(single_img,index) in  all_prompt_img" :key="index">
+                    <el-image :src="$remote_file_url + single_img.attachment_path" fit="fill"></el-image>
+                    <el-button type="text" @click="remove_promp_img(single_img)">删除</el-button>
+                </vue-cell>
+                <el-upload :show-file-list="false" accept="image/*" :action="$remote_url + '/upload/'" :limit="1" :on-success="upload_prompt_image">
+                    <el-button size="small" type="primary">点击上传</el-button>
+                </el-upload>
+            </vue-grid>
+            <el-divider>系统更新</el-divider>
             <el-row :gutter="10" type="flex" justify="start">
                 <el-col :span="18">
                     <div>当前版本: {{current_version}}</div>
@@ -359,6 +371,7 @@ export default {
                 var comp = require(`../components/${_plugin_name}.vue`);
                 return comp.default;
             },
+            all_prompt_img: [],
             installed_plugins: [],
             content_need_print1: '',
             content_need_print2: '',
@@ -447,6 +460,26 @@ export default {
         };
     },
     methods: {
+        remove_promp_img: function (_image) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "delete_prompt_image", [vue_this.$cookies.get("zh_ssid"), _image.id]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_prompt_img();
+                }
+            });
+
+        },
+        upload_prompt_image: function (resp, file) {
+            var real_path = resp.match(/^\/tmp\/.*/gm)[0];
+            var file_name_split = file.name.split('.');
+            var att_path = real_path + '.' + file_name_split[file_name_split.length - 1];
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "upload_prompt_image", [vue_this.$cookies.get("zh_ssid"), att_path]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_prompt_img();
+                }
+            });
+        },
         install_plugin(resp, file) {
             var real_path = resp.match(/^\/tmp\/.*/gm)[0];
             var file_name_split = file.name.split('.');
@@ -627,6 +660,16 @@ export default {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "set_auto_confirm", [vue_this.$cookies.get("zh_ssid"), vue_this.auto_confirm]);
         },
+        init_prompt_img: function () {
+            var vue_this = this;
+
+            vue_this.$call_remote_process("system_management", "get_all_prompt_image", []).then(function (resp) {
+                vue_this.all_prompt_img = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_prompt_img, index, element);
+                });
+            });
+        },
     },
     beforeMount: function () {
         var vue_this = this;
@@ -638,6 +681,8 @@ export default {
         vue_this.$call_remote_process("system_management", "is_auto_confirm", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
             vue_this.auto_confirm = resp;
         });
+        this.init_prompt_img();
+
     },
 }
 </script>

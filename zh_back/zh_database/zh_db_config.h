@@ -579,6 +579,24 @@ public:
     }
 };
 
+class zh_sql_prompt_image: public sql_tree_base{
+public:
+    zh_sql_prompt_image()
+    {
+        add_parent_type<zh_sql_file>("attachment");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "prompt_image_table";
+    }
+};
+
 std::string zh_double2string_reserve2(double _value);
 
 #endif // _ZH_DB_CONFIG_H_

@@ -29,6 +29,12 @@
             </el-form>
         </van-dialog>
     </div>
+    <van-divider>进厂指引</van-divider>
+    <van-swipe :autoplay="3000">
+        <van-swipe-item v-for="(image, index) in all_prompt_img" :key="index">
+            <img v-lazy="$remote_file_url + image.attachment_path" />
+        </van-swipe-item>
+    </van-swipe>
     <div style="margin:15px;">
         <van-button v-if="!cur_vehicle.registered" block type="info" @click="driver_check_in(false)">排号</van-button>
         <van-button v-else block type="danger" @click="driver_check_in(true)">取消排号</van-button>
@@ -39,6 +45,16 @@
 <script>
 import Vue from 'vue';
 import Vant from 'vant';
+import {
+    Lazyload
+} from 'vant';
+
+Vue.use(Lazyload);
+
+// 注册时可以配置额外的选项
+Vue.use(Lazyload, {
+    lazyComponent: true,
+});
 import 'vant/lib/index.css';
 import vueQr from 'vue-qr'
 Vue.use(Vant);
@@ -61,6 +77,7 @@ export default {
     },
     data: function () {
         return {
+            all_prompt_img: [],
             upload_detail: {
                 enter_weight: 0,
                 enter_weight_attachment: '',
@@ -156,9 +173,20 @@ export default {
                 vue_this.$set(vue_this.cur_vehicle, 'basic_info', resp.basic_info);
             });
         },
+        init_prompt_img: function () {
+            var vue_this = this;
+
+            vue_this.$call_remote_process("system_management", "get_all_prompt_image", []).then(function (resp) {
+                vue_this.all_prompt_img = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_prompt_img, index, element);
+                });
+            });
+        },
     },
     beforeMount: function () {
         this.init_vehicle();
+        this.init_prompt_img();
     },
 }
 </script>

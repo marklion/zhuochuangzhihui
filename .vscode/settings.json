@@ -53,6 +53,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "zh_printer.h": "c"
+        "zh_printer.h": "c",
+        "shared_mutex": "cpp",
+        "regex": "cpp"
     }
 }
