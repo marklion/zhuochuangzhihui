@@ -67,10 +67,19 @@ std::string zh_vcom_link::get_pts()
                             {
                                 FD_ZERO(&set);
                                 FD_SET(pipe_fd[0], &set);
+                                auto max_fd_number = pipe_fd[0];
                                 FD_SET(socket_fd, &set);
+                                if (socket_fd > max_fd_number)
+                                {
+                                    max_fd_number = socket_fd;
+                                }
                                 if (ptm_fd >= 0)
                                 {
                                     FD_SET(ptm_fd, &set);
+                                    if (ptm_fd > max_fd_number)
+                                    {
+                                        max_fd_number = ptm_fd;
+                                    }
                                 }
                                 FD_ZERO(&err_set);
                                 FD_SET(pipe_fd[0], &err_set);
@@ -79,7 +88,7 @@ std::string zh_vcom_link::get_pts()
                                 {
                                     FD_SET(ptm_fd, &err_set);
                                 }
-                                if (0 < select(socket_fd + 1, &set, NULL, &err_set, NULL))
+                                if (0 < select(max_fd_number + 1, &set, NULL, &err_set, NULL))
                                 {
                                     if (FD_ISSET(socket_fd, &set))
                                     {
