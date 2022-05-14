@@ -176,9 +176,12 @@ export default {
             total_vehicle: 0,
             could_be_undo: false,
             calc_weight_show: function (_weight) {
-                var ret = _weight;
+                var ret = parseFloat(_weight);
                 if (this.ticket_param.unit == '千克') {
                     ret *= 1000;
+                    ret = ret.toFixed(0);
+                } else {
+                    ret = ret.toFixed(2);
                 }
                 return ret;
             },

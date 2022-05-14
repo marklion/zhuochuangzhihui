@@ -5,7 +5,7 @@
             <van-icon name="home-o" color="red" size="20">主页</van-icon>
         </template>
     </van-nav-bar>
-    <van-cell :title="cur_order.basic_info.main_vehicle_number" :label="cur_order.basic_info.behind_vehicle_number" :value="cur_order.basic_info.stuff_name"></van-cell>
+    <van-cell :title="cur_order.basic_info.main_vehicle_number" :value="cur_order.basic_info.stuff_name" :label="cur_order.basic_info.source_dest_name"></van-cell>
     <van-cell :title="cur_order.basic_info.driver_name" :value="cur_order.basic_info.driver_phone" :label="cur_order.basic_info.company_name"></van-cell>
     <van-cell title="一次称重" :value="cur_order.basic_info.p_weight"></van-cell>
     <div v-if="cur_order.basic_info.status >= 4">

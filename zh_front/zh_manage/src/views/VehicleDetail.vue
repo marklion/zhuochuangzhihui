@@ -6,7 +6,7 @@
             <el-col :span="12">
                 <el-descriptions title="基本信息" :column="2" border>
                     <el-descriptions-item label="派车单号">{{cur_vehicle.basic_info.order_number}}</el-descriptions-item>
-                    <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}</el-descriptions-item>
+                    <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}({{cur_vehicle.basic_info.source_dest_name}})</el-descriptions-item>
                     <el-descriptions-item v-if="cur_vehicle.basic_info.company_address" label="运往地点">{{cur_vehicle.basic_info.company_address}}</el-descriptions-item>
                     <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
                     <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
@@ -175,14 +175,13 @@
     <div v-else>
         <van-nav-bar title="详细信息" left-arrow @click-left="$router.go(-1)" />
         <van-cell-group inset title="车辆信息">
-            <van-cell title="车号" :value="cur_vehicle.basic_info.main_vehicle_number" />
-            <van-cell title="挂车号" :value="cur_vehicle.basic_info.behind_vehicle_number" />
+            <van-cell :title="cur_vehicle.basic_info.main_vehicle_number" :value="cur_vehicle.basic_info.behind_vehicle_number" :label="cur_vehicle.basic_info.source_dest_name" />
             <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id" />
         </van-cell-group>
         <van-cell-group inset title="拉运信息">
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.basic_info.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.basic_info.m_time" />
-            <van-cell title="净重" :value="cur_vehicle.basic_info.j_weight" />
+            <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" />
         </van-cell-group>
     </div>
 </div>

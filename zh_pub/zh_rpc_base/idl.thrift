@@ -187,6 +187,12 @@ struct stuff_history {
     2:list<stuff_change_point> change_point,
 }
 
+struct stuff_source_dest{
+    1:i64 id,
+    2:string name,
+    3:bool is_source,
+}
+
 service stuff_management {
     bool add_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
@@ -197,6 +203,9 @@ service stuff_management {
     string get_last_active(1:string ssid) throws (1:gen_exp e),
     list<number_change_point> get_history(1:string ssid, 2:string stuff_name, 3:i64 count) throws (1:gen_exp e),
     bool change_price(1:string ssid, 2:string stuff_name, 3:double new_value) throws (1:gen_exp e),
+    bool add_source_dest(1:string ssid, 2:string source_dest_name, 3:bool is_source) throws (1:gen_exp e),
+    list<stuff_source_dest> get_all_source_dest(1:bool is_source) throws (1:gen_exp e),
+    bool del_source_dest(1:string ssid, 2:i64 id) throws (1:gen_exp e),
 }
 
 struct vehicle_info {
@@ -250,6 +259,8 @@ struct vehicle_order_info {
     20:string balance_warn,
     21:double max_count,
     22:string end_time,
+    23:string source_dest_name,
+    24:bool is_sale,
 }
 
 struct gate_relate_info {
@@ -326,6 +337,7 @@ service vehicle_order_center {
     bool cancel_driver_self_order(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     list<driver_self_order> get_all_self_order(1:string ssid) throws (1:gen_exp e),
     driver_self_order get_self_order_by_phone(1:string driver_phone) throws (1:gen_exp e),
+    bool record_order_source_dest(1:i64 order_id, 2:string source_dest_name) throws (1:gen_exp e),
 }
 
 service open_api {

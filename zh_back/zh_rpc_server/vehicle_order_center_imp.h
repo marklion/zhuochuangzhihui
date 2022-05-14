@@ -208,6 +208,7 @@ public:
     virtual bool cancel_driver_self_order(const std::string &ssid, const int64_t order_id);
     virtual void get_all_self_order(std::vector<driver_self_order> &_return, const std::string &ssid);
     virtual void get_self_order_by_phone(driver_self_order &_return, const std::string &driver_phone);
+    virtual bool record_order_source_dest(const int64_t order_id, const std::string &source_dest_name);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

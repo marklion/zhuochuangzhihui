@@ -332,3 +332,53 @@ void stuff_management_handler::get_stuff(stuff_info &_return, const std::string 
     _return.unit = stuff->unit;
     _return.need_manual_scale = stuff->need_manual_scale;
 }
+
+bool stuff_management_handler::add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == %ld", source_dest_name.c_str(), is_source?1:0);
+    if (exist_record)
+    {
+        ZH_RETURN_MSG("记录已存在");
+    }
+    zh_sql_stuff_source_dest tmp;
+    tmp.name = source_dest_name;
+    tmp.is_source = is_source?1:0;
+    ret = tmp.insert_record();
+
+    return ret;
+}
+void stuff_management_handler::get_all_source_dest(std::vector<stuff_source_dest> &_return, const bool is_source)
+{
+    auto all_ssd = sqlite_orm::search_record_all<zh_sql_stuff_source_dest>("is_source == %ld", is_source?1:0);
+    for (auto &itr:all_ssd)
+    {
+        stuff_source_dest tmp;
+        tmp.id = itr.get_pri_id();
+        tmp.is_source = itr.is_source;
+        tmp.name = itr.name;
+        _return.push_back(tmp);
+    }
+}
+bool stuff_management_handler::del_source_dest(const std::string &ssid, const int64_t id)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>(id);
+    if (!exist_record)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    exist_record->remove_record();
+
+    return true;
+}

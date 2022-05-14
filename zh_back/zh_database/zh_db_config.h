@@ -273,6 +273,7 @@ public:
     double max_count = 35;
     long check_in_timestamp = 0;
     std::string end_time;
+    std::string source_dest_name;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -312,6 +313,7 @@ public:
         ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
         ret.push_back(sqlite_orm_column("check_in_timestamp", sqlite_orm_column::INTEGER, &check_in_timestamp));
         ret.push_back(sqlite_orm_column("end_time", sqlite_orm_column::STRING, &end_time));
+        ret.push_back(sqlite_orm_column("source_dest_name", sqlite_orm_column::STRING, &source_dest_name));
 
         return ret;
     }
@@ -598,5 +600,24 @@ public:
 };
 
 std::string zh_double2string_reserve2(double _value);
+
+class zh_sql_stuff_source_dest : public sql_tree_base
+{
+public:
+    std::string name;
+    long is_source = 0;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("is_source", sqlite_orm_column::INTEGER, &is_source));
+        return ret;
+    }
+
+    virtual std::string table_name()
+    {
+        return "stuff_source_dest_table";
+    }
+};
 
 #endif // _ZH_DB_CONFIG_H_

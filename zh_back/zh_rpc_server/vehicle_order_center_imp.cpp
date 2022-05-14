@@ -118,6 +118,15 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.p_time = vo->p_cam_time;
     _return.m_time = vo->m_cam_time;
     _return.basic_info.end_time = vo->end_time;
+    _return.basic_info.source_dest_name = vo->source_dest_name;
+    if (company && company->is_sale)
+    {
+        _return.basic_info.is_sale = true;
+    }
+    else
+    {
+        _return.basic_info.is_sale = false;
+    }
 }
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
@@ -1873,4 +1882,19 @@ void vehicle_order_center_handler::get_self_order_by_phone(driver_self_order &_r
             _return.stuff_name = order->stuff_name;
         }
     }
+}
+
+bool vehicle_order_center_handler::record_order_source_dest(const int64_t order_id, const std::string &source_dest_name)
+{
+    bool ret = false;
+
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("status != 100 AND PRI_ID == %ld", order_id);
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    vo->source_dest_name = source_dest_name;
+    ret = vo->update_record();
+
+    return ret;
 }

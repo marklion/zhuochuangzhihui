@@ -27,6 +27,9 @@ public:
     virtual void get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &stuff_name, const int64_t count);
     virtual bool change_price(const std::string &ssid, const std::string &stuff_name, const double new_value);
     virtual void get_stuff(stuff_info &_return, const std::string &ssid, const std::string &stuff_name);
+    virtual bool add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source);
+    virtual void get_all_source_dest(std::vector<stuff_source_dest> &_return, const bool is_source);
+    virtual bool del_source_dest(const std::string &ssid, const int64_t id);
 };
 
 #endif // _STUFF_MANAGEMENT_H_

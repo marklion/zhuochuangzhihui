@@ -2,6 +2,10 @@
 <div class="check_in_show">
     <van-cell :title="cur_vehicle.basic_info.main_vehicle_number" :label="cur_vehicle.basic_info.company_name" :value="cur_vehicle.basic_info.stuff_name"></van-cell>
     <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id"></van-cell>
+    <van-field readonly clickable name="picker" :value="cur_vehicle.basic_info.source_dest_name" :label="source_or_dest" placeholder="点击选择" @click="show_source_dest_picker = true" />
+    <van-popup v-model="show_source_dest_picker" position="bottom">
+        <van-picker show-toolbar :columns="all_source_dest" @confirm="select_source_dest" @cancel="show_source_dest_picker = false" />
+    </van-popup>
     <van-cell title="当前状态" :value="status" center>
         <template #right-icon>
             <van-button size="small" type="info" icon="replay" @click="init_vehicle">刷新</van-button>
@@ -77,6 +81,7 @@ export default {
     },
     data: function () {
         return {
+            show_source_dest_picker: false,
             all_prompt_img: [],
             upload_detail: {
                 enter_weight: 0,
@@ -92,10 +97,18 @@ export default {
                 return document.location.href;
             },
             show_upload_diag: false,
-
+            all_source_dest: [],
         };
     },
     computed: {
+        source_or_dest: function () {
+            var ret = '物料源';
+            if (this.cur_vehicle.basic_info.is_sale) {
+                ret = '物料目的地';
+            }
+
+            return ret;
+        },
         status: function () {
             var ret = "未排号";
             if (this.cur_vehicle.registered) {
@@ -109,6 +122,15 @@ export default {
         },
     },
     methods: {
+        select_source_dest: function (_value) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", 'record_order_source_dest', [vue_this.cur_vehicle.basic_info.id, _value]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_vehicle();
+                    vue_this.show_source_dest_picker = false;
+                }
+            });
+        },
         weight_should_not_0: (rule, value, callback) => {
             if (parseFloat(value) > 0) {
                 callback();
@@ -147,11 +169,19 @@ export default {
         driver_check_in: function (_cancel) {
             var vue_this = this;
             if (!_cancel) {
-                vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
-                    if (resp) {
-                        vue_this.init_vehicle();
-                    }
-                });
+                if (!vue_this.cur_vehicle.basic_info.source_dest_name) {
+                    vue_this.$notify({
+                        type: 'danger',
+                        message: "请先指定" + vue_this.source_or_dest
+                    });
+                } else {
+                    vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
+                        if (resp) {
+                            vue_this.init_vehicle();
+                        }
+                    });
+
+                }
             } else {
                 vue_this.$dialog.confirm({
                     title: "取消确认",
@@ -171,6 +201,12 @@ export default {
             vue_this.$call_remote_process("vehicle_order_center", "driver_get_order", [vue_this.driver_phone]).then(function (resp) {
                 vue_this.cur_vehicle = resp;
                 vue_this.$set(vue_this.cur_vehicle, 'basic_info', resp.basic_info);
+                vue_this.$call_remote_process("stuff_management", 'get_all_source_dest', [!resp.basic_info.is_sale]).then(function (sd_resp) {
+                    vue_this.all_source_dest = [];
+                    sd_resp.forEach((element, index) => {
+                        vue_this.$set(vue_this.all_source_dest, index, element.name);
+                    });
+                })
             });
         },
         init_prompt_img: function () {

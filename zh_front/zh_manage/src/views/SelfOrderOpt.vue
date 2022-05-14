@@ -19,6 +19,9 @@
     <van-dialog v-model="show_qr" title="请司机扫描此码自助派车和排号" :showConfirmButton="false" closeOnClickOverlay>
         <div style="text-align: center;">
             <vue-qr :text="'http://' + domain_name + '/#/mobile/self_order?user=' + $store.state.user_info.name"></vue-qr>
+            <div>
+                {{$store.state.user_info.name}}
+            </div>
         </div>
     </van-dialog>
 </div>

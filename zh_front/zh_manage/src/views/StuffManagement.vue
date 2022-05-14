@@ -1,57 +1,110 @@
 <template>
 <div class="stuff_management_sh">
-    <el-row type="flex" justify="space-between" align="middle">
-        <el-col>
-            <div class="block_title_show">所有物料</div>
-        </el-col>
-        <el-col>
-            <div style="margin-right:10px; text-align:right">
-                <el-button size="mini" type="warning" icon="el-icon-search" @click="download_audit_log">下载审计日志</el-button>
-                <table-import-export @proc_table="proc_upload_stuff" :sample_table="sample_table" export_name="物料导出表.xlsx" :export_table="all_stuff" :item_name_map="col_map"></table-import-export>
-                <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_stuff_diag = true">新增</el-button>
-            </div>
-        </el-col>
-    </el-row>
-    <el-table :data="all_stuff" style="width: 100%" stripe>
-        <el-table-column type="index" label="编号" width="50px">
-        </el-table-column>
-        <el-table-column prop="name" label="物料名" width="120px">
-        </el-table-column>
-        <el-table-column prop="unit" label="计量单位" width="100px">
-        </el-table-column>
-        <el-table-column prop="inventory" label="库存" width="60px">
-        </el-table-column>
-        <el-table-column prop="price" label="单价" width="120px">
-            <template slot-scope="scope">
-                <span>{{scope.row.price}}</span>
-                <el-tooltip class="item" effect="dark" content="修改价格" placement="top">
-                    <el-button type="text" size="mini" @click="change_price(scope.row)" class="el-icon-edit"></el-button>
-                </el-tooltip>
-                <el-tooltip class="item" effect="dark" content="历史价格" placement="top">
-                    <el-button type="text" size="mini" @click="show_price_history(scope.row)" class="el-icon-s-data"></el-button>
-                </el-tooltip>
-            </template>
-        </el-table-column>
-        <el-table-column label="需要矿(厂)发净重" width="180px">
-            <template slot-scope="scope">
-                {{scope.row.need_enter_weight?'是':'否'}}
-            </template>
-        </el-table-column>
-        <el-table-column prop="expect_weight" label="预计装车净重" width="120px">
-        </el-table-column>
-        <el-table-column label="手动称重" width="80px">
-            <template slot-scope="scope">
-                {{scope.row.need_manual_scale?'是':'否'}}
-            </template>
-        </el-table-column>
 
-        <el-table-column fixed="right" label="操作" width="150px">
-            <template slot-scope="scope">
-                <el-button type="warning" size="mini" @click="trigger_update_stuff(scope.row)">修改</el-button>
-                <el-button type="danger" size="mini" @click="del_stuff(scope.row)">删除</el-button>
-            </template>
-        </el-table-column>
-    </el-table>
+    <el-tabs v-model="activeName">
+        <el-tab-pane label="物料维护" name="stuff_config">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col>
+                    <div class="block_title_show">所有物料</div>
+                </el-col>
+                <el-col>
+                    <div style="margin-right:10px; text-align:right">
+                        <el-button size="mini" type="warning" icon="el-icon-search" @click="download_audit_log">下载审计日志</el-button>
+                        <table-import-export @proc_table="proc_upload_stuff" :sample_table="sample_table" export_name="物料导出表.xlsx" :export_table="all_stuff" :item_name_map="col_map"></table-import-export>
+                        <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_stuff_diag = true">新增</el-button>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-table :data="all_stuff" style="width: 100%" stripe>
+                <el-table-column type="index" label="编号" width="50px">
+                </el-table-column>
+                <el-table-column prop="name" label="物料名" width="120px">
+                </el-table-column>
+                <el-table-column prop="unit" label="计量单位" width="100px">
+                </el-table-column>
+                <el-table-column prop="inventory" label="库存" width="60px">
+                </el-table-column>
+                <el-table-column prop="price" label="单价" width="120px">
+                    <template slot-scope="scope">
+                        <span>{{scope.row.price}}</span>
+                        <el-tooltip class="item" effect="dark" content="修改价格" placement="top">
+                            <el-button type="text" size="mini" @click="change_price(scope.row)" class="el-icon-edit"></el-button>
+                        </el-tooltip>
+                        <el-tooltip class="item" effect="dark" content="历史价格" placement="top">
+                            <el-button type="text" size="mini" @click="show_price_history(scope.row)" class="el-icon-s-data"></el-button>
+                        </el-tooltip>
+                    </template>
+                </el-table-column>
+                <el-table-column label="需要矿(厂)发净重" width="180px">
+                    <template slot-scope="scope">
+                        {{scope.row.need_enter_weight?'是':'否'}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="expect_weight" label="预计装车净重" width="120px">
+                </el-table-column>
+                <el-table-column label="手动称重" width="80px">
+                    <template slot-scope="scope">
+                        {{scope.row.need_manual_scale?'是':'否'}}
+                    </template>
+                </el-table-column>
+
+                <el-table-column fixed="right" label="操作" width="150px">
+                    <template slot-scope="scope">
+                        <el-button type="warning" size="mini" @click="trigger_update_stuff(scope.row)">修改</el-button>
+                        <el-button type="danger" size="mini" @click="del_stuff(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+
+        <el-tab-pane label="物料源维护" name="stuff_source">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col>
+                    <div class="block_title_show">所有物料源</div>
+                </el-col>
+                <el-col>
+                    <div style="margin-right:10px; text-align:right">
+                        <el-button size="mini" type="success" icon="el-icon-plus" @click="show_edit_stuff_source_dest_diag = true;focus_stuff_source_dest.is_source = true;">新增</el-button>
+                    </div>
+                </el-col>
+            </el-row>
+
+            <el-table :data="all_stuff_source" style="width: 100%" stripe>
+                <el-table-column type="index" label="编号" width="50px">
+                </el-table-column>
+                <el-table-column prop="name" label="物料源" width="120px">
+                </el-table-column>
+                <el-table-column fixed="right" label="操作" width="150px">
+                    <template slot-scope="scope">
+                        <el-button type="danger" size="mini" @click="del_stuff_source_dest(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="物料目的地维护" name="stuff_dest">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col>
+                    <div class="block_title_show">所有物料目的地</div>
+                </el-col>
+                <el-col>
+                    <div style="margin-right:10px; text-align:right">
+                        <el-button size="mini" type="success" icon="el-icon-plus" @click="show_edit_stuff_source_dest_diag = true;focus_stuff_source_dest.is_source = false">新增</el-button>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-table :data="all_stuff_dest" style="width: 100%" stripe>
+                <el-table-column type="index" label="编号" width="50px">
+                </el-table-column>
+                <el-table-column prop="name" label="物料目的地" width="120px">
+                </el-table-column>
+                <el-table-column fixed="right" label="操作" width="150px">
+                    <template slot-scope="scope">
+                        <el-button type="danger" size="mini" @click="del_stuff_source_dest(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+    </el-tabs>
     <el-dialog @close="clean_stuff" :title="(current_opt_add?'新增':'修改') + '物料'" :visible.sync="show_edit_stuff_diag" width="60%" @keyup.enter.native="edit_stuff">
         <el-form :model="focus_stuff" ref="edit_stuff_form" :rules="rules" label-width="150px">
             <el-form-item label="物料名称" prop="name">
@@ -76,6 +129,16 @@
             </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="edit_stuff">确认</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+    <el-dialog @close="clean_stuff_source_dest" :title="'新增物料' + (focus_stuff_source_dest.is_source?'源':'目的地')" :visible.sync="show_edit_stuff_source_dest_diag" width="60%" @keyup.enter.native="edit_stuff_source_dest">
+        <el-form :model="focus_stuff_source_dest" ref="edit_stuff_source_dest_form" label-width="150px">
+            <el-form-item label="名称" prop="name" :rules="[{required:true, message:'请输入名称'}]">
+                <el-input v-model="focus_stuff_source_dest.name" placeholder="请输入名称"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="edit_stuff_source_dest">确认</el-button>
             </el-form-item>
         </el-form>
     </el-dialog>
@@ -108,6 +171,15 @@ export default {
     },
     data: function () {
         return {
+            all_stuff_dest: [],
+            all_stuff_source: [],
+            show_edit_stuff_source_dest_diag: false,
+            activeName: 'stuff_config',
+            focus_stuff_source_dest: {
+                id: 0,
+                name: "",
+                is_source: false,
+            },
             price_focus_stuff: '',
             price_history: [],
             price_history_load_end: false,
@@ -278,6 +350,21 @@ export default {
                 vue_this.init_all_stuff();
             }
         },
+        del_stuff_source_dest: function (_stuff) {
+            var vue_this = this;
+            this.$confirm('确定删除吗', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("stuff_management", "del_source_dest", [vue_this.$cookies.get("zh_ssid"), _stuff.id]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_all_stuff_source_dest();
+                    }
+                });
+            });
+
+        },
         del_stuff: function (_stuff) {
             var vue_this = this;
             this.$confirm('确定删除物料吗', '提示', {
@@ -318,12 +405,41 @@ export default {
                 }
             });
         },
+        edit_stuff_source_dest: function () {
+            var vue_this = this;
+            var func_name = "add_source_dest";
+            vue_this.$refs.edit_stuff_source_dest_form.validate((valid) => {
+                if (valid) {
+                    vue_this.$call_remote_process("stuff_management", func_name, [vue_this.$cookies.get("zh_ssid"), vue_this.focus_stuff_source_dest.name, vue_this.focus_stuff_source_dest.is_source]).then(function (resp) {
+                        if (resp) {
+                            vue_this.show_edit_stuff_source_dest_diag = false;
+                            vue_this.init_all_stuff_source_dest();
+                        }
+                    });
+                }
+            });
+        },
         init_all_stuff: function () {
             var vue_this = this;
             vue_this.$call_remote_process("stuff_management", 'get_all_stuff', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
                 vue_this.all_stuff = [];
                 resp.forEach((element, index) => {
                     vue_this.$set(vue_this.all_stuff, index, element);
+                });
+            });
+        },
+        init_all_stuff_source_dest: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("stuff_management", 'get_all_source_dest', [true]).then(function (resp) {
+                vue_this.all_stuff_source = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_stuff_source, index, element);
+                });
+            });
+            vue_this.$call_remote_process("stuff_management", 'get_all_source_dest', [false]).then(function (resp) {
+                vue_this.all_stuff_dest = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_stuff_dest, index, element);
                 });
             });
         },
@@ -338,9 +454,17 @@ export default {
                 need_manual_scale: false,
             };
         },
+        clean_stuff_source_dest: function () {
+            this.focus_stuff_source_dest = {
+                id: 0,
+                name: "",
+                is_source: false,
+            };
+        },
     },
     beforeMount: function () {
         this.init_all_stuff();
+        this.init_all_stuff_source_dest();
     },
 
 }
