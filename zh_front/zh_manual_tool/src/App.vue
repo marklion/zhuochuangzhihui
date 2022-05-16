@@ -4,9 +4,9 @@
         <el-header class="title_header">卓创智汇称重客户端</el-header>
         <el-main>
             <el-container>
-                <el-aside width="350px" class="vehicle_search">
+                <el-aside width="700px" class="vehicle_search">
                     <el-container>
-                        <el-header>车辆检索</el-header>
+                        <el-header>今日计划</el-header>
                         <el-main>
                             <el-row>
                                 <el-col :span="8">
@@ -18,14 +18,46 @@
                                 </el-col>
                             </el-row>
                             <el-input v-model="search_key" placeholder="输入部分或全部车牌搜索"></el-input>
-                            <el-radio-group v-model="selected_vehicle" size="small">
-                                <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
-                                    <el-radio :label="single_vehicle.id" border>
+                            <vue-grid align="stretch" justify="start">
+                                <vue-cell width="6of12">
+                                    <el-divider>等待称重</el-divider>
+                                    <el-radio-group v-model="selected_vehicle" size="small">
+                                        <div v-for="(single_vehicle, index) in vehicle_need_show" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
+                                            <el-radio :label="single_vehicle.id" border>
+                                                {{single_vehicle.plateNo}}-{{single_vehicle.driverName}}
+                                                -{{single_vehicle.driverPhone}}
+                                            </el-radio>
+                                        </div>
+                                    </el-radio-group>
+                                </vue-cell>
+                                <vue-cell width="6of12">
+                                    <el-divider>已完成</el-divider>
+                                    <el-radio-group v-model="selected_vehicle" size="small">
+                                        <div v-for="(single_vehicle, index) in vehicle_finish_scale" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
+                                            <el-radio :label="single_vehicle.id" border>
+                                                {{single_vehicle.plateNo}}-{{single_vehicle.driverName}}
+                                                -{{single_vehicle.driverPhone}}
+                                            </el-radio>
+                                        </div>
+                                    </el-radio-group>
+
+                                </vue-cell>
+                                <vue-cell width="6of12">
+                                    <el-divider>无证件</el-divider>
+                                    <div v-for="(single_vehicle, index) in vehicle_has_to_wait_license" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
                                         {{single_vehicle.plateNo}}-{{single_vehicle.driverName}}
-                                        {{single_vehicle.createTime.substr(0,10)}}-{{single_vehicle.driverPhone}}
-                                    </el-radio>
-                                </div>
-                            </el-radio-group>
+                                        -{{single_vehicle.driverPhone}}
+                                    </div>
+                                </vue-cell>
+                                <vue-cell width="6of12">
+                                    <el-divider>未付款</el-divider>
+                                    <div v-for="(single_vehicle, index) in vehicle_has_to_wait_payed" :key="index" :class="{finish_scale_vehicle_show:single_vehicle.m_time}">
+                                        {{single_vehicle.plateNo}}-{{single_vehicle.driverName}}
+                                        -{{single_vehicle.driverPhone}}
+                                    </div>
+                                </vue-cell>
+
+                            </vue-grid>
                         </el-main>
                     </el-container>
                 </el-aside>
@@ -303,7 +335,7 @@ export default {
             console.log(ret);
             return ret;
         },
-        vehicle_need_show: function () {
+        vehicle_after_search: function () {
             var ret = [];
             this.all_vehicle.forEach(element => {
                 if (this.search_key.length > 0) {
@@ -315,6 +347,43 @@ export default {
                 }
             });
 
+            return ret;
+        },
+        vehicle_need_show: function () {
+            var ret = [];
+            this.vehicle_after_search.forEach(element => {
+                if (element.has_license && element.has_payed && !element.m_time) {
+                    ret.push(element);
+                }
+            });
+            return ret;
+        },
+        vehicle_finish_scale: function () {
+            var ret = [];
+            this.vehicle_after_search.forEach(element => {
+                if (element.m_time) {
+                    ret.push(element);
+                }
+            });
+
+            return ret;
+        },
+        vehicle_has_to_wait_payed: function () {
+            var ret = [];
+            this.vehicle_after_search.forEach(element => {
+                if (!element.has_payed) {
+                    ret.push(element);
+                }
+            });
+            return ret;
+        },
+        vehicle_has_to_wait_license: function () {
+            var ret = [];
+            this.vehicle_after_search.forEach(element => {
+                if (!element.has_license) {
+                    ret.push(element);
+                }
+            });
             return ret;
         },
         focus_vehicle: function () {
