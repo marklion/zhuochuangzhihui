@@ -513,6 +513,11 @@ export default {
                                 vue_this.stored_weight = new_weight;
                                 vue_this.$message('称重成功');
                             });
+                            const axios = require('axios');
+                            var token_from_idb = await idb.get("zy_token");
+                            axios.post(vue_this.remote_path() + "/pa_rest/push_p?token=" + token_from_idb, {
+                                id: tmp.id
+                            });
                         }
                         vue_this.is_scaling = false;
                     })
