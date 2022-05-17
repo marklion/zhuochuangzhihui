@@ -139,7 +139,7 @@ int main(int argc, char const *argv[])
     threadManager->start();
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
     tdf_main::get_inst().start_timer(
-        1000, [](void *_private)
+        120, [](void *_private)
         {
             auto single_this = (plugin_management_handler *)(_private);
             auto all_plugins = single_this->internel_get_installed_plugins();
