@@ -90,7 +90,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
 }
 void system_management_handler::get_device_config(device_config &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 0);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();

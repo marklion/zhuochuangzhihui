@@ -278,10 +278,19 @@ public:
             opt.c_cc[VTIME] = 0;
             opt.c_cc[VMIN] = 12;
             tcsetattr(fd, TCSANOW, &opt);
-            int read_len = read(fd, buff, sizeof(buff));
-            if (read_len >= 0)
+            fd_set set;
+            FD_ZERO(&set);
+            FD_SET(fd, &set);
+            timeval timeout;
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+            if (0 < select(fd + 1, &set, nullptr, nullptr, &timeout))
             {
-                ret = parse_weight(make_one_frame(buff, read_len));
+                int read_len = read(fd, buff, sizeof(buff));
+                if (read_len >= 0)
+                {
+                    ret = parse_weight(make_one_frame(buff, read_len));
+                }
             }
             else
             {

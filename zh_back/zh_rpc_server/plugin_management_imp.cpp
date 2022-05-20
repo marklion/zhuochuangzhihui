@@ -182,7 +182,7 @@ void plugin_management_handler::uninstall_plugin(const std::string &ssid, const 
 }
 void plugin_management_handler::get_installed_plugins(std::vector<std::string> &_return, const std::string &ssid)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, 2);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
