@@ -79,6 +79,12 @@ struct prompt_image_info{
     2:string attachment_path,
 }
 
+struct company_address_info{
+    1:double x,
+    2:double y,
+    3:double distance,
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
@@ -104,6 +110,8 @@ service system_management {
     bool upload_prompt_image(1:string ssid, 2:string attachment) throws (1:gen_exp e),
     list<prompt_image_info> get_all_prompt_image() throws (1:gen_exp e),
     bool delete_prompt_image(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    company_address_info get_company_address_info() throws (1:gen_exp e),
+    bool set_company_address_info(1:string ssid, 2:company_address_info address_info) throws (1:gen_exp e),
 }
 
 struct user_info {
