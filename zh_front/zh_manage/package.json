@@ -54,7 +54,9 @@
     "parserOptions": {
       "parser": "babel-eslint"
     },
-    "rules": {}
+    "rules": {
+      "no-async-promise-executor":1
+    }
   },
   "browserslist": [
     "> 1%",

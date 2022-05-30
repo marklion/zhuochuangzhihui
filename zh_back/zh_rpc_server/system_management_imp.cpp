@@ -487,3 +487,42 @@ bool system_management_handler::delete_prompt_image(const std::string &ssid, con
 
     return true;
 }
+
+void system_management_handler::get_company_address_info(company_address_info &_return)
+{
+    auto config = get_cur_config_json();
+    if (config.KeyExist("company_address_info"))
+    {
+        auto cai = config["company_address_info"];
+        cai.Get("lat", _return.x);
+        cai.Get("lag", _return.y);
+        cai.Get("distance", _return.distance);
+    }
+
+}
+bool system_management_handler::set_company_address_info(const std::string &ssid, const company_address_info &address_info)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto config = get_cur_config_json();
+    auto new_config = neb::CJsonObject();
+    new_config.Add("lat", address_info.x);
+    new_config.Add("lag", address_info.y);
+    new_config.Add("distance", address_info.distance);
+
+    config.Delete("company_address_info");
+    config.Add("company_address_info", new_config);
+
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
+    config_file << config.ToFormattedString();
+    config_file.close();
+    ret = true;
+
+    return ret;
+}

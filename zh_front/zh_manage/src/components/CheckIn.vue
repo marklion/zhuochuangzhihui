@@ -166,6 +166,62 @@ export default {
             var file_name_split = file.name.split('.');
             this.upload_detail.enter_weight_attachment = real_path + '.' + file_name_split[file_name_split.length - 1];
         },
+        getDistance(lat1, lng1, lat2, lng2) {
+            console.log(lat1);
+            console.log(lng1);
+            console.log(lat2);
+            console.log(lng2);
+            var dis = 0;
+            var radLat1 = toRadians(lat1);
+            var radLat2 = toRadians(lat2);
+            var deltaLat = radLat1 - radLat2;
+            var deltaLng = toRadians(lng1) - toRadians(lng2);
+            dis = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(deltaLat / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(deltaLng / 2), 2)));
+            return dis * 6378137;
+
+            function toRadians(d) {
+                return d * Math.PI / 180;
+            }
+        },
+        getLocation(options = {}) {
+            const resultPromise = new Promise((resolve, reject) => {
+                if (navigator.geolocation && navigator.geolocation.getCurrentPosition) {
+                    navigator.geolocation.getCurrentPosition((res) => {
+                        resolve(res)
+                    }, (err) => {
+                        reject(err)
+                    }, options)
+                } else {
+                    reject({
+                        code: 1,
+                        message: "Browser doesn't support"
+                    })
+                }
+            })
+            return resultPromise
+        },
+        check_postion: async function () {
+            var vue_this = this;
+            return new Promise(async function (resolve, reject) {
+                try {
+                    var self_pos = await vue_this.getLocation();
+                    var config_pos = await vue_this.$call_remote_process("system_management", "get_company_address_info", []);
+                    if (config_pos.distance == 0) {
+                        resolve();
+                    } else {
+                        var calc_distance = vue_this.getDistance(self_pos.coords.latitude, self_pos.coords.longitude, config_pos.y, config_pos.x);
+                        if (config_pos.distance >= calc_distance) {
+                            resolve();
+                        } else {
+                            reject("未进入指定区域，距离(" + calc_distance.toFixed(2) + "米)过远")
+                        }
+                    }
+                } catch (error) {
+                    console.log(error);
+                    reject("获取定位失败")
+                }
+            });
+        },
         driver_check_in: function (_cancel) {
             var vue_this = this;
             if (!_cancel) {
@@ -175,12 +231,15 @@ export default {
                         message: "请先指定" + vue_this.source_or_dest
                     });
                 } else {
-                    vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
-                        if (resp) {
-                            vue_this.init_vehicle();
-                        }
+                    vue_this.check_postion().then(function () {
+                        vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
+                            if (resp) {
+                                vue_this.init_vehicle();
+                            }
+                        });
+                    }).catch(function (msg) {
+                        vue_this.$toast(msg);
                     });
-
                 }
             } else {
                 vue_this.$dialog.confirm({

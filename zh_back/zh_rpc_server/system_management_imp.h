@@ -53,6 +53,8 @@ public:
     virtual bool upload_prompt_image(const std::string &ssid, const std::string &attachment);
     virtual void get_all_prompt_image(std::vector<prompt_image_info> &_return);
     virtual bool delete_prompt_image(const std::string &ssid, const int64_t id);
+    virtual void get_company_address_info(company_address_info &_return);
+    virtual bool set_company_address_info(const std::string &ssid, const company_address_info &address_info);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

@@ -298,6 +298,25 @@
             <el-divider direction="vertical"></el-divider>
             <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
             </el-switch>
+            <el-divider>排号位置</el-divider>
+            <el-form ref="address_form" :model="address_info" label-width="80px">
+                <el-form-item label="排号最远距离">
+                    <el-input v-model="address_info.distance"></el-input>
+                </el-form-item>
+                <el-form-item label="厂区位置">
+                    <el-col :span="11">
+                        <el-input v-model="address_info.x" placeholder="经度"></el-input>
+                    </el-col>
+                    <el-col class="line" :span="2">-</el-col>
+                    <el-col :span="11">
+                        <el-input v-model="address_info.y" placeholder="纬度"></el-input>
+                    </el-col>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="save_address_info">保存</el-button>
+                </el-form-item>
+            </el-form>
+
             <el-divider>指引图片</el-divider>
             <vue-grid align="stretch" justify="start">
                 <vue-cell width="2of12" v-for="(single_img,index) in  all_prompt_img" :key="index">
@@ -366,6 +385,11 @@ export default {
     },
     data: function () {
         return {
+            address_info: {
+                x: 0,
+                y: 0,
+                distance: 0,
+            },
             auto_confirm: false,
             get_component_from_plugin_name: function (_plugin_name) {
                 var comp = require(`../components/${_plugin_name}.vue`);
@@ -460,6 +484,25 @@ export default {
         };
     },
     methods: {
+        save_address_info: function () {
+            var vue_this = this;
+            var set_arg = {
+                x: parseFloat(vue_this.address_info.x),
+                y: parseFloat(vue_this.address_info.y),
+                distance: parseFloat(vue_this.address_info.distance)
+            };
+            vue_this.$call_remote_process("system_management", "set_company_address_info", [vue_this.$cookies.get("zh_ssid"), set_arg]).then(function (resp) {
+                if (resp) {
+                    vue_this.get_company_address_info();
+                }
+            });
+        },
+        get_company_address_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_company_address_info", []).then(function (resp) {
+                vue_this.address_info = resp;
+            });
+        },
         remove_promp_img: function (_image) {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "delete_prompt_image", [vue_this.$cookies.get("zh_ssid"), _image.id]).then(function (resp) {
@@ -682,6 +725,7 @@ export default {
             vue_this.auto_confirm = resp;
         });
         this.init_prompt_img();
+        this.get_company_address_info();
 
     },
 }
