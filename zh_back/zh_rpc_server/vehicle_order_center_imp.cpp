@@ -119,6 +119,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.m_time = vo->m_cam_time;
     _return.basic_info.end_time = vo->end_time;
     _return.basic_info.source_dest_name = vo->source_dest_name;
+    _return.checkin_time = zh_rpc_util_get_timestring(vo->check_in_timestamp);
     if (company && company->is_sale)
     {
         _return.basic_info.is_sale = true;
@@ -1151,13 +1152,18 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "---------------\n";
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
-        qr_code = getenv("BASE_URL");
-        qr_code += std::string(getenv("URL_REMOTE")) + "/#/field_opt/" + vo->order_number;
+        qr_code = "http://" + std::string( getenv("BASE_URL"));
+        qr_code += std::string(getenv("URL_REMOTE")) + "/#/mobile/field_opt/" + vo->order_number;
     }
     else
     {
         content += "称重：" + zh_double2string_reserve2(fin_weight) + "吨\n";
         content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
+        zh_sql_white_record tmp;
+        tmp.date = zh_rpc_util_get_timestring();
+        tmp.vehicle_number = bound_vehicle_number;
+        tmp.weight = fin_weight;
+        tmp.insert_record();
     }
     std::string printer_ip;
     if (bound_scale.entry_config.cam_ip == enter_cam_ip)
@@ -1763,6 +1769,34 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
     return ret;
 }
 
+static void pri_confirm_self_order(zh_sql_user_info user, const int64_t order_id, const bool continue_order)
+{
+    auto order = user.get_children<zh_sql_driver_self_order>("belong_user", "PRI_ID == %ld", order_id);
+    if (!order)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    std::vector<vehicle_order_info> tmp;
+    vehicle_order_info one_info;
+    one_info.company_name = user.name;
+    one_info.driver_id = order->driver_id;
+    one_info.driver_name = order->driver_name;
+    one_info.driver_phone = order->driver_phone;
+    one_info.main_vehicle_number = order->main_vehicle_number;
+    one_info.stuff_name = order->stuff_name;
+    one_info.max_count = 35;
+    if (continue_order)
+    {
+        one_info.end_time = zh_rpc_util_get_datestring().substr(0, 10);
+    }
+    tmp.push_back(one_info);
+    if (pri_create_order(tmp))
+    {
+        order->remove_record();
+    }
+}
+
 bool vehicle_order_center_handler::create_driver_self_order(const driver_self_order &order)
 {
     bool ret = false;
@@ -1786,45 +1820,26 @@ bool vehicle_order_center_handler::create_driver_self_order(const driver_self_or
     }
 
     ret = tmp.insert_record();
+    if (ret && user)
+    {
+        auto company = user->get_parent<zh_sql_contract>("belong_contract");
+        if (company && !company->is_sale)
+        {
+            pri_confirm_self_order(*user, tmp.get_pri_id(), false);
+        }
+    }
 
     return ret;
 }
 bool vehicle_order_center_handler::confirm_driver_self_order(const std::string &ssid, const int64_t order_id, const bool continue_order)
 {
-    bool ret = false;
-
     auto user = zh_rpc_util_get_online_user(ssid);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    auto order = user->get_children<zh_sql_driver_self_order>("belong_user", "PRI_ID == %ld", order_id);
-    if (!order)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
-
-    std::vector<vehicle_order_info> tmp;
-    vehicle_order_info one_info;
-    one_info.company_name = user->name;
-    one_info.driver_id = order->driver_id;
-    one_info.driver_name = order->driver_name;
-    one_info.driver_phone = order->driver_phone;
-    one_info.main_vehicle_number = order->main_vehicle_number;
-    one_info.stuff_name = order->stuff_name;
-    one_info.max_count = 35;
-    if (continue_order)
-    {
-        one_info.end_time = zh_rpc_util_get_datestring().substr(0, 10);
-    }
-    tmp.push_back(one_info);
-    if (create_vehicle_order(ssid, tmp))
-    {
-        order->remove_record();
-        ret = true;
-    }
-
-    return ret;
+    pri_confirm_self_order(*user, order_id, continue_order);
+    return true;
 }
 bool vehicle_order_center_handler::cancel_driver_self_order(const std::string &ssid, const int64_t order_id)
 {
@@ -1868,19 +1883,20 @@ void vehicle_order_center_handler::get_all_self_order(std::vector<driver_self_or
 void vehicle_order_center_handler::get_self_order_by_phone(driver_self_order &_return, const std::string &driver_phone)
 {
     auto order = sqlite_orm::search_record<zh_sql_driver_self_order>("driver_phone == '%s'", driver_phone.c_str());
-    if (order)
+    if (!order)
     {
-        auto user = order->get_parent<zh_sql_user_info>("belong_user");
-        if (user)
-        {
-            _return.belong_user_name = user->name;
-            _return.driver_id = order->driver_id;
-            _return.driver_name = order->driver_name;
-            _return.driver_phone = order->driver_phone;
-            _return.id = order->get_pri_id();
-            _return.main_vehicle_number = order->main_vehicle_number;
-            _return.stuff_name = order->stuff_name;
-        }
+        ZH_RETURN_MSG("未找到自助派车单");
+    }
+    auto user = order->get_parent<zh_sql_user_info>("belong_user");
+    if (user)
+    {
+        _return.belong_user_name = user->name;
+        _return.driver_id = order->driver_id;
+        _return.driver_name = order->driver_name;
+        _return.driver_phone = order->driver_phone;
+        _return.id = order->get_pri_id();
+        _return.main_vehicle_number = order->main_vehicle_number;
+        _return.stuff_name = order->stuff_name;
     }
 }
 
@@ -1897,4 +1913,72 @@ bool vehicle_order_center_handler::record_order_source_dest(const int64_t order_
     ret = vo->update_record();
 
     return ret;
+}
+
+void vehicle_order_center_handler::get_driver_opt_history(vehicle_order_info &_return, const std::string &driver_phone)
+{
+    auto latest_vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_phone == '%s'", driver_phone.c_str());
+    if (latest_vo)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, *latest_vo);
+        _return = tmp.basic_info;
+    }
+}
+
+void vehicle_order_center_handler::get_white_record_info(std::vector<white_record_info> &_return, const std::string &ssid, const int64_t _begin_date, const int64_t _end_date)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    long begin_id = 0;
+    long end_id= 0;
+    auto begin_date = _begin_date;
+    auto end_date = _end_date;
+    while (begin_id <= 0)
+    {
+        auto begin_date_string = zh_rpc_util_get_timestring(begin_date).substr(0, 10);
+        auto first_record = sqlite_orm::search_record<zh_sql_white_record>("date LIKE '%s%%'", begin_date_string.c_str());
+        if (first_record)
+        {
+            begin_id = first_record->get_pri_id();
+        }
+        else
+        {
+            begin_date += 3600 * 24;
+        }
+        if (begin_date_string == zh_rpc_util_get_timestring(end_date).substr(0, 10))
+        {
+            break;
+        }
+    }
+    begin_date = _begin_date;
+    while (end_id <= 0)
+    {
+        auto end_date_string = zh_rpc_util_get_timestring(end_date).substr(0, 10);
+        auto last_record = sqlite_orm::search_record<zh_sql_white_record>("date LIKE '%s%%' ORDER BY PRI_ID DESC", end_date_string.c_str());
+        if (last_record)
+        {
+            end_id = last_record->get_pri_id();
+        }
+        else
+        {
+            end_date -= 3600 * 24;
+        }
+        if (end_date_string == zh_rpc_util_get_timestring(begin_date).substr(0, 10))
+        {
+            break;
+        }
+    }
+    auto record = sqlite_orm::search_record_all<zh_sql_white_record>("PRI_ID >= %ld AND PRI_ID <= %ld", begin_id, end_id);
+    for (auto &itr:record) {
+        white_record_info tmp;
+        tmp.id = itr.get_pri_id();
+        tmp.date = itr.date;
+        tmp.vehicle_number = itr.vehicle_number;
+        tmp.weight = zh_double2string_reserve2(itr.weight);
+        _return.push_back(tmp);
+    }
 }

@@ -209,6 +209,8 @@ public:
     virtual void get_all_self_order(std::vector<driver_self_order> &_return, const std::string &ssid);
     virtual void get_self_order_by_phone(driver_self_order &_return, const std::string &driver_phone);
     virtual bool record_order_source_dest(const int64_t order_id, const std::string &source_dest_name);
+    virtual void get_driver_opt_history(vehicle_order_info &_return, const std::string &driver_phone);
+    virtual void get_white_record_info(std::vector<white_record_info> &_return, const std::string &ssid, const int64_t begin_date, const int64_t end_date);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

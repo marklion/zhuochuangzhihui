@@ -298,6 +298,7 @@ struct vehicle_order_detail {
     12:string exit_time,
     13:string p_time,
     14:string m_time,
+    15:string checkin_time,
 }
 
 struct vehicle_order_statistics {
@@ -317,6 +318,13 @@ struct driver_self_order {
     5:string driver_id,
     6:string stuff_name,
     7:string belong_user_name,
+}
+
+struct white_record_info {
+    1:i64 id,
+    2:string vehicle_number,
+    3:string date,
+    4:string weight,
 }
 
 service vehicle_order_center {
@@ -346,6 +354,8 @@ service vehicle_order_center {
     list<driver_self_order> get_all_self_order(1:string ssid) throws (1:gen_exp e),
     driver_self_order get_self_order_by_phone(1:string driver_phone) throws (1:gen_exp e),
     bool record_order_source_dest(1:i64 order_id, 2:string source_dest_name) throws (1:gen_exp e),
+    vehicle_order_info get_driver_opt_history(1:string driver_phone) throws (1:gen_exp e),
+    list<white_record_info> get_white_record_info(1:string ssid, 2:i64 begin_date, 3:i64 end_date) throws (1:gen_exp e),
 }
 
 service open_api {

@@ -1,139 +1,154 @@
 <template>
 <div class="contract_management_show">
-    <el-row type="flex" justify="space-between" align="middle">
-        <el-col>
-            <div class="block_title_show">所有合同</div>
-        </el-col>
-        <el-col>
-            <div style="margin-right:10px; text-align:right;">
-                <table-import-export @proc_table="proc_upload_contract" :sample_table="sample_table" export_name="合同导出表.xlsx" :export_table="all_contract" :item_name_map="col_map"></table-import-export>
-                <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_add_contract_diag = true">新增</el-button>
-            </div>
-        </el-col>
-    </el-row>
-    <el-table :data="all_contract" style="width: 100%" stripe>
-        <el-table-column type="index" label="编号" width="50px">
-        </el-table-column>
-        <el-table-column prop="name" label="公司名" width="200px">
-        </el-table-column>
-        <el-table-column prop="code" label="编码" width="150px">
-        </el-table-column>
-        <el-table-column label="关注物料" width="150px">
-            <template slot-scope="scope">
-                <div v-for="(single_follow_stuff, index) in scope.row.follow_stuffs" :key="index">
-                    {{single_follow_stuff}}
+    <div v-if="!$route.meta.mobile">
+        <el-row type="flex" justify="space-between" align="middle">
+            <el-col>
+                <div class="block_title_show">所有合同</div>
+            </el-col>
+            <el-col>
+                <div style="margin-right:10px; text-align:right;">
+                    <table-import-export @proc_table="proc_upload_contract" :sample_table="sample_table" export_name="合同导出表.xlsx" :export_table="all_contract" :item_name_map="col_map"></table-import-export>
+                    <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_add_contract_diag = true">新增</el-button>
                 </div>
-            </template>
-        </el-table-column>
-        <el-table-column label="类型" width="50px" :formatter="get_type">
-        </el-table-column>
-        <el-table-column prop="attachment" label="附件" width="80px">
-            <template slot-scope="scope">
-                <el-link v-if="scope.row.attachment" type="primary" :href="$remote_file_url + scope.row.attachment">查看</el-link>
-                <span v-else>无附件</span>
-            </template>
-        </el-table-column>
-        <el-table-column prop="admin_phone" label="管理员手机号" width="120px">
-        </el-table-column>
-        <el-table-column prop="balance" label="余额" width="120px">
-            <template slot-scope="scope">
-                <span>{{scope.row.balance}}</span>
-                <el-tooltip class="item" effect="dark" content="修改余额" placement="top">
-                    <el-button type="text" size="mini" @click="change_balance(scope.row)" class="el-icon-edit"></el-button>
-                </el-tooltip>
-                <el-tooltip class="item" effect="dark" content="历史余额" placement="top">
-                    <el-button type="text" size="mini" @click="show_balance_history(scope.row)" class="el-icon-s-data"></el-button>
-                </el-tooltip>
-            </template>
-        </el-table-column>
-        <el-table-column prop="credit" label="授信额度" width="80px">
-        </el-table-column>
-        <el-table-column prop="company_address" label="公司地址" width="200px">
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="150px">
-            <template slot-scope="scope">
-                <el-button type="warning" size="mini" @click="trigger_update_contract(scope.row)">修改</el-button>
-                <el-button type="danger" size="mini" @click="del_contract(scope.row)">删除</el-button>
-            </template>
-        </el-table-column>
-    </el-table>
-    <el-dialog @close="clean_contract" :title="(current_opt_add?'新增':'修改') + '合同'" :visible.sync="show_add_contract_diag" width="60%" @keyup.enter.native="add_contract" @open="gen_random_password">
-        <el-form :model="new_contract" ref="add_contract_form" :rules="rules" label-width="120px">
-            <el-form-item label="对方公司名称" prop="name">
-                <el-input v-model="new_contract.name" placeholder="请输入对方公司名称"></el-input>
-            </el-form-item>
-            <el-form-item label="关注物料" prop="follow_stuffs">
-                <el-row>
-                    <el-col :span="12">
-                        <item-for-select v-model="follow_stuff_need_add" search_key="stuff_name"></item-for-select>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-button icon="el-icon-plus" type="primary" circle @click="new_contract.follow_stuffs.push(follow_stuff_need_add);follow_stuff_need_add = ''"></el-button>
-                    </el-col>
-                </el-row>
-                <el-tag v-for="(single_follow_stuff, index) in new_contract.follow_stuffs" :key="index" closable @close="new_contract.follow_stuffs.splice(index, 1)">
-                    {{single_follow_stuff}}
-                </el-tag>
-            </el-form-item>
-            <el-form-item label="公司地址" prop="company_address">
-                <el-input v-model="new_contract.company_address" placeholder="请输入对方公司地址"></el-input>
-            </el-form-item>
-            <el-form-item label="管理员手机" prop="admin_phone">
-                <el-input v-model="new_contract.admin_phone" placeholder="请输入对方公司管理员手机号"></el-input>
-            </el-form-item>
-            <el-form-item label="密码" v-if="new_contract.admin_phone && old_admin_phone != new_contract.admin_phone">
-                <el-input v-model="new_contract.admin_password" disabled></el-input>
-                <el-button type="text" size="mini" @click="copy_random_password(new_contract.admin_password)">复制密码</el-button>
-                <span style="font-size:12px;">请复制密码，对话框关闭后将不再显示该密码</span>
-            </el-form-item>
-            <el-form-item label="合同类型" prop="is_sale">
-                <el-radio-group v-model="new_contract.is_sale">
-                    <el-radio :label="true">销售</el-radio>
-                    <el-radio :label="false">采购</el-radio>
-                </el-radio-group>
-            </el-form-item>
-            <el-form-item label="合同编号" prop="code">
-                <el-input v-model="new_contract.code" placeholder="请输入合同编号(可选)"></el-input>
-            </el-form-item>
-            <el-form-item label="授信额度" prop="credit">
-                <el-input v-model="new_contract.credit" type="number" placeholder="请输入授信额度(可选)"></el-input>
-            </el-form-item>
-            <el-form-item label="附件">
-                <span v-if="!new_contract.attachment">未上传</span>
-                <span v-else-if="new_contract.attachment.substring(0, 4) == '/tmp'">已上传</span>
-                <el-row v-else type="flex" align="middle">
-                    <el-col :span="6">
-                        <el-link type="primary" :href="$remote_file_url + new_contract.attachment">附件</el-link>
-                    </el-col>
-                    <el-col :span="18">
-                        <el-button size="small" type="danger" @click="new_contract.attachment = ''">删除附件</el-button>
-                    </el-col>
-                </el-row>
-            </el-form-item>
-            <el-form-item>
-                <el-upload :on-remove="()=>{new_contract.attachment = ''}" accept="image/*,.pdf" :action="$remote_url + '/upload/'" :limit="1" :on-success="mark_tmp_path">
-                    <el-button v-if="!new_contract.attachment" size="small" type="primary">点击上传</el-button>
-                </el-upload>
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" @click="add_contract">确认</el-button>
-            </el-form-item>
-        </el-form>
-    </el-dialog>
-    <el-drawer :title="balance_focus_company +'历史余额'" size="40%" :visible.sync="show_balance_history_diag" direction="rtl" @opened="open_balance_history_diag" @closed="close_balance_history_diag">
-        <van-list ref="lazy_load" :offset="200" v-model="balance_history_loading" :finished="balance_history_load_end" finished-text="没有更多了" @load="get_balance_history">
-            <el-table :data="balance_history" style="width: 100%" stripe>
-                <el-table-column label="时间" min-width="50px" prop="timestamp">
-                </el-table-column>
-                <el-table-column label="变化量" min-width="30px" prop="change_value">
-                </el-table-column>
-                <el-table-column label="修改后" min-width="30px" prop="new_value">
-                </el-table-column>
-                <el-table-column label="原因" min-width="60px" prop="reason">
-                </el-table-column>
-            </el-table>
-        </van-list>
-    </el-drawer>
+            </el-col>
+        </el-row>
+        <el-table :data="all_contract" style="width: 100%" stripe>
+            <el-table-column type="index" label="编号" width="50px">
+            </el-table-column>
+            <el-table-column prop="name" label="公司名" width="200px">
+            </el-table-column>
+            <el-table-column prop="code" label="编码" width="150px">
+            </el-table-column>
+            <el-table-column label="关注物料" width="150px">
+                <template slot-scope="scope">
+                    <div v-for="(single_follow_stuff, index) in scope.row.follow_stuffs" :key="index">
+                        {{single_follow_stuff}}
+                    </div>
+                </template>
+            </el-table-column>
+            <el-table-column label="类型" width="50px" :formatter="get_type">
+            </el-table-column>
+            <el-table-column prop="attachment" label="附件" width="80px">
+                <template slot-scope="scope">
+                    <el-link v-if="scope.row.attachment" type="primary" :href="$remote_file_url + scope.row.attachment">查看</el-link>
+                    <span v-else>无附件</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="admin_phone" label="管理员手机号" width="120px">
+            </el-table-column>
+            <el-table-column prop="balance" label="余额" width="120px">
+                <template slot-scope="scope">
+                    <span>{{scope.row.balance}}</span>
+                    <el-tooltip class="item" effect="dark" content="修改余额" placement="top">
+                        <el-button type="text" size="mini" @click="change_balance(scope.row)" class="el-icon-edit"></el-button>
+                    </el-tooltip>
+                    <el-tooltip class="item" effect="dark" content="历史余额" placement="top">
+                        <el-button type="text" size="mini" @click="show_balance_history(scope.row)" class="el-icon-s-data"></el-button>
+                    </el-tooltip>
+                </template>
+            </el-table-column>
+            <el-table-column prop="credit" label="授信额度" width="80px">
+            </el-table-column>
+            <el-table-column prop="company_address" label="公司地址" width="200px">
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="150px">
+                <template slot-scope="scope">
+                    <el-button type="warning" size="mini" @click="trigger_update_contract(scope.row)">修改</el-button>
+                    <el-button type="danger" size="mini" @click="del_contract(scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-dialog @close="clean_contract" :title="(current_opt_add?'新增':'修改') + '合同'" :visible.sync="show_add_contract_diag" width="60%" @keyup.enter.native="add_contract" @open="gen_random_password">
+            <el-form :model="new_contract" ref="add_contract_form" :rules="rules" label-width="120px">
+                <el-form-item label="对方公司名称" prop="name">
+                    <el-input v-model="new_contract.name" placeholder="请输入对方公司名称"></el-input>
+                </el-form-item>
+                <el-form-item label="关注物料" prop="follow_stuffs">
+                    <el-row>
+                        <el-col :span="12">
+                            <item-for-select v-model="follow_stuff_need_add" search_key="stuff_name"></item-for-select>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-button icon="el-icon-plus" type="primary" circle @click="new_contract.follow_stuffs.push(follow_stuff_need_add);follow_stuff_need_add = ''"></el-button>
+                        </el-col>
+                    </el-row>
+                    <el-tag v-for="(single_follow_stuff, index) in new_contract.follow_stuffs" :key="index" closable @close="new_contract.follow_stuffs.splice(index, 1)">
+                        {{single_follow_stuff}}
+                    </el-tag>
+                </el-form-item>
+                <el-form-item label="公司地址" prop="company_address">
+                    <el-input v-model="new_contract.company_address" placeholder="请输入对方公司地址"></el-input>
+                </el-form-item>
+                <el-form-item label="管理员手机" prop="admin_phone">
+                    <el-input v-model="new_contract.admin_phone" placeholder="请输入对方公司管理员手机号"></el-input>
+                </el-form-item>
+                <el-form-item label="密码" v-if="new_contract.admin_phone && old_admin_phone != new_contract.admin_phone">
+                    <el-input v-model="new_contract.admin_password" disabled></el-input>
+                    <el-button type="text" size="mini" @click="copy_random_password(new_contract.admin_password)">复制密码</el-button>
+                    <span style="font-size:12px;">请复制密码，对话框关闭后将不再显示该密码</span>
+                </el-form-item>
+                <el-form-item label="合同类型" prop="is_sale">
+                    <el-radio-group v-model="new_contract.is_sale">
+                        <el-radio :label="true">销售</el-radio>
+                        <el-radio :label="false">采购</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="合同编号" prop="code">
+                    <el-input v-model="new_contract.code" placeholder="请输入合同编号(可选)"></el-input>
+                </el-form-item>
+                <el-form-item label="授信额度" prop="credit">
+                    <el-input v-model="new_contract.credit" type="number" placeholder="请输入授信额度(可选)"></el-input>
+                </el-form-item>
+                <el-form-item label="附件">
+                    <span v-if="!new_contract.attachment">未上传</span>
+                    <span v-else-if="new_contract.attachment.substring(0, 4) == '/tmp'">已上传</span>
+                    <el-row v-else type="flex" align="middle">
+                        <el-col :span="6">
+                            <el-link type="primary" :href="$remote_file_url + new_contract.attachment">附件</el-link>
+                        </el-col>
+                        <el-col :span="18">
+                            <el-button size="small" type="danger" @click="new_contract.attachment = ''">删除附件</el-button>
+                        </el-col>
+                    </el-row>
+                </el-form-item>
+                <el-form-item>
+                    <el-upload :on-remove="()=>{new_contract.attachment = ''}" accept="image/*,.pdf" :action="$remote_url + '/upload/'" :limit="1" :on-success="mark_tmp_path">
+                        <el-button v-if="!new_contract.attachment" size="small" type="primary">点击上传</el-button>
+                    </el-upload>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="add_contract">确认</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+        <el-drawer :title="balance_focus_company +'历史余额'" size="40%" :visible.sync="show_balance_history_diag" direction="rtl" @opened="open_balance_history_diag" @closed="close_balance_history_diag">
+            <van-list ref="lazy_load" :offset="200" v-model="balance_history_loading" :finished="balance_history_load_end" finished-text="没有更多了" @load="get_balance_history">
+                <el-table :data="balance_history" style="width: 100%" stripe>
+                    <el-table-column label="时间" min-width="50px" prop="timestamp">
+                    </el-table-column>
+                    <el-table-column label="变化量" min-width="30px" prop="change_value">
+                    </el-table-column>
+                    <el-table-column label="修改后" min-width="30px" prop="new_value">
+                    </el-table-column>
+                    <el-table-column label="原因" min-width="60px" prop="reason">
+                    </el-table-column>
+                </el-table>
+            </van-list>
+        </el-drawer>
+    </div>
+    <div else>
+        <van-nav-bar title="合同管理" />
+        <van-search v-model="search_key" placeholder="公司名过滤" />
+        <van-cell v-for="(single_contract , index) in contract_need_show" is-link :key="index" :title="single_contract.name" @click="show_qr = true;cur_qr_name = single_contract.name"></van-cell>
+        <van-dialog v-model="show_qr" title="请司机扫描此码自助派车和排号" :showConfirmButton="false" closeOnClickOverlay>
+            <div style="text-align: center;">
+                <vue-qr :text="'http://' + domain_name + '/#/mobile/self_order?user=' + cur_qr_name"></vue-qr>
+                <div>
+                    {{cur_qr_name}}
+                </div>
+            </div>
+        </van-dialog>
+    </div>
 </div>
 </template>
 
@@ -144,6 +159,8 @@ import VueClipboard from 'vue-clipboard2'
 import Vant from 'vant';
 import 'vant/lib/index.css';
 import ItemForSelect from "../components/ItemForSelect.vue"
+import PinyinMatch from "pinyin-match"
+import vueQr from 'vue-qr'
 Vue.use(Vant);
 Vue.use(VueClipboard)
 export default {
@@ -151,9 +168,15 @@ export default {
     components: {
         "table-import-export": TableImportExport,
         "item-for-select": ItemForSelect,
+        vueQr
     },
     data: function () {
         return {
+            domain_name: '',
+            show_qr: false,
+            cur_qr_name: '',
+            search_key: '',
+            active: 0,
             follow_stuff_need_add: '',
             balance_history: [],
             balance_history_load_end: false,
@@ -237,6 +260,23 @@ export default {
             },
             balance_focus_company: '',
         };
+    },
+    computed: {
+        contract_need_show: function () {
+            var ret = [];
+
+            this.all_contract.forEach(element => {
+                if (this.search_key) {
+                    if (PinyinMatch.match(element.name, this.search_key)) {
+                        ret.push(element);
+                    }
+                } else {
+                    ret.push(element);
+                }
+            });
+
+            return ret;
+        },
     },
     methods: {
         open_balance_history_diag: function () {
@@ -399,6 +439,10 @@ export default {
     },
     beforeMount: function () {
         this.init_all_contract();
+        var vue_this = this;
+        vue_this.$call_remote_process("system_management", "get_domain_name", []).then(function (resp) {
+            vue_this.domain_name = resp;
+        });
     },
 }
 </script>

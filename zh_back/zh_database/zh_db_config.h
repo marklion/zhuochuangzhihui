@@ -620,4 +620,24 @@ public:
     }
 };
 
+class zh_sql_white_record:public sql_tree_base {
+public:
+    std::string vehicle_number;
+    std::string date;
+    double weight = 0;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("vehicle_number", sqlite_orm_column::STRING, &vehicle_number));
+        ret.push_back(sqlite_orm_column("date", sqlite_orm_column::STRING, &date));
+        ret.push_back(sqlite_orm_column("weight", sqlite_orm_column::REAL, &weight));
+        return ret;
+    }
+
+    virtual std::string table_name()
+    {
+        return "white_record_table";
+    }
+};
+
 #endif // _ZH_DB_CONFIG_H_

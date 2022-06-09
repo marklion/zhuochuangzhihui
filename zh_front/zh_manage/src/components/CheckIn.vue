@@ -10,8 +10,13 @@
         <template #right-icon>
             <van-button size="small" type="info" icon="replay" @click="init_vehicle">刷新</van-button>
         </template>
+        <template #label>
+            <div v-if="cur_vehicle.registered">
+                {{cur_vehicle.checkin_time}}
+            </div>
+        </template>
     </van-cell>
-    <vue-qr :text="cur_url()" :size="200"></vue-qr>
+    <vue-qr :text="cur_url" :size="200"></vue-qr>
     <div v-if="cur_vehicle.basic_info.need_enter_weight">
         <van-cell title="矿(厂)发净重" clickable is-link @click="show_upload_diag = true" :value="cur_vehicle.basic_info.enter_weight" center>
         </van-cell>
@@ -33,12 +38,13 @@
             </el-form>
         </van-dialog>
     </div>
-    <van-divider>进厂指引</van-divider>
-    <van-swipe :autoplay="3000">
-        <van-swipe-item v-for="(image, index) in all_prompt_img" :key="index">
-            <img v-lazy="$remote_file_url + image.attachment_path" />
-        </van-swipe-item>
-    </van-swipe>
+    <van-dialog v-model="show_direction" title="进厂指引" :showConfirmButton="false" closeOnClickOverlay>
+        <van-swipe :autoplay="3000">
+            <van-swipe-item v-for="(image, index) in all_prompt_img" :key="index">
+                <img v-lazy="$remote_file_url + image.attachment_path" width="150" height="300" />
+            </van-swipe-item>
+        </van-swipe>
+    </van-dialog>
     <div style="margin:15px;">
         <van-button v-if="!cur_vehicle.registered" block type="info" @click="driver_check_in(false)">排号</van-button>
         <van-button v-else block type="danger" @click="driver_check_in(true)">取消排号</van-button>
@@ -81,6 +87,8 @@ export default {
     },
     data: function () {
         return {
+            show_direction: false,
+            domain_name: '',
             show_source_dest_picker: false,
             all_prompt_img: [],
             upload_detail: {
@@ -93,14 +101,19 @@ export default {
                 registered: false,
                 has_called: false,
             },
-            cur_url: function () {
-                return document.location.href;
-            },
+
             show_upload_diag: false,
             all_source_dest: [],
         };
     },
     computed: {
+        cur_url: function () {
+            var order_number = '';
+            if (this.cur_vehicle.basic_info.order_number) {
+                order_number = this.cur_vehicle.basic_info.order_number;
+            }
+            return 'http://' + this.domain_name + '/#/mobile/field_opt/' + order_number;
+        },
         source_or_dest: function () {
             var ret = '物料源';
             if (this.cur_vehicle.basic_info.is_sale) {
@@ -225,22 +238,19 @@ export default {
         driver_check_in: function (_cancel) {
             var vue_this = this;
             if (!_cancel) {
-                if (!vue_this.cur_vehicle.basic_info.source_dest_name) {
-                    vue_this.$notify({
-                        type: 'danger',
-                        message: "请先指定" + vue_this.source_or_dest
-                    });
-                } else {
-                    vue_this.check_postion().then(function () {
-                        vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
-                            if (resp) {
-                                vue_this.init_vehicle();
-                            }
-                        });
-                    }).catch(function (msg) {
-                        vue_this.$toast(msg);
-                    });
+                if (!vue_this.cur_vehicle.basic_info.is_sale) {
+                    vue_this.cur_vehicle.basic_info.source_dest_name = vue_this.cur_vehicle.basic_info.company_name;
                 }
+                vue_this.check_postion().then(function () {
+                    vue_this.show_direction = true;
+                    vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
+                        if (resp) {
+                            vue_this.init_vehicle();
+                        }
+                    });
+                }).catch(function (msg) {
+                    vue_this.$toast(msg);
+                });
             } else {
                 vue_this.$dialog.confirm({
                     title: "取消确认",
@@ -282,6 +292,10 @@ export default {
     beforeMount: function () {
         this.init_vehicle();
         this.init_prompt_img();
+        var vue_this = this;
+        vue_this.$call_remote_process("system_management", "get_domain_name", []).then(function (resp) {
+            vue_this.domain_name = resp;
+        });
     },
 }
 </script>

@@ -76,6 +76,7 @@
                 <van-tabbar-item replace to="/mobile/vehicle_management" icon="newspaper-o">车辆管理</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/all_came_vehicle" icon="label-o">现场管理</van-tabbar-item>
                 <van-tabbar-item replace to="/mobile/self_order_opt" icon="label-o" v-if="$store.state.user_info.permission == 3">司机派车</van-tabbar-item>
+                <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
             </van-tabbar>
         </div>
         <div v-else>
@@ -159,6 +160,10 @@ export default {
                 permission_need: 2,
                 route_name: 'StuffManagement',
                 name: '物料管理'
+            }, {
+                permission_need: 2,
+                route_name: 'WhiteRecord',
+                name: '白名单称重'
             }, {
                 permission_need: 0,
                 route_name: 'UserManagement',

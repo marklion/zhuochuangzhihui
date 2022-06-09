@@ -1,6 +1,18 @@
 <template>
 <div class="driver_self_opt_show">
     <van-nav-bar title="自助操作" right-text="刷新" @click-right="refresh" />
+    <van-dialog v-model="init_diag" title="请输入手机号查询" :showConfirmButton="false" closeOnClickOverlay>
+        <van-form @submit="search_driver_phone">
+            <van-field v-model="query_phone" label="司机电话" placeholder="司机电话" :rules="[{ required: true, message: '请填写司机电话' },
+                {
+                    pattern: /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/,
+                    message: '请输入正确手机号',
+                }]" />
+            <div style="margin: 16px;">
+                <van-button round block type="info" native-type="submit">查询</van-button>
+            </div>
+        </van-form>
+    </van-dialog>
     <van-tabs v-model="active">
         <van-tab title="自助派车">
             <van-notice-bar left-icon="volume-o" text="提交后请等待货主审批和厂区审批" />
@@ -33,18 +45,25 @@
                     <div @click="get_self_order">搜索</div>
                 </template>
             </van-search>
-            <van-cell-group inset title="已提交派车单" v-if="queried_record.main_vehicle_number.length > 0">
+            <van-cell-group inset title="未审批的派车单" v-if="queried_record.main_vehicle_number.length > 0">
                 <van-cell title="车牌号" :value="queried_record.main_vehicle_number" />
                 <van-cell title="司机姓名" :value="queried_record.driver_name" />
                 <van-cell title="司机电话" :value="queried_record.driver_phone" />
                 <van-cell title="司机身份证" :value="queried_record.driver_id" />
                 <van-cell title="拉运公司" :value="queried_record.belong_user_name" />
                 <van-cell title="货物名称" :value="queried_record.stuff_name" />
+                <div style="margin: 16px;">
+                    <van-button round block type="info" @click="search_driver_phone">刷新</van-button>
+                </div>
             </van-cell-group>
             <van-empty description="搜索货主未批准的自助派车单" v-else />
         </van-tab>
         <van-tab title="排号">
-            <van-search v-model="query_phone" label="司机电话" placeholder="请输入司机电话查询" show-action @search="check_in_phone = query_phone" @cancel="check_in_phone = ''" />
+            <van-search v-model="query_phone" label="司机电话" placeholder="请输入司机电话查询" show-action @search="check_in_phone = query_phone">
+                <template #action>
+                    <div @click="check_in_phone = query_phone">搜索</div>
+                </template>
+            </van-search>
             <check-in v-if="check_in_phone" :driver_phone="check_in_phone"></check-in>
             <van-empty v-else description="无派车记录,请输入正确司机手机号搜索">
             </van-empty>
@@ -60,9 +79,6 @@ import 'vant/lib/index.css';
 import ItemForSelect from "../components/ItemForSelect.vue"
 import CheckIn from "../components/CheckIn.vue"
 Vue.use(Vant);
-import {
-    Dialog
-} from 'vant';
 
 export default {
     name: 'DriverSelfOpt',
@@ -72,6 +88,7 @@ export default {
     },
     data: function () {
         return {
+            init_diag: true,
             check_in_phone: '',
             active: 0,
             new_self_order: {
@@ -94,16 +111,44 @@ export default {
         };
     },
     methods: {
+        search_driver_phone: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process_no_toast("vehicle_order_center", "driver_get_order", [vue_this.query_phone]).then(function (resp) {
+                if (resp) {
+                    vue_this.active = 2;
+                    vue_this.check_in_phone = vue_this.query_phone;
+                }
+            }).catch(function () {
+                vue_this.$call_remote_process_no_toast("vehicle_order_center", "get_self_order_by_phone", [vue_this.query_phone]).then(function (resp) {
+                    vue_this.queried_record = resp;
+                    vue_this.active = 1;
+                    vue_this.$dialog.alert({
+                        title: "等待审批",
+                        message: "已提交自助派车，请联系货主审批,\n货主审批通过后方可请刷新页面操作排号"
+                    });
+                }).catch(function () {
+                    vue_this.$dialog.alert({
+                        title: '未找到派车单',
+                        message: '请完善信息后提交派车单'
+                    });
+                    vue_this.$call_remote_process_no_toast("vehicle_order_center", "get_driver_opt_history", [vue_this.query_phone]).then(function (resp) {
+                        vue_this.new_self_order.main_vehicle_number = resp.main_vehicle_number;
+                        vue_this.new_self_order.driver_id = resp.driver_id;
+                        vue_this.new_self_order.driver_phone = vue_this.query_phone;
+                        vue_this.new_self_order.driver_name = resp.driver_name;
+                    });
+                    vue_this.active = 0;
+                });
+            }).finally(function () {
+                vue_this.init_diag = false;
+            });
+        },
         create_self_order: function () {
             var vue_this = this;
             vue_this.new_self_order.main_vehicle_number = vue_this.new_self_order.main_vehicle_number.toUpperCase()
             vue_this.$call_remote_process("vehicle_order_center", "create_driver_self_order", [vue_this.new_self_order]).then(function (resp) {
                 if (resp) {
-                    Dialog.alert({
-                        message: '创建成功。货主和厂区负责人审批通过后可在排号页面操作排号',
-                    }).finally(function () {
-                        vue_this.refresh();
-                    });
+                    vue_this.search_driver_phone();
                 }
             })
         },

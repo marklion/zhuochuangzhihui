@@ -22,7 +22,7 @@ const routes = [
   {
     path: '/contract_management',
     name: 'ContractManagement',
-    component: () => import('../views/ContractManagement.vue')
+    component: () => import('../views/ContractManagement.vue'),
   },
   {
     path: '/stuff_management',
@@ -40,8 +40,13 @@ const routes = [
     component: () => import('../views/VehicleOrderCenter.vue')
   },
   {
-    path:'/mobile/field_opt/:order_no',
-    name:'FieldOpt',
+    path: '/white_record',
+    name: 'WhiteRecord',
+    component: () => import('../views/WhiteRecord.vue')
+  },
+  {
+    path: '/mobile/field_opt/:order_no',
+    name: 'FieldOpt',
     component: () => import('../views/FieldOpt.vue'),
     meta: {
       mobile: true,
@@ -56,14 +61,22 @@ const routes = [
     },
   },
   {
+    path: '/mobile/contract_management',
+    name: 'ContractManagement',
+    component: () => import('../views/ContractManagement.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
+  {
     path: '/vehicle_detail/:order_no',
     name: 'VehicleDetail',
     component: () => import('../views/VehicleDetail.vue'),
     meta: {
-      is_sub:true,
-      subtitle:'派车单',
+      is_sub: true,
+      subtitle: '派车单',
     },
-  },{
+  }, {
     path: '/mobile/vehicle_order_center',
     name: 'MobileVehicleOrderCenter',
     component: () => import('../views/VehicleOrderCenter.vue'),
@@ -78,23 +91,23 @@ const routes = [
     meta: {
       mobile: true,
     },
-  },{
+  }, {
     path: '/mobile/vehicle_detail/:order_no',
     name: 'MobileVehicleDetail',
     component: () => import('../views/VehicleDetail.vue'),
     meta: {
       mobile: true,
     },
-  },{
+  }, {
     path: '/mobile/self_order',
     name: 'DriverSelfOpt',
     component: () => import('../views/DriverSelfOpt.vue'),
     meta: {
       mobile: true,
-      no_need_login:true,
-      no_tabbar:true,
+      no_need_login: true,
+      no_tabbar: true,
     },
-  },{
+  }, {
     path: '/mobile/self_order_opt',
     name: 'SelfOrderOpt',
     component: () => import('../views/SelfOrderOpt.vue'),

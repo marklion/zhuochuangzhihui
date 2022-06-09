@@ -9,7 +9,7 @@
     <div class="single_vehicle_show" v-for="(single_vehicle, index) in vehicle_need_show" :key="index">
         <van-cell :title="single_vehicle.basic_info.company_name" :label="single_vehicle.basic_info.stuff_name" :value="single_vehicle.basic_info.main_vehicle_number" center>
         </van-cell>
-        <van-cell title="司机" :value="single_vehicle.basic_info.driver_name" :label="single_vehicle.basic_info.driver_phone"></van-cell>
+        <van-cell :title="single_vehicle.basic_info.driver_name" :value="single_vehicle.basic_info.driver_phone" :label="single_vehicle.checkin_time"></van-cell>
         <van-cell title="附件" v-if="single_vehicle.basic_info.attachment">
             <van-image width="100" height="100" :src="$remote_file_url + single_vehicle.basic_info.attachment" @click="preview_attachment(single_vehicle.basic_info.attachment)" />
         </van-cell>
@@ -18,6 +18,7 @@
                 <div style="margin-left:10px;">
                     <van-button v-if="!single_vehicle.has_called" size="small" type="info" @click="call_vehicle(single_vehicle, false)">叫号</van-button>
                     <van-button v-else size="small" type="danger" @click="call_vehicle(single_vehicle, true)">取消叫号</van-button>
+                    <van-button v-if="single_vehicle.has_called && !single_vehicle.confirmed" size="small" type="primary" @click="confirm_deliver(single_vehicle)">确认装卸货</van-button>
                 </div>
             </template>
         </van-cell>
@@ -132,6 +133,14 @@ export default {
         },
     },
     methods: {
+        confirm_deliver: function (_vehicle) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "confirm_order_deliver", [vue_this.$cookies.get("zh_ssid"), _vehicle.basic_info.order_number, true]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_all_vehicle();
+                }
+            });
+        },
         trigger_gate_opt: function (gate_code, _cmd) {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", 'ctrl_gate', [gate_code, _cmd]).then(function (resp) {
