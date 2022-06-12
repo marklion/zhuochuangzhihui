@@ -183,6 +183,8 @@ struct stuff_info {
     6:double price,
     10:double expect_weight,
     11:bool need_manual_scale,
+    12:double min_limit,
+    13:double max_limit,
 }
 
 struct stuff_change_point {

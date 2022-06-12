@@ -165,6 +165,8 @@ public:
     double price = 0;
     double expect_weight = 0;
     long need_manual_scale = 0;
+    double min_limit = 45;
+    double max_limit = 49.5;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -175,6 +177,8 @@ public:
         ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
         ret.push_back(sqlite_orm_column("expect_weight", sqlite_orm_column::REAL, &expect_weight));
         ret.push_back(sqlite_orm_column("need_manual_scale", sqlite_orm_column::INTEGER, &need_manual_scale));
+        ret.push_back(sqlite_orm_column("min_limit", sqlite_orm_column::REAL, &min_limit));
+        ret.push_back(sqlite_orm_column("max_limit", sqlite_orm_column::REAL, &max_limit));
 
         return ret;
     }

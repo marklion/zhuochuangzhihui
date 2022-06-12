@@ -83,6 +83,7 @@ public:
     zh_read_id_api entry_id_api;
     zh_read_id_api exit_id_api;
     bool manual_confirm_scale = true;
+    bool lack_weight = false;
     void open_trigger_switch();
     void proc_trigger_id_read(const std::string &_id_no, const std::string &_id_reader_ip);
     void proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip);
@@ -103,7 +104,7 @@ public:
     void broadcast_leave_scale();
     void print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &_order);
     std::unique_ptr<zh_sql_vehicle_order> record_order();
-    bool assume_stable_considering_manual();
+    bool assume_stable_considering_manual(double _weight);
     void proc_manual_confirm_scale();
 };
 

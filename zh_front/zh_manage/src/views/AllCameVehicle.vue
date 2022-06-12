@@ -17,7 +17,10 @@
             <template #right-icon>
                 <div style="margin-left:10px;">
                     <van-button v-if="!single_vehicle.has_called" size="small" type="info" @click="call_vehicle(single_vehicle, false)">叫号</van-button>
-                    <van-button v-else size="small" type="danger" @click="call_vehicle(single_vehicle, true)">取消叫号</van-button>
+                    <div v-else>
+                        <van-button size="small" type="warning" @click="call_vehicle(single_vehicle, true)">取消叫号</van-button>
+                        <van-button v-if="single_vehicle.basic_info.status == 1" size="small" type="danger" @click="pass_vehicle(single_vehicle)">过号</van-button>
+                    </div>
                     <van-button v-if="single_vehicle.has_called && !single_vehicle.confirmed" size="small" type="primary" @click="confirm_deliver(single_vehicle)">确认装卸货</van-button>
                 </div>
             </template>
@@ -133,8 +136,24 @@ export default {
         },
     },
     methods: {
+        pass_vehicle: function (_vehicle) {
+            var vue_this = this;
+
+            vue_this.$dialog.confirm({
+                title: '过号确认',
+                message: '确认过号吗？'
+            }).then(function () {
+                vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(_vehicle.basic_info.id), true]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_all_vehicle();
+                    }
+                });
+
+            });
+        },
         confirm_deliver: function (_vehicle) {
             var vue_this = this;
+
             vue_this.$call_remote_process("vehicle_order_center", "confirm_order_deliver", [vue_this.$cookies.get("zh_ssid"), _vehicle.basic_info.order_number, true]).then(function (resp) {
                 if (resp) {
                     vue_this.init_all_vehicle();

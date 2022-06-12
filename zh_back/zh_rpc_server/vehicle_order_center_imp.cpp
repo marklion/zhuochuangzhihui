@@ -522,6 +522,15 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     {
         vo->m_called = 0;
         vo->check_in_timestamp = 0;
+        std::string oem_name;
+        system_management_handler::get_inst()->get_oem_name(oem_name);
+        std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "取消'";
+        tdf_log tmp_log("sms");
+        tmp_log.log(sms_cmd);
+        if (0 != system(sms_cmd.c_str()))
+        {
+            ZH_RETURN_MSG("发送叫号短信失败");
+        }
     }
     else
     {
@@ -997,12 +1006,12 @@ bool scale_state_machine::should_open()
     return ret;
 }
 
-bool scale_state_machine::assume_stable_considering_manual()
+bool scale_state_machine::assume_stable_considering_manual(double _weight)
 {
     bool ret = true;
 
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status > 0", bound_vehicle_number.c_str());
-    if (vo)
+    if (vo && vo->status == 3)
     {
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
         if (stuff && stuff->need_manual_scale)
@@ -1038,14 +1047,36 @@ bool scale_state_machine::scale_stable()
         }();
         if (cur_weight > 1)
         {
-            if (assume_stable_considering_manual())
+            if (assume_stable_considering_manual(cur_weight))
             {
                 ret = true;
             }
             else
             {
-                zh_hk_cast_need_manual(bound_scale.entry_config.led_ip, bound_vehicle_number);
-                zh_hk_cast_need_manual(bound_scale.exit_config.led_ip, bound_vehicle_number);
+                auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100 AND status > 0", bound_vehicle_number.c_str());
+                if (vo)
+                {
+                    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+                    if (stuff && !lack_weight)
+                    {
+                        if (cur_weight > stuff->max_limit)
+                        {
+                            zh_hk_cast_need_drop(bound_scale.entry_config.led_ip, bound_vehicle_number);
+                            zh_hk_cast_need_drop(bound_scale.exit_config.led_ip, bound_vehicle_number);
+                            ret = true;
+                        }
+                        else if (cur_weight < stuff->min_limit)
+                        {
+                            lack_weight = true;
+                            zh_hk_cast_need_manual(bound_scale.entry_config.led_ip, bound_vehicle_number);
+                            zh_hk_cast_need_manual(bound_scale.exit_config.led_ip, bound_vehicle_number);
+                        }
+                        else
+                        {
+                            ret = true;
+                        }
+                    }
+                }
             }
         }
     }
@@ -1072,6 +1103,22 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
     if (vo)
     {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+        bool permit_m_weight = false;
+        if (stuff)
+        {
+            if (stuff->need_manual_scale)
+            {
+                if ((stuff->max_limit >= fin_weight && stuff->min_limit <= fin_weight) || manual_confirm_scale)
+                {
+                    permit_m_weight = true;
+                }
+            }
+            else{
+                permit_m_weight = true;
+            }
+        }
+
         if (vo->status < 3)
         {
             vo->p_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
@@ -1081,7 +1128,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->p_weight = fin_weight;
             vo->push_status(status);
         }
-        else if (vo->status < 4)
+        else if (vo->status < 4 && permit_m_weight)
         {
             vo->m_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
             vo->m_nvr_ip2 = bound_scale.exit_nvr_ip + ":" + std::to_string(bound_scale.exit_channel);
@@ -1152,7 +1199,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "---------------\n";
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
-        qr_code = "http://" + std::string( getenv("BASE_URL"));
+        qr_code = "http://" + std::string(getenv("BASE_URL"));
         qr_code += std::string(getenv("URL_REMOTE")) + "/#/mobile/field_opt/" + vo->order_number;
     }
     else
@@ -1252,6 +1299,7 @@ void scale_state_machine::proc_manual_confirm_scale()
 {
     tdf_state_machine_lock a(*this);
     manual_confirm_scale = true;
+    lack_weight = false;
 }
 void scale_state_machine::proc_trigger_vehicle(const std::string &_vehicle_number, const std::string &_road_ip)
 {
@@ -1310,8 +1358,28 @@ void scale_state_machine::broadcast_enter_scale()
 }
 void scale_state_machine::broadcast_leave_scale()
 {
-    zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
-    zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
+    bool permit_m_weight = false;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
+    if (vo && vo->status == 3)
+    {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+        if (stuff && stuff->need_manual_scale)
+        {
+            if ((stuff->max_limit >= fin_weight && stuff->min_limit <= fin_weight) || manual_confirm_scale)
+            {
+                permit_m_weight = true;
+            }
+        }
+    }
+    else
+    {
+        permit_m_weight = true;
+    }
+    if (permit_m_weight)
+    {
+        zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
+        zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
+    }
 }
 
 std::unique_ptr<tdf_state_machine_state> scale_sm_vehicle_come::change_state(tdf_state_machine &_sm)
@@ -1934,7 +2002,7 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
         ZH_RETURN_NO_PRAVILIGE();
     }
     long begin_id = 0;
-    long end_id= 0;
+    long end_id = 0;
     auto begin_date = _begin_date;
     auto end_date = _end_date;
     while (begin_id <= 0)
@@ -1973,7 +2041,8 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
         }
     }
     auto record = sqlite_orm::search_record_all<zh_sql_white_record>("PRI_ID >= %ld AND PRI_ID <= %ld", begin_id, end_id);
-    for (auto &itr:record) {
+    for (auto &itr : record)
+    {
         white_record_info tmp;
         tmp.id = itr.get_pri_id();
         tmp.date = itr.date;
