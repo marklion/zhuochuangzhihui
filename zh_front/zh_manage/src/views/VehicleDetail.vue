@@ -179,8 +179,8 @@
             <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id" />
         </van-cell-group>
         <van-cell-group inset title="拉运信息">
-            <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.basic_info.p_time" />
-            <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.basic_info.m_time" />
+            <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
+            <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />
             <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" />
         </van-cell-group>
     </div>

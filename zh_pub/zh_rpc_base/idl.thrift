@@ -301,6 +301,7 @@ struct vehicle_order_detail {
     13:string p_time,
     14:string m_time,
     15:string checkin_time,
+    16:string call_time,
 }
 
 struct vehicle_order_statistics {

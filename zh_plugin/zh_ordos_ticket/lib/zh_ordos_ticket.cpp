@@ -49,7 +49,7 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
     neb::CJsonObject config(config_string);
     httplib::Client cli(config("remote_url"));
     cli.set_bearer_token_auth(config("token").c_str());
-    httplib::Headers ref = {{"Referer", config("remote_url") + "/view/access_process/gross_weight"}};
+    httplib::Headers ref = {{"Referer", config("remote_url") + "/view/access_process/gross_weight"}, {"Origin", config("remote_url")}};
     cli.set_default_headers(ref);
     auto res = cli.Get(_url.c_str());
     if (_req.length() > 0)
@@ -161,7 +161,7 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     neb::CJsonObject curb_weight;
 
     curb_weight.Add("VehicleNum", gross_info("VehicleNum"));
-    curb_weight.Add("CurbWeight", gross_info("CurbWeight"));
+    curb_weight.Add("CurbWeight", gross_info("EmptyWeight"));
     curb_weight.Add("Axes", gross_info("Axes"));
 
     auto additional_config = zh_ordos_ticket_get_config()["additional_config"];
@@ -172,6 +172,10 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
         gross_info.Add(additional_key, additional_value);
         curb_weight.Add(additional_key, additional_value);
     }
+    gross_info.Delete("ClearInventory");
+    gross_info.Add("ClearInventory", "0");
+    gross_info.Delete("GuarantHeat");
+    gross_info.Add("GuarantHeat", "0");
     gross_info.Add("GPS", zh_ordos_ticket_get_config()("gps"));
     curb_weight.Add("GPS", zh_ordos_ticket_get_config()("gps"));
 

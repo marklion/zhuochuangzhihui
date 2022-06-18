@@ -55,6 +55,13 @@
         "typeinfo": "cpp",
         "zh_printer.h": "c",
         "shared_mutex": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "csetjmp": "cpp",
+        "csignal": "cpp",
+        "bitset": "cpp",
+        "condition_variable": "cpp",
+        "unordered_set": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp"
     }
 }

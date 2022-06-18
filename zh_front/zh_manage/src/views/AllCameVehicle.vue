@@ -9,7 +9,16 @@
     <div class="single_vehicle_show" v-for="(single_vehicle, index) in vehicle_need_show" :key="index">
         <van-cell :title="single_vehicle.basic_info.company_name" :label="single_vehicle.basic_info.stuff_name" :value="single_vehicle.basic_info.main_vehicle_number" center>
         </van-cell>
-        <van-cell :title="single_vehicle.basic_info.driver_name" :value="single_vehicle.basic_info.driver_phone" :label="single_vehicle.checkin_time"></van-cell>
+        <van-cell :title="single_vehicle.basic_info.driver_name" :value="single_vehicle.basic_info.driver_phone" >
+            <template #label>
+                <div>
+                    排号时间:{{single_vehicle.checkin_time}}
+                </div>
+                <div>
+                    叫号时间:{{single_vehicle.call_time}}
+                </div>
+            </template>
+        </van-cell>
         <van-cell title="附件" v-if="single_vehicle.basic_info.attachment">
             <van-image width="100" height="100" :src="$remote_file_url + single_vehicle.basic_info.attachment" @click="preview_attachment(single_vehicle.basic_info.attachment)" />
         </van-cell>

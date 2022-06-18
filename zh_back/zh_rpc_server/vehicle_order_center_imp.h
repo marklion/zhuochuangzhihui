@@ -212,6 +212,7 @@ public:
     virtual bool record_order_source_dest(const int64_t order_id, const std::string &source_dest_name);
     virtual void get_driver_opt_history(vehicle_order_info &_return, const std::string &driver_phone);
     virtual void get_white_record_info(std::vector<white_record_info> &_return, const std::string &ssid, const int64_t begin_date, const int64_t end_date);
+    bool pri_call_vehicle(const int64_t order_id, const bool is_cancel);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

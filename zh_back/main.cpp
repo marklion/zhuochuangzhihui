@@ -110,15 +110,36 @@ void init_admin_user()
     }
 }
 
+static void start_checkin_check_timer()
+{
+    tdf_main::get_inst().start_timer(
+        60, [](void *_private)
+        {
+            auto need_pass_time = time(nullptr);
+            need_pass_time -= 20 * 60;
+            auto checkin_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 AND call_timestamp < %d AND call_timestamp != 0", need_pass_time);
+            for (auto &itr:checkin_order)
+            {
+                try
+                {
+                vehicle_order_center_handler::get_inst()->driver_check_in(itr.get_pri_id(), true);
+                }
+                catch(gen_exp& e)
+                {
+                }
+
+            } },
+        nullptr);
+}
+
 int main(int argc, char const *argv[])
 {
     init_user_permissions();
     init_admin_user();
 
-    std::thread ([]{
-
-        tdf_main::get_inst().run();
-    }).detach();
+    std::thread([]
+                { tdf_main::get_inst().run(); })
+        .detach();
 
     std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
     multi_processor->registerProcessor("system_management", std::shared_ptr<TProcessor>(new system_managementProcessor(std::shared_ptr<system_management_handler>(system_management_handler::get_inst()))));
@@ -148,9 +169,9 @@ int main(int argc, char const *argv[])
                 std::string std_out_tmp;
                 std::string std_err_tmp;
                 single_this->zh_plugin_run_plugin("refresh", itr, std_out_tmp, std_err_tmp);
-            }
-        },
+            } },
         plugin_management_handler::get_inst());
+    start_checkin_check_timer();
 
     tp_server.serve();
 

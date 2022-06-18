@@ -55,6 +55,9 @@
                 <div style="margin: 16px;">
                     <van-button round block type="info" @click="search_driver_phone">刷新</van-button>
                 </div>
+                <div style="margin: 16px;">
+                    <van-button round block type="danger" @click="cancel_self_order">取消</van-button>
+                </div>
             </van-cell-group>
             <van-empty description="搜索货主未批准的自助派车单" v-else />
         </van-tab>
@@ -111,6 +114,20 @@ export default {
         };
     },
     methods: {
+        cancel_self_order: function () {
+            var vue_this = this;
+            vue_this.$dialog.confirm({
+                title: '取消确认',
+                message: '确认取消自助派车单吗？',
+                cancelButtonText:'再等等'
+            }).then(function () {
+                vue_this.$call_remote_process("vehicle_order_center", "cancel_driver_self_order", ["", vue_this.queried_record.id]).then(function (resp) {
+                    if (resp) {
+                        vue_this.refresh();
+                    }
+                });
+            });
+        },
         search_driver_phone: function () {
             var vue_this = this;
             vue_this.$call_remote_process_no_toast("vehicle_order_center", "driver_get_order", [vue_this.query_phone]).then(function (resp) {

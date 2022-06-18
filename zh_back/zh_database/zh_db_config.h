@@ -278,6 +278,7 @@ public:
     long check_in_timestamp = 0;
     std::string end_time;
     std::string source_dest_name;
+    long call_timestamp = 0;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -318,6 +319,7 @@ public:
         ret.push_back(sqlite_orm_column("check_in_timestamp", sqlite_orm_column::INTEGER, &check_in_timestamp));
         ret.push_back(sqlite_orm_column("end_time", sqlite_orm_column::STRING, &end_time));
         ret.push_back(sqlite_orm_column("source_dest_name", sqlite_orm_column::STRING, &source_dest_name));
+        ret.push_back(sqlite_orm_column("call_timestamp", sqlite_orm_column::INTEGER, &call_timestamp));
 
         return ret;
     }

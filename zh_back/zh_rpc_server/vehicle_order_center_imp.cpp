@@ -119,7 +119,8 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.m_time = vo->m_cam_time;
     _return.basic_info.end_time = vo->end_time;
     _return.basic_info.source_dest_name = vo->source_dest_name;
-    _return.checkin_time = zh_rpc_util_get_timestring(vo->check_in_timestamp);
+    _return.checkin_time = vo->check_in_timestamp > 0 ? zh_rpc_util_get_timestring(vo->check_in_timestamp) : "";
+    _return.call_time = vo->call_timestamp > 0 ? zh_rpc_util_get_timestring(vo->call_timestamp) : "";
     if (company && company->is_sale)
     {
         _return.basic_info.is_sale = true;
@@ -209,7 +210,6 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
 
     return ret;
 }
-
 
 static bool pri_create_order(const std::vector<vehicle_order_info> &orders, const std::string &ssid = "")
 {
@@ -521,16 +521,14 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (!vo->m_registered)
     {
         vo->m_called = 0;
+        vo->call_timestamp = 0;
         vo->check_in_timestamp = 0;
         std::string oem_name;
         system_management_handler::get_inst()->get_oem_name(oem_name);
         std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "取消'";
         tdf_log tmp_log("sms");
         tmp_log.log(sms_cmd);
-        if (0 != system(sms_cmd.c_str()))
-        {
-            ZH_RETURN_MSG("发送叫号短信失败");
-        }
+        system(sms_cmd.c_str());
     }
     else
     {
@@ -551,14 +549,9 @@ void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_retur
     make_vehicle_detail_from_sql(_return, *vo);
 }
 
-bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel)
+bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, const bool is_cancel)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
-    if (!user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
     if (!vo)
     {
@@ -574,6 +567,14 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     }
     auto orig_called = vo->m_called;
     vo->m_called = is_cancel ? 0 : 1;
+    if (is_cancel)
+    {
+        vo->call_timestamp = 0;
+    }
+    else
+    {
+        vo->call_timestamp = time(nullptr);
+    }
     ret = vo->update_record();
     if (ret && vo->m_called && orig_called != vo->m_called)
     {
@@ -589,6 +590,16 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     }
 
     return ret;
+}
+bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    return pri_call_vehicle(order_id, is_cancel);
 }
 
 void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid)
@@ -1114,7 +1125,8 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                     permit_m_weight = true;
                 }
             }
-            else{
+            else
+            {
                 permit_m_weight = true;
             }
         }
@@ -1913,12 +1925,16 @@ bool vehicle_order_center_handler::cancel_driver_self_order(const std::string &s
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid);
-    if (!user)
+    if (ssid.length() > 0)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        auto user = zh_rpc_util_get_online_user(ssid);
+        if (!user)
+        {
+            ZH_RETURN_NO_PRAVILIGE();
+        }
     }
-    auto order = user->get_children<zh_sql_driver_self_order>("belong_user", "PRI_ID == %ld", order_id);
+
+    auto order = sqlite_orm::search_record<zh_sql_driver_self_order>(order_id);
     if (!order)
     {
         ZH_RETURN_NO_PRAVILIGE();
