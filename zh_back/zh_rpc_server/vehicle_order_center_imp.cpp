@@ -501,6 +501,32 @@ bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid,
     ret = vo->update_record();
     return ret;
 }
+static bool vehicle_leave_enough(const std::string &_vehicle_number)
+{
+    bool ret = true;
+
+    auto smh = system_management_handler::get_inst();
+    if (smh)
+    {
+        register_config_info rci;
+        smh->get_register_info(rci);
+        if (rci.enabled && rci.check_in_time > 0)
+        {
+            auto expect_leave_time = time(nullptr) - rci.check_in_time * 60;
+            auto last_leave_vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status == 100 AND exit_cam_time != '' ORDER BY PRI_ID DESC LIMIT 1", _vehicle_number.c_str());
+            if (last_leave_vo)
+            {
+                auto last_leave_time = zh_rpc_util_get_time_by_string(last_leave_vo->exit_cam_time);
+                if (last_leave_time > expect_leave_time)
+                {
+                    ret = false;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
 bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel)
 {
     bool ret = false;
@@ -517,18 +543,25 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     {
         ZH_RETURN_MSG("请先填写进厂前净重并上传矿（厂）发磅单");
     }
+    if (!is_cancel && !vehicle_leave_enough(vo->main_vehicle_number))
+    {
+        ZH_RETURN_MSG("离场时间过短，无法排号，请稍后排号");
+    }
     vo->m_registered = is_cancel ? 0 : 1;
     if (!vo->m_registered)
     {
-        vo->m_called = 0;
-        vo->call_timestamp = 0;
         vo->check_in_timestamp = 0;
-        std::string oem_name;
-        system_management_handler::get_inst()->get_oem_name(oem_name);
-        std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "取消'";
-        tdf_log tmp_log("sms");
-        tmp_log.log(sms_cmd);
-        system(sms_cmd.c_str());
+        if (vo->m_called)
+        {
+            vo->m_called = 0;
+            vo->call_timestamp = 0;
+            std::string oem_name;
+            system_management_handler::get_inst()->get_oem_name(oem_name);
+            std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "取消'";
+            tdf_log tmp_log("sms");
+            tmp_log.log(sms_cmd);
+            system(sms_cmd.c_str());
+        }
     }
     else
     {

@@ -85,6 +85,12 @@ struct company_address_info{
     3:double distance,
 }
 
+struct register_config_info {
+    1:bool enabled,
+    2:i64 pass_time,
+    3:i64 check_in_time,
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
@@ -112,6 +118,8 @@ service system_management {
     bool delete_prompt_image(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     company_address_info get_company_address_info() throws (1:gen_exp e),
     bool set_company_address_info(1:string ssid, 2:company_address_info address_info) throws (1:gen_exp e),
+    register_config_info get_register_info() throws (1:gen_exp e),
+    bool set_register_info(1:string ssid, 2:register_config_info register_config) throws (1:gen_exp e),
 }
 
 struct user_info {

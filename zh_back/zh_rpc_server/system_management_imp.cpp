@@ -110,7 +110,13 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
     }
 
     std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
-    neb::CJsonObject tmp;
+    std::ifstream config_file_orig("/conf/device/device_config.json", std::ios::in);
+    std::istreambuf_iterator<char> beg(config_file_orig), end;
+    std::string config_string(beg, end);
+    neb::CJsonObject tmp(config_string);
+    tmp.Replace("auto_order", config.auto_order, config.auto_order);
+    tmp.Delete("gate");
+    tmp.Delete("scale");
     tmp.AddEmptySubArray("gate");
     tmp.AddEmptySubArray("scale");
     for (auto &itr : config.gate)
@@ -164,7 +170,6 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("coefficient", itr.coefficient);
         tmp["scale"].Add(scale);
     }
-    tmp.Add("auto_order", config.auto_order, config.auto_order);
     config_file << tmp.ToFormattedString();
     config_file.close();
 
@@ -524,5 +529,44 @@ bool system_management_handler::set_company_address_info(const std::string &ssid
     config_file.close();
     ret = true;
 
+    return ret;
+}
+
+void system_management_handler::get_register_info(register_config_info &_return)
+{
+    auto config = get_cur_config_json();
+    if (config.KeyExist("register_config"))
+    {
+        config["register_config"].Get("enable_register", _return.enabled);
+        config["register_config"].Get("pass_time", _return.pass_time);
+        config["register_config"].Get("check_in_time", _return.check_in_time);
+    }
+    else
+    {
+        _return.enabled = false;
+    }
+}
+bool system_management_handler::set_register_info(const std::string &ssid, const register_config_info &register_config)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto config = get_cur_config_json();
+    auto new_config = neb::CJsonObject();
+    new_config.Add("enable_register", register_config.enabled, register_config.enabled);
+    new_config.Add("pass_time", register_config.pass_time);
+    new_config.Add("check_in_time", register_config.check_in_time);
+
+    config.Delete("register_config");
+    config.Add("register_config", new_config);
+
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
+    config_file << config.ToFormattedString();
+    config_file.close();
+    ret = true;
     return ret;
 }

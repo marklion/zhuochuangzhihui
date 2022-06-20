@@ -38,7 +38,7 @@
             </el-form>
         </van-dialog>
     </div>
-    <van-dialog v-model="show_direction" title="进厂指引" :showConfirmButton="false" closeOnClickOverlay>
+    <van-dialog v-model="show_direction" confirm-button-text="知道了" title="进厂指引"  closeOnClickOverlay>
         <van-swipe :autoplay="3000">
             <van-swipe-item v-for="(image, index) in all_prompt_img" :key="index">
                 <img v-lazy="$remote_file_url + image.attachment_path" width="150" height="300" />
@@ -242,11 +242,16 @@ export default {
                     vue_this.cur_vehicle.basic_info.source_dest_name = vue_this.cur_vehicle.basic_info.company_name;
                 }
                 vue_this.check_postion().then(function () {
-                    vue_this.show_direction = true;
                     vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {
                         if (resp) {
                             vue_this.init_vehicle();
+                            vue_this.show_direction = true;
                         }
+                    }).catch(function (error) {
+                        vue_this.$dialog.alert({
+                            title: '无法排号',
+                            message: error.msg
+                        })
                     });
                 }).catch(function (msg) {
                     vue_this.$toast(msg);

@@ -113,22 +113,32 @@ void init_admin_user()
 static void start_checkin_check_timer()
 {
     tdf_main::get_inst().start_timer(
-        60, [](void *_private)
+        60,
+        [](void *_private)
         {
             auto need_pass_time = time(nullptr);
-            need_pass_time -= 20 * 60;
-            auto checkin_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 AND call_timestamp < %d AND call_timestamp != 0", need_pass_time);
-            for (auto &itr:checkin_order)
+            auto smh = system_management_handler::get_inst();
+            if (smh)
             {
-                try
+                register_config_info rci;
+                smh->get_register_info(rci);
+                if (rci.enabled && rci.pass_time > 0)
                 {
-                vehicle_order_center_handler::get_inst()->driver_check_in(itr.get_pri_id(), true);
+                    need_pass_time -= rci.pass_time * 60;
+                    auto checkin_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 AND call_timestamp < %d AND call_timestamp != 0", need_pass_time);
+                    for (auto &itr : checkin_order)
+                    {
+                        try
+                        {
+                            vehicle_order_center_handler::get_inst()->driver_check_in(itr.get_pri_id(), true);
+                        }
+                        catch (gen_exp &e)
+                        {
+                        }
+                    }
                 }
-                catch(gen_exp& e)
-                {
-                }
-
-            } },
+            }
+        },
         nullptr);
 }
 

@@ -7,6 +7,7 @@
 
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
 std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));
+time_t zh_rpc_util_get_time_by_string(const std::string &_time_string);
 
 std::map<std::string, long> &zh_runtime_get_device_health();
 class zh_sql_user_permission : public sql_tree_base

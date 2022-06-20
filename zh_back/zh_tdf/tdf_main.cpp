@@ -600,7 +600,7 @@ bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_
             .sin_family = AF_INET,
             .sin_port = ntohs(_port),
             .sin_addr = {.s_addr = inet_addr(_ip.c_str())}};
-        if (1 == connect_timeout(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr), 5000))
+        if (1 == connect_timeout(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr), 1000))
         {
             std::string chcrt;
             chcrt.append(inet_ntoa(server_addr.sin_addr));

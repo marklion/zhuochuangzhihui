@@ -298,25 +298,44 @@
             <el-divider direction="vertical"></el-divider>
             <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
             </el-switch>
-            <el-divider>排号位置</el-divider>
-            <el-form ref="address_form" :model="address_info" label-width="80px">
-                <el-form-item label="排号最远距离">
-                    <el-input v-model="address_info.distance"></el-input>
-                </el-form-item>
-                <el-form-item label="厂区位置">
-                    <el-col :span="11">
-                        <el-input v-model="address_info.x" placeholder="经度"></el-input>
+            <div v-if="register_time_config.enabled">
+                <el-divider>排号配置</el-divider>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form ref="address_form" :model="address_info" label-width="80px">
+                            <el-form-item label="排号最远距离">
+                                <el-input v-model="address_info.distance"></el-input>
+                            </el-form-item>
+                            <el-form-item label="厂区位置">
+                                <el-col :span="11">
+                                    <el-input v-model="address_info.x" placeholder="经度"></el-input>
+                                </el-col>
+                                <el-col class="line" :span="2">-</el-col>
+                                <el-col :span="11">
+                                    <el-input v-model="address_info.y" placeholder="纬度"></el-input>
+                                </el-col>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="save_address_info">保存</el-button>
+                            </el-form-item>
+                        </el-form>
                     </el-col>
-                    <el-col class="line" :span="2">-</el-col>
-                    <el-col :span="11">
-                        <el-input v-model="address_info.y" placeholder="纬度"></el-input>
-                    </el-col>
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="save_address_info">保存</el-button>
-                </el-form-item>
-            </el-form>
+                    <el-col :span="12">
+                        <el-form ref="time_config_form" :model="register_time_config" label-width="80px">
+                            <el-form-item label="过号时间">
+                                <el-input v-model="register_time_config.pass_time"></el-input>
+                            </el-form-item>
+                            <el-form-item label="最短离场排号间隔">
+                                <el-input v-model="register_time_config.check_in_time"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="save_register_info">保存</el-button>
+                            </el-form-item>
+                        </el-form>
 
+                    </el-col>
+                </el-row>
+            </div>
             <el-divider>指引图片</el-divider>
             <vue-grid align="stretch" justify="start">
                 <vue-cell width="2of12" v-for="(single_img,index) in  all_prompt_img" :key="index">
@@ -389,6 +408,11 @@ export default {
                 x: 0,
                 y: 0,
                 distance: 0,
+            },
+            register_time_config: {
+                pass_time: 0,
+                check_in_time: 0,
+                enabled: false,
             },
             auto_confirm: false,
             get_component_from_plugin_name: function (_plugin_name) {
@@ -484,6 +508,24 @@ export default {
         };
     },
     methods: {
+        get_register_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_register_info", []).then(function (resp) {
+                vue_this.register_time_config = resp;
+            });
+        },
+        save_register_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "set_register_info", [vue_this.$cookies.get("zh_ssid"), {
+                enabled: true,
+                pass_time: parseInt(vue_this.register_time_config.pass_time),
+                check_in_time: parseInt(vue_this.register_time_config.check_in_time),
+            }]).then(function (resp) {
+                if (resp) {
+                    vue_this.get_register_info();
+                }
+            });
+        },
         save_address_info: function () {
             var vue_this = this;
             var set_arg = {
@@ -726,6 +768,7 @@ export default {
         });
         this.init_prompt_img();
         this.get_company_address_info();
+        this.get_register_info();
 
     },
 }

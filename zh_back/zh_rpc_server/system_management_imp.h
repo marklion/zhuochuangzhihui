@@ -55,6 +55,8 @@ public:
     virtual bool delete_prompt_image(const std::string &ssid, const int64_t id);
     virtual void get_company_address_info(company_address_info &_return);
     virtual bool set_company_address_info(const std::string &ssid, const company_address_info &address_info);
+    virtual void get_register_info(register_config_info &_return);
+    virtual bool set_register_info(const std::string &ssid, const register_config_info &register_config);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

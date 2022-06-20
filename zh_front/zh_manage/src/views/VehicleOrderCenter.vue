@@ -49,7 +49,7 @@
             </el-col>
             <el-col :span="6">
                 <div align="right" style="margin-right:10px;">
-                    <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
+                    <el-input @input="recheck_list" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
                 </div>
             </el-col>
         </el-row>
@@ -244,7 +244,7 @@
                 <van-tab title="结束" name="end"></van-tab>
 
             </van-tabs>
-            <el-input @input="refresh_order" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
+            <el-input @input="recheck_list" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
             <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
                 <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :to="{name:'MobileVehicleDetail', params:{order_no:single_vehicle.order_number}}" :value="single_vehicle.stuff_name" :label="single_vehicle.company_name">
                     <template #right-icon>
@@ -622,7 +622,7 @@ export default {
             })
         },
         choose_date: function () {
-            this.refresh_order();
+            this.recheck_list();
         },
         fill_company_name: function () {
             if (this.$store.state.user_info.permission == 3) {
@@ -759,6 +759,10 @@ export default {
                 vue_this.cur_statistic.not_in_yet = resp.confirmed;
                 vue_this.cur_statistic.already_in = resp.entered + resp.first_weight + resp.second_weight;
             });
+        },
+        recheck_list:function() {
+            this.lazy_finish = false;
+            this.$refs.lazy_load.check();
         },
         refresh_order: function () {
             var vue_this = this;
