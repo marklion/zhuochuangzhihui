@@ -40,6 +40,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.need_manual_scale = stuff.need_manual_scale;
     tmp.min_limit = stuff.min_limit;
     tmp.max_limit = stuff.max_limit;
+    tmp.code = stuff.code;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -75,6 +76,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->need_manual_scale = stuff.need_manual_scale;
     exist_record->max_limit = stuff.max_limit;
     exist_record->min_limit = stuff.min_limit;
+    exist_record->code = stuff.code;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -154,6 +156,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.need_manual_scale = itr.need_manual_scale;
         tmp.max_limit = itr.max_limit;
         tmp.min_limit = itr.min_limit;
+        tmp.code = itr.code;
 
         _return.push_back(tmp);
     }

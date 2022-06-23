@@ -7,6 +7,7 @@
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_scale/lib/zh_scale.h"
 #include "../zh_qr/lib/zh_qr_lib.h"
+#include "plugin_management_imp.h"
 #include <sstream>
 
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
@@ -319,22 +320,30 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
 
 static void dup_one_order(zh_sql_vehicle_order &vo)
 {
-    vehicle_order_info tmp_order;
-    tmp_order.behind_vehicle_number = vo.behind_vehicle_number;
-    tmp_order.driver_id = vo.driver_id;
-    tmp_order.driver_name = vo.driver_name;
-    tmp_order.driver_phone = vo.driver_phone;
-    tmp_order.main_vehicle_number = vo.main_vehicle_number;
-    tmp_order.stuff_name = vo.stuff_name;
-    tmp_order.company_name = vo.company_name;
-    tmp_order.company_address = vo.company_address;
-    tmp_order.use_for = vo.use_for;
-    tmp_order.max_count = vo.max_count;
-    tmp_order.end_time = vo.end_time;
+    if (vo.status == 100 && vo.end_time.length() > 0)
+    {
+        auto now_date = zh_rpc_util_get_datestring().substr(0, 10);
+        auto end_date = vo.end_time.substr(0, 10);
+        if (now_date == end_date)
+        {
+            vehicle_order_info tmp_order;
+            tmp_order.behind_vehicle_number = vo.behind_vehicle_number;
+            tmp_order.driver_id = vo.driver_id;
+            tmp_order.driver_name = vo.driver_name;
+            tmp_order.driver_phone = vo.driver_phone;
+            tmp_order.main_vehicle_number = vo.main_vehicle_number;
+            tmp_order.stuff_name = vo.stuff_name;
+            tmp_order.company_name = vo.company_name;
+            tmp_order.company_address = vo.company_address;
+            tmp_order.use_for = vo.use_for;
+            tmp_order.max_count = vo.max_count;
+            tmp_order.end_time = vo.end_time;
 
-    std::vector<vehicle_order_info> tmp;
-    tmp.push_back(tmp_order);
-    pri_create_order(tmp);
+            std::vector<vehicle_order_info> tmp;
+            tmp.push_back(tmp_order);
+            pri_create_order(tmp);
+        }
+    }
 }
 bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders)
 {
@@ -566,6 +575,28 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     else
     {
         vo->check_in_timestamp = time(nullptr);
+        auto pmh = plugin_management_handler::get_inst();
+        if (pmh)
+        {
+            auto installed_plugin = pmh->internel_get_installed_plugins();
+            if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
+                             { return _item == "zh_hnnc"; }) != installed_plugin.end())
+            {
+                auto stuff_info = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+                auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
+                if (stuff_info && customer_info && customer_info->is_sale)
+                {
+                    auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
+                    std::string std_out;
+                    std::string std_err;
+                    pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
+                    if (std_err.length() > 0)
+                    {
+                        ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
+                    }
+                }
+            }
+        }
     }
     ret = vo->update_record();
 
@@ -730,7 +761,8 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
         ZH_RETURN_NO_ORDER();
     }
     auto status = zh_sql_order_status::make_end_status(ssid);
-    vo->push_status(status, dup_one_order);
+    auto save_hook = zh_order_save_hook([](zh_sql_vehicle_order &)->bool{return true;}, dup_one_order);
+    vo->push_status(status, save_hook);
     recalcu_balance_inventory(*vo, ssid);
 
     ret = true;
@@ -1142,6 +1174,120 @@ bool scale_state_machine::scale_clear()
     return ret;
 }
 
+static bool nvr_info_valided(const device_scale_config &_scale_config)
+{
+    bool ret = false;
+
+    auto &entry_login = _scale_config.entry_login;
+    auto &exit_login = _scale_config.exit_login;
+    auto &scale1 = _scale_config.scale1;
+    auto &scale2 = _scale_config.scale2;
+    auto &scale3 = _scale_config.scale3;
+    auto login_is_valided = [](const nvr_login_info &_login) -> bool
+    {
+        bool ret = false;
+        if (_login.username.length() > 0 && _login.password.length() > 0)
+        {
+            ret = true;
+        }
+
+        return ret;
+    };
+    if (login_is_valided(entry_login) &&
+        login_is_valided(exit_login) &&
+        login_is_valided(scale1) &&
+        login_is_valided(scale2) &&
+        login_is_valided(scale3))
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+
+static bool hnnc_installed()
+{
+    bool ret = false;
+
+    auto pmh = plugin_management_handler::get_inst();
+    if (pmh)
+    {
+        auto installed_plugin = pmh->internel_get_installed_plugins();
+        if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
+                         { return _item == "zh_hnnc"; }) != installed_plugin.end())
+        {
+            ret = true;
+        }
+    }
+
+    return ret;
+}
+
+static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic1, const std::string &_pic2, const std::string &_pic3)
+{
+    bool ret = false;
+    neb::CJsonObject req;
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _order.stuff_name.c_str());
+    auto customer = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
+    if (stuff && customer)
+    {
+        req.Add("Invcode", stuff->code);
+        req.Add("Custcode", customer->code);
+        req.Add("Emptweight", _order.p_weight);
+        req.Add("OTHbillcode", _order.order_number);
+        req.Add("LoadbillNo", _order.order_number.substr(_order.order_number.length() - 11, 11));
+        req.Add("Carno", _order.main_vehicle_number);
+        if (_order.status < 3)
+        {
+            req.Add("Carlenth", 14);
+            req.Add("CarBoxlenth", 12);
+            req.Add("CarnormalWeiT", 15);
+            req.Add("CarnormalWeiG", 50);
+            req.Add("CarType", "N");
+            req.Add("Caraxles", 6);
+
+            req.Add("transtype", "UpTare");
+            req.Add("PicurlT1", _pic1);
+            req.Add("PicurlT2", _pic2);
+            req.Add("PicurlT3", _pic3);
+            req.Add("Sname", _order.driver_name);
+            req.Add("Scode", _order.driver_id);
+            req.Add("Sphone", _order.driver_phone);
+        }
+        else if (_order.status < 4)
+        {
+            req.Add("transtype", "UpGross");
+            req.Add("IsRepeat", "N");
+            req.Add("PicurlG1", _pic1);
+            req.Add("PicurlG2", _pic2);
+            req.Add("PicurlG3", _pic3);
+            req.Add("Netweight", _order.m_weight - _order.p_weight);
+            req.Add("Grossweight", _order.m_weight);
+            req.Add("Billcode", _order.bl_number);
+        }
+        auto pmh = plugin_management_handler::get_inst();
+        if (pmh)
+        {
+            auto installed_plugin = pmh->internel_get_installed_plugins();
+            if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
+                             { return _item == "zh_hnnc"; }) != installed_plugin.end())
+            {
+                std::string std_out;
+                std::string std_err;
+                pmh->zh_plugin_run_plugin("push_req '" + req.ToString() + "'", "zh_hnnc", std_out, std_err);
+                if (std_err.empty())
+                {
+                    ret = true;
+                    auto resp = neb::CJsonObject(std_out);
+                    _order.bl_number = resp("Billcode");
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
 std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 {
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
@@ -1163,7 +1309,21 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                 permit_m_weight = true;
             }
         }
+        auto save_hook = zh_order_save_hook(
+            [&](zh_sql_vehicle_order &_order)
+            {
+                bool ret = false;
+                if (nvr_info_valided(bound_scale) && hnnc_installed())
+                {
+                    auto pic1 = zh_hk_get_capture_picture(bound_scale.scale1_nvr_ip, bound_scale.scale1_channel, bound_scale.scale1.username, bound_scale.scale1.password);
+                    auto pic2 = zh_hk_get_capture_picture(bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                    auto pic3 = zh_hk_get_capture_picture(bound_scale.scale3_nvr_ip, bound_scale.scale3_channel, bound_scale.scale3.username, bound_scale.scale3.password);
+                    ret = push_req_to_hn(_order, pic1, pic2, pic3);
+                }
 
+                return ret;
+            },
+            [](zh_sql_vehicle_order &) {});
         if (vo->status < 3)
         {
             vo->p_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
@@ -1171,7 +1331,16 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->p_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_p_status();
             vo->p_weight = fin_weight;
-            vo->push_status(status);
+
+            auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == 1", vo->company_name.c_str());
+            if (company)
+            {
+                vo->push_status(status, save_hook);
+            }
+            else
+            {
+                vo->push_status(status);
+            }
         }
         else if (vo->status < 4 && permit_m_weight)
         {
@@ -1180,12 +1349,22 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->m_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_m_status();
             vo->m_weight = fin_weight;
-            vo->push_status(status);
+            if (vo->bl_number.length() > 0)
+            {
+                vo->push_status(status, save_hook);
+            }
+            else
+            {
+                vo->push_status(status);
+            }
             recalcu_balance_inventory(*vo);
             if (!vo->get_children<zh_sql_order_status>("belong_order", "step == 2"))
             {
                 auto end_status = zh_sql_order_status::make_end_status();
-                vo->push_status(end_status, dup_one_order);
+                auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
+                                                      { return true; },
+                                                      dup_one_order);
+                vo->push_status(end_status, save_hook_1);
             }
         }
     }
@@ -1757,7 +1936,10 @@ void gate_state_machine::record_vehicle_pass()
         auto out_status = zh_sql_order_status::make_out_status();
         vo->push_status(out_status);
         auto end_status = zh_sql_order_status::make_end_status();
-        vo->push_status(end_status, dup_one_order);
+        auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
+                                              { return true; },
+                                              dup_one_order);
+        vo->push_status(end_status, save_hook_1);
     }
 }
 

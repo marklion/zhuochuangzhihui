@@ -25,6 +25,11 @@ struct device_gate_config {
     15:i64 exit_channel,
 }
 
+struct nvr_login_info{
+    1:string username,
+    2:string password,
+}
+
 struct device_scale_config {
     1:string name,
     2:list<string> raster_ip,
@@ -45,6 +50,17 @@ struct device_scale_config {
     17:i64 entry_channel,
     18:i64 exit_channel,
     19:double coefficient = 1,
+    20:nvr_login_info entry_login,
+    21:nvr_login_info exit_login,
+    22:nvr_login_info scale1,
+    23:nvr_login_info scale2,
+    24:nvr_login_info scale3,
+    25:string scale1_nvr_ip,
+    26:i64 scale1_channel,
+    27:string scale2_nvr_ip,
+    28:i64 scale2_channel,
+    29:string scale3_nvr_ip,
+    30:i64 scale3_channel,
 }
 
 struct device_config {
@@ -193,6 +209,7 @@ struct stuff_info {
     11:bool need_manual_scale,
     12:double min_limit,
     13:double max_limit,
+    14:string code,
 }
 
 struct stuff_change_point {

@@ -96,12 +96,12 @@ std::string zh_vcom_link::get_pts()
                                         char tmp[4096];
                                         int read_len = 0;
                                         read_len = recv(socket_fd, &tmp, sizeof(tmp), MSG_DONTWAIT);
-                                        if (read_len < 0)
+                                        if (read_len <= 0)
                                         {
                                             close(ptm_fd);
                                             ptm_fd = -1;
-                                        }
-                                        if (read_len > 0)
+                                            return;
+                                        }else
                                         {
                                             g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
                                             g_log.log_package(tmp, read_len);
@@ -117,6 +117,12 @@ std::string zh_vcom_link::get_pts()
                                             send(socket_fd, tmp, read_len, 0);
                                             g_log.log("send to com ip:%s port:%d", ip.c_str(), port);
                                             g_log.log_package(tmp, read_len);
+                                        }
+                                        else
+                                        {
+                                            close(ptm_fd);
+                                            ptm_fd = -1;
+                                            return;
                                         }
                                     }
                                     if (FD_ISSET(pipe_fd[0], &set))

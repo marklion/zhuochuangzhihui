@@ -61,14 +61,18 @@
                 </el-descriptions>
             </div>
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :column="3" :title="single_scale.name">
+                <el-descriptions border :column="4" :title="single_scale.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 NVR IP">{{single_scale.entry_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 通道">{{single_scale.entry_channel}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR 用户名">{{single_scale.entry_login.username}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR 密码">{{single_scale.entry_login.password}}</el-descriptions-item>
                     <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口 NVR IP">{{single_scale.exit_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口 通道">{{single_scale.exit_channel}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR 用户名">{{single_scale.exit_login.username}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR 密码">{{single_scale.exit_login.password}}</el-descriptions-item>
                     <el-descriptions-item label="出口LEDIP">{{single_scale.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
@@ -81,6 +85,18 @@
                     <el-descriptions-item label="读数系数">{{single_scale.coefficient}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体1 NVR 用户名">{{single_scale.scale1.username}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体1 NVR 密码">{{single_scale.scale1.password}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体1 NVR IP">{{single_scale.scale1_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体1 通道">{{single_scale.scale1_channel}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体2 NVR 用户名">{{single_scale.scale2.username}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体2 NVR 密码">{{single_scale.scale2.password}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体2 NVR IP">{{single_scale.scale2_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体2 通道">{{single_scale.scale2_channel}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体3 NVR 用户名">{{single_scale.scale3.username}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体3 NVR 密码">{{single_scale.scale3.password}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体3 NVR IP">{{single_scale.scale3_nvr_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="磅体3 通道">{{single_scale.scale3_channel}}</el-descriptions-item>
                     <el-descriptions-item label="身份证验证">
                         <el-tag v-if="single_scale.need_id" type="success">必选验证</el-tag>
                         <el-tag v-else>可选验证</el-tag>
@@ -167,6 +183,12 @@
                     <el-form-item label="入口通道" prop="entry_channel">
                         <el-input v-model="scale_for_edit.entry_channel" placeholder="请输入入口通道"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口NVR用户名" prop="entry_nvr_login_username">
+                        <el-input v-model="scale_for_edit.entry_login.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口NVR密码" prop="entry_nvr_login_password">
+                        <el-input v-model="scale_for_edit.entry_login.password"></el-input>
+                    </el-form-item>
                     <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
                         <el-input v-model="scale_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
                     </el-form-item>
@@ -175,6 +197,12 @@
                     </el-form-item>
                     <el-form-item label="出口通道" prop="exit_channel">
                         <el-input v-model="scale_for_edit.exit_channel" placeholder="请输入出口通道"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVR用户名" prop="exit_nvr_login_username">
+                        <el-input v-model="scale_for_edit.exit_login.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVR密码" prop="exit_nvr_login_password">
+                        <el-input v-model="scale_for_edit.exit_login.password"></el-input>
                     </el-form-item>
                     <el-form-item label="入口LEDIP" prop="entry_led_ip">
                         <el-input v-model="scale_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
@@ -220,6 +248,42 @@
                     </el-form-item>
                     <el-form-item label="必选二维码验证" prop="need_qr">
                         <el-switch v-model="scale_for_edit.need_qr"></el-switch>
+                    </el-form-item>
+                    <el-form-item label="磅体1NVR用户名" prop="scale1_nvr_login_username">
+                        <el-input v-model="scale_for_edit.scale1.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体1NVR密码" prop="scale1_nvr_login_password">
+                        <el-input v-model="scale_for_edit.scale1.password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体1NVRIP" prop="scale1_nvr_ip">
+                        <el-input v-model="scale_for_edit.scale1_nvr_ip"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体1通道" prop="scale1_channel">
+                        <el-input v-model="scale_for_edit.scale1_channel"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体2NVR用户名" prop="scale2_nvr_login_username">
+                        <el-input v-model="scale_for_edit.scale2.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体2NVR密码" prop="scale2_nvr_login_password">
+                        <el-input v-model="scale_for_edit.scale2.password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体2NVRIP" prop="scale2_nvr_ip">
+                        <el-input v-model="scale_for_edit.scale2_nvr_ip"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体2通道" prop="scale2_channel">
+                        <el-input v-model="scale_for_edit.scale2_channel"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体3NVR用户名" prop="scale3_nvr_login_username">
+                        <el-input v-model="scale_for_edit.scale3.username"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体3NVR密码" prop="scale3_nvr_login_password">
+                        <el-input v-model="scale_for_edit.scale3.password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体3NVRIP" prop="scale3_nvr_ip">
+                        <el-input v-model="scale_for_edit.scale3_nvr_ip"></el-input>
+                    </el-form-item>
+                    <el-form-item label="磅体3通道" prop="scale3_channel">
+                        <el-input v-model="scale_for_edit.scale3_channel"></el-input>
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_scale">确认</el-button>
@@ -438,12 +502,17 @@ export default {
             device_config: {},
             gate_for_edit: {
                 entry_config: {},
-                exit_config: {}
+                exit_config: {},
             },
             scale_for_edit: {
                 raster_ip: ['', ''],
                 entry_config: {},
-                exit_config: {}
+                exit_config: {},
+                entry_login:{},
+                exit_login:{},
+                scale1:{},
+                scale2:{},
+                scale3:{},
             },
             rules: {
                 name: [{
@@ -708,6 +777,9 @@ export default {
             vue_this.scale_for_edit.entry_channel = parseInt(vue_this.scale_for_edit.entry_channel);
             vue_this.scale_for_edit.exit_channel = parseInt(vue_this.scale_for_edit.exit_channel);
             vue_this.scale_for_edit.coefficient = parseFloat(vue_this.scale_for_edit.coefficient);
+            vue_this.scale_for_edit.scale1_channel = parseInt(vue_this.scale_for_edit.scale1_channel);
+            vue_this.scale_for_edit.scale2_channel = parseInt(vue_this.scale_for_edit.scale2_channel);
+            vue_this.scale_for_edit.scale3_channel = parseInt(vue_this.scale_for_edit.scale3_channel);
             vue_this.$refs.edit_scale_form.validate((valid) => {
                 if (valid) {
                     vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {

@@ -347,9 +347,9 @@ void __attribute__((constructor)) zh_hk_init(void)
     // req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
     // call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
     NET_DVR_Init();
-    if (!NET_DVR_SetConnectTime(2000, 1) ||
+    if (!NET_DVR_SetConnectTime(1000, 1) ||
         !NET_DVR_SetReconnect(10000, true) ||
-        !NET_DVR_SetRecvTimeOut(30000))
+        !NET_DVR_SetRecvTimeOut(1000))
     {
         g_log.err("failed to init hk_lib:%d", NET_DVR_GetLastError());
     }
@@ -677,11 +677,11 @@ bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_
     return true;
 }
 
-std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end)
+std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end, const std::string &_user_name , const std::string &_password)
 {
     std::string ret;
     NET_DVR_DEVICEINFO_V30 tmp_info = {0};
-    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
+    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, _user_name.c_str(), _password.c_str(), &tmp_info);
     std::string store_prefix = "/manage_dist/logo_res/";
     if (user_id >= 0)
     {
@@ -741,4 +741,36 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
     }
 
     return ret;
+}
+
+std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name , const std::string &_password )
+{
+    std::string ret;
+    auto begin_point = time(NULL);
+    NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, _user_name.c_str(), _password.c_str(), &tmp_info);
+    if (user_id >= 0)
+    {
+        NET_DVR_JPEGPARA cap_param = {
+            .wPicSize = 0xff,
+            .wPicQuality = 1};
+        std::string store_prefix = "/manage_dist";
+        ret = "/logo_res/pic_" + std::to_string(time(NULL)) + "_" + _nvr_ip + "_" + std::to_string(_channel_id);
+        if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id, &cap_param, (char *)((store_prefix + ret).c_str())))
+        {
+            g_log.log("success cap picture:%s", ret.c_str());
+        }
+        else
+        {
+            g_log.err("failed to cap picture [%d]", NET_DVR_GetLastError());
+        }
+    }
+    else
+    {
+        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
+    }
+    auto end_point = time(NULL);
+    g_log.log("cap pic spend %d second", end_point - begin_point);
+
+    return std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
 }

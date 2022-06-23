@@ -168,6 +168,7 @@ public:
     long need_manual_scale = 0;
     double min_limit = 45;
     double max_limit = 49.5;
+    std::string code;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -180,6 +181,7 @@ public:
         ret.push_back(sqlite_orm_column("need_manual_scale", sqlite_orm_column::INTEGER, &need_manual_scale));
         ret.push_back(sqlite_orm_column("min_limit", sqlite_orm_column::REAL, &min_limit));
         ret.push_back(sqlite_orm_column("max_limit", sqlite_orm_column::REAL, &max_limit));
+        ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
 
         return ret;
     }
@@ -244,6 +246,14 @@ public:
 };
 
 class zh_sql_order_status;
+class zh_sql_vehicle_order;
+struct zh_order_save_hook{
+    std::function<bool (zh_sql_vehicle_order &)> before_hook = [](zh_sql_vehicle_order &)->bool{return true;};
+    std::function<void (zh_sql_vehicle_order &)> after_hook = [](zh_sql_vehicle_order &){};
+    zh_order_save_hook(const std::function<bool (zh_sql_vehicle_order &)> &_before_hook,
+    const std::function<void (zh_sql_vehicle_order &)> &_after_hook):before_hook(_before_hook),after_hook(_after_hook){}
+    zh_order_save_hook():before_hook([](zh_sql_vehicle_order &)->bool{return true;}),after_hook([](zh_sql_vehicle_order &){}) {}
+};
 class zh_sql_vehicle_order : public sql_tree_base
 {
 public:
@@ -280,6 +290,7 @@ public:
     std::string end_time;
     std::string source_dest_name;
     long call_timestamp = 0;
+    std::string bl_number;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -321,6 +332,7 @@ public:
         ret.push_back(sqlite_orm_column("end_time", sqlite_orm_column::STRING, &end_time));
         ret.push_back(sqlite_orm_column("source_dest_name", sqlite_orm_column::STRING, &source_dest_name));
         ret.push_back(sqlite_orm_column("call_timestamp", sqlite_orm_column::INTEGER, &call_timestamp));
+        ret.push_back(sqlite_orm_column("bl_number", sqlite_orm_column::STRING, &bl_number));
 
         return ret;
     }
@@ -329,7 +341,7 @@ public:
         return "vehicle_order_table";
     }
     void push_status(
-        zh_sql_order_status &_status, const std::function<void(zh_sql_vehicle_order &)> &call_back = [](zh_sql_vehicle_order &) {});
+        zh_sql_order_status &_status, const zh_order_save_hook &_save_hook = zh_order_save_hook());
 };
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);

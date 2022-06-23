@@ -1,7 +1,9 @@
 #include "lib/zh_ordos_ticket.h"
+#include "../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include <unistd.h>
 #include <iostream>
 #include "clipp.h"
+#define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
 
 int main(int argc, char **argv)
 {
@@ -52,14 +54,14 @@ int main(int argc, char **argv)
     else if (cmd == "get")
     {
         std::string get_value;
-        auto config_value = zh_ordos_ticket_get_config()(key);
+        auto config_value = zh_plugin_conf_get_config(PLUGIN_CONF_FILE)(key);
         if (!config_value.empty())
         {
             get_value = config_value;
         }
         else
         {
-            get_value = zh_ordos_ticket_get_config()[key].ToString();
+            get_value = zh_plugin_conf_get_config(PLUGIN_CONF_FILE)[key].ToString();
         }
         std::cout << get_value << std::endl;
         iret = 0;
@@ -68,11 +70,11 @@ int main(int argc, char **argv)
     {
         if (json_obj)
         {
-            zh_ordos_set_config(key, neb::CJsonObject(json_string));
+            zh_plugin_conf_set_config(PLUGIN_CONF_FILE, key, neb::CJsonObject(json_string));
         }
         else
         {
-            zh_ordos_set_config(key, json_string);
+            zh_plugin_conf_set_config(PLUGIN_CONF_FILE, key, json_string);
         }
         iret = 0;
     }

@@ -210,6 +210,14 @@ std::vector<std::string> plugin_management_handler::internel_get_installed_plugi
         if (_return.size() > 0)
         {
             _return.pop_back();
+            for (auto itr = _return.begin(); itr != _return.end(); itr++)
+            {
+                if (*itr == "audit.log")
+                {
+                    _return.erase(itr);
+                    break;
+                }
+            }
         }
     }
     return _return;

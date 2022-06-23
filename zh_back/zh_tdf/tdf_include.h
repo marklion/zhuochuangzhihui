@@ -114,7 +114,7 @@ class tdf_log
         nolocks_localtime(&tmp_tm, usec_time.tv_sec);
         strftime(time_buffer, 48, "%Y/%m/%d %H:%M:%S", &tmp_tm);
         char m_sec_string[4] = {0};
-        snprintf(m_sec_string, sizeof(m_sec_string), "%03d", msec_time);
+        snprintf(m_sec_string, sizeof(m_sec_string), "%03ld", msec_time);
 
         output.append(time_buffer);
         output.append(":" + std::string(m_sec_string));
@@ -268,16 +268,16 @@ class tdf_state_machine_state;
 class tdf_state_machine_lock;
 class tdf_state_machine
 {
-    static std::thread sm_thread;
-    static int sm_mq_fd;
-    static std::set<tdf_state_machine *> valid_sm;
-    static pthread_mutex_t valid_sm_lock;
-    void internal_trigger_sm();
     pthread_mutex_t sm_lock;
     virtual tdf_log &get_log() = 0;
 
 public:
+    static std::thread *sm_thread;
+    static int sm_mq_fd;
+    static std::set<tdf_state_machine *> valid_sm;
+    static pthread_mutex_t valid_sm_lock;
     friend class tdf_state_machine_lock;
+    void internal_trigger_sm();
     tdf_state_machine()
     {
         if (sm_mq_fd < 0)

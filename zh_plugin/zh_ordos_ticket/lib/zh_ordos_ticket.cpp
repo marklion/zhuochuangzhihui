@@ -4,36 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "httplib.h"
+#include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
-
-neb::CJsonObject zh_ordos_ticket_get_config()
-{
-    std::fstream in_file(PLUGIN_CONF_FILE, std::ios::in);
-    std::istreambuf_iterator<char> beg(in_file), end;
-    std::string config_string(beg, end);
-    neb::CJsonObject config(config_string);
-
-    return config;
-}
-
-void zh_ordos_set_config(const std::string &_key, const std::string &_value)
-{
-    neb::CJsonObject config(zh_ordos_ticket_get_config());
-    config.Delete(_key);
-    config.Add(_key, _value);
-
-    std::fstream out_file(PLUGIN_CONF_FILE, std::ios::out);
-    out_file << config.ToString() << std::endl;
-}
-void zh_ordos_set_config(const std::string &_key, const neb::CJsonObject &_value)
-{
-    neb::CJsonObject config(zh_ordos_ticket_get_config());
-    config.Delete(_key);
-    config.Add(_key, _value);
-
-    std::fstream out_file(PLUGIN_CONF_FILE, std::ios::out);
-    out_file << config.ToString() << std::endl;
-}
 
 void zh_ordos_ticket_order_finish(const std::string &_msg)
 {
@@ -68,7 +40,7 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
             std::cerr << res->body << std::endl;
         }
         auto token = res->get_header_value("Token");
-        zh_ordos_set_config("token", token);
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "token", token);
     }
     else
     {
@@ -84,7 +56,7 @@ std::string zh_ordos_ticket_get_TIDs()
 
 std::string zh_ordos_ticket_get_verify_code()
 {
-    neb::CJsonObject config(zh_ordos_ticket_get_config());
+    neb::CJsonObject config(zh_plugin_conf_get_config(PLUGIN_CONF_FILE));
     httplib::Client cli(config("remote_url"));
     auto res = cli.Get("/getCaptcha");
     if (!res)
@@ -95,7 +67,7 @@ std::string zh_ordos_ticket_get_verify_code()
     neb::CJsonObject res_json(res_body);
     auto png_body = res_json("captcha");
     png_body = png_body.substr(22, png_body.length() - 22);
-    zh_ordos_set_config("login_key", res_json("idKey"));
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "login_key", res_json("idKey"));
     return png_body;
 }
 static void zh_ordos_fetch_basic()
@@ -113,13 +85,13 @@ static void zh_ordos_fetch_basic()
         tmp.Add("DestinationName", location_config[i]("Name"));
         basic_config["commonlyDestinations"].Add(tmp);
     }
-    zh_ordos_set_config("basic_data", basic_config);
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "basic_data", basic_config);
 }
 bool zh_ordos_ticket_login(const std::string &_username, const std::string &_password, const std::string &_verify_code)
 {
     bool ret = false;
     neb::CJsonObject login_req;
-    neb::CJsonObject config(zh_ordos_ticket_get_config());
+    neb::CJsonObject config(zh_plugin_conf_get_config(PLUGIN_CONF_FILE));
 
     login_req.Add("Captcha", _verify_code);
     login_req.Add("Key", config("login_key"));
@@ -133,8 +105,8 @@ bool zh_ordos_ticket_login(const std::string &_username, const std::string &_pas
         neb::CJsonObject res_body(res->body);
         if (res_body("ok") == "true")
         {
-            zh_ordos_set_config("OID", res_body("organization"));
-            zh_ordos_set_config("token", res_body("token"));
+            zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "OID", res_body("organization"));
+            zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "token", res_body("token"));
             zh_ordos_fetch_basic();
             ret = true;
         }
@@ -164,7 +136,7 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     curb_weight.Add("CurbWeight", gross_info("EmptyWeight"));
     curb_weight.Add("Axes", gross_info("Axes"));
 
-    auto additional_config = zh_ordos_ticket_get_config()["additional_config"];
+    auto additional_config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE)["additional_config"];
     for (auto i = 0; i < additional_config.GetArraySize(); i++)
     {
         auto additional_key = additional_config[i]("key");
@@ -176,8 +148,8 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     gross_info.Add("ClearInventory", "0");
     gross_info.Delete("GuarantHeat");
     gross_info.Add("GuarantHeat", "0");
-    gross_info.Add("GPS", zh_ordos_ticket_get_config()("gps"));
-    curb_weight.Add("GPS", zh_ordos_ticket_get_config()("gps"));
+    gross_info.Add("GPS", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("gps"));
+    curb_weight.Add("GPS", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("gps"));
 
     zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString());
     zh_ordos_req_with_token("/vehicles/supervisory_gross_weight", gross_info.ToString());
@@ -188,7 +160,7 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
     //for debug
     // auto prev_number = atol(ticket_number.substr(1, ticket_number.length() - 1).c_str()) - 1;
     // ticket_number = ticket_number.substr(0, 1) + std::to_string(prev_number);
-    neb::CJsonObject config(zh_ordos_ticket_get_config());
+    neb::CJsonObject config(zh_plugin_conf_get_config(PLUGIN_CONF_FILE));
 
     std::string set_print_cmd = "lpadmin -x rp;lpadmin -p rp -E -v '" + config("device_uri") + "' && lpadmin -d rp";
     system(set_print_cmd.c_str());
@@ -205,7 +177,7 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
 static std::string zh_ordos_ticket_find_basic_data(const std::string &_type, const std::string &_name)
 {
     std::string ret;
-    auto basic_data = zh_ordos_ticket_get_config()["basic_data"];
+    auto basic_data = zh_plugin_conf_get_config(PLUGIN_CONF_FILE)["basic_data"];
     auto focus_data = basic_data[_type];
     for (auto i = 0; i < focus_data.GetArraySize(); i++)
     {
@@ -227,7 +199,7 @@ bool zh_ordos_ticket_proc_finish(const std::string &_msg)
 {
     bool ret = false;
     zh_ordos_fetch_basic();
-    auto tid = zh_ordos_ticket_get_config()("TID");
+    auto tid = zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("TID");
     auto res = neb::CJsonObject(zh_ordos_req_with_token("/getNextTicket?ID=" + tid));
     auto ticket_number = res("ticketNo");
 
@@ -259,15 +231,15 @@ bool zh_ordos_ticket_proc_finish(const std::string &_msg)
 
 bool zh_ordos_ticket_init()
 {
-    auto config = zh_ordos_ticket_get_config();
+    auto config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE);
     config.Delete("remote_url");
-    zh_ordos_set_config("remote_url", "http://58.18.38.116:8811");
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "http://58.18.38.116:8811");
     return true;
 }
 
 void zh_ordos_ticket_refresh()
 {
-    auto config = zh_ordos_ticket_get_config();
+    auto config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE);
     if (config("token").length() > 0)
     {
         zh_ordos_fetch_basic();

@@ -20,6 +20,8 @@
                 </el-table-column>
                 <el-table-column prop="name" label="物料名" width="120px">
                 </el-table-column>
+                <el-table-column prop="code" label="编码" width="120px">
+                </el-table-column>
                 <el-table-column prop="unit" label="计量单位" width="100px">
                 </el-table-column>
                 <el-table-column prop="inventory" label="库存" width="60px">
@@ -114,6 +116,9 @@
             <el-form-item label="物料名称" prop="name">
                 <el-input v-model="focus_stuff.name" placeholder="请输入物料名称"></el-input>
             </el-form-item>
+            <el-form-item label="物料编码" prop="code">
+                <el-input v-model="focus_stuff.code" placeholder="请输入物料编码"></el-input>
+            </el-form-item>
             <el-form-item label="计量单位" prop="unit">
                 <el-autocomplete v-model="focus_stuff.unit" :fetch-suggestions="fetch_unit" placeholder="请输入物料单位"></el-autocomplete>
             </el-form-item>
@@ -207,6 +212,7 @@ export default {
                 need_manual_scale: false,
                 max_limit:49.5,
                 min_limit:48.5,
+                code:"",
             },
             all_stuff: [],
             rules: {
@@ -466,6 +472,7 @@ export default {
                 need_manual_scale: false,
                 max_limit:49.5,
                 min_limit:48.5,
+                code:"",
             };
         },
         clean_stuff_source_dest: function () {
