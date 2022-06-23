@@ -9,7 +9,14 @@
                     message: '请输入正确手机号',
                 }]" />
             <div style="margin: 16px;">
-                <van-button round block type="info" native-type="submit">查询</van-button>
+                <van-row :gutter="10">
+                    <van-col :span="12">
+                        <van-button block type="info" native-type="submit">查询派车</van-button>
+                    </van-col>
+                    <van-col :span="12">
+                        <van-button block type="warning" @click="search_ticket_by_phone" native-type="button">查看磅单</van-button>
+                    </van-col>
+                </van-row>
             </div>
         </van-form>
     </van-dialog>
@@ -71,7 +78,20 @@
             <van-empty v-else description="无派车记录,请输入正确司机手机号搜索">
             </van-empty>
         </van-tab>
+        <van-tab title="历史磅单">
+            <van-search v-model="query_phone" label="司机电话" placeholder="请输入司机电话查询" show-action @search="search_ticket_by_phone">
+                <template #action>
+                    <div @click="search_ticket_by_phone">搜索</div>
+                </template>
+            </van-search>
+            <van-cell v-for="(single_vehicle, index) in history_ticket" :key="index" :title="single_vehicle.basic_info.main_vehicle_number" :value="single_vehicle.m_time" :label="single_vehicle.stuff_name" is-link @click="show_ticket_detail(single_vehicle.basic_info.order_number)"></van-cell>
+        </van-tab>
     </van-tabs>
+
+    <van-dialog v-model="show_ticket_diag" title="磅单" :showConfirmButton="false" closeOnClickOverlay>
+        <ticket :order_number="focus_order_number">
+        </ticket>
+    </van-dialog>
 </div>
 </template>
 
@@ -81,6 +101,7 @@ import Vant from 'vant';
 import 'vant/lib/index.css';
 import ItemForSelect from "../components/ItemForSelect.vue"
 import CheckIn from "../components/CheckIn.vue"
+import Ticket from "../components/Ticket.vue"
 Vue.use(Vant);
 
 export default {
@@ -88,9 +109,12 @@ export default {
     components: {
         "item-for-select": ItemForSelect,
         "check-in": CheckIn,
+        "ticket": Ticket,
     },
     data: function () {
         return {
+            focus_order_number: '',
+            show_ticket_diag: false,
             init_diag: true,
             check_in_phone: '',
             active: 0,
@@ -111,15 +135,20 @@ export default {
                 stuff_name: '',
                 belong_user_name: '',
             },
+            history_ticket: [],
         };
     },
     methods: {
+        show_ticket_detail: function (_order_number) {
+            this.show_ticket_diag = true;
+            this.focus_order_number = _order_number;
+        },
         cancel_self_order: function () {
             var vue_this = this;
             vue_this.$dialog.confirm({
                 title: '取消确认',
                 message: '确认取消自助派车单吗？',
-                cancelButtonText:'再等等'
+                cancelButtonText: '再等等'
             }).then(function () {
                 vue_this.$call_remote_process("vehicle_order_center", "cancel_driver_self_order", ["", vue_this.queried_record.id]).then(function (resp) {
                     if (resp) {
@@ -177,6 +206,17 @@ export default {
         },
         refresh: function () {
             window.location.reload();
+        },
+        search_ticket_by_phone: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "driver_get_last_30_order_number", [vue_this.query_phone]).then(function (resp) {
+                vue_this.history_ticket = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.history_ticket, index, element);
+                });
+                vue_this.init_diag = false;
+                vue_this.active = 3;
+            });
         },
     },
     beforeMount: function () {

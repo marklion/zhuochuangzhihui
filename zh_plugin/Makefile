@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/plugin_build
-SUB_DIR=zh_ordos_ticket zh_hnnc
+SUB_DIR=zh_ordos_ticket zh_hnnc zh_meiyitong
 
 all:$(DELIVER_PATH)
 	for single_plugin in $(SUB_DIR); do tar zcf $(DELIVER_PATH)/$$single_plugin.tar.gz -C $(DELIVER_PATH) $$single_plugin; done

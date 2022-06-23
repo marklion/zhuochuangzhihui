@@ -63,7 +63,7 @@
             <el-table :data="order_need_show" @selection-change="proc_order_select" style="width: 100%" stripe ref="order_table">
                 <el-table-column type="selection" width="30px">
                 </el-table-column>
-                <el-table-column label="单号" width="130px">
+                <el-table-column label="单号" width="150px">
                     <template slot-scope="scope">
                         <router-link tag="el-link" :to="{name:'VehicleDetail', params:{order_no:scope.row.order_number}}">
                             <el-link type="primary">{{scope.row.order_number}}</el-link>
@@ -152,6 +152,13 @@
                                 <el-button type="success" size="small" icon="el-icon-check" circle @click="confirm_order([scope.row])"></el-button>
                             </el-tooltip>
                         </span>
+                        <el-popover placement="right" width="400" trigger="click" v-if="scope.row.status == 100">
+                            <div>
+                                <ticket :order_number="scope.row.order_number">
+                                </ticket>
+                            </div>
+                            <el-button size="small" slot="reference">查看磅单</el-button>
+                        </el-popover>
                     </template>
                 </el-table-column>
             </el-table>
@@ -322,6 +329,7 @@ import ItemForSelect from "../components/ItemForSelect.vue"
 import CompanyBalance from "../components/CompanyBalance.vue"
 import StuffPrice from "../components/StuffPrice.vue"
 import infiniteScroll from 'vue-infinite-scroll'
+import Ticket from '../components/Ticket.vue'
 
 import PinyinMatch from "pinyin-match"
 import XLSX from 'xlsx';
@@ -338,6 +346,7 @@ export default {
         "item-for-select": ItemForSelect,
         "company-balance": CompanyBalance,
         "stuff-price": StuffPrice,
+        "ticket": Ticket
     },
     events: {
         ['need_refresh']() {
@@ -760,7 +769,7 @@ export default {
                 vue_this.cur_statistic.already_in = resp.entered + resp.first_weight + resp.second_weight;
             });
         },
-        recheck_list:function() {
+        recheck_list: function () {
             this.lazy_finish = false;
             this.$refs.lazy_load.check();
         },

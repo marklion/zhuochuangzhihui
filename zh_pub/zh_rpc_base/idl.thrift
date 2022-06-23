@@ -296,6 +296,7 @@ struct vehicle_order_info {
     22:string end_time,
     23:string source_dest_name,
     24:bool is_sale,
+    25:string bl_number,
 }
 
 struct gate_relate_info {
@@ -384,6 +385,7 @@ service vehicle_order_center {
     bool record_order_source_dest(1:i64 order_id, 2:string source_dest_name) throws (1:gen_exp e),
     vehicle_order_info get_driver_opt_history(1:string driver_phone) throws (1:gen_exp e),
     list<white_record_info> get_white_record_info(1:string ssid, 2:i64 begin_date, 3:i64 end_date) throws (1:gen_exp e),
+    list<vehicle_order_detail> driver_get_last_30_order_number(1:string driver_phone) throws (1:gen_exp e),
 }
 
 service open_api {

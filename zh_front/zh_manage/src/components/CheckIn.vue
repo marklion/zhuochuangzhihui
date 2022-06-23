@@ -38,7 +38,7 @@
             </el-form>
         </van-dialog>
     </div>
-    <van-dialog v-model="show_direction" confirm-button-text="知道了" title="进厂指引"  closeOnClickOverlay>
+    <van-dialog v-model="show_direction" confirm-button-text="知道了" title="进厂指引" closeOnClickOverlay>
         <van-swipe :autoplay="3000">
             <van-swipe-item v-for="(image, index) in all_prompt_img" :key="index">
                 <img v-lazy="$remote_file_url + image.attachment_path" width="150" height="300" />
@@ -48,6 +48,7 @@
     <div style="margin:15px;">
         <van-button v-if="!cur_vehicle.registered" block type="info" @click="driver_check_in(false)">排号</van-button>
         <van-button v-else block type="danger" @click="driver_check_in(true)">取消排号</van-button>
+        <van-button block type="danger" @click="driver_cancel_order">取消派车</van-button>
     </div>
 </div>
 </template>
@@ -135,6 +136,21 @@ export default {
         },
     },
     methods: {
+        driver_cancel_order: function () {
+            var vue_this = this;
+            vue_this.$dialog.confirm({
+                title: "取消确认",
+                message: "确定要取消该派车单吗？"
+            }).then(function () {
+                vue_this.$call_remote_process("vehicle_order_center", "cancel_vehicle_order", [vue_this.cur_vehicle.basic_info.driver_phone, [{
+                    id: vue_this.cur_vehicle.basic_info.id
+                }]]).then(function (resp) {
+                    if (resp) {
+                        vue_this.$router.go(0);
+                    }
+                });
+            });
+        },
         select_source_dest: function (_value) {
             var vue_this = this;
             vue_this.$call_remote_process("vehicle_order_center", 'record_order_source_dest', [vue_this.cur_vehicle.basic_info.id, _value]).then(function (resp) {

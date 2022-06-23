@@ -122,6 +122,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.basic_info.source_dest_name = vo->source_dest_name;
     _return.checkin_time = vo->check_in_timestamp > 0 ? zh_rpc_util_get_timestring(vo->check_in_timestamp) : "";
     _return.call_time = vo->call_timestamp > 0 ? zh_rpc_util_get_timestring(vo->call_timestamp) : "";
+    _return.basic_info.bl_number = vo->bl_number;
     if (company && company->is_sale)
     {
         _return.basic_info.is_sale = true;
@@ -391,9 +392,18 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
             opt_user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
         }
     }
+    bool op_by_drvier = false;
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        auto op_by_driver_order = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_phone == '%s'", ssid.c_str());
+        if (op_by_driver_order)
+        {
+            op_by_drvier = true;
+        }
+        else
+        {
+            ZH_RETURN_NO_PRAVILIGE();
+        }
     }
 
     std::list<zh_sql_vehicle_order> need_cancel;
@@ -409,8 +419,16 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
 
     for (auto &itr : need_cancel)
     {
-        auto cancel_status = zh_sql_order_status::make_end_status(ssid);
-        itr.push_status(cancel_status);
+        if (op_by_drvier)
+        {
+            auto cancel_status = zh_sql_order_status::make_end_status();
+            itr.push_status(cancel_status);
+        }
+        else
+        {
+            auto cancel_status = zh_sql_order_status::make_end_status(ssid);
+            itr.push_status(cancel_status);
+        }
     }
 
     return ret;
@@ -423,11 +441,6 @@ std::shared_ptr<scale_state_machine> vehicle_order_center_handler::get_scale_sm(
 
 void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 3);
-    if (!user)
-    {
-        ZH_RETURN_NO_PRAVILIGE();
-    }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
     if (!vo)
     {
@@ -761,7 +774,9 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
         ZH_RETURN_NO_ORDER();
     }
     auto status = zh_sql_order_status::make_end_status(ssid);
-    auto save_hook = zh_order_save_hook([](zh_sql_vehicle_order &)->bool{return true;}, dup_one_order);
+    auto save_hook = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
+                                        { return true; },
+                                        dup_one_order);
     vo->push_status(status, save_hook);
     recalcu_balance_inventory(*vo, ssid);
 
@@ -2279,6 +2294,17 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
         tmp.date = itr.date;
         tmp.vehicle_number = itr.vehicle_number;
         tmp.weight = zh_double2string_reserve2(itr.weight);
+        _return.push_back(tmp);
+    }
+}
+
+void vehicle_order_center_handler::driver_get_last_30_order_number(std::vector<vehicle_order_detail> &_return, const std::string &driver_phone)
+{
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("driver_phone == '%s' AND status == 100 ORDER BY PRI_ID DESC LIMIT 30", driver_phone.c_str());
+    for (auto &itr : vos)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, itr);
         _return.push_back(tmp);
     }
 }
