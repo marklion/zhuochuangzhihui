@@ -40,6 +40,9 @@
                         {{Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)}}
                         <span style="color:red" v-if="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight) > cur_vehicle.basic_info.max_count">超重</span>
                     </el-descriptions-item>
+                    <el-descriptions-item label="状态错误" v-if="cur_vehicle.err_string">
+                        {{cur_vehicle.err_string}}
+                    </el-descriptions-item>
                     <template slot="extra">
                         <div style="padding:5px;" v-if="$store.state.user_info.permission != 3">
                             <el-button size="mini" type="danger" @click="manual_close">手动结束运输</el-button>
@@ -182,6 +185,7 @@
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />
             <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" />
+            <van-cell v-if="cur_vehicle.err_string" title="错误信息" :value="cur_vehicle.err_string" />
         </van-cell-group>
     </div>
 </div>

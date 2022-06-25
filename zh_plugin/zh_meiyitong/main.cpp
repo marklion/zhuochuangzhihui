@@ -14,11 +14,19 @@ int main(int argc, char **argv)
     std::string inv_code;
     std::string json_string;
     std::string key;
+    std::string order_number;
+    std::string customer_name;
+    std::string product_name;
+    std::string vehicle_number;
+    std::string p_weight;
     bool json_obj = false;
     using namespace clipp;
     auto cli = (command("fetch_dest").set(cmd) |
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
+                (command("check_in").set(cmd) & value("order_number", order_number) & value("customer_name", customer_name) & value("product_name", product_name) & value("vehicle_number", vehicle_number)) |
+                (command("push_p").set(cmd) & value("order_number", order_number) & value("vehicle_number", vehicle_number) & value("p_weight", p_weight)) |
+                (command("push_m").set(cmd) & value("req", json_string)) |
                 command("init").set(cmd));
     if (!parse(argc, argv, cli))
     {
@@ -60,6 +68,27 @@ int main(int argc, char **argv)
             zh_plugin_conf_set_config(PLUGIN_CONF_FILE, key, json_string);
         }
         iret = 0;
+    }
+    else if (cmd == "check_in")
+    {
+        if (ZH_MEIYITONG_check_in(order_number, customer_name, product_name, vehicle_number))
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "push_p")
+    {
+        if (ZH_MEIYITONG_post_p_weight(order_number, vehicle_number, p_weight))
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "push_m")
+    {
+        if (ZH_MEIYITONG_post_m_weight(json_string))
+        {
+            iret = 0;
+        }
     }
     else if (cmd == "init")
     {

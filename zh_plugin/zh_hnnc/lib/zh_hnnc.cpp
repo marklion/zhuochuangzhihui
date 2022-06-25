@@ -51,6 +51,7 @@ static bool send_req_with_token(const neb::CJsonObject _req, const std::function
             else
             {
                 g_log.err("failure because %s", res_json("msg").c_str());
+                std::cerr << res_json("msg") << std::endl;
             }
         }
         else

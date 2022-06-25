@@ -677,16 +677,17 @@ bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_
     return true;
 }
 
-std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end, const std::string &_user_name , const std::string &_password)
+std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end, const std::string &_user_name, const std::string &_password)
 {
     std::string ret;
     NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto begin_point = time(NULL);
     auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, _user_name.c_str(), _password.c_str(), &tmp_info);
     std::string store_prefix = "/manage_dist/logo_res/";
     if (user_id >= 0)
     {
         NET_DVR_PLAYCOND time_cond = {0};
-        time_cond.dwChannel = _channel_id;
+        time_cond.dwChannel = _channel_id + (tmp_info.byStartDChan - 1);
         time_cond.struStartTime = _start;
         time_cond.struStopTime = _end;
         std::string file_name = store_prefix + "vehicle_video_" + std::to_string(_channel_id) + "_" + std::to_string(time(NULL)) + ".mp4";
@@ -728,22 +729,21 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
     }
     if (ret.length() > 0)
     {
-        auto begin_point = time(NULL);
         std::string cmd = "ffmpeg -threads 4 -i " + ret + " -s 320x180 tmp_video.mp4 && mv tmp_video.mp4 " + ret;
         system(cmd.c_str());
-        auto end_point = time(NULL);
-        g_log.log("convert takes %d second", end_point - begin_point);
     }
 
+    auto end_point = time(NULL);
+    g_log.log("convert takes %d second", end_point - begin_point);
     if (ret.length() > store_prefix.length())
     {
         ret = ret.substr(store_prefix.length(), ret.length() - store_prefix.length());
     }
 
-    return ret;
+    return std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
 }
 
-std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name , const std::string &_password )
+std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name, const std::string &_password)
 {
     std::string ret;
     auto begin_point = time(NULL);
@@ -756,7 +756,7 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
             .wPicQuality = 1};
         std::string store_prefix = "/manage_dist";
         ret = "/logo_res/pic_" + std::to_string(time(NULL)) + "_" + _nvr_ip + "_" + std::to_string(_channel_id);
-        if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id, &cap_param, (char *)((store_prefix + ret).c_str())))
+        if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id + (tmp_info.byStartDChan - 1), &cap_param, (char *)((store_prefix + ret).c_str())))
         {
             g_log.log("success cap picture:%s", ret.c_str());
         }

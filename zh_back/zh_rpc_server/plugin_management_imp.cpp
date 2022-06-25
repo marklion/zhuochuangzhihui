@@ -78,15 +78,48 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
     {
         close(pipfd[1]);
         close(pipfd_err[1]);
-        char buff = 0;
-        while (read(pipfd[0], &buff, sizeof(buff)) > 0)
+        char buff[4096 * 1048] = {0};
+        int read_len = 0;
+        fd_set set;
+        bool select_should_exit = false;
+        while (select_should_exit == false)
         {
-            _stdout_string.push_back(buff);
-        }
-        std::string error_string;
-        while (read(pipfd_err[0], &buff, sizeof(buff)) > 0)
-        {
-            error_string.push_back(buff);
+            FD_ZERO(&set);
+            FD_SET(pipfd[0], &set);
+            FD_SET(pipfd_err[0], &set);
+            if (0 < select(pipfd_err[0] + 1, &set, nullptr, nullptr, nullptr))
+            {
+                if (FD_ISSET(pipfd[0], &set))
+                {
+                    if ((read_len = read(pipfd[0], buff, sizeof(buff))) > 0)
+                    {
+                        _stdout_string.assign(buff, read_len);
+                    }
+                    else
+                    {
+                        select_should_exit = true;
+                    }
+                }
+                if (FD_ISSET(pipfd_err[0], &set))
+                {
+                    if ((read_len = read(pipfd_err[0], buff, sizeof(buff))) > 0)
+                    {
+                        _stderr_string.assign(buff, read_len);
+                    }
+                    else
+                    {
+                        select_should_exit = true;
+                    }
+                }
+                else
+                {
+                    select_should_exit = true;
+                }
+            }
+            else
+            {
+                select_should_exit = true;
+            }
         }
         close(pipfd[0]);
         close(pipfd_err[0]);
@@ -98,10 +131,9 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
         {
             exit_normal = true;
         }
-        if (error_string.size() > 0 || !exit_normal)
+        if (!exit_normal)
         {
-            error_string.insert(0, "出错原因");
-            _stderr_string = error_string;
+            _stderr_string.insert(0, "出错原因");
         }
         if (_stdout_string.length() > 0 && _stdout_string[_stdout_string.size() - 1] == '\n')
         {

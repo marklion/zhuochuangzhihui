@@ -114,6 +114,15 @@ const routes = [
     meta: {
       mobile: true,
     },
+  },{
+    path: '/mobile/ticket/:order_number',
+    name: 'TicketPage',
+    component: () => import('../views/TicketPage.vue'),
+    meta: {
+      mobile: true,
+      no_need_login: true,
+      no_tabbar: true,
+    },
   },
 ]
 

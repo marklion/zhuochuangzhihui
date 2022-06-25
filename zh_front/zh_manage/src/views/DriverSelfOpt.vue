@@ -84,14 +84,9 @@
                     <div @click="search_ticket_by_phone">搜索</div>
                 </template>
             </van-search>
-            <van-cell v-for="(single_vehicle, index) in history_ticket" :key="index" :title="single_vehicle.basic_info.main_vehicle_number" :value="single_vehicle.m_time" :label="single_vehicle.stuff_name" is-link @click="show_ticket_detail(single_vehicle.basic_info.order_number)"></van-cell>
+            <van-cell v-for="(single_vehicle, index) in history_ticket" :key="index" :title="single_vehicle.basic_info.main_vehicle_number" :value="single_vehicle.m_time" :label="single_vehicle.basic_info.stuff_name" is-link :to="{name:'TicketPage', params:{order_number:single_vehicle.basic_info.order_number}}"></van-cell>
         </van-tab>
     </van-tabs>
-
-    <van-dialog v-model="show_ticket_diag" title="磅单" :showConfirmButton="false" closeOnClickOverlay>
-        <ticket :order_number="focus_order_number">
-        </ticket>
-    </van-dialog>
 </div>
 </template>
 
@@ -101,7 +96,6 @@ import Vant from 'vant';
 import 'vant/lib/index.css';
 import ItemForSelect from "../components/ItemForSelect.vue"
 import CheckIn from "../components/CheckIn.vue"
-import Ticket from "../components/Ticket.vue"
 Vue.use(Vant);
 
 export default {
@@ -109,12 +103,9 @@ export default {
     components: {
         "item-for-select": ItemForSelect,
         "check-in": CheckIn,
-        "ticket": Ticket,
     },
     data: function () {
         return {
-            focus_order_number: '',
-            show_ticket_diag: false,
             init_diag: true,
             check_in_phone: '',
             active: 0,
@@ -139,10 +130,6 @@ export default {
         };
     },
     methods: {
-        show_ticket_detail: function (_order_number) {
-            this.show_ticket_diag = true;
-            this.focus_order_number = _order_number;
-        },
         cancel_self_order: function () {
             var vue_this = this;
             vue_this.$dialog.confirm({

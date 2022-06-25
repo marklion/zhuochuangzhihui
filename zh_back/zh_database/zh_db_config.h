@@ -291,6 +291,8 @@ public:
     std::string source_dest_name;
     long call_timestamp = 0;
     std::string bl_number;
+    std::string extra_info;
+    std::string err_string;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -333,6 +335,8 @@ public:
         ret.push_back(sqlite_orm_column("source_dest_name", sqlite_orm_column::STRING, &source_dest_name));
         ret.push_back(sqlite_orm_column("call_timestamp", sqlite_orm_column::INTEGER, &call_timestamp));
         ret.push_back(sqlite_orm_column("bl_number", sqlite_orm_column::STRING, &bl_number));
+        ret.push_back(sqlite_orm_column("extra_info", sqlite_orm_column::STRING, &extra_info));
+        ret.push_back(sqlite_orm_column("err_string", sqlite_orm_column::STRING, &err_string));
 
         return ret;
     }
@@ -625,11 +629,13 @@ class zh_sql_stuff_source_dest : public sql_tree_base
 public:
     std::string name;
     long is_source = 0;
+    std::string id;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
         ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
         ret.push_back(sqlite_orm_column("is_source", sqlite_orm_column::INTEGER, &is_source));
+        ret.push_back(sqlite_orm_column("id", sqlite_orm_column::STRING, &id));
         return ret;
     }
 

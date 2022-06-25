@@ -342,7 +342,7 @@ void stuff_management_handler::get_stuff(stuff_info &_return, const std::string 
     _return.need_manual_scale = stuff->need_manual_scale;
 }
 
-bool stuff_management_handler::add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source)
+bool stuff_management_handler::add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source, const std::string &code)
 {
     bool ret = false;
     auto user = zh_rpc_util_get_online_user(ssid, 1);
@@ -353,11 +353,12 @@ bool stuff_management_handler::add_source_dest(const std::string &ssid, const st
     auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == %ld", source_dest_name.c_str(), is_source?1:0);
     if (exist_record)
     {
-        ZH_RETURN_MSG("记录已存在");
+        exist_record->remove_record();
     }
     zh_sql_stuff_source_dest tmp;
     tmp.name = source_dest_name;
     tmp.is_source = is_source?1:0;
+    tmp.id = code;
     ret = tmp.insert_record();
 
     return ret;
@@ -371,6 +372,7 @@ void stuff_management_handler::get_all_source_dest(std::vector<stuff_source_dest
         tmp.id = itr.get_pri_id();
         tmp.is_source = itr.is_source;
         tmp.name = itr.name;
+        tmp.code = itr.id;
         _return.push_back(tmp);
     }
 }

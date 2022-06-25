@@ -103,6 +103,8 @@
                 </el-table-column>
                 <el-table-column prop="name" label="物料目的地" width="120px">
                 </el-table-column>
+                <el-table-column prop="code" label="编码" width="120px">
+                </el-table-column>
                 <el-table-column fixed="right" label="操作" width="150px">
                     <template slot-scope="scope">
                         <el-button type="danger" size="mini" @click="del_stuff_source_dest(scope.row)">删除</el-button>

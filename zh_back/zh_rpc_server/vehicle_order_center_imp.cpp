@@ -123,6 +123,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.checkin_time = vo->check_in_timestamp > 0 ? zh_rpc_util_get_timestring(vo->check_in_timestamp) : "";
     _return.call_time = vo->call_timestamp > 0 ? zh_rpc_util_get_timestring(vo->call_timestamp) : "";
     _return.basic_info.bl_number = vo->bl_number;
+    _return.err_string = vo->err_string;
     if (company && company->is_sale)
     {
         _return.basic_info.is_sale = true;
@@ -1079,13 +1080,13 @@ bool scale_state_machine::should_open()
         auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", cur_vehicle.c_str());
         if (vo)
         {
-            if (vo->p_weight == 0 && vo->m_called)
+            if (vo->m_called)
             {
                 ret = true;
-            }
-            else if (vo->m_weight == 0 && vo->m_permit && vo->m_called)
-            {
-                ret = true;
+                if (vo->status == 2 && !vo->m_permit)
+                {
+                    ret = false;
+                }
             }
         }
         else
@@ -1220,7 +1221,7 @@ static bool nvr_info_valided(const device_scale_config &_scale_config)
     return ret;
 }
 
-static bool hnnc_installed()
+static bool plugin_is_installed(const std::string &_plugin_name)
 {
     bool ret = false;
 
@@ -1228,11 +1229,108 @@ static bool hnnc_installed()
     if (pmh)
     {
         auto installed_plugin = pmh->internel_get_installed_plugins();
-        if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
-                         { return _item == "zh_hnnc"; }) != installed_plugin.end())
+        if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [&](const std::string &_item)
+                         { return _item == _plugin_name; }) != installed_plugin.end())
         {
             ret = true;
         }
+    }
+
+    return ret;
+}
+
+static std::string order_number2voc_number(const std::string &_order_number)
+{
+    std::string ret;
+    ret = _order_number.substr(_order_number.length() - 11, 11);
+
+    return ret;
+}
+
+static void change_json_key(neb::CJsonObject &_json, const std::string &_orig_key, const std::string &_new_key)
+{
+    if (_json.KeyExist(_orig_key))
+    {
+        auto json_value = _json(_orig_key);
+        _json.Delete(_orig_key);
+        _json.Add(_new_key, json_value);
+    }
+}
+static NET_DVR_TIME dateTime2unix(const std::string &_time, int _min = 0)
+{
+    NET_DVR_TIME tm;
+    memset(&tm, 0, sizeof(tm));
+    auto timeStamp = _time;
+    if (_min != 0)
+    {
+        auto time_sec = zh_rpc_util_get_time_by_string(_time) - _min;
+        timeStamp = zh_rpc_util_get_timestring(time_sec);
+    }
+    sscanf(
+        timeStamp.c_str(), "%d-%d-%d %d:%d:%d",
+        &tm.dwYear, &tm.dwMonth, &tm.dwDay,
+        &tm.dwHour, &tm.dwMinute, &tm.dwSecond);
+
+    return tm;
+}
+static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nvr_ip, int _nvr_channel, const std::string &_username, const std::string &_password)
+{
+    bool ret = false;
+
+    auto pmh = plugin_management_handler::get_inst();
+    std::string std_out;
+    std::string std_err;
+    if (pmh)
+    {
+        if (_order.status < 3)
+        {
+            pmh->zh_plugin_run_plugin(
+                "push_p " +
+                    order_number2voc_number(_order.order_number) + " " +
+                    _order.main_vehicle_number + " " +
+                    zh_double2string_reserve2(_order.p_weight),
+                "zh_meiyitong", std_out, std_err);
+            if (std_err.empty())
+            {
+                ret = true;
+                neb::CJsonObject tmp_extra(_order.extra_info);
+                tmp_extra.ReplaceAdd("VehilceTareID", std_out);
+                _order.extra_info = tmp_extra.ToString();
+            }
+        }
+        else if (_order.status < 4)
+        {
+            neb::CJsonObject tmp_extra(_order.extra_info);
+            neb::CJsonObject m_req(tmp_extra("myt_info"));
+            change_json_key(m_req, "singleprice", "SinglePrice");
+            change_json_key(m_req, "productname", "ProductName");
+            change_json_key(m_req, "standproductid", "StandProductID");
+            change_json_key(m_req, "custproductid", "CustProductID");
+            change_json_key(m_req, "heatvalue", "HeatValue");
+            m_req.Add("VehiclePlate", _order.main_vehicle_number);
+            m_req.Add("VehicleTareID", tmp_extra("VehicleTareID"));
+            m_req.Add("GrossWeight", zh_double2string_reserve2(_order.m_weight));
+            m_req.Add("CustomerName", _order.company_name);
+            auto sd_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == 0", _order.source_dest_name.c_str());
+            if (sd_record)
+            {
+                m_req.Add("DivisionID", sd_record->id);
+            }
+            m_req.Add("DivisionName", _order.source_dest_name);
+            auto p_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.p_cam_time), dateTime2unix(_order.p_cam_time, 15), _username, _password);
+            auto m_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.m_cam_time), dateTime2unix(_order.m_cam_time, 15), _username, _password);
+            m_req.Add("TareVideoUrl", p_video);
+            m_req.Add("GrossVideoUrl", m_video);
+            pmh->zh_plugin_run_plugin("push_m '" + m_req.ToString() + "'", "zh_meiyitong", std_out, std_err);
+            if (std_err.empty())
+            {
+                ret = true;
+            }
+        }
+    }
+    if (std_err.length() > 0)
+    {
+        _order.err_string = "上传监管平台失败：" + std_err;
     }
 
     return ret;
@@ -1242,6 +1340,7 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
 {
     bool ret = false;
     neb::CJsonObject req;
+
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _order.stuff_name.c_str());
     auto customer = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
     if (stuff && customer)
@@ -1279,23 +1378,36 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
             req.Add("Netweight", _order.m_weight - _order.p_weight);
             req.Add("Grossweight", _order.m_weight);
             req.Add("Billcode", _order.bl_number);
+            auto extra_info = neb::CJsonObject(_order.extra_info);
+            if (extra_info.KeyExist("myt_info"))
+            {
+                ret = true;
+            }
         }
         auto pmh = plugin_management_handler::get_inst();
-        if (pmh)
+        if (pmh && ret == false)
         {
-            auto installed_plugin = pmh->internel_get_installed_plugins();
-            if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
-                             { return _item == "zh_hnnc"; }) != installed_plugin.end())
+            std::string std_out;
+            std::string std_err;
+            pmh->zh_plugin_run_plugin("push_req '" + req.ToString() + "'", "zh_hnnc", std_out, std_err);
+            if (std_err.empty())
             {
-                std::string std_out;
-                std::string std_err;
-                pmh->zh_plugin_run_plugin("push_req '" + req.ToString() + "'", "zh_hnnc", std_out, std_err);
-                if (std_err.empty())
+                ret = true;
+                auto resp = neb::CJsonObject(std_out);
+                if (req("transtype") == "UpTare")
                 {
-                    ret = true;
-                    auto resp = neb::CJsonObject(std_out);
                     _order.bl_number = resp("Billcode");
                 }
+                else if (req("transtype") == "UpGross")
+                {
+                    neb::CJsonObject tmp_extra(_order.extra_info);
+                    tmp_extra.ReplaceAdd("myt_info", resp["NyjInf"].ToString());
+                    _order.extra_info = tmp_extra.ToString();
+                }
+            }
+            else
+            {
+                _order.err_string = "上传NC失败：" + std_err;
             }
         }
     }
@@ -1328,13 +1440,18 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             [&](zh_sql_vehicle_order &_order)
             {
                 bool ret = false;
-                if (nvr_info_valided(bound_scale) && hnnc_installed())
+                if (nvr_info_valided(bound_scale) && plugin_is_installed("zh_hnnc"))
                 {
                     auto pic1 = zh_hk_get_capture_picture(bound_scale.scale1_nvr_ip, bound_scale.scale1_channel, bound_scale.scale1.username, bound_scale.scale1.password);
                     auto pic2 = zh_hk_get_capture_picture(bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
                     auto pic3 = zh_hk_get_capture_picture(bound_scale.scale3_nvr_ip, bound_scale.scale3_channel, bound_scale.scale3.username, bound_scale.scale3.password);
                     ret = push_req_to_hn(_order, pic1, pic2, pic3);
+                    if (ret && plugin_is_installed("zh_meiyitong"))
+                    {
+                        ret = push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                    }
                 }
+                _order.update_record();
 
                 return ret;
             },
@@ -1372,14 +1489,17 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             {
                 vo->push_status(status);
             }
-            recalcu_balance_inventory(*vo);
-            if (!vo->get_children<zh_sql_order_status>("belong_order", "step == 2"))
+            if (vo->status == 4)
             {
-                auto end_status = zh_sql_order_status::make_end_status();
-                auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
-                                                      { return true; },
-                                                      dup_one_order);
-                vo->push_status(end_status, save_hook_1);
+                recalcu_balance_inventory(*vo);
+                if (!vo->get_children<zh_sql_order_status>("belong_order", "step == 2"))
+                {
+                    auto end_status = zh_sql_order_status::make_end_status();
+                    auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
+                                                          { return true; },
+                                                          dup_one_order);
+                    vo->push_status(end_status, save_hook_1);
+                }
             }
         }
     }

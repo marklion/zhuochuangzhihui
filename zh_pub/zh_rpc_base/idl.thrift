@@ -226,6 +226,7 @@ struct stuff_source_dest{
     1:i64 id,
     2:string name,
     3:bool is_source,
+    4:string code,
 }
 
 service stuff_management {
@@ -238,7 +239,7 @@ service stuff_management {
     string get_last_active(1:string ssid) throws (1:gen_exp e),
     list<number_change_point> get_history(1:string ssid, 2:string stuff_name, 3:i64 count) throws (1:gen_exp e),
     bool change_price(1:string ssid, 2:string stuff_name, 3:double new_value) throws (1:gen_exp e),
-    bool add_source_dest(1:string ssid, 2:string source_dest_name, 3:bool is_source) throws (1:gen_exp e),
+    bool add_source_dest(1:string ssid, 2:string source_dest_name, 3:bool is_source, 4:string code) throws (1:gen_exp e),
     list<stuff_source_dest> get_all_source_dest(1:bool is_source) throws (1:gen_exp e),
     bool del_source_dest(1:string ssid, 2:i64 id) throws (1:gen_exp e),
 }
@@ -328,6 +329,7 @@ struct vehicle_order_detail {
     14:string m_time,
     15:string checkin_time,
     16:string call_time,
+    17:string err_string,
 }
 
 struct vehicle_order_statistics {
