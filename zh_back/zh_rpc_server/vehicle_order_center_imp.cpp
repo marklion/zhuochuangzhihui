@@ -13,6 +13,23 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
+static bool plugin_is_installed(const std::string &_plugin_name)
+{
+    bool ret = false;
+
+    auto pmh = plugin_management_handler::get_inst();
+    if (pmh)
+    {
+        auto installed_plugin = pmh->internel_get_installed_plugins();
+        if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [&](const std::string &_item)
+                         { return _item == _plugin_name; }) != installed_plugin.end())
+        {
+            ret = true;
+        }
+    }
+
+    return ret;
+}
 static bool balance_enough(zh_sql_contract &_company, zh_sql_stuff &_stuff, int _vehicle_count, double *_already_cost, bool _only_self = false)
 {
     bool ret = false;
@@ -592,22 +609,34 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
         auto pmh = plugin_management_handler::get_inst();
         if (pmh)
         {
-            auto installed_plugin = pmh->internel_get_installed_plugins();
-            if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [](const std::string &_item)
-                             { return _item == "zh_hnnc"; }) != installed_plugin.end())
+            std::string std_out;
+            std::string std_err;
+            if (plugin_is_installed("zh_hnnc"))
             {
                 auto stuff_info = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
                 auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
                 if (stuff_info && customer_info && customer_info->is_sale)
                 {
                     auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
-                    std::string std_out;
-                    std::string std_err;
                     pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
                     if (std_err.length() > 0)
                     {
                         ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                     }
+                }
+            }
+            if (plugin_is_installed("zh_meiyitong"))
+            {
+                pmh->zh_plugin_run_plugin(
+                    "check_in " +
+                        vo->order_number.substr(vo->order_number.length() - 11, 11) + " " +
+                        vo->company_name + " " +
+                        vo->stuff_name + " " +
+                        vo->main_vehicle_number,
+                    "zh_meiyitong", std_out, std_err);
+                if (std_err.length() > 0)
+                {
+                    ZH_RETURN_MSG("上传监管平台接单失败:" + std_err);
                 }
             }
         }
@@ -1216,24 +1245,6 @@ static bool nvr_info_valided(const device_scale_config &_scale_config)
         login_is_valided(scale3))
     {
         ret = true;
-    }
-
-    return ret;
-}
-
-static bool plugin_is_installed(const std::string &_plugin_name)
-{
-    bool ret = false;
-
-    auto pmh = plugin_management_handler::get_inst();
-    if (pmh)
-    {
-        auto installed_plugin = pmh->internel_get_installed_plugins();
-        if (std::find_if(installed_plugin.begin(), installed_plugin.end(), [&](const std::string &_item)
-                         { return _item == _plugin_name; }) != installed_plugin.end())
-        {
-            ret = true;
-        }
     }
 
     return ret;

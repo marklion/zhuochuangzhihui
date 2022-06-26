@@ -755,7 +755,7 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
             .wPicSize = 0xff,
             .wPicQuality = 1};
         std::string store_prefix = "/manage_dist";
-        ret = "/logo_res/pic_" + std::to_string(time(NULL)) + "_" + _nvr_ip + "_" + std::to_string(_channel_id);
+        ret = "/logo_res/pic_" + std::to_string(time(NULL)) + "_" + _nvr_ip + "_" + std::to_string(_channel_id) + ".jpeg";
         if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id + (tmp_info.byStartDChan - 1), &cap_param, (char *)((store_prefix + ret).c_str())))
         {
             g_log.log("success cap picture:%s", ret.c_str());

@@ -47,7 +47,8 @@
     </van-dialog>
     <div style="margin:15px;">
         <van-button v-if="!cur_vehicle.registered" block type="info" @click="driver_check_in(false)">排号</van-button>
-        <van-button v-else block type="danger" @click="driver_check_in(true)">取消排号</van-button>
+        <van-button v-else block type="warning" @click="driver_check_in(true)">取消排号</van-button>
+        <van-divider />
         <van-button block type="danger" @click="driver_cancel_order">取消派车</van-button>
     </div>
 </div>
