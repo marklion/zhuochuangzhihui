@@ -1,7 +1,7 @@
 <template>
 <div class="table_import_export_show">
     <div class="inline_button_group_show">
-        <el-button type="primary" size="mini" @click="show_upload = true">导入</el-button>
+        <el-button type="primary" size="mini" v-if="!no_need_import" @click="show_upload = true">导入</el-button>
         <el-button type="success" size="mini" @click="make_download_table(export_table)">导出</el-button>
     </div>
     <el-dialog title="导入表格" :visible.sync="show_upload" width="60%" class="upload_diag_show">
@@ -30,6 +30,7 @@ export default {
         item_name_map: Object,
         export_table: Array,
         sample_table: Array,
+        no_need_import:Boolean,
     },
     methods: {
         import_table: function (_file) {
