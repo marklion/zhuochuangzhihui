@@ -282,8 +282,8 @@ public:
             FD_ZERO(&set);
             FD_SET(fd, &set);
             timeval timeout;
-            timeout.tv_sec = 1;
-            timeout.tv_usec = 0;
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 700000;
             if (0 < select(fd + 1, &set, nullptr, nullptr, &timeout))
             {
                 int read_len = read(fd, buff, sizeof(buff));

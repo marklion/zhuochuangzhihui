@@ -26,15 +26,15 @@ int main(int argc, char const *argv[])
 
     std::string cmd = argv[1];
     std::string nvr_ip = argv[2];
-    int nvr_channel = atoi(argv[2]);
-    std::string username = argv[3];
-    std::string password = argv[4];
+    int nvr_channel = atoi(argv[3]);
+    std::string username = argv[4];
+    std::string password = argv[5];
     std::string begin_time;
     std::string end_time;
     if (argc > 6)
     {
-        begin_time = argv[5];
-        end_time = argv[6];
+        begin_time = argv[6];
+        end_time = argv[7];
     }
 
     std::string path_name;

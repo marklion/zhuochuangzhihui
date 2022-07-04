@@ -684,6 +684,7 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
     auto begin_point = time(NULL);
     auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, _user_name.c_str(), _password.c_str(), &tmp_info);
     std::string store_prefix = "/manage_dist/logo_res/";
+    std::string web_prefix = "/logo_res/";
     if (user_id >= 0)
     {
         NET_DVR_PLAYCOND time_cond = {0};
@@ -740,7 +741,7 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
         ret = ret.substr(store_prefix.length(), ret.length() - store_prefix.length());
     }
 
-    return std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
+    return "http://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + web_prefix + ret;
 }
 
 std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name, const std::string &_password)
@@ -759,6 +760,8 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
         if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id + (tmp_info.byStartDChan - 1), &cap_param, (char *)((store_prefix + ret).c_str())))
         {
             g_log.log("success cap picture:%s", ret.c_str());
+            auto chmod_opt = "chmod +r " + store_prefix + ret;
+            system(chmod_opt.c_str());
         }
         else
         {
@@ -772,5 +775,5 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
     auto end_point = time(NULL);
     g_log.log("cap pic spend %d second", end_point - begin_point);
 
-    return std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
+    return "http://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
 }

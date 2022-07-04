@@ -98,18 +98,25 @@
                 </el-table-column>
                 <el-table-column label="车牌号" width="100px" prop="main_vehicle_number">
                 </el-table-column>
+                <el-table-column label="净重" width="100px">
+                    <template slot-scope="scope">
+                        <div v-if="scope.row.status >= 4">
+                            {{Math.abs(scope.row.m_weight - scope.row.p_weight).toFixed(2)}}
+                        </div>
+                        <div v-else>
+                            未完成
+                        </div>
+                    </template>
+                </el-table-column>
                 <el-table-column width="40px" type="expand">
                     <template slot-scope="scope">
-                        <div style="width:600px;">
-                            <el-descriptions size="mini" :column="4" border>
-                                <el-descriptions-item label="主车">{{scope.row.main_vehicle_number}}</el-descriptions-item>
-                                <el-descriptions-item label="挂车">{{scope.row.behind_vehicle_number}}</el-descriptions-item>
+                        <div>
+                            <el-descriptions size="mini" :column="8" border>
                                 <el-descriptions-item label="一次称重">{{scope.row.p_weight}}</el-descriptions-item>
                                 <el-descriptions-item label="二次称重">{{scope.row.m_weight}}</el-descriptions-item>
                                 <el-descriptions-item label="司机">{{scope.row.driver_name}}</el-descriptions-item>
                                 <el-descriptions-item label="电话">{{scope.row.driver_phone}}</el-descriptions-item>
                                 <el-descriptions-item label="身份证">{{scope.row.driver_id}}</el-descriptions-item>
-                                <el-descriptions-item label="最大净重">{{scope.row.max_count}}</el-descriptions-item>
                             </el-descriptions>
                         </div>
                     </template>

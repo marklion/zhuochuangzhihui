@@ -126,5 +126,46 @@ void open_api_handler::get_video(std::string &_return, const std::string &nvr_ip
     auto start_date_val = strTime2unix(start_time);
     auto end_date_val = strTime2unix(stop_time);
 
-    _return = zh_hk_get_channel_video(nvr_ip, channel_id, start_date_val, end_date_val);
+    auto smh = system_management_handler::get_inst();
+    if (smh)
+    {
+        std::string username;
+        std::string password;
+        device_config cur_config;
+        smh->internal_get_device_config(cur_config);
+        for (auto &itr : cur_config.scale)
+        {
+            if (itr.entry_nvr_ip == nvr_ip)
+            {
+                username = itr.entry_login.username;
+                password = itr.entry_login.password;
+                break;
+            }
+            if (itr.exit_nvr_ip == nvr_ip)
+            {
+                username = itr.exit_login.username;
+                password = itr.exit_login.password;
+                break;
+            }
+        }
+        if (username.empty() || password.empty())
+        {
+            for (auto &itr:cur_config.gate)
+            {
+                if (itr.entry_nvr_ip == nvr_ip)
+                {
+                    username = itr.entry_login.username;
+                    password = itr.entry_login.password;
+                    break;
+                }
+                if (itr.exit_nvr_ip == nvr_ip)
+                {
+                    username = itr.exit_login.username;
+                    password = itr.exit_login.password;
+                    break;
+                }
+            }
+        }
+        _return = zh_hk_get_channel_video(nvr_ip, channel_id, start_date_val, end_date_val, username, password);
+    }
 }

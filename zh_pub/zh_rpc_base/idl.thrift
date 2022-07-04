@@ -7,6 +7,11 @@ struct hk_gate_device_ipconfig {
     2:string led_ip;
 }
 
+struct nvr_login_info{
+    1:string username,
+    2:string password,
+}
+
 struct device_gate_config {
     1:string name,
     2:string entry_id_reader_ip,
@@ -23,12 +28,11 @@ struct device_gate_config {
     13:string exit_nvr_ip,
     14:i64 entry_channel,
     15:i64 exit_channel,
+    16:nvr_login_info entry_login,
+    17:nvr_login_info exit_login,
 }
 
-struct nvr_login_info{
-    1:string username,
-    2:string password,
-}
+
 
 struct device_scale_config {
     1:string name,

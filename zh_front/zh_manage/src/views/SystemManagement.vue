@@ -5,13 +5,17 @@
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
                 <el-descriptions :column="4" border :title="single_gate.name">
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 NVR IP">{{single_gate.entry_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 通道">{{single_gate.entry_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR 用户名">{{single_gate.entry_login.username}}</el-descriptions-item>
+                    <el-descriptions-item label="入口 NVR 密码">{{single_gate.entry_login.password}}</el-descriptions-item>
                     <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口 NVR IP">{{single_gate.exit_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="出口 通道">{{single_gate.exit_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR 用户名">{{single_gate.exit_login.username}}</el-descriptions-item>
+                    <el-descriptions-item label="出口 NVR 密码">{{single_gate.exit_login.password}}</el-descriptions-item>
                     <el-descriptions-item>
                         {{single_gate.entry_qr_ip}}
                         <template slot="label">
@@ -125,6 +129,12 @@
                     <el-form-item label="入口通道" prop="entry_channel">
                         <el-input v-model="gate_for_edit.entry_channel" type="number" placeholder="请输入入口通道"></el-input>
                     </el-form-item>
+                    <el-form-item label="入口NVR用户名" prop="entry_nvr_username">
+                        <el-input v-model="gate_for_edit.entry_login.username" placeholder="请输入入口NVR用户名"></el-input>
+                    </el-form-item>
+                    <el-form-item label="入口NVR密码" prop="entry_nvr_password">
+                        <el-input v-model="gate_for_edit.entry_login.password" placeholder="请输入入口NVR密码"></el-input>
+                    </el-form-item>
                     <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
                         <el-input v-model="gate_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
                     </el-form-item>
@@ -139,6 +149,12 @@
                     </el-form-item>
                     <el-form-item label="出口LEDIP" prop="exit_led_ip">
                         <el-input v-model="gate_for_edit.exit_config.led_ip" placeholder="请输入出口LEDIP"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVR用户名" prop="exit_nvr_username">
+                        <el-input v-model="gate_for_edit.exit_login.username" placeholder="请输入出口NVR用户名"></el-input>
+                    </el-form-item>
+                    <el-form-item label="出口NVR密码" prop="exit_nvr_password">
+                        <el-input v-model="gate_for_edit.exit_login.password" placeholder="请输入出口NVR密码"></el-input>
                     </el-form-item>
                     <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
                         <el-input v-model="gate_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
@@ -503,6 +519,8 @@ export default {
             gate_for_edit: {
                 entry_config: {},
                 exit_config: {},
+                entry_login:{},
+                exit_login:{},
             },
             scale_for_edit: {
                 raster_ip: ['', ''],

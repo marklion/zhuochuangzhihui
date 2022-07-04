@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     auto cli = (command("fetch_dest").set(cmd) |
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
+                command("enabled").set(cmd)  |
                 (command("check_in").set(cmd) & value("order_number", order_number) & value("customer_name", customer_name) & value("product_name", product_name) & value("vehicle_number", vehicle_number)) |
                 (command("push_p").set(cmd) & value("order_number", order_number) & value("vehicle_number", vehicle_number) & value("p_weight", p_weight)) |
                 (command("push_m").set(cmd) & value("req", json_string)) |
@@ -72,6 +73,13 @@ int main(int argc, char **argv)
     else if (cmd == "check_in")
     {
         if (ZH_MEIYITONG_check_in(order_number, customer_name, product_name, vehicle_number))
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "enabled")
+    {
+        if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
         {
             iret = 0;
         }

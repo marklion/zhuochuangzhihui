@@ -356,4 +356,6 @@ public:
     virtual std::string state_name() = 0;
 };
 
+int connect_timeout(int sockfd, struct sockaddr *serv_addr, int addrlen, int timeout);
+
 #endif // _TDF_INCLUDE_H_

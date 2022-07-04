@@ -20,6 +20,7 @@ int main(int argc, char **argv)
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
                 command("init").set(cmd) |
+                command("enabled").set(cmd) |
                 command("fetchCust").set(cmd) |
                 command("push_req").set(cmd) & value("json_string", json_string) |
                 (command("valid_balance").set(cmd) & value("cust_code", customer_code) & value("inv_code", inv_code)) & value("vehicle_count", vehicle_count) |
@@ -79,6 +80,13 @@ int main(int argc, char **argv)
             iret = 0;
         }
     }
+    else if (cmd == "enabled")
+    {
+        if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
+        {
+            iret = 0;
+        }
+    }
     else if (cmd == "valid_balance")
     {
         if (ZH_HNNC_valid_balance(customer_code, inv_code, atoi(vehicle_count.c_str())))
@@ -98,6 +106,7 @@ int main(int argc, char **argv)
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "http://www.hnjt.top");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "username", "mhg");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "password", "mhg123456");
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
     }
 
     return iret;

@@ -105,7 +105,7 @@ bool ZH_MEIYITONG_post_p_weight(const std::string &_order_number, const std::str
     req.Add("Gps", config("gps"));
 
     ret = send_to_myt("/supervisory_vehicle_tare_elect", req, [](const neb::CJsonObject &res)->bool{
-        std::cout << res("VehilceTareID") << std::endl;
+        std::cout << res("VehicleTareID") << std::endl;
         return true;
     });
 
@@ -123,7 +123,8 @@ bool ZH_MEIYITONG_post_m_weight(const std::string &_req)
             neb::CJsonObject(),
             [&](const neb::CJsonObject &res) -> bool
             {
-                emp_id = res("HandlerID");
+                auto tmp_res = res;
+                emp_id = tmp_res[0]("EmployeeID");
                 return true;
             }))
     {

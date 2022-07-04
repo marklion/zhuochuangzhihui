@@ -57,6 +57,10 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         gate_config[i].Get("exit_nvr_ip", tmp.exit_nvr_ip);
         gate_config[i].Get("entry_channel", tmp.entry_channel);
         gate_config[i].Get("exit_channel", tmp.exit_channel);
+        gate_config[i].Get("entry_nvr_username", tmp.entry_login.username);
+        gate_config[i].Get("entry_nvr_password", tmp.entry_login.password);
+        gate_config[i].Get("exit_nvr_username", tmp.exit_login.username);
+        gate_config[i].Get("exit_nvr_password", tmp.exit_login.password);
         _return.gate.push_back(tmp);
     }
     for (int i = 0; i < scale_config.GetArraySize(); i++)
@@ -155,6 +159,10 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         gate.Add("exit_nvr_ip", itr.exit_nvr_ip);
         gate.Add("entry_channel", itr.entry_channel);
         gate.Add("exit_channel", itr.exit_channel);
+        gate.Add("entry_nvr_username", itr.entry_login.username);
+        gate.Add("entry_nvr_password", itr.entry_login.password);
+        gate.Add("exit_nvr_username", itr.exit_login.username);
+        gate.Add("exit_nvr_password", itr.exit_login.password);
         tmp["gate"].Add(gate);
     }
 
