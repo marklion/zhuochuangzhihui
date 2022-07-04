@@ -2567,6 +2567,11 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
         tmp.date = itr.date;
         tmp.vehicle_number = itr.vehicle_number;
         tmp.weight = zh_double2string_reserve2(itr.weight);
+        auto vmr = sqlite_orm::search_record<zh_sql_vehicle>("main_vehicle_number == '%s'", tmp.vehicle_number.c_str());
+        if (vmr)
+        {
+            tmp.group_name = vmr->group_name;
+        }
         _return.push_back(tmp);
     }
 }

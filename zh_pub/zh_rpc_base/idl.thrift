@@ -360,6 +360,7 @@ struct white_record_info {
     2:string vehicle_number,
     3:string date,
     4:string weight,
+    5:string group_name,
 }
 
 service vehicle_order_center {
