@@ -20,18 +20,28 @@ public:
                 g_mock_map[_chrct] = _mock;
                 if (_mock.postive)
                 {
-                    for (auto i = 0; i < 5; i++)
+                    char *out_buf = (char *)calloc(1UL, _mock.m_mock_data.length() / 2);
+                    for (int i = 0; i < _mock.m_mock_data.length() / 2; i++)
                     {
-                        char *out_buf = (char *)calloc(1UL, _mock.m_mock_data.length() / 2);
-                        for (int i = 0; i < _mock.m_mock_data.length() / 2; i++)
-                        {
-                            sscanf(_mock.m_mock_data.c_str() + i * 2, "%02x", out_buf + i);
-                        }
-                        tdf_main::get_inst().send_data(_chrct, std::string(out_buf, _mock.m_mock_data.size() / 2));
-                        _mock.m_log.log("send data");
-                        _mock.m_log.log_package(out_buf, _mock.m_mock_data.size() / 2);
-                        free(out_buf);
+                        sscanf(_mock.m_mock_data.c_str() + i * 2, "%02x", out_buf + i);
                     }
+                    struct cont_buff
+                    {
+                        std::string chrct;
+                        std::string data;
+                    } out_buff_tmp;
+                    out_buff_tmp.chrct = _chrct;
+                    out_buff_tmp.data = std::string(out_buf, _mock.m_mock_data.size() / 2);
+                    tdf_main::get_inst().start_timer(
+                        1, [](void *_private)
+                        {
+                            auto tmp_buff = (cont_buff *)_private;
+                            tdf_main::get_inst().send_data(tmp_buff->chrct, tmp_buff->data); },
+                        new cont_buff(out_buff_tmp));
+                    tdf_main::get_inst().send_data(_chrct, std::string(out_buf, _mock.m_mock_data.size() / 2));
+                    _mock.m_log.log("send data");
+                    _mock.m_log.log_package(out_buf, _mock.m_mock_data.size() / 2);
+                    free(out_buf);
                 }
             },
             [=](const std::string &_chrct)

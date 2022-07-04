@@ -210,6 +210,73 @@ public:
     }
 } g_zh_scale_kld2008_tf1;
 
+struct zh_scale_kl_buff{
+    std::string ip;
+    std::string buff;
+};
+
+static std::map<std::string,zh_scale_kl_buff> g_buff_map;
+static pthread_mutex_t g_buff_map_lock = PTHREAD_MUTEX_INITIALIZER;
+static void create_scale_buff(const std::string &_ip)
+{
+    pthread_mutex_lock(&g_buff_map_lock);
+    zh_scale_kl_buff tmp;
+    tmp.ip = _ip;
+    g_buff_map[_ip] = tmp;
+    pthread_mutex_unlock(&g_buff_map_lock);
+}
+static void destroy_scale_buff(const std::string &_ip)
+{
+    pthread_mutex_lock(&g_buff_map_lock);
+    if (g_buff_map.find(_ip) != g_buff_map.end())
+    {
+        g_buff_map.erase(_ip);
+    }
+    pthread_mutex_unlock(&g_buff_map_lock);
+}
+static void push_data_in_buff(const std::string &_ip, const std::string &_data)
+{
+    pthread_mutex_lock(&g_buff_map_lock);
+    if (g_buff_map.find(_ip) != g_buff_map.end())
+    {
+        auto &tmp = g_buff_map[_ip];
+        if (tmp.buff.length() < 128)
+        {
+            tmp.buff.append(_data);
+        }
+    }
+    pthread_mutex_unlock(&g_buff_map_lock);
+}
+
+static std::string pop_data_from_buff(const std::string &_ip)
+{
+    std::string ret;
+    pthread_mutex_lock(&g_buff_map_lock);
+    if (g_buff_map.find(_ip) != g_buff_map.end())
+    {
+        auto &tmp = g_buff_map[_ip];
+        ret = tmp.buff;
+        tmp.buff.clear();
+    }
+    pthread_mutex_unlock(&g_buff_map_lock);
+
+    return ret;
+}
+
+static bool buff_is_added(const std::string &_ip)
+{
+    bool ret = false;
+
+    pthread_mutex_lock(&g_buff_map_lock);
+
+    if (g_buff_map.find(_ip) != g_buff_map.end())
+    {
+        ret = true;
+    }
+    pthread_mutex_unlock(&g_buff_map_lock);
+
+    return ret;
+}
 class zh_scale_kld2008_tf0 : public zh_scale_if
 {
 public:
@@ -263,45 +330,31 @@ public:
     }
     virtual double get_weight(const std::string &_scale_ip, unsigned short _port)
     {
-        double ret = 0;
-        zh_vcom_link vl(_scale_ip, _port);
-        char buff[2048] = {0};
-
-        int fd = open(vl.get_pts().c_str(), O_RDWR);
-        if (fd >= 0)
+        if (!buff_is_added(_scale_ip))
         {
-            termios opt;
-            tcgetattr(fd, &opt);
-            opt.c_cflag |= CLOCAL | CREAD;
-            opt.c_oflag = 0;
-            opt.c_lflag = 0;
-            opt.c_cc[VTIME] = 0;
-            opt.c_cc[VMIN] = 12;
-            tcsetattr(fd, TCSANOW, &opt);
-            fd_set set;
-            FD_ZERO(&set);
-            FD_SET(fd, &set);
-            timeval timeout;
-            timeout.tv_sec = 0;
-            timeout.tv_usec = 700000;
-            if (0 < select(fd + 1, &set, nullptr, nullptr, &timeout))
-            {
-                int read_len = read(fd, buff, sizeof(buff));
-                if (read_len >= 0)
+            tdf_main::get_inst().connect_remote(
+                _scale_ip,
+                _port,
+                [=](const std::string &_chrct)
                 {
-                    ret = parse_weight(make_one_frame(buff, read_len));
-                }
-            }
-            else
-            {
-                g_log.err("failed to read data from scale : %s", strerror(errno));
-            }
-            close(fd);
+                    g_log.log("connect to %s", _scale_ip.c_str());
+                    create_scale_buff(_scale_ip);
+                },
+                [=](const std::string &_chrct)
+                {
+                    g_log.err("disconnected %s", _scale_ip.c_str());
+                    destroy_scale_buff(_scale_ip);
+                },
+                [=](const std::string &_chcrt, const std::string &_data)
+                {
+                    g_log.log("recv data from %s", _scale_ip.c_str());
+                    g_log.log_package(_data.data(), _data.length());
+                    push_data_in_buff(_scale_ip, _data);
+                });
         }
-        else
-        {
-            g_log.err("failed to open scale device: %s", strerror(errno));
-        }
+        auto scale_buff = pop_data_from_buff(_scale_ip);
+        double ret = 0;
+        ret = parse_weight(make_one_frame(scale_buff.data(), scale_buff.size()));
 
         return ret;
     }
