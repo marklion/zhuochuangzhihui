@@ -77,6 +77,7 @@
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/all_came_vehicle" icon="label-o">现场管理</van-tabbar-item>
                 <van-tabbar-item replace to="/mobile/self_order_opt" icon="label-o" v-if="$store.state.user_info.permission == 3">司机派车</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
+                <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/scale_state" icon="eye-o">称重状态</van-tabbar-item>
             </van-tabbar>
         </div>
         <div v-else>

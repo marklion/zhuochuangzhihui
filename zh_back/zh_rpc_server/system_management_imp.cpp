@@ -615,3 +615,48 @@ bool system_management_handler::set_register_info(const std::string &ssid, const
     ret = true;
     return ret;
 }
+
+void system_management_handler::get_scale_state(std::vector<scale_state_info> &_return, const std::string &ssid)
+{
+    auto vch = vehicle_order_center_handler::get_inst();
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (vch && user)
+    {
+        for ( auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++ )
+        {
+            scale_state_info tmp;
+            tmp.name = itr->first;
+            tmp.cur_status = itr->second->m_cur_state->state_name() + " 车辆:" + itr->second->bound_vehicle_number;
+            _return.push_back(tmp);
+        }
+    }
+}
+void system_management_handler::reset_scale_state(const std::string &ssid, const std::string &scale_name)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    for (auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++)
+    {
+        if (itr->first == scale_name)
+        {
+            device_config dc;
+            internal_get_device_config(dc);
+            auto scale_config_itr = std::find_if(
+                dc.scale.begin(),
+                dc.scale.end(),
+                [&](const device_scale_config &_item)
+                {
+                    return _item.name == itr->first;
+                });
+            if (scale_config_itr != dc.scale.end())
+            {
+                vehicle_order_center_handler::ssm_map.erase(itr);
+                vehicle_order_center_handler::ssm_map[scale_config_itr->name] = std::make_shared<scale_state_machine>(*scale_config_itr);
+            }
+            break;
+        }
+    }
+}

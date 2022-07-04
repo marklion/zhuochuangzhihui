@@ -111,6 +111,11 @@ struct register_config_info {
     3:i64 check_in_time,
 }
 
+struct scale_state_info {
+    1:string name,
+    2:string cur_status,
+}
+
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
@@ -140,6 +145,8 @@ service system_management {
     bool set_company_address_info(1:string ssid, 2:company_address_info address_info) throws (1:gen_exp e),
     register_config_info get_register_info() throws (1:gen_exp e),
     bool set_register_info(1:string ssid, 2:register_config_info register_config) throws (1:gen_exp e),
+    list<scale_state_info> get_scale_state(1:string ssid) throws (1:gen_exp e),
+    void reset_scale_state(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
 }
 
 struct user_info {
