@@ -17,7 +17,7 @@ public:
     virtual void after_enter(tdf_state_machine &_sm);
     virtual void before_leave(tdf_state_machine &_sm);
     virtual std::string state_name() {
-        return "判定";
+        return "空闲";
     }
 };class scale_sm_scale:public tdf_state_machine_state {
 public:

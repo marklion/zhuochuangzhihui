@@ -57,6 +57,8 @@ public:
     virtual bool set_company_address_info(const std::string &ssid, const company_address_info &address_info);
     virtual void get_register_info(register_config_info &_return);
     virtual bool set_register_info(const std::string &ssid, const register_config_info &register_config);
+    virtual void get_scale_state(std::vector<scale_state_info> &_return, const std::string &ssid);
+    virtual void reset_scale_state(const std::string &ssid, const std::string &scale_name);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

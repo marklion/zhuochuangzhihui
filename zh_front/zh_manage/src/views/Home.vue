@@ -50,6 +50,16 @@
 
         </vue-cell>
     </vue-grid>
+    <el-divider content-position="left">称重状态</el-divider>
+
+    <vue-grid align="stretch" justify="start">
+        <vue-cell v-for="(single_scale, index) in scale_state" :key="index" width="3of12">
+            <span>{{single_scale.name}}:{{single_scale.cur_status}}</span>
+            <span>
+                <el-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</el-button>
+            </span>
+        </vue-cell>
+    </vue-grid>
 </div>
 </template>
 
@@ -62,6 +72,7 @@ export default {
     name: 'Home',
     data: function () {
         return {
+            scale_state: [],
             device_health_info: [],
             date_range: [
                 new Date(new Date().getTime() - (7 * 24 * 3600 * 1000)),
@@ -256,6 +267,27 @@ export default {
                 });
             });
         },
+        init_scale_state: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_scale_state", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.scale_state = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.scale_state, index, element);
+                });
+            });
+        },
+        reset_scale: function (_scale_name) {
+            var vue_this = this;
+            vue_this.$confirm('确定要重置' + _scale_name + '的状态吗？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("system_management", "reset_scale_state", [vue_this.$cookies.get("zh_ssid"), _scale_name]).then(function () {
+                    vue_this.init_scale_state();
+                });
+            });
+        },
     },
     beforeMount: function () {
         this.init_order_statistics();
@@ -265,6 +297,7 @@ export default {
         vue_this.$call_remote_process("stuff_management", "get_last_active", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
             vue_this.focus_stuff = resp;
         });
+        this.init_scale_state();
 
     },
 }

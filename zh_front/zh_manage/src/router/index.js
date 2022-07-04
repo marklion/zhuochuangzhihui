@@ -52,6 +52,14 @@ const routes = [
       mobile: true,
     },
   },
+{
+    path: '/mobile/scale_state',
+    name: 'ScaleState',
+    component: () => import('../views/ScaleState.vue'),
+    meta: {
+      mobile: true,
+    },
+  },
   {
     path: '/mobile/all_came_vehicle',
     name: 'AllCameVehicle',
