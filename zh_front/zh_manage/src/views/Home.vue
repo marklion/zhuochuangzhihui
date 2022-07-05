@@ -54,10 +54,13 @@
 
     <vue-grid align="stretch" justify="start">
         <vue-cell v-for="(single_scale, index) in scale_state" :key="index" width="3of12">
-            <span>{{single_scale.name}}:{{single_scale.cur_status}}</span>
-            <span>
-                <el-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</el-button>
-            </span>
+            <div class="scale_status_show">
+                <span>{{single_scale.name}}</span>
+                <span>
+                    <el-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</el-button>
+                </span>
+                <div>{{single_scale.cur_status}}</div>
+            </div>
         </vue-cell>
     </vue-grid>
 </div>
@@ -311,5 +314,9 @@ export default {
 
 .device_health_name_show {
     font-size: 10px;
+}
+
+.scale_status_show {
+    border: 1px solid;
 }
 </style>

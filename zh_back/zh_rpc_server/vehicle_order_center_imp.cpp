@@ -1521,6 +1521,22 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
             {
                 ret = true;
             }
+            if (std::abs(_order.m_weight - _order.p_weight) < 0.2)
+            {
+                req.Delete("IsRepeat");
+                req.Delete("PicurlG3");
+                req.Delete("PicurlG2");
+                req.Delete("PicurlG1");
+                req.Delete("Invcode");
+                req.Delete("Custcode");
+                req.Delete("LoadbillNo");
+                req.ReplaceAdd("transtype", "UpEmpt");
+                req.ReplaceAdd("Netweight", 0);
+                req.ReplaceAdd("Grossweight", _order.p_weight);
+                req.Add("PicurlE1", _pic1);
+                req.Add("PicurlE2", _pic2);
+                req.Add("PicurlE3", _pic3);
+            }
         }
         if (stuff->code.length() > 0 && customer->code.length() > 0)
         {
@@ -2624,7 +2640,7 @@ void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle
     }
     detail_query += " AND datetime(m_cam_time) >= datetime('" + begin_date + "') AND datetime(m_cam_time) <= datetime('" + end_date + "')";
     auto all_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY datetime(m_cam_time) DESC", detail_query.c_str());
-    for (auto &itr:all_order)
+    for (auto &itr : all_order)
     {
         vehicle_order_detail tmp;
         make_vehicle_detail_from_sql(tmp, itr);
@@ -2640,7 +2656,7 @@ void vehicle_order_center_handler::go_through_plugin_que(std::vector<std::string
         ZH_RETURN_NO_PRAVILIGE();
     }
     auto que_items = g_nc_req_pip.go_throw_que();
-    for (auto &itr:que_items)
+    for (auto &itr : que_items)
     {
         _return.push_back(itr);
     }
