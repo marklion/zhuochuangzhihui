@@ -80,7 +80,7 @@ bool user_management_handler::add_user(const std::string &ssid, const user_info 
         ZH_RETURN_MSG("该手机号已注册过");
     }
     auto required_permission = sqlite_orm::search_record<zh_sql_user_permission>("name == '%s'", new_user.permission_name.c_str());
-    if (!required_permission)
+    if (!required_permission || required_permission->key >= 3)
     {
         ZH_RETURN_MSG("无法分配权限");
     }

@@ -214,6 +214,9 @@ public:
     virtual void get_white_record_info(std::vector<white_record_info> &_return, const std::string &ssid, const int64_t begin_date, const int64_t end_date);
     bool pri_call_vehicle(const int64_t order_id, const bool is_cancel);
     virtual void driver_get_last_30_order_number(std::vector<vehicle_order_detail> &_return, const std::string &driver_phone);
+    virtual void export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name);
+    virtual void go_through_plugin_que(std::vector<std::string> &_return, const std::string &ssid);
+    virtual void cancel_plugin_que(const std::string &ssid);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_
