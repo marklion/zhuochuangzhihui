@@ -25,6 +25,8 @@ int main(int argc, char **argv)
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
                 command("enabled").set(cmd)  |
+                command("refresh").set(cmd)  |
+                (command("need_proc").set(cmd) & value("stuff_name", product_name))  |
                 (command("check_in").set(cmd) & value("order_number", order_number) & value("customer_name", customer_name) & value("product_name", product_name) & value("vehicle_number", vehicle_number)) |
                 (command("push_p").set(cmd) & value("order_number", order_number) & value("vehicle_number", vehicle_number) & value("p_weight", p_weight)) |
                 (command("push_m").set(cmd) & value("req", json_string)) |
@@ -91,6 +93,13 @@ int main(int argc, char **argv)
             iret = 0;
         }
     }
+    else if (cmd == "need_proc")
+    {
+        if (ZH_MEIYITONG_stuff_need_process(product_name))
+        {
+            iret = 0;
+        }
+    }
     else if (cmd == "push_m")
     {
         if (ZH_MEIYITONG_post_m_weight(json_string))
@@ -100,7 +109,17 @@ int main(int argc, char **argv)
     }
     else if (cmd == "init")
     {
-        iret = 0;
+        if (ZH_MEIYITONG_get_product_info())
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "refresh")
+    {
+        if (ZH_MEIYITONG_get_product_info())
+        {
+            iret = 0;
+        }
     }
 
     return iret;

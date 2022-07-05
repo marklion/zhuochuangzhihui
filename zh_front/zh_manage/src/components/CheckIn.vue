@@ -4,7 +4,11 @@
     <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id"></van-cell>
     <van-field readonly clickable name="picker" :value="cur_vehicle.basic_info.source_dest_name" :label="source_or_dest" placeholder="点击选择" @click="show_source_dest_picker = true" />
     <van-popup v-model="show_source_dest_picker" position="bottom">
-        <van-picker show-toolbar :columns="all_source_dest" @confirm="select_source_dest" @cancel="show_source_dest_picker = false" />
+        <van-picker show-toolbar :columns="address_need_show" @confirm="select_source_dest" @cancel="show_source_dest_picker = false">
+            <template #columns-top>
+                <van-field v-model="address_search_key" placeholder="拼音首字母过滤" label="过滤条件"></van-field>
+            </template>
+        </van-picker>
     </van-popup>
     <van-cell title="当前状态" :value="status" center>
         <template #right-icon>
@@ -61,6 +65,8 @@ import {
     Lazyload
 } from 'vant';
 
+import PinyinMatch from "pinyin-match"
+
 Vue.use(Lazyload);
 
 // 注册时可以配置额外的选项
@@ -89,6 +95,7 @@ export default {
     },
     data: function () {
         return {
+            address_search_key: '',
             show_direction: false,
             domain_name: '',
             show_source_dest_picker: false,
@@ -109,6 +116,19 @@ export default {
         };
     },
     computed: {
+        address_need_show: function () {
+            var ret = this.all_source_dest;
+            if (this.address_search_key) {
+                ret = [];
+                this.all_source_dest.forEach(element => {
+                    if (PinyinMatch.match(element, this.address_search_key)) {
+                        ret.push(element);
+                    }
+                });
+            }
+
+            return ret;
+        },
         cur_url: function () {
             var order_number = '';
             if (this.cur_vehicle.basic_info.order_number) {
@@ -257,6 +277,12 @@ export default {
             if (!_cancel) {
                 if (!vue_this.cur_vehicle.basic_info.is_sale) {
                     vue_this.cur_vehicle.basic_info.source_dest_name = vue_this.cur_vehicle.basic_info.company_name;
+                } else if (!vue_this.cur_vehicle.basic_info.source_dest_name) {
+                    vue_this.$dialog.alert({
+                        title: '无法排号',
+                        message: "请先选择拉运目的地"
+                    });
+                    return;
                 }
                 vue_this.check_postion().then(function () {
                     vue_this.$call_remote_process("vehicle_order_center", "driver_check_in", [parseInt(vue_this.cur_vehicle.basic_info.id), _cancel]).then(function (resp) {

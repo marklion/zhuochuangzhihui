@@ -48,7 +48,7 @@ static bool send_req_with_token(const neb::CJsonObject _req, const std::function
             {
                 ret = _callback(res_json["obj"]);
             }
-            else
+            else if (_once_again)
             {
                 g_log.err("failure because %s", res_json("msg").c_str());
                 std::cerr << res_json("msg") << std::endl;

@@ -633,16 +633,20 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
             }
             if (plugin_is_installed("zh_meiyitong"))
             {
-                pmh->zh_plugin_run_plugin(
-                    "check_in " +
-                        vo->order_number.substr(vo->order_number.length() - 11, 11) + " " +
-                        vo->company_name + " " +
-                        vo->stuff_name + " " +
-                        vo->main_vehicle_number,
-                    "zh_meiyitong", std_out, std_err);
-                if (std_err.length() > 0)
+                pmh->zh_plugin_run_plugin("need_proc " + vo->stuff_name, "zh_meiyitong", std_out, std_err);
+                if (std_err.length() == 0)
                 {
-                    ZH_RETURN_MSG("上传监管平台接单失败:" + std_err);
+                    pmh->zh_plugin_run_plugin(
+                        "check_in " +
+                            vo->order_number.substr(vo->order_number.length() - 11, 11) + " " +
+                            vo->company_name + " " +
+                            vo->stuff_name + " " +
+                            vo->main_vehicle_number,
+                        "zh_meiyitong", std_out, std_err);
+                    if (std_err.length() > 0)
+                    {
+                        ZH_RETURN_MSG("上传监管平台接单失败:" + std_err);
+                    }
                 }
             }
         }
@@ -1290,17 +1294,44 @@ static NET_DVR_TIME dateTime2unix(const std::string &_time, int _min = 0)
 
     return tm;
 }
-struct zh_rest_api_meta{
+struct zh_rest_api_meta
+{
     neb::CJsonObject req;
     std::string order_number;
-    std::function<bool(const neb::CJsonObject &,const std::string &)> proc_func;
-    zh_rest_api_meta(const neb::CJsonObject &_req, const std::string &_order_number, const std::function<bool(const neb::CJsonObject &, const std::string &)> _proc_func):req(_req),order_number(_order_number), proc_func(_proc_func){}
+    std::function<bool(const neb::CJsonObject &, const std::string &)> proc_func;
+    bool is_running = false;
+    zh_rest_api_meta(const neb::CJsonObject &_req, const std::string &_order_number, const std::function<bool(const neb::CJsonObject &, const std::string &)> _proc_func) : req(_req), order_number(_order_number), proc_func(_proc_func) {}
+    zh_rest_api_meta() {}
 };
-struct zh_rest_api_req_pipe{
+struct zh_rest_api_req_pipe
+{
     std::list<zh_rest_api_meta> rest_que;
     pthread_mutex_t read_lock;
     pthread_cond_t que_cond = PTHREAD_COND_INITIALIZER;
     tdf_log m_log;
+    void cancel_que(bool _is_running = false)
+    {
+        pthread_mutex_lock(&read_lock);
+        auto &top_req = rest_que.front();
+        bool need_delete = false;
+        if (_is_running)
+        {
+            if (top_req.is_running)
+            {
+                need_delete = true;
+            }
+        }
+        else
+        {
+            need_delete = true;
+        }
+        if (need_delete)
+        {
+            m_log.log("pop req in, order_number:%s,req:%s", top_req.order_number.c_str(), top_req.req.ToFormattedString().c_str());
+            rest_que.pop_front();
+        }
+        pthread_mutex_unlock(&read_lock);
+    }
     zh_rest_api_req_pipe() : m_log("rest_api")
     {
         pthread_mutexattr_t attr;
@@ -1312,6 +1343,7 @@ struct zh_rest_api_req_pipe{
             {
                 while (1)
                 {
+                    zh_rest_api_meta cur_node;
                     pthread_mutex_lock(&read_lock);
                     timeval now;
                     timespec outtime;
@@ -1321,19 +1353,16 @@ struct zh_rest_api_req_pipe{
                     m_log.log("wait signal");
                     pthread_cond_timedwait(&que_cond, &read_lock, &outtime);
                     m_log.log("timeout or something happened");
-                    while (rest_que.size() > 0)
+                    if (rest_que.size() > 0)
                     {
-                        auto &first_node = rest_que.front();
-                        if (first_node.proc_func(first_node.req, first_node.order_number))
-                        {
-                            rest_que.pop_front();
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        rest_que.front().is_running = true;
+                        cur_node = rest_que.front();
                     }
                     pthread_mutex_unlock(&read_lock);
+                    if (cur_node.is_running && cur_node.proc_func(cur_node.req, cur_node.order_number))
+                    {
+                        cancel_que(true);
+                    }
                 }
             })
             .detach();
@@ -1346,23 +1375,16 @@ struct zh_rest_api_req_pipe{
         pthread_cond_signal(&que_cond);
         pthread_mutex_unlock(&read_lock);
     }
-    std::list<std::string> go_throw_que() {
+    std::list<std::string> go_throw_que()
+    {
         pthread_mutex_lock(&read_lock);
         std::list<std::string> ret;
-        for (auto &itr:rest_que)
+        for (auto &itr : rest_que)
         {
             ret.push_back(itr.order_number + '-' + itr.req.ToString());
         }
         pthread_mutex_unlock(&read_lock);
         return ret;
-    }
-    void cancel_que()
-    {
-        pthread_mutex_lock(&read_lock);
-        auto &top_req = rest_que.front();
-        m_log.log("pop req in, order_number:%s,req:%s", top_req.order_number.c_str(), top_req.req.ToFormattedString().c_str());
-        rest_que.pop_front();
-        pthread_mutex_unlock(&read_lock);
     }
 };
 static zh_rest_api_req_pipe g_nc_req_pip;
@@ -1370,6 +1392,17 @@ static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nv
 {
     bool ret = true;
 
+    auto pmh = plugin_management_handler::get_inst();
+    if (pmh)
+    {
+        std::string std_out;
+        std::string std_err;
+        pmh->zh_plugin_run_plugin("need_proc " + _order.stuff_name, "zh_meiyitong", std_out, std_err);
+        if (std_err.length() > 0)
+        {
+            return ret;
+        }
+    }
     if (_order.status < 3)
     {
         g_nc_req_pip.push_req(
@@ -1421,17 +1454,16 @@ static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nv
             m_req.Add("DivisionID", sd_record->id);
         }
         m_req.Add("DivisionName", _order.source_dest_name);
-        auto p_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.p_cam_time), dateTime2unix(_order.p_cam_time, 15), _username, _password);
-        auto m_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.m_cam_time), dateTime2unix(_order.m_cam_time, 15), _username, _password);
-        m_req.Add("TareVideoUrl", p_video);
-        m_req.Add("GrossVideoUrl", m_video);
         g_nc_req_pip.push_req(
             zh_rest_api_meta(
                 m_req,
                 _order.order_number,
-                [](const neb::CJsonObject &_req, const std::string &_order_number) -> bool
+                [=](const neb::CJsonObject &_req, const std::string &_order_number) -> bool
                 {
                     sleep(1);
+
+                    auto p_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.p_cam_time), dateTime2unix(_order.p_cam_time, 15), _username, _password);
+                    auto m_video = zh_hk_get_channel_video(_nvr_ip, _nvr_channel, dateTime2unix(_order.m_cam_time), dateTime2unix(_order.m_cam_time, 15), _username, _password);
                     bool push_m_ret = false;
                     auto pmh = plugin_management_handler::get_inst();
                     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", _order_number.c_str());
@@ -1442,18 +1474,9 @@ static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nv
                         auto tmp_req = _req;
                         neb::CJsonObject tmp_extra(vo->extra_info);
                         tmp_req.Add("VehicleTareID", tmp_extra("VehicleTareID"));
-
-                        neb::CJsonObject tmp_extra_req(tmp_extra("myt_info"));
-                        change_json_key(tmp_extra_req, "singleprice", "SinglePrice");
-                        change_json_key(tmp_extra_req, "productname", "ProductName");
-                        change_json_key(tmp_extra_req, "standproductid", "StandProductID");
-                        change_json_key(tmp_extra_req, "custproductid", "CustProductID");
-                        change_json_key(tmp_extra_req, "heatvalue", "HeatValue");
-                        std::string tmp_key;
-                        while (tmp_extra_req.GetKey(tmp_key))
-                        {
-                            tmp_req.Add(tmp_key, tmp_extra_req(tmp_key));
-                        }
+                        tmp_req.Add("TareVideoUrl", p_video);
+                        tmp_req.Add("GrossVideoUrl", m_video);
+                        tmp_req.Add("ProductName", vo->stuff_name);
 
                         pmh->zh_plugin_run_plugin("push_m '" + tmp_req.ToString() + "'", "zh_meiyitong", std_out, std_err);
                         if (std_err.empty())
@@ -1553,7 +1576,7 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                         if (pmh && vo)
                         {
                             auto tmp_req = req_json_content;
-                            if (req_json_content("transtype") == "UpGross")
+                            if (req_json_content("transtype") == "UpGross" || req_json_content("transtype") == "UpEmpt")
                             {
                                 tmp_req.ReplaceAdd("Billcode", vo->bl_number);
                             }
@@ -1565,12 +1588,16 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                             {
                                 if (std_err.empty())
                                 {
+                                    tdf_log tmp_log("plugin_exec");
+                                    tmp_log.log(std_out);
                                     auto resp = neb::CJsonObject(std_out);
+                                    tmp_log.log("bl:%s", resp("Billcode").c_str());
+                                    tmp_log.log("nyj:%s", resp["NyjInf"].ToFormattedString().c_str());
                                     if (req_json_content("transtype") == "UpTare")
                                     {
                                         vo->bl_number = resp("Billcode");
                                     }
-                                    else if (req_json_content("transtype") == "UpGross")
+                                    else if (req_json_content("transtype") == "UpGross" || req_json_content("transtype") == "UpEmpt")
                                     {
                                         neb::CJsonObject tmp_extra(vo->extra_info);
                                         tmp_extra.ReplaceAdd("myt_info", resp["NyjInf"].ToString());
@@ -1624,19 +1651,19 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             [&](zh_sql_vehicle_order &_order)
             {
                 bool ret = true;
-                if (nvr_info_valided(bound_scale))
+                if (plugin_is_installed("zh_hnnc"))
                 {
-                    auto pic1 = zh_hk_get_capture_picture(bound_scale.scale1_nvr_ip, bound_scale.scale1_channel, bound_scale.scale1.username, bound_scale.scale1.password);
-                    auto pic2 = zh_hk_get_capture_picture(bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
-                    auto pic3 = zh_hk_get_capture_picture(bound_scale.scale3_nvr_ip, bound_scale.scale3_channel, bound_scale.scale3.username, bound_scale.scale3.password);
-                    if (plugin_is_installed("zh_hnnc"))
+                    if (nvr_info_valided(bound_scale))
                     {
+                        auto pic1 = zh_hk_get_capture_picture(bound_scale.scale1_nvr_ip, bound_scale.scale1_channel, bound_scale.scale1.username, bound_scale.scale1.password);
+                        auto pic2 = zh_hk_get_capture_picture(bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                        auto pic3 = zh_hk_get_capture_picture(bound_scale.scale3_nvr_ip, bound_scale.scale3_channel, bound_scale.scale3.username, bound_scale.scale3.password);
                         ret = ret && push_req_to_hn(_order, pic1, pic2, pic3);
                     }
-                    if (plugin_is_installed("zh_meiyitong"))
-                    {
-                        ret = ret && push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
-                    }
+                }
+                if (plugin_is_installed("zh_meiyitong"))
+                {
+                    ret = ret && push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
                 }
                 _order.update_record();
 

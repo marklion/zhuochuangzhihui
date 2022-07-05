@@ -104,10 +104,22 @@ bool ZH_MEIYITONG_post_p_weight(const std::string &_order_number, const std::str
     req.Add("Ukey", config("ukey"));
     req.Add("Gps", config("gps"));
 
-    ret = send_to_myt("/supervisory_vehicle_tare_elect", req, [](const neb::CJsonObject &res)->bool{
-        std::cout << res("VehicleTareID") << std::endl;
-        return true;
-    });
+    ret = send_to_myt(
+        "/supervisory_vehicle_tare_elect",
+        req,
+        [](const neb::CJsonObject &res) -> bool
+        {
+            auto tare_id = res.ToString();
+            if (tare_id.length() > 2)
+            {
+                std::cout << tare_id.substr(1, tare_id.length() - 2) << std::endl;
+            }
+            else
+            {
+                return false;
+            }
+            return true;
+        });
 
     return ret;
 }
@@ -134,6 +146,24 @@ bool ZH_MEIYITONG_post_m_weight(const std::string &_req)
         req.Add("Ukey", config("ukey"));
         req.Add("Gps", config("gps"));
         req.Add("Axle", "6");
+        auto product_map = config["product_map"];
+        auto aim_product = [&]()->neb::CJsonObject{
+            neb::CJsonObject found_ret;
+            for (auto i = 0; i < product_map.GetArraySize() ; i++)
+            {
+                if (product_map[i]("name") == req("ProductName"))
+                {
+                    found_ret = product_map[i];
+                    break;
+                }
+            }
+            return found_ret;
+        }();
+        req.Add(  "SinglePrice",aim_product("price"));
+        req.Add(  "StandProductID",aim_product("stand_id"));
+        req.Add(  "CustProductID",aim_product("cust_id"));
+        req.Add(  "HeatValue",aim_product("heat_value"));
+        std::string tmp_key;
         ret = send_to_myt(
             "/supervisory_vehicle_gross_elect",
             req,
@@ -142,6 +172,61 @@ bool ZH_MEIYITONG_post_m_weight(const std::string &_req)
                 std::cout << res.ToFormattedString() << std::endl;
                 return true;
             });
+    }
+
+    return ret;
+}
+
+bool ZH_MEIYITONG_get_product_info()
+{
+    bool ret = false;
+
+    ret = send_to_myt(
+        "/supervisory_stand_product_restful",
+        neb::CJsonObject(),
+        [](const neb::CJsonObject &res) -> bool
+        {
+            bool get_ret = false;
+            if (res.IsArray())
+            {
+                zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "stand_product", res);
+                get_ret = true;
+            }
+            return get_ret;
+        });
+
+    if (ret)
+    {
+        ret = send_to_myt(
+            "/supervisory_custom_product_restful",
+            neb::CJsonObject(),
+            [](const neb::CJsonObject &res) -> bool
+            {
+                bool get_ret = false;
+                if (res.IsArray())
+                {
+                    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "customer_product", res);
+                    get_ret = true;
+                }
+                return get_ret;
+            });
+    }
+
+    return ret;
+}
+
+bool ZH_MEIYITONG_stuff_need_process(const std::string &_name)
+{
+    bool ret = false;
+    auto config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE);
+    auto product_map = config["product_map"];
+    for (auto i = 0; i < product_map.GetArraySize(); i++)
+    {
+        if (_name == product_map[i]("name") && product_map[i]("stand_id").length() > 0)
+        {
+            ret = true;
+            break;
+        }
     }
 
     return ret;
