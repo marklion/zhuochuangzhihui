@@ -400,6 +400,9 @@ service vehicle_order_center {
     vehicle_order_info get_driver_opt_history(1:string driver_phone) throws (1:gen_exp e),
     list<white_record_info> get_white_record_info(1:string ssid, 2:i64 begin_date, 3:i64 end_date) throws (1:gen_exp e),
     list<vehicle_order_detail> driver_get_last_30_order_number(1:string driver_phone) throws (1:gen_exp e),
+    list<vehicle_order_detail> export_order_by_condition(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name) throws (1:gen_exp e),
+    list<string> go_through_plugin_que(1:string ssid) throws (1:gen_exp e),
+    void cancel_plugin_que(1:string ssid) throws (1:gen_exp e),
 }
 
 service open_api {

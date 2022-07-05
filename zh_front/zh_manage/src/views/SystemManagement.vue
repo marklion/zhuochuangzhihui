@@ -460,6 +460,15 @@
                     </el-upload>
                 </vue-cell>
             </vue-grid>
+            <el-row>
+                <el-col :span="20">
+                    <el-divider content-position="left">插件队列</el-divider>
+                </el-col>
+                <el-col :span="4">
+                    <el-button type="danger" size="small" @click="pop_plugin_que">弹出</el-button>
+                </el-col>
+            </el-row>
+            <div v-for="(single_item, index) in plugin_que" :key="index">{{single_item}}</div>
         </el-tab-pane>
     </el-tabs>
 </div>
@@ -484,6 +493,7 @@ export default {
     },
     data: function () {
         return {
+            plugin_que: [],
             address_info: {
                 x: 0,
                 y: 0,
@@ -519,18 +529,18 @@ export default {
             gate_for_edit: {
                 entry_config: {},
                 exit_config: {},
-                entry_login:{},
-                exit_login:{},
+                entry_login: {},
+                exit_login: {},
             },
             scale_for_edit: {
                 raster_ip: ['', ''],
                 entry_config: {},
                 exit_config: {},
-                entry_login:{},
-                exit_login:{},
-                scale1:{},
-                scale2:{},
-                scale3:{},
+                entry_login: {},
+                exit_login: {},
+                scale1: {},
+                scale2: {},
+                scale3: {},
             },
             rules: {
                 name: [{
@@ -595,6 +605,26 @@ export default {
         };
     },
     methods: {
+        init_plugin_que: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "go_through_plugin_que", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.plugin_que = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.plugin_que, index, element);
+                });
+            });
+        },
+        pop_plugin_que: function () {
+            var vue_this = this;
+            vue_this.$dialog.confirm({
+                title: '弹出确认',
+                message: '确定要弹出该任务吗？'
+            }).then(function () {
+                vue_this.$call_remote_process("vehicle_order_center", "cancel_plugin_que", [vue_this.$cookies.get("zh_ssid")]).then(function () {
+                    vue_this.init_plugin_que();
+                });
+            });
+        },
         get_register_info: function () {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "get_register_info", []).then(function (resp) {
@@ -859,6 +889,7 @@ export default {
         this.init_prompt_img();
         this.get_company_address_info();
         this.get_register_info();
+        this.init_plugin_que();
 
     },
 }

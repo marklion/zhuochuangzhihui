@@ -1346,6 +1346,24 @@ struct zh_rest_api_req_pipe{
         pthread_cond_signal(&que_cond);
         pthread_mutex_unlock(&read_lock);
     }
+    std::list<std::string> go_throw_que() {
+        pthread_mutex_lock(&read_lock);
+        std::list<std::string> ret;
+        for (auto &itr:rest_que)
+        {
+            ret.push_back(itr.order_number + '-' + itr.req.ToString());
+        }
+        pthread_mutex_unlock(&read_lock);
+        return ret;
+    }
+    void cancel_que()
+    {
+        pthread_mutex_lock(&read_lock);
+        auto &top_req = rest_que.front();
+        m_log.log("pop req in, order_number:%s,req:%s", top_req.order_number.c_str(), top_req.req.ToFormattedString().c_str());
+        rest_que.pop_front();
+        pthread_mutex_unlock(&read_lock);
+    }
 };
 static zh_rest_api_req_pipe g_nc_req_pip;
 static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nvr_ip, int _nvr_channel, const std::string &_username, const std::string &_password)
@@ -2585,4 +2603,54 @@ void vehicle_order_center_handler::driver_get_last_30_order_number(std::vector<v
         make_vehicle_detail_from_sql(tmp, itr);
         _return.push_back(tmp);
     }
+}
+
+void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
+    if (!opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    std::string detail_query = "PRI_ID != 0";
+    auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
+    if (contract)
+    {
+        detail_query = "company_name == '" + contract->name + "'";
+    }
+    if (company_name.length() > 0)
+    {
+        detail_query += " AND company_name == '" + company_name + "'";
+    }
+    detail_query += " AND datetime(m_cam_time) >= datetime('" + begin_date + "') AND datetime(m_cam_time) <= datetime('" + end_date + "')";
+    auto all_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY datetime(m_cam_time) DESC", detail_query.c_str());
+    for (auto &itr:all_order)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, itr);
+        _return.push_back(tmp);
+    }
+}
+
+void vehicle_order_center_handler::go_through_plugin_que(std::vector<std::string> &_return, const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto que_items = g_nc_req_pip.go_throw_que();
+    for (auto &itr:que_items)
+    {
+        _return.push_back(itr);
+    }
+}
+void vehicle_order_center_handler::cancel_plugin_que(const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    g_nc_req_pip.cancel_que();
 }

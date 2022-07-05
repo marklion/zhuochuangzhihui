@@ -11,9 +11,24 @@
                     <el-button size="mini" type="primary" icon="el-icon-check" v-if="order_selected.length > 0" @click="confirm_multi">批量确认{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="danger" icon="el-icon-s-release" v-if="order_selected.length > 0" @click="cancle_multi">批量取消{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_order_diag = true">新增</el-button>
+                    <el-button size="mini" type="info" icon="el-icon-notebook-2" @click="advance_export_show = true">高级导出</el-button>
                 </div>
             </el-col>
         </el-row>
+        <el-dialog title="高级导出" :visible.sync="advance_export_show" width="60%">
+            <el-form ref="form" label-width="80px">
+                <el-form-item label="称重日期范围">
+                    <el-date-picker v-model="date_range" type="datetimerange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+                    </el-date-picker>
+                </el-form-item>
+                <el-form-item label="公司名">
+                    <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_comapny" search_key="company_name"></item-for-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="advance_export_record">导出</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
         <el-row type="flex" justify="space-between">
             <el-col :span="12">
                 <el-tabs v-model="activeName" @tab-click="refresh_order">
@@ -361,6 +376,18 @@ export default {
         }
     },
     computed: {
+        date_range: {
+            get: function () {
+                var ret = [];
+                ret.push(this.begin_date);
+                ret.push(this.end_date);
+                return ret;
+            },
+            set: function (_new_value) {
+                this.begin_date = _new_value[0];
+                this.end_date = _new_value[1];
+            }
+        },
         need_fetch: function () {
             var ret = false;
             if (!this.lazy_finish && !this.is_loading) {
@@ -434,6 +461,10 @@ export default {
     },
     data: function () {
         return {
+            focus_comapny: '',
+            begin_date: '',
+            end_date: '',
+            advance_export_show: false,
             form_continue_switch: false,
             create_mobile_vehicle_diag: false,
             isLoading: false,
@@ -529,6 +560,16 @@ export default {
         };
     },
     methods: {
+        advance_export_record: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "export_order_by_condition", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.focus_comapny]).then(function (resp) {
+                var tmp = [];
+                resp.forEach(element => {
+                    tmp.push(element.basic_info);
+                });
+                vue_this.export_xlsx(tmp);
+            });
+        },
         user_logoff: function () {
             var vue_this = this;
             vue_this.$call_remote_process("user_management", 'user_logoff', [vue_this.$cookies.get('zh_ssid')]).then(function () {
@@ -933,7 +974,7 @@ export default {
             // 导出 Excel
             XLSX.writeFile(wb, fileName);
         },
-        export_xlsx: function () {
+        export_xlsx: function (_advance_record) {
             var init_colm = [{
                 title: '编号',
                 key: 'order_number',
@@ -970,6 +1011,9 @@ export default {
             }, {
                 title: "二次称重时间",
                 key: 'm_time',
+            }, {}, {
+                title: "净重",
+                key: 'j_weight',
             }, {
                 title: "司机",
                 key: 'driver_name',
@@ -981,7 +1025,11 @@ export default {
                 key: 'driver_id',
             }, ];
             var content = [];
-            this.order_selected.forEach(element => {
+            var record_need_export = this.order_selected;
+            if (_advance_record) {
+                record_need_export = _advance_record;
+            }
+            record_need_export.forEach(element => {
                 var tmp = {
                     ...element
                 };
@@ -1012,6 +1060,9 @@ export default {
                             break;
                     }
                 });
+                tmp.j_weight = Math.abs(tmp.m_weight - tmp.p_weight).toFixed(2);
+                tmp.p_weight = tmp.p_weight.toFixed(2);
+                tmp.m_weight = tmp.m_weight.toFixed(2);
                 content.push(tmp);
             });
             this.exportExcel(init_colm, content);
