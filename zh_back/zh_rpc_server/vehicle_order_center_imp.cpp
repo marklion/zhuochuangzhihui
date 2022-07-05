@@ -1984,6 +1984,7 @@ void scale_sm_scale::do_action(tdf_state_machine &_sm)
             }
             return ret;
         }();
+        ssm.fin_weight = floor(ssm.fin_weight * 100 + 0.5) / 100;
     }
 }
 void scale_sm_scale::after_enter(tdf_state_machine &_sm)
