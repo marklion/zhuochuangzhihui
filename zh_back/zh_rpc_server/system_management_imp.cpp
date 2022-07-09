@@ -129,7 +129,6 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         ZH_RETURN_NO_PRAVILIGE();
     }
 
-    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
     std::ifstream config_file_orig("/conf/device/device_config.json", std::ios::in);
     std::istreambuf_iterator<char> beg(config_file_orig), end;
     std::string config_string(beg, end);
@@ -215,6 +214,7 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("scale3_channel", itr.scale3_channel);
         tmp["scale"].Add(scale);
     }
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
     config_file << tmp.ToFormattedString();
     config_file.close();
 

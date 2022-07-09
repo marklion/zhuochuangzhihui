@@ -59,10 +59,6 @@ bool zh_printer_dev::print_string(const std::string &_content)
     Print_ASCII(buff);
     print_And_Line();
     print_And_Line();
-    print_And_Line();
-    print_And_Line();
-    print_And_Line();
-    print_And_Line();
     close(g_ser_fd);
     g_focus_printer_ip = "";
     g_ser_fd = -1;
@@ -80,9 +76,6 @@ bool zh_printer_dev::print_qr(const std::string &_qr_code)
 	Set_QRCodeBuffer(_qr_code.length(), (unsigned char *)(_qr_code.c_str()));	/* 传输数据至编码缓存 */
 	Sel_Align_Way(0x01);									/* 居中对齐 */
 	PrintQRCode();
-    print_And_Line();
-    print_And_Line();
-    print_And_Line();
     print_And_Line();
     print_And_Line();
     print_And_Line();

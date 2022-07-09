@@ -610,20 +610,35 @@ bool tdf_main::connect_remote(const std::string &_ip, unsigned short _port, tdf_
             struct epoll_event ev = {
                 .events = EPOLLIN,
                 .data = {.ptr = data_channel}};
-
-            if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev))
+            if (_con_hook)
             {
-                g_data_map[chcrt] = data_channel;
-                if (_con_hook)
+                _con_hook(chcrt);
+            }
+            struct socket_async_param
+            {
+                epoll_event ev;
+                int socket_fd;
+                std::string chrct;
+            } *p_socket_ap = new socket_async_param();
+            memcpy(&(p_socket_ap->ev), &ev, sizeof(ev));
+            p_socket_ap->socket_fd = socket_fd;
+            p_socket_ap->chrct = chcrt;
+            tdf_main::get_inst().Async_to_mainthread(
+                [](void *_private, const std::string &)
                 {
-                    _con_hook(chcrt);
-                }
-                ret = true;
-            }
-            else
-            {
-                delete data_channel;
-            }
+                    auto psock_ap = (socket_async_param *)_private;
+                    if (0 == epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, psock_ap->socket_fd, &(psock_ap->ev)))
+                    {
+                        g_data_map[psock_ap->chrct] = (tdf_data *)(psock_ap->ev.data.ptr);
+                    }
+                    else
+                    {
+                        delete (tdf_data *)(psock_ap->ev.data.ptr);
+                    }
+                    delete psock_ap;
+                },
+                p_socket_ap, "");
+            ret = true;
         }
         else
         {

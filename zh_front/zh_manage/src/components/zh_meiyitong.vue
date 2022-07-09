@@ -86,8 +86,8 @@ export default {
             var vue_this = this;
             vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_meiyitong", "fetch_dest"]).then(function (resp) {
                 var all_dest = JSON.parse(resp);
-                all_dest.forEach(element => {
-                    vue_this.$call_remote_process("stuff_management", "add_source_dest", [vue_this.$cookies.get("zh_ssid"), element.DivisionName, false, element.DivisionID]);
+                all_dest.forEach(async element => {
+                    await vue_this.$call_remote_process("stuff_management", "add_source_dest", [vue_this.$cookies.get("zh_ssid"), element.DivisionName, false, element.DivisionID]);
                 });
             });
         },

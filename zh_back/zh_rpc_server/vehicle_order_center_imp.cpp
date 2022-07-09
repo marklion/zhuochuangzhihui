@@ -292,6 +292,10 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         zh_sql_vehicle_order tmp;
         tmp.behind_vehicle_number = order.behind_vehicle_number;
         tmp.driver_id = order.driver_id;
+        if (tmp.driver_id.length() > 0 && tmp.driver_id[tmp.driver_id.length() - 1] == 'X')
+        {
+            tmp.driver_id[tmp.driver_id.length() - 1] = 'x';
+        }
         tmp.driver_name = order.driver_name;
         tmp.driver_phone = order.driver_phone;
         tmp.main_vehicle_number = order.main_vehicle_number;
@@ -1016,6 +1020,7 @@ scale_state_machine::~scale_state_machine()
     zh_hk_unsubcribe_event(bound_scale.exit_config.cam_ip);
     zh_qr_unsubscribe(bound_scale.entry_qr_ip);
     zh_qr_unsubscribe(bound_scale.exit_qr_ip);
+    reset_scale_connection(bound_scale.scale_ip, bound_scale.scale_brand);
 }
 
 void scale_state_machine::open_enter()
@@ -2050,6 +2055,7 @@ void scale_sm_clean::after_enter(tdf_state_machine &_sm)
 void scale_sm_clean::before_leave(tdf_state_machine &_sm)
 {
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
+    ssm.scale_zero();
     ssm.close_timer();
 }
 gate_state_machine::gate_state_machine(

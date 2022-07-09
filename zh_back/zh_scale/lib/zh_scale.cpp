@@ -213,15 +213,17 @@ public:
 struct zh_scale_kl_buff{
     std::string ip;
     std::string buff;
+    std::string chrct;
 };
 
 static std::map<std::string,zh_scale_kl_buff> g_buff_map;
 static pthread_mutex_t g_buff_map_lock = PTHREAD_MUTEX_INITIALIZER;
-static void create_scale_buff(const std::string &_ip)
+static void create_scale_buff(const std::string &_ip, const std::string&_chrct)
 {
     pthread_mutex_lock(&g_buff_map_lock);
     zh_scale_kl_buff tmp;
     tmp.ip = _ip;
+    tmp.chrct = _chrct;
     g_buff_map[_ip] = tmp;
     pthread_mutex_unlock(&g_buff_map_lock);
 }
@@ -276,6 +278,17 @@ static bool buff_is_added(const std::string &_ip)
     pthread_mutex_unlock(&g_buff_map_lock);
 
     return ret;
+}
+
+static void disconnect_scale(const std::string &_scale_ip)
+{
+    pthread_mutex_lock(&g_buff_map_lock);
+
+    if (g_buff_map.find(_scale_ip) != g_buff_map.end())
+    {
+        tdf_main::get_inst().close_data(g_buff_map[_scale_ip].chrct);
+    }
+    pthread_mutex_unlock(&g_buff_map_lock);
 }
 class zh_scale_kld2008_tf0 : public zh_scale_if
 {
@@ -338,12 +351,14 @@ public:
                 [=](const std::string &_chrct)
                 {
                     g_log.log("connect to %s", _scale_ip.c_str());
-                    create_scale_buff(_scale_ip);
+                    create_scale_buff(_scale_ip, _chrct);
+                    zh_runtime_get_device_health()[_scale_ip] = 1;
                 },
                 [=](const std::string &_chrct)
                 {
                     g_log.err("disconnected %s", _scale_ip.c_str());
                     destroy_scale_buff(_scale_ip);
+                    zh_runtime_get_device_health()[_scale_ip] = 2;
                 },
                 [=](const std::string &_chcrt, const std::string &_data)
                 {
@@ -360,6 +375,7 @@ public:
     }
     virtual void clean_scale(const std::string &_scale_ip, unsigned short _port)
     {
+        disconnect_scale(_scale_ip);
         return;
     }
     virtual std::unique_ptr<zh_scale_if> clone_self()
@@ -373,6 +389,10 @@ public:
         {
             g_scale_map[brand_name] = this;
         }
+    }
+    void reset_connection(const std::string &_scale_ip)
+    {
+        disconnect_scale(_scale_ip);
     }
 } g_zh_scale_kld2008_tf0;
 
@@ -393,5 +413,14 @@ void clean_scale_weight(const std::string &_scale_ip, unsigned short _port, cons
     if (scale)
     {
         scale->clean_scale(_scale_ip, _port);
+    }
+}
+
+void reset_scale_connection(const std::string &_scale_ip, const std::string &_brand)
+{
+    auto scale = zh_scale_if::get_scale(_brand);
+    if (scale)
+    {
+        scale->reset_connection(_scale_ip);
     }
 }

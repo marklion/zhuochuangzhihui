@@ -236,6 +236,32 @@ struct hk_gate_ctrl_param
     zh_hk_gate_control_cmd cmd;
 };
 
+bool zh_hk_get_cam_IO(const std::string &_nvr_ip, int _io_id)
+{
+    bool ret = false;
+
+    auto hk_duh = g_device_user_map[_nvr_ip];
+    if (hk_duh.user_id != -1 && _io_id < MAX_IOIN_NUM)
+    {
+        NET_DVR_BARRIERGATE_COND in_param = {0};
+        in_param.byLaneNo = 1;
+        NET_DVR_ENTRANCE_CFG out_cfg = {0};
+        unsigned int status_list[64] = {0};
+        if (NET_DVR_GetDeviceConfig(hk_duh.user_id, NET_DVR_GET_ENTRANCE_PARAMCFG, 1, &in_param, sizeof(in_param), status_list, &out_cfg, sizeof(out_cfg)))
+        {
+            if (out_cfg.byGateSingleIO[_io_id] == 2)
+            {
+                ret = true;
+            }
+        }
+        else
+        {
+            g_log.err("failed to trigger cap:%s, error_code:%d", _nvr_ip.c_str(), NET_DVR_GetLastError());
+        }
+    }
+
+    return ret;
+}
 bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd)
 {
     auto gate_cp = new hk_gate_ctrl_param();
@@ -767,6 +793,7 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
         {
             g_log.err("failed to cap picture [%d]", NET_DVR_GetLastError());
         }
+        NET_DVR_Logout_V30(user_id);
     }
     else
     {

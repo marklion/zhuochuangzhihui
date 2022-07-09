@@ -125,6 +125,10 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
     if (all_info.size() > 5)
     {
         ret = all_info[5];
+        if (ret.length() > 0 && ret[ret.length() - 1] == 'X' )
+        {
+            ret[ret.length() - 1] = 'x';
+        }
     }
     if (read_ret)
     {
