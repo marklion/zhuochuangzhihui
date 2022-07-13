@@ -114,6 +114,7 @@ struct register_config_info {
 struct scale_state_info {
     1:string name,
     2:string cur_status,
+    3:string weight_pip,
 }
 
 service system_management {
@@ -199,6 +200,13 @@ struct number_change_point{
     4:double new_value,
 }
 
+struct contract_stuff_price {
+    1:string customer_name,
+    2:string stuff_name,
+    3:double price,
+    4:i64 id,
+}
+
 service contract_management {
     bool add_contract(1:string ssid, 2:contract_info contract) throws (1:gen_exp e),
     bool del_contract(1:string ssid, 2:i64 contract_id) throws (1:gen_exp e),
@@ -207,6 +215,9 @@ service contract_management {
     contract_info get_contract(1:string ssid, 2:string company_name) throws (1:gen_exp e),
     list<number_change_point> get_history(1:string ssid, 2:string company_name, 3:i64 count) throws (1:gen_exp e),
     bool change_balance(1:string ssid, 2:string company_name, 3:double new_value, 4:string reason) throws (1:gen_exp e),
+    bool add_single_contract_price(1:string ssid, 2:contract_stuff_price bound_price) throws (1:gen_exp e),
+    bool del_single_contract_price(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    list<contract_stuff_price> get_all_single_contract_price() throws (1:gen_exp e),
 }
 
 struct stuff_info {
@@ -400,7 +411,7 @@ service vehicle_order_center {
     vehicle_order_info get_driver_opt_history(1:string driver_phone) throws (1:gen_exp e),
     list<white_record_info> get_white_record_info(1:string ssid, 2:i64 begin_date, 3:i64 end_date) throws (1:gen_exp e),
     list<vehicle_order_detail> driver_get_last_30_order_number(1:string driver_phone) throws (1:gen_exp e),
-    list<vehicle_order_detail> export_order_by_condition(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name) throws (1:gen_exp e),
+    list<vehicle_order_detail> export_order_by_condition(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name, 5:string stuff_name) throws (1:gen_exp e),
     list<string> go_through_plugin_que(1:string ssid) throws (1:gen_exp e),
     void cancel_plugin_que(1:string ssid) throws (1:gen_exp e),
 }

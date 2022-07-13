@@ -337,3 +337,67 @@ void contract_management_handler::get_contract(contract_info &_return, const std
     _return.is_sale = contract->is_sale;
     _return.name = contract->name;
 }
+
+bool contract_management_handler::add_single_contract_price(const std::string &ssid, const contract_stuff_price &bound_price)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_contract_stuff_price>(bound_price.id);
+    if (!exist_record)
+    {
+        exist_record.reset(new zh_sql_contract_stuff_price());
+    }
+    if (exist_record)
+    {
+        exist_record->customer_name = bound_price.customer_name;
+        exist_record->stuff_name = bound_price.stuff_name;
+        exist_record->price = bound_price.price;
+        if (exist_record->get_pri_id() > 0)
+        {
+            ret = exist_record->update_record();
+        }
+        else
+        {
+            ret = exist_record->insert_record();
+        }
+    }
+
+    return ret;
+}
+bool contract_management_handler::del_single_contract_price(const std::string &ssid, const int64_t id)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    if (!user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_contract_stuff_price>(id);
+    if (exist_record)
+    {
+        ret = true;
+        exist_record->remove_record();
+    }
+
+    return ret;
+}
+void contract_management_handler::get_all_single_contract_price(std::vector<contract_stuff_price> &_return)
+{
+    auto all_scp = sqlite_orm::search_record_all<zh_sql_contract_stuff_price>();
+    for (auto &itr : all_scp)
+    {
+        contract_stuff_price tmp;
+        tmp.customer_name = itr.customer_name;
+        tmp.id = itr.get_pri_id();
+        tmp.price = itr.price;
+        tmp.stuff_name = itr.stuff_name;
+        _return.push_back(tmp);
+    }
+}

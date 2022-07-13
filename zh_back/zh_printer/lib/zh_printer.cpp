@@ -50,7 +50,8 @@ bool zh_printer_dev::print_string(const std::string &_content)
     unsigned char buff[2048];
     SetCharacterSize(1, 1);
     Sel_Align_Way(1);
-    strcpy((char *)buff,"卓创智汇\n自动称重系统\n");
+    strcpy((char *)buff, getenv("OEM_NAME"));
+    strcat((char *)buff, "\n称重单");
     Print_ASCII(buff);
     Sel_Align_Way(0);
     SetCharacterSize(0, 0);
@@ -59,6 +60,8 @@ bool zh_printer_dev::print_string(const std::string &_content)
     Print_ASCII(buff);
     print_And_Line();
     print_And_Line();
+    strcpy((char *)buff,"卓创智汇\n自动称重系统\n");
+    Print_ASCII(buff);
     close(g_ser_fd);
     g_focus_printer_ip = "";
     g_ser_fd = -1;

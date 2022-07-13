@@ -112,7 +112,51 @@
                 </el-table-column>
             </el-table>
         </el-tab-pane>
+        <el-tab-pane label="客户独立定价" name="single_contract_stuff_price">
+            <el-row type="flex" justify="space-between" align="middle">
+                <el-col>
+                    <div class="block_title_show">所有独立定价</div>
+                </el-col>
+                <el-col>
+                    <div style="margin-right:10px; text-align:right">
+                        <el-button size="mini" type="success" icon="el-icon-plus" @click="open_customer_price_diag({}, true)">新增</el-button>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-table :data="all_customer_stuff_price" style="width: 100%" stripe>
+                <el-table-column type="index" label="编号" width="50px">
+                </el-table-column>
+                <el-table-column prop="customer_name" label="客户名称" width="120px">
+                </el-table-column>
+                <el-table-column prop="stuff_name" label="物料名称" width="120px">
+                </el-table-column>
+                <el-table-column prop="price" label="单价" width="120px">
+                </el-table-column>
+                <el-table-column label="操作" width="220px">
+                    <template slot-scope="scope">
+                        <el-button type="warning" size="mini" @click="open_customer_price_diag(scope.row, false)">修改</el-button>
+                        <el-button type="danger" size="mini" @click="del_customer_stuff_price(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
     </el-tabs>
+    <el-dialog :title="(focus_customer_stuff_price.id == 0?'新增':'修改') + '独立定价'" :visible.sync="customer_stuff_diag" width="60%" @keyup.enter.native="opt_customer_stuff_price">
+        <el-form :model="focus_customer_stuff_price" ref="focus_customer_stuff_price_form" label-width="150px">
+            <el-form-item label="公司名称" prop="customer_name">
+                <item-for-select v-model="focus_customer_stuff_price.customer_name" search_key="company_name"></item-for-select>
+            </el-form-item>
+            <el-form-item label="物料名称" prop="stuff_name">
+                <item-for-select v-model="focus_customer_stuff_price.stuff_name" search_key="stuff_name"></item-for-select>
+            </el-form-item>
+            <el-form-item label="单价" prop="price">
+                <el-input v-model="focus_customer_stuff_price.price" placeholder="请输入物料单价"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="opt_customer_stuff_price">确认</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
     <el-dialog @close="clean_stuff" :title="(current_opt_add?'新增':'修改') + '物料'" :visible.sync="show_edit_stuff_diag" width="60%" @keyup.enter.native="edit_stuff">
         <el-form :model="focus_stuff" ref="edit_stuff_form" :rules="rules" label-width="150px">
             <el-form-item label="物料名称" prop="name">
@@ -180,14 +224,24 @@ import PinyinMatch from "pinyin-match"
 import Vue from 'vue'
 import Vant from 'vant';
 import 'vant/lib/index.css';
+import ItemForSelect from "../components/ItemForSelect.vue"
 Vue.use(Vant);
 export default {
     name: 'StuffManagement',
     components: {
         "table-import-export": TableImportExport,
+        "item-for-select": ItemForSelect,
     },
     data: function () {
         return {
+            customer_stuff_diag: false,
+            focus_customer_stuff_price: {
+                id: 0,
+                stuff_name: '',
+                customer_name: '',
+                price: 0
+            },
+            all_customer_stuff_price: [],
             all_stuff_dest: [],
             all_stuff_source: [],
             show_edit_stuff_source_dest_diag: false,
@@ -212,9 +266,9 @@ export default {
                 expect_weight: 30,
                 need_enter_weight: false,
                 need_manual_scale: false,
-                max_limit:49.5,
-                min_limit:48.5,
-                code:"",
+                max_limit: 49.5,
+                min_limit: 48.5,
+                code: "",
             },
             all_stuff: [],
             rules: {
@@ -291,6 +345,54 @@ export default {
         };
     },
     methods: {
+        open_customer_price_diag: function (_bound_price, is_add) {
+            if (is_add) {
+                this.focus_customer_stuff_price = {
+                    id: 0,
+                    stuff_name: '',
+                    customer_name: '',
+                    price: 0,
+                };
+            }
+
+            this.focus_customer_stuff_price = _bound_price;
+            this.customer_stuff_diag = true;
+        },
+        init_customer_stuff_price: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("contract_management", "get_all_single_contract_price", []).then(function (resp) {
+                vue_this.all_customer_stuff_price = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_customer_stuff_price, index, element);
+                });
+            });
+        },
+        opt_customer_stuff_price: function () {
+            var vue_this = this;
+            vue_this.focus_customer_stuff_price.price = parseFloat(vue_this.focus_customer_stuff_price.price);
+            vue_this.$call_remote_process("contract_management", "add_single_contract_price", [vue_this.$cookies.get("zh_ssid"), vue_this.focus_customer_stuff_price]).then(function (resp) {
+                if (resp) {
+                    vue_this.customer_stuff_diag = false;
+                    vue_this.init_customer_stuff_price();
+                }
+            });
+        },
+        del_customer_stuff_price: function (_bound_price) {
+            var vue_this = this;
+
+            this.$confirm('确定删除吗', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("contract_management", "del_single_contract_price", [vue_this.$cookies.get("zh_ssid"), _bound_price.id]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_customer_stuff_price();
+                    }
+                });
+
+            });
+        },
         open_price_history_diag: function () {
             this.$refs.lazy_load.check();
         },
@@ -472,9 +574,9 @@ export default {
                 expect_weight: 30,
                 need_enter_weight: false,
                 need_manual_scale: false,
-                max_limit:49.5,
-                min_limit:48.5,
-                code:"",
+                max_limit: 49.5,
+                min_limit: 48.5,
+                code: "",
             };
         },
         clean_stuff_source_dest: function () {
@@ -488,6 +590,7 @@ export default {
     beforeMount: function () {
         this.init_all_stuff();
         this.init_all_stuff_source_dest();
+        this.init_customer_stuff_price();
     },
 
 }

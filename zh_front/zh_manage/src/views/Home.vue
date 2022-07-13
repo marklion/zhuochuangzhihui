@@ -60,6 +60,7 @@
                     <el-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</el-button>
                 </span>
                 <div>{{single_scale.cur_status}}</div>
+                <div>称重数据：{{single_scale.weight_pip}}</div>
             </div>
         </vue-cell>
     </vue-grid>

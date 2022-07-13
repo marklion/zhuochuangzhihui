@@ -67,7 +67,13 @@ static bool balance_enough(zh_sql_contract &_company, zh_sql_stuff &_stuff, int 
         }
         if (_already_cost)
             *_already_cost = already_cost;
-        auto total_cost = already_cost + _vehicle_count * _stuff.expect_weight * _stuff.price;
+        auto single_price = _stuff.price;
+        auto bound_price = sqlite_orm::search_record<zh_sql_contract_stuff_price>("customer_name == '%s' AND stuff_name == '%s'", _company.name.c_str(), _stuff.name.c_str());
+        if (bound_price)
+        {
+            single_price = bound_price->price;
+        }
+        auto total_cost = already_cost + _vehicle_count * _stuff.expect_weight * single_price;
         if ((_company.balance + _company.credit) >= total_cost)
         {
             ret = true;
@@ -577,6 +583,27 @@ static bool vehicle_leave_enough(const std::string &_vehicle_number)
 
     return ret;
 }
+
+static bool pri_calcu_balanc(zh_sql_contract &_company, zh_sql_stuff &_stuff, int _vehicle_count)
+{
+    bool ret = false;
+
+    double single_price = _stuff.price;
+    auto bound_price = sqlite_orm::search_record<zh_sql_contract_stuff_price>("customer_name == '%s' AND stuff_name == '%s'", _company.name.c_str(), _stuff.name.c_str());
+    if (bound_price)
+    {
+        single_price = bound_price->price;
+    }
+
+    auto requier_cash = _vehicle_count * _stuff.expect_weight * single_price;
+    if (requier_cash <= _company.balance + _company.credit)
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+
 bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel)
 {
     bool ret = false;
@@ -621,10 +648,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
         {
             std::string std_out;
             std::string std_err;
+            auto stuff_info = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+            auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
             if (plugin_is_installed("zh_hnnc"))
             {
-                auto stuff_info = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
-                auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
                 if (stuff_info && customer_info && customer_info->is_sale && stuff_info->code.length() > 0 && customer_info->code.length() > 0)
                 {
                     auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
@@ -651,6 +678,14 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
                     {
                         ZH_RETURN_MSG("上传监管平台接单失败:" + std_err);
                     }
+                }
+            }
+            if (stuff_info && customer_info && customer_info->is_sale && stuff_info->code.empty())
+            {
+                auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
+                if (!pri_calcu_balanc(*customer_info, *stuff_info, related_vehicle.size() + 1))
+                {
+                    ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                 }
             }
         }
@@ -783,6 +818,7 @@ bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, 
 }
 static void recalcu_balance_inventory(zh_sql_vehicle_order &_vo, const std::string &_ssid = "")
 {
+    double single_price = 0;
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _vo.stuff_name.c_str());
     if (stuff)
     {
@@ -799,8 +835,14 @@ static void recalcu_balance_inventory(zh_sql_vehicle_order &_vo, const std::stri
     auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _vo.company_name.c_str());
     if (company && stuff && company->is_sale)
     {
+        single_price = stuff->price;
+        auto boud_price = sqlite_orm::search_record<zh_sql_contract_stuff_price>("customer_name == '%s' AND stuff_name == '%s'", company->name.c_str(), stuff->name.c_str());
+        if (boud_price)
+        {
+            single_price = boud_price->price;
+        }
         auto ch = contract_management_handler::get_inst();
-        auto new_balance = company->balance - stuff->price * (_vo.m_weight - _vo.p_weight);
+        auto new_balance = company->balance - single_price * (_vo.m_weight - _vo.p_weight);
         ch->internal_change_balance(company->name, new_balance, "（系统自动）售出产品 " + stuff->name + " ：" + zh_double2string_reserve2(_vo.m_weight - _vo.p_weight) + stuff->unit);
     }
 }
@@ -1038,6 +1080,26 @@ void scale_state_machine::scale_zero()
     m_log.log("清零衡器");
     clean_scale_weight(bound_scale.scale_ip, ZH_SCALE_PORT, bound_scale.scale_brand);
 }
+
+static void continue_push_same_weight(std::vector<double> &_con, double _value)
+{
+    if (_value == 0)
+    {
+        _con.clear();
+    }
+    else
+    {
+        if (_con.size() > 0)
+        {
+            if (_con[0] != _value)
+            {
+                _con.clear();
+            }
+        }
+    }
+    _con.push_back(_value);
+}
+
 void scale_state_machine::open_scale_timer()
 {
     m_log.log("开启定时器");
@@ -1049,37 +1111,14 @@ void scale_state_machine::open_scale_timer()
             auto ssm = (scale_state_machine *)_private;
             if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
             {
+                // 15848601177
                 auto scale_ret = get_current_weight(ssm->bound_scale.scale_ip, ZH_SCALE_PORT, ssm->bound_scale.scale_brand);
                 scale_ret *= ssm->bound_scale.coefficient;
-                ssm->continue_weight.push_back(scale_ret);
-                auto ava = [=]() -> double
                 {
-                    double sum = 0;
-                    for (auto &itr : ssm->continue_weight)
-                    {
-                        sum += itr;
-                    }
-                    return sum / ssm->continue_weight.size();
-                }();
-                double p_dev;
-                for (auto &itr : ssm->continue_weight)
-                {
-                    p_dev += (ava - itr) * (ava - itr);
+                    tdf_state_machine_lock a(*ssm);
+                    continue_push_same_weight(ssm->continue_weight, scale_ret);
                 }
-                p_dev /= ssm->continue_weight.size();
-                p_dev = sqrt(p_dev);
-                if (ava != 0 && p_dev / ava > 0.01)
-                {
-                    ssm->continue_weight.clear();
-                }
-                else
-                {
-                    ssm->trigger_sm();
-                }
-            }
-            else
-            {
-                ssm->continue_weight.clear();
+                ssm->trigger_sm();
             }
         },
         this);
@@ -2655,7 +2694,7 @@ void vehicle_order_center_handler::driver_get_last_30_order_number(std::vector<v
     }
 }
 
-void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name)
+void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name, const std::string &stuff_name)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
@@ -2671,6 +2710,10 @@ void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle
     if (company_name.length() > 0)
     {
         detail_query += " AND company_name == '" + company_name + "'";
+    }
+    if (stuff_name.length() > 0)
+    {
+        detail_query += " AND stuff_name == '" + stuff_name + "'";
     }
     detail_query += " AND datetime(m_cam_time) >= datetime('" + begin_date + "') AND datetime(m_cam_time) <= datetime('" + end_date + "')";
     auto all_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY datetime(m_cam_time) DESC", detail_query.c_str());

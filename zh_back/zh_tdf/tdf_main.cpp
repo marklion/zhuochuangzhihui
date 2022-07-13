@@ -458,6 +458,19 @@ bool tdf_main::run()
             }
         }
         g_pause_epoll = false;
+        if (ev_num > 0)
+        {
+            for (auto i = 0; i < ev_num; i++)
+            {
+                if (evs[i].data.ptr == &g_proc_work_coming_data)
+                {
+                    auto tmp = evs[0];
+                    evs[0] = evs[i];
+                    evs[i] = tmp;
+                    break;
+                }
+            }
+        }
         for (int i = 0; i < ev_num; i++)
         {
             auto channel = (Itdf_io_channel *)(evs[i].data.ptr);

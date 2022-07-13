@@ -24,6 +24,9 @@
                 <el-form-item label="公司名">
                     <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_comapny" search_key="company_name"></item-for-select>
                 </el-form-item>
+                <el-form-item label="物料名">
+                    <item-for-select :disabled="$store.state.user_info.permission==3" v-model="focus_stuff" search_key="stuff_name"></item-for-select>
+                </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="advance_export_record">导出</el-button>
                 </el-form-item>
@@ -462,6 +465,7 @@ export default {
     data: function () {
         return {
             focus_comapny: '',
+            focus_stuff:'',
             begin_date: '',
             end_date: '',
             advance_export_show: false,
@@ -562,7 +566,7 @@ export default {
     methods: {
         advance_export_record: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "export_order_by_condition", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.focus_comapny]).then(function (resp) {
+            vue_this.$call_remote_process("vehicle_order_center", "export_order_by_condition", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.focus_comapny, vue_this.focus_stuff]).then(function (resp) {
                 var tmp = [];
                 resp.forEach(element => {
                     tmp.push(element.basic_info);
@@ -982,6 +986,9 @@ export default {
                 title: '公司',
                 key: 'company_name',
             }, {
+                title: '物料',
+                key: 'stuff_name',
+            }, {
                 title: '车号',
                 key: 'main_vehicle_number',
             }, {
@@ -1011,7 +1018,7 @@ export default {
             }, {
                 title: "二次称重时间",
                 key: 'm_time',
-            }, {}, {
+            }, {
                 title: "净重",
                 key: 'j_weight',
             }, {

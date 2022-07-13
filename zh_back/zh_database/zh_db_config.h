@@ -665,4 +665,25 @@ public:
     }
 };
 
+class zh_sql_contract_stuff_price :public sql_tree_base{
+public:
+    std::string customer_name;
+    std::string stuff_name;
+    double price = 0;
+
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("customer_name", sqlite_orm_column::STRING, &customer_name));
+        ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
+        ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
+        return ret;
+    }
+
+    virtual std::string table_name()
+    {
+        return "contract_stuff_price_table";
+    }
+};
+
 #endif // _ZH_DB_CONFIG_H_

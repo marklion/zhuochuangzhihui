@@ -6,13 +6,18 @@
                 <div class="block_title_show">所有合同</div>
             </el-col>
             <el-col>
+                <div align="right" style="margin-right:10px;">
+                    <el-input  v-model="search_key" placeholder="输入公司名拼音首字母过滤" prefix-icon="el-icon-search"></el-input>
+                </div>
+            </el-col>
+            <el-col>
                 <div style="margin-right:10px; text-align:right;">
                     <table-import-export @proc_table="proc_upload_contract" :sample_table="sample_table" export_name="合同导出表.xlsx" :export_table="all_contract" :item_name_map="col_map"></table-import-export>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_add_contract_diag = true">新增</el-button>
                 </div>
             </el-col>
         </el-row>
-        <el-table :data="all_contract" style="width: 100%" stripe>
+        <el-table :data="contract_need_show" style="width: 100%" stripe>
             <el-table-column type="index" label="编号" width="50px">
             </el-table-column>
             <el-table-column prop="name" label="公司名" width="200px">
@@ -136,7 +141,7 @@
             </van-list>
         </el-drawer>
     </div>
-    <div else>
+    <div v-else>
         <van-nav-bar title="合同管理" />
         <van-search v-model="search_key" placeholder="公司名过滤" />
         <van-cell v-for="(single_contract , index) in contract_need_show" is-link :key="index" :title="single_contract.name" @click="show_qr = true;cur_qr_name = single_contract.name"></van-cell>

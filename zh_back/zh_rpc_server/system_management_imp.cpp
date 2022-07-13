@@ -624,9 +624,14 @@ void system_management_handler::get_scale_state(std::vector<scale_state_info> &_
     {
         for ( auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++ )
         {
+            tdf_state_machine_lock a(*(itr->second));
             scale_state_info tmp;
             tmp.name = itr->first;
             tmp.cur_status = itr->second->m_cur_state->state_name() + " 车辆:" + itr->second->bound_vehicle_number;
+            for (auto &single_weight:itr->second->continue_weight)
+            {
+                tmp.weight_pip.append(zh_double2string_reserve2(single_weight) + " ");
+            }
             _return.push_back(tmp);
         }
     }

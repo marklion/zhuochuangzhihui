@@ -2,7 +2,7 @@
 <div class="scale_state_show">
 
     <van-nav-bar title="称重状态" @click-right="init_scale_state" right-text="刷新" />
-    <van-cell v-for="(single_scale, index) in scale_state" :key="index" :title="single_scale.name" :label="single_scale.cur_status">
+    <van-cell v-for="(single_scale, index) in scale_state" :key="index" :title="single_scale.name" :label="single_scale.cur_status" :value="single_scale.weight_pip">
         <template #right-icon>
             <van-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</van-button>
         </template>

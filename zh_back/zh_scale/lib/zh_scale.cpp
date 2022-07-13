@@ -345,27 +345,29 @@ public:
     {
         if (!buff_is_added(_scale_ip))
         {
-            tdf_main::get_inst().connect_remote(
-                _scale_ip,
-                _port,
-                [=](const std::string &_chrct)
-                {
-                    g_log.log("connect to %s", _scale_ip.c_str());
-                    create_scale_buff(_scale_ip, _chrct);
-                    zh_runtime_get_device_health()[_scale_ip] = 1;
-                },
-                [=](const std::string &_chrct)
-                {
-                    g_log.err("disconnected %s", _scale_ip.c_str());
-                    destroy_scale_buff(_scale_ip);
-                    zh_runtime_get_device_health()[_scale_ip] = 2;
-                },
-                [=](const std::string &_chcrt, const std::string &_data)
-                {
-                    g_log.log("recv data from %s", _scale_ip.c_str());
-                    g_log.log_package(_data.data(), _data.length());
-                    push_data_in_buff(_scale_ip, _data);
-                });
+            if (!tdf_main::get_inst().connect_remote(
+                    _scale_ip,
+                    _port,
+                    [=](const std::string &_chrct)
+                    {
+                        g_log.log("connect to %s", _scale_ip.c_str());
+                        create_scale_buff(_scale_ip, _chrct);
+                        zh_runtime_get_device_health()[_scale_ip] = 1;
+                    },
+                    [=](const std::string &_chrct)
+                    {
+                        g_log.err("disconnected %s", _scale_ip.c_str());
+                        destroy_scale_buff(_scale_ip);
+                    },
+                    [=](const std::string &_chcrt, const std::string &_data)
+                    {
+                        g_log.log("recv data from %s", _scale_ip.c_str());
+                        g_log.log_package(_data.data(), _data.length());
+                        push_data_in_buff(_scale_ip, _data);
+                    }))
+            {
+                zh_runtime_get_device_health()[_scale_ip] = 2;
+            }
         }
         auto scale_buff = pop_data_from_buff(_scale_ip);
         double ret = 0;
