@@ -79,9 +79,23 @@ std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string 
     if (ret)
     {
         auto permission = ret->get_parent<zh_sql_user_permission>("permission");
-        if (permission && permission->key >= 0 && permission->key <= required_permission)
+        if (permission)
         {
-            return ret;
+            if (required_permission == 100)
+            {
+                if (required_permission == permission->key)
+                {
+                    return ret;
+                }
+            }
+            else if (permission->key >= 0 && permission->key <= required_permission)
+            {
+                return ret;
+            }
+            else if (permission->key == 100)
+            {
+                return ret;
+            }
         }
     }
 

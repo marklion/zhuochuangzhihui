@@ -65,6 +65,7 @@ struct device_scale_config {
     28:i64 scale2_channel,
     29:string scale3_nvr_ip,
     30:i64 scale3_channel,
+    31:double min_weight = 11,
 }
 
 struct device_config {
@@ -218,6 +219,7 @@ service contract_management {
     bool add_single_contract_price(1:string ssid, 2:contract_stuff_price bound_price) throws (1:gen_exp e),
     bool del_single_contract_price(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<contract_stuff_price> get_all_single_contract_price() throws (1:gen_exp e),
+    list<number_change_point> export_history(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name) throws (1:gen_exp e),
 }
 
 struct stuff_info {
@@ -320,6 +322,7 @@ struct vehicle_order_info {
     23:string source_dest_name,
     24:bool is_sale,
     25:string bl_number,
+    26:double price,
 }
 
 struct gate_relate_info {
@@ -352,6 +355,7 @@ struct vehicle_order_detail {
     15:string checkin_time,
     16:string call_time,
     17:string err_string,
+    18:string call_user_name,
 }
 
 struct vehicle_order_statistics {

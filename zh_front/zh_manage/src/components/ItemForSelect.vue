@@ -3,7 +3,11 @@
     <el-autocomplete v-if="!$route.meta.mobile" :disabled="disabled" v-model="input_value" :fetch-suggestions="proc_match" placeholder="请输入内容"></el-autocomplete>
     <van-field v-else readonly clickable :rules="rules" :value="value_show" :label="label" :placeholder="'点击选择' + label" @click="show_picker = true" />
     <van-popup get-container="#app" v-model="show_picker" position="bottom">
-        <van-picker show-toolbar :columns="sel_col" @confirm="onConfirm" @cancel="show_picker = false" />
+        <van-picker show-toolbar :columns="sel_col" @confirm="onConfirm" @cancel="show_picker = false">
+            <template #columns-top>
+                <van-field v-model="address_search_key" placeholder="拼音首字母过滤" label="过滤条件"></van-field>
+            </template>
+        </van-picker>
     </van-popup>
 </div>
 </template>
@@ -17,6 +21,7 @@ export default {
             all_item: [],
             show_picker: false,
             value_show: '',
+            address_search_key: '',
         };
     },
     props: {
@@ -37,6 +42,15 @@ export default {
             this.all_item.forEach(element => {
                 ret.push(element.value);
             });
+            if (this.address_search_key) {
+                var tmp_ret = ret;
+                ret = [];
+                tmp_ret.forEach(element => {
+                    if (PinyinMatch.match(element, this.address_search_key)) {
+                        ret.push(element);
+                    }
+                });
+            }
             return ret;
         },
         input_value: {
@@ -82,9 +96,17 @@ export default {
             case 'stuff_name':
                 vue_this.$call_remote_process("stuff_management", "get_all_stuff", [vue_this.$cookies.get("zh_ssid"), vue_this.related_contract]).then(function (resp) {
                     resp.forEach(element => {
-                        vue_this.all_item.push({
-                            value: element.name
-                        });
+                        if (vue_this.$store.state.focus_stuff) {
+                            if (element.name == vue_this.$store.state.focus_stuff) {
+                                vue_this.all_item.push({
+                                    value: vue_this.$store.state.focus_stuff
+                                });
+                            }
+                        } else {
+                            vue_this.all_item.push({
+                                value: element.name
+                            });
+                        }
                     });
                 });
 

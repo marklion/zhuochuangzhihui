@@ -149,10 +149,12 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     _return.m_time = vo->m_cam_time;
     _return.basic_info.end_time = vo->end_time;
     _return.basic_info.source_dest_name = vo->source_dest_name;
+    _return.basic_info.price = vo->price;
     _return.checkin_time = vo->check_in_timestamp > 0 ? zh_rpc_util_get_timestring(vo->check_in_timestamp) : "";
     _return.call_time = vo->call_timestamp > 0 ? zh_rpc_util_get_timestring(vo->call_timestamp) : "";
     _return.basic_info.bl_number = vo->bl_number;
     _return.err_string = vo->err_string;
+    _return.call_user_name = vo->call_user_name;
     if (company && company->is_sale)
     {
         _return.basic_info.is_sale = true;
@@ -705,7 +707,7 @@ void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_retur
     make_vehicle_detail_from_sql(_return, *vo);
 }
 
-bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, const bool is_cancel)
+bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, const bool is_cancel, const std::string &_user_name)
 {
     bool ret = false;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
@@ -730,6 +732,7 @@ bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, cons
     else
     {
         vo->call_timestamp = time(nullptr);
+        vo->call_user_name = _user_name;
     }
     ret = vo->update_record();
     if (ret && vo->m_called && orig_called != vo->m_called)
@@ -755,7 +758,7 @@ bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const i
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
-    return pri_call_vehicle(order_id, is_cancel);
+    return pri_call_vehicle(order_id, is_cancel, user->name);
 }
 
 void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid)
@@ -844,6 +847,8 @@ static void recalcu_balance_inventory(zh_sql_vehicle_order &_vo, const std::stri
         auto ch = contract_management_handler::get_inst();
         auto new_balance = company->balance - single_price * (_vo.m_weight - _vo.p_weight);
         ch->internal_change_balance(company->name, new_balance, "（系统自动）售出产品 " + stuff->name + " ：" + zh_double2string_reserve2(_vo.m_weight - _vo.p_weight) + stuff->unit);
+        _vo.price = single_price;
+        _vo.update_record();
     }
 }
 bool vehicle_order_center_handler::manual_close(const std::string &ssid, const int64_t order_id)
@@ -1220,7 +1225,7 @@ bool scale_state_machine::scale_stable()
             }
             return scale_ret;
         }();
-        if (cur_weight > 1)
+        if (cur_weight >= bound_scale.min_weight)
         {
             if (assume_stable_considering_manual(cur_weight))
             {
@@ -1767,12 +1772,16 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehicle_order> &vo)
 {
     std::string content;
-    content += "---------------\n";
-    content += "称重车辆：" + bound_vehicle_number + "\n";
-    content += "---------------\n";
     std::string qr_code;
     if (vo)
     {
+        content += "---------------\n";
+        if (vo->bl_number.length() > 0)
+        {
+            content += "磅单号：" + vo->bl_number + "\n";
+        }
+        content += "称重车辆：" + vo->main_vehicle_number + "\n";
+        content += "---------------\n";
         std::string m_weight_string = "未称重";
         std::string j_weight_string = "未知";
         std::string p_weight_string = m_weight_string;
@@ -1821,6 +1830,10 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     }
     else
     {
+
+        content += "---------------\n";
+        content += "称重车辆：" + bound_vehicle_number + "\n";
+        content += "---------------\n";
         content += "称重：" + zh_double2string_reserve2(fin_weight) + "吨\n";
         content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
         zh_sql_white_record tmp;

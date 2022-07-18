@@ -294,7 +294,7 @@ bool stuff_management_handler::change_price(const std::string &ssid, const std::
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, 100);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();

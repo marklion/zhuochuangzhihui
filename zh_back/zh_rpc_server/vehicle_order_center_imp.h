@@ -212,7 +212,7 @@ public:
     virtual bool record_order_source_dest(const int64_t order_id, const std::string &source_dest_name);
     virtual void get_driver_opt_history(vehicle_order_info &_return, const std::string &driver_phone);
     virtual void get_white_record_info(std::vector<white_record_info> &_return, const std::string &ssid, const int64_t begin_date, const int64_t end_date);
-    bool pri_call_vehicle(const int64_t order_id, const bool is_cancel);
+    bool pri_call_vehicle(const int64_t order_id, const bool is_cancel, const std::string &_user_name = "");
     virtual void driver_get_last_30_order_number(std::vector<vehicle_order_detail> &_return, const std::string &driver_phone);
     virtual void export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name, const std::string &stuff_name);
     virtual void go_through_plugin_que(std::vector<std::string> &_return, const std::string &ssid);

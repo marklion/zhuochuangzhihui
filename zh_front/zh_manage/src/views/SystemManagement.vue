@@ -87,6 +87,7 @@
                     <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
                     <el-descriptions-item label="衡器品牌">{{single_scale.scale_brand}}</el-descriptions-item>
                     <el-descriptions-item label="读数系数">{{single_scale.coefficient}}</el-descriptions-item>
+                    <el-descriptions-item label="最低重量">{{single_scale.min_weight}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
                     <el-descriptions-item label="磅体1 NVR 用户名">{{single_scale.scale1.username}}</el-descriptions-item>
@@ -234,6 +235,9 @@
                     </el-form-item>
                     <el-form-item label="衡器读数系数" prop="coefficient">
                         <el-input v-model="scale_for_edit.coefficient" type="number" placeholder="请输入衡器系数"></el-input>
+                    </el-form-item>
+                    <el-form-item label="最低重量" prop="min_weight">
+                        <el-input v-model="scale_for_edit.min_weight" type="number" placeholder="请输入最低重量"></el-input>
                     </el-form-item>
                     <el-form-item label="光栅IP-1" prop="raster_ip">
                         <el-input v-model="scale_for_edit.raster_ip[0]" placeholder="请输入光栅IP-1"></el-input>

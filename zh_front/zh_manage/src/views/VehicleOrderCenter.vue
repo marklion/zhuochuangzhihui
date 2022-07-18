@@ -440,6 +440,16 @@ export default {
                 }
             });
 
+            if (this.$store.state.focus_stuff) {
+                tmp_ret = ret;
+                ret = [];
+                tmp_ret.forEach(element => {
+                    if (element.stuff_name == this.$store.state.focus_stuff) {
+                        ret.push(element);
+                    }
+                });
+            }
+
             return ret;
         },
     },
@@ -465,7 +475,7 @@ export default {
     data: function () {
         return {
             focus_comapny: '',
-            focus_stuff:'',
+            focus_stuff: '',
             begin_date: '',
             end_date: '',
             advance_export_show: false,
@@ -969,6 +979,14 @@ export default {
                                 wpx: 120
                             }, {
                                 wpx: 120
+                            }, {
+                                wpx: 120
+                            }, {
+                                wpx: 120
+                            }, {
+                                wpx: 120
+                            }, {
+                                wpx: 120
                             }],
                         },
                     ),
@@ -1022,6 +1040,15 @@ export default {
                 title: "净重",
                 key: 'j_weight',
             }, {
+                title: "进厂前净重",
+                key: 'enter_weight',
+            }, {
+                title: "单价",
+                key: 'price',
+            }, {
+                title: "总价",
+                key: 'total_cost',
+            }, {
                 title: "司机",
                 key: 'driver_name',
             }, {
@@ -1070,6 +1097,7 @@ export default {
                 tmp.j_weight = Math.abs(tmp.m_weight - tmp.p_weight).toFixed(2);
                 tmp.p_weight = tmp.p_weight.toFixed(2);
                 tmp.m_weight = tmp.m_weight.toFixed(2);
+                tmp.total_cost = (parseFloat(tmp.j_weight) * tmp.price).toFixed(2);
                 content.push(tmp);
             });
             this.exportExcel(init_colm, content);

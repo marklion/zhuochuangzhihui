@@ -28,6 +28,7 @@ public:
     virtual bool add_single_contract_price(const std::string &ssid, const contract_stuff_price &bound_price);
     virtual bool del_single_contract_price(const std::string &ssid, const int64_t id);
     virtual void get_all_single_contract_price(std::vector<contract_stuff_price> &_return);
+    virtual void export_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name);
 };
 
 #endif // _CONTRACT_MANAGEMENT_H_

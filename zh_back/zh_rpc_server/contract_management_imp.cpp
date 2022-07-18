@@ -65,7 +65,6 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
     tmp.code = contract.code;
     tmp.is_sale = contract.is_sale ? 1 : 0;
     tmp.address = contract.company_address;
-    tmp.credit = contract.credit;
 
     ret = tmp.insert_record();
     if (ret && contract.admin_phone.length() > 0)
@@ -135,6 +134,10 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
     if (!exist_record)
     {
         ZH_RETURN_NO_CONTRACT();
+    }
+    if (exist_record->credit != contract.credit && !zh_rpc_util_get_online_user(ssid, 100))
+    {
+        ZH_RETURN_NO_PRAVILIGE();
     }
 
     if (contract_is_dup(contract))
@@ -303,13 +306,18 @@ bool contract_management_handler::internal_change_balance(const std::string &com
 
 bool contract_management_handler::change_balance(const std::string &ssid, const std::string &company_name, const double new_value, const std::string &reason)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, 100);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
+    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
+    if (!company)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
 
-    return internal_change_balance(company_name, new_value, reason);
+    return internal_change_balance(company_name, company->balance + new_value, reason);
 }
 
 void contract_management_handler::get_contract(contract_info &_return, const std::string &ssid, const std::string &company_name)
@@ -342,7 +350,7 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, 100);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -373,7 +381,7 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
 bool contract_management_handler::del_single_contract_price(const std::string &ssid, const int64_t id)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, 100);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -398,6 +406,26 @@ void contract_management_handler::get_all_single_contract_price(std::vector<cont
         tmp.id = itr.get_pri_id();
         tmp.price = itr.price;
         tmp.stuff_name = itr.stuff_name;
+        _return.push_back(tmp);
+    }
+}
+
+void contract_management_handler::export_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name)
+{
+    auto user = zh_rpc_util_get_online_user(ssid,2);
+    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
+    if (!user || !company)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto history = company->get_all_children<zh_sql_balance_point>("belong_contract", "datetime(timestamp) >= datetime('%s') AND datetime(timestamp) < datetime('%s')", begin_date.c_str(), end_date.c_str());
+    for (auto &itr:history)
+    {
+        number_change_point tmp;
+        tmp.change_value = itr.change_value;
+        tmp.new_value = itr.new_value;
+        tmp.reason = itr.reason;
+        tmp.timestamp = itr.timestamp;
         _return.push_back(tmp);
     }
 }

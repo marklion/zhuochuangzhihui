@@ -110,7 +110,7 @@
                             </el-result>
                         </el-col>
                         <el-col v-if="cur_vehicle.registered">
-                            <el-result :icon="cur_vehicle.has_called?'success':'info'" :title="cur_vehicle.has_called?'已叫号':'未叫号'">
+                            <el-result :icon="cur_vehicle.has_called?'success':'info'" :title="cur_vehicle.has_called?(cur_vehicle.call_user_name + '已叫号'):'未叫号'">
                                 <template slot="extra">
                                     <div v-if="!cur_vehicle.has_called">
                                         <el-button :disabled="cur_vehicle.basic_info.status == 100 || $store.state.user_info.permission == 3" type="success" size="medium" @click="call_vehicle(false)">叫号</el-button>
@@ -180,11 +180,14 @@
         <van-cell-group inset title="车辆信息">
             <van-cell :title="cur_vehicle.basic_info.main_vehicle_number" :value="cur_vehicle.basic_info.behind_vehicle_number" :label="cur_vehicle.basic_info.source_dest_name" />
             <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id" />
+            <van-cell v-if="cur_vehicle.call_user_name" title="叫号人" :value="cur_vehicle.call_user_name" />
         </van-cell-group>
         <van-cell-group inset title="拉运信息">
+            <van-cell title="派车公司" :value="cur_vehicle.basic_info.company_name"  />
+            <van-cell title="物料" :value="cur_vehicle.basic_info.stuff_name"   />
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />
-            <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" />
+            <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" :label="'入场前净重' + cur_vehicle.basic_info.enter_weight.toFixed(2)" />
             <van-cell v-if="cur_vehicle.err_string" title="错误信息" :value="cur_vehicle.err_string" />
         </van-cell-group>
     </div>

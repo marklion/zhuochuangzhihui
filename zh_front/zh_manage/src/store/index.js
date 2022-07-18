@@ -15,6 +15,7 @@ export default new Vuex.Store({
     },
 
     is_login: false,
+    focus_stuff:''
   },
   mutations: {
     set_user_info(state, user_info) {
@@ -22,7 +23,10 @@ export default new Vuex.Store({
     },
     set_login(state, login) {
       state.is_login = login;
-    }
+    },
+    set_focus_stuff(state, stuff_name) {
+      state.focus_stuff = stuff_name;
+    },
   },
   actions: {
   },

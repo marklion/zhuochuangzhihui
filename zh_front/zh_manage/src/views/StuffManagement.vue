@@ -365,6 +365,15 @@ export default {
                 resp.forEach((element, index) => {
                     vue_this.$set(vue_this.all_customer_stuff_price, index, element);
                 });
+                if (vue_this.$store.state.focus_stuff) {
+                    var tmp_ret = [];
+                    vue_this.all_customer_stuff_price.forEach(item => {
+                        if (item.stuff_name == vue_this.$store.state.focus_stuff) {
+                            tmp_ret.push(item);
+                        }
+                    });
+                    vue_this.all_customer_stuff_price = tmp_ret;
+                }
             });
         },
         opt_customer_stuff_price: function () {
@@ -545,9 +554,17 @@ export default {
             var vue_this = this;
             vue_this.$call_remote_process("stuff_management", 'get_all_stuff', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
                 vue_this.all_stuff = [];
-                resp.forEach((element, index) => {
-                    vue_this.$set(vue_this.all_stuff, index, element);
-                });
+                if (vue_this.$store.state.focus_stuff) {
+                    var found_item = resp.find(item => {
+                        return item.name == vue_this.$store.state.focus_stuff;
+                    });
+                    vue_this.$set(vue_this.all_stuff, 0, found_item);
+                } else {
+
+                    resp.forEach((element, index) => {
+                        vue_this.$set(vue_this.all_stuff, index, element);
+                    });
+                }
             });
         },
         init_all_stuff_source_dest: function () {

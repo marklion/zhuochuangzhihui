@@ -293,6 +293,8 @@ public:
     std::string bl_number;
     std::string extra_info;
     std::string err_string;
+    double price = 0;
+    std::string call_user_name;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -337,6 +339,8 @@ public:
         ret.push_back(sqlite_orm_column("bl_number", sqlite_orm_column::STRING, &bl_number));
         ret.push_back(sqlite_orm_column("extra_info", sqlite_orm_column::STRING, &extra_info));
         ret.push_back(sqlite_orm_column("err_string", sqlite_orm_column::STRING, &err_string));
+        ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
+        ret.push_back(sqlite_orm_column("call_user_name", sqlite_orm_column::STRING, &call_user_name));
 
         return ret;
     }

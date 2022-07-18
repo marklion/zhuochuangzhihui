@@ -37,7 +37,7 @@
             <el-row>
                 <el-col :span="3">
                     <el-menu v-if="$store.state.is_login" class="web_nav_show" :default-active="$route.name" router background-color="#545c64" text-color="#fff">
-                        <el-menu-item v-for="(single_menu, index) in menu_need_show" :key="index" :index="single_menu.route_name" :route="{name:single_menu.route_name}">{{single_menu.name}}</el-menu-item>
+                        <el-menu-item v-for="(single_menu, index) in menu_need_show" :key="index" :index="single_menu.route_name" :route="{name:single_menu.route_name, query:{focus_stuff:$store.state.focus_stuff}}">{{single_menu.name}}</el-menu-item>
                     </el-menu>
                 </el-col>
                 <el-col :span="21">
@@ -76,7 +76,7 @@
                 <van-tabbar-item replace to="/mobile/vehicle_management" icon="newspaper-o">车辆管理</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/all_came_vehicle" icon="label-o">现场管理</van-tabbar-item>
                 <van-tabbar-item replace to="/mobile/self_order_opt" icon="label-o" v-if="$store.state.user_info.permission == 3">司机派车</van-tabbar-item>
-                <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
+                <van-tabbar-item v-if="$store.state.user_info.permission < 3 || $store.state.user_info.permission == 100" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/scale_state" icon="eye-o">称重状态</van-tabbar-item>
             </van-tabbar>
         </div>
@@ -123,7 +123,7 @@ export default {
         menu_need_show: function () {
             var ret = [];
             this.cur_menu.forEach((element) => {
-                if (this.$store.state.user_info.permission <= element.permission_need) {
+                if (this.$store.state.user_info.permission <= element.permission_need || this.$store.state.user_info.permission == 100) {
                     ret.push(element);
                 }
             });
@@ -260,6 +260,9 @@ export default {
                     target_path = '/vehicle_order_center';
                 }
                 this.$router.replace('/mobile' + target_path);
+            }
+            if (to.query.focus_stuff) {
+                this.$store.commit('set_focus_stuff', to.query.focus_stuff);
             }
         },
     },

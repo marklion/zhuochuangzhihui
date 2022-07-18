@@ -7,11 +7,12 @@
             </el-col>
             <el-col>
                 <div align="right" style="margin-right:10px;">
-                    <el-input  v-model="search_key" placeholder="输入公司名拼音首字母过滤" prefix-icon="el-icon-search"></el-input>
+                    <el-input v-model="search_key" placeholder="输入公司名拼音首字母过滤" prefix-icon="el-icon-search"></el-input>
                 </div>
             </el-col>
             <el-col>
                 <div style="margin-right:10px; text-align:right;">
+                    <el-button size="mini" type="primary" icon="el-icon-money" @click="charge_diag_show = true">充值</el-button>
                     <table-import-export @proc_table="proc_upload_contract" :sample_table="sample_table" export_name="合同导出表.xlsx" :export_table="all_contract" :item_name_map="col_map"></table-import-export>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_add_contract_diag = true">新增</el-button>
                 </div>
@@ -44,9 +45,6 @@
             <el-table-column prop="balance" label="余额" width="120px">
                 <template slot-scope="scope">
                     <span>{{scope.row.balance}}</span>
-                    <el-tooltip class="item" effect="dark" content="修改余额" placement="top">
-                        <el-button type="text" size="mini" @click="change_balance(scope.row)" class="el-icon-edit"></el-button>
-                    </el-tooltip>
                     <el-tooltip class="item" effect="dark" content="历史余额" placement="top">
                         <el-button type="text" size="mini" @click="show_balance_history(scope.row)" class="el-icon-s-data"></el-button>
                     </el-tooltip>
@@ -127,8 +125,13 @@
             </el-form>
         </el-dialog>
         <el-drawer :title="balance_focus_company +'历史余额'" size="40%" :visible.sync="show_balance_history_diag" direction="rtl" @opened="open_balance_history_diag" @closed="close_balance_history_diag">
+            <el-select v-model="history_type" placeholder="请选择">
+                <el-option v-for="item in history_type_options" :key="item.value" :label="item.label" :value="item.value">
+                </el-option>
+            </el-select>
+            <el-button type="warning" @click="advance_export_show = true">导出</el-button>
             <van-list ref="lazy_load" :offset="200" v-model="balance_history_loading" :finished="balance_history_load_end" finished-text="没有更多了" @load="get_balance_history">
-                <el-table :data="balance_history" style="width: 100%" stripe>
+                <el-table :data="balance_history_need_show" style="width: 100%" stripe>
                     <el-table-column label="时间" min-width="50px" prop="timestamp">
                     </el-table-column>
                     <el-table-column label="变化量" min-width="30px" prop="change_value">
@@ -140,11 +143,22 @@
                 </el-table>
             </van-list>
         </el-drawer>
+        <el-dialog title="导出" :visible.sync="advance_export_show" width="60%" @opened="history_need_export = [];begin_date='';end_date='';">
+            <el-form ref="form" label-width="80px">
+                <el-form-item label="日期范围">
+                    <el-date-picker v-model="date_range" :picker-options="pickerOptions" type="datetimerange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" @change="advance_export_record">
+                    </el-date-picker>
+                </el-form-item>
+                <table-import-export v-if="history_export_table.length > 0" no_need_import export_name="余额导出表.xlsx" :export_table="history_export_table" :item_name_map="het_col_map"></table-import-export>
+            </el-form>
+        </el-dialog>
+
     </div>
     <div v-else>
-        <van-nav-bar title="合同管理" />
+        <van-nav-bar title="合同管理" right-text="充值" @click-right="charge_diag_show = true">
+        </van-nav-bar>
         <van-search v-model="search_key" placeholder="公司名过滤" />
-        <van-cell v-for="(single_contract , index) in contract_need_show" is-link :key="index" :title="single_contract.name" @click="show_qr = true;cur_qr_name = single_contract.name"></van-cell>
+        <van-cell v-for="(single_contract , index) in contract_need_show" is-link :key="index" :title="single_contract.name" :label="'余额:' + single_contract.balance" @click="show_qr = true;cur_qr_name = single_contract.name"></van-cell>
         <van-dialog v-model="show_qr" title="请司机扫描此码自助派车和排号" :showConfirmButton="false" closeOnClickOverlay>
             <div style="text-align: center;">
                 <vue-qr :text="'http://' + domain_name + '/#/mobile/self_order?user=' + cur_qr_name"></vue-qr>
@@ -154,6 +168,38 @@
             </div>
         </van-dialog>
     </div>
+
+    <van-dialog v-if="$route.meta.mobile" v-model="charge_diag_show" title="充值单" :showConfirmButton="false" closeOnClickOverlay>
+        <van-form @submit="change_balance">
+            <item-for-select label="客户名称" v-model="charge_company" :rules="[{required:true, message:'请指定公司'}]" search_key="company_name"></item-for-select>
+            <item-for-select label="用途物料" v-model="charge_stuff" :rules="[{required:true, message:'请指定物料名'}]" search_key="stuff_name"></item-for-select>
+            <van-field required v-model="charge_value" name="充值金额" label="充值金额" type="number" placeholder="" :rules="[{required:true, message:'请指定金额'}]" />
+            <van-field required v-model="charge_reason" name="充值原因" label="充值原因" type="text" placeholder="" :rules="[{required:true, message:'请指定原因'}]" />
+            <div style="margin: 16px;">
+                <van-button round block type="info" native-type="submit">提交</van-button>
+            </div>
+        </van-form>
+    </van-dialog>
+    <el-dialog v-else title="充值" :visible.sync="charge_diag_show" width="60%" @keyup.enter.native="change_balance">
+        <el-form label-width="120px" ref="charge_form">
+            <el-form-item label="客户名称" prop="charge_company">
+                <item-for-select v-model="charge_company" :rules="[{required:true, message:'请指定公司'}]" search_key="company_name"></item-for-select>
+            </el-form-item>
+            <el-form-item label="用途物料" prop="charge_stuff">
+                <item-for-select v-model="charge_stuff" :rules="[{required:true, message:'请指定物料名'}]" search_key="stuff_name"></item-for-select>
+            </el-form-item>
+            <el-form-item label="充值金额" prop="charge_value">
+                <el-input v-model="charge_value" placeholder="请输入充值金额" :rules="[{required:true, message:'请指定金额'}]"></el-input>
+            </el-form-item>
+            <el-form-item label="充值原因" prop="charge_reason">
+                <el-input v-model="charge_reason" placeholder="请输入充值原因" :rules="[{required:true, message:'请指定原因'}]"></el-input>
+            </el-form-item>
+
+            <el-form-item>
+                <el-button type="primary" @click="change_balance">提交</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
 </div>
 </template>
 
@@ -177,6 +223,74 @@ export default {
     },
     data: function () {
         return {
+            pickerOptions: {
+                shortcuts: [{
+                    text: '最近一周',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近一个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近三个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }]
+            },
+            history_export_table: [],
+            het_col_map: {
+                company_name: {
+                    text: "公司名称"
+                },
+                timestamp: {
+                    text: "时间"
+                },
+                change_value: {
+                    text: '变化量'
+                },
+                reason: {
+                    text: '原因'
+                },
+                type: {
+                    text: '类型'
+                }
+            },
+            begin_date: '',
+            end_date: '',
+            history_need_export: [],
+            advance_export_show: false,
+            history_type: 0,
+            history_type_options: [{
+                    value: 0,
+                    label: '全部'
+                },
+                {
+                    value: 1,
+                    label: '充值'
+                },
+                {
+                    value: 2,
+                    label: '消费'
+                },
+            ],
+            charge_company: '',
+            charge_stuff: '',
+            charge_value: '',
+            charge_reason: '',
+            charge_diag_show: false,
             domain_name: '',
             show_qr: false,
             cur_qr_name: '',
@@ -267,6 +381,31 @@ export default {
         };
     },
     computed: {
+        date_range: {
+            get: function () {
+                var ret = [];
+                ret.push(this.begin_date);
+                ret.push(this.end_date);
+                return ret;
+            },
+            set: function (_new_value) {
+                this.begin_date = _new_value[0];
+                this.end_date = _new_value[1];
+            }
+        },
+        balance_history_need_show: function () {
+            var ret = [];
+            this.balance_history.forEach(element => {
+                if (this.history_type == 0) {
+                    ret.push(element);
+                } else if (this.history_type == 1 && !element.reason.includes('（系统自动）')) {
+                    ret.push(element);
+                } else if (this.history_type == 2 && element.reason.includes('（系统自动）')) {
+                    ret.push(element);
+                }
+            });
+            return ret;
+        },
         contract_need_show: function () {
             var ret = [];
 
@@ -279,11 +418,43 @@ export default {
                     ret.push(element);
                 }
             });
+            if (this.$store.state.focus_stuff) {
+                var tmp_ret = ret;
+                ret = [];
+                tmp_ret.forEach(element => {
+                    if (element.follow_stuffs.find(item => {
+                            return item == this.$store.state.focus_stuff;
+                        })) {
+                        var tmp_item = element;
+                        tmp_item.follow_stuffs = [this.$store.state.focus_stuff];
+                        ret.push(element);
+                    }
+                });
+
+            }
 
             return ret;
         },
     },
     methods: {
+        advance_export_record: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("contract_management", "export_history", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.balance_focus_company]).then(function (resp) {
+                vue_this.history_export_table = [];
+                resp.forEach(element => {
+                    var tmp_item = {
+                        ...element
+                    };
+                    tmp_item.company_name = vue_this.balance_focus_company;
+                    if (tmp_item.reason.includes('（系统自动）')) {
+                        tmp_item.type = "消费";
+                    } else {
+                        tmp_item.type = "充值";
+                    }
+                    vue_this.history_export_table.push(tmp_item);
+                });
+            });
+        },
         open_balance_history_diag: function () {
             this.$refs.lazy_load.check();
         },
@@ -314,30 +485,27 @@ export default {
             this.balance_history_load_end = false;
             this.balance_history_loading = false;
         },
-        change_balance: function (_contract) {
+        change_balance: function () {
             var vue_this = this;
-            this.$prompt('请输入调整后的余额', '提示', {
-                confirmButtonText: '确定',
-                cancelButtonText: '取消',
-                inputType: 'number',
-                inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
-                inputErrorMessage: '请输入新余额'
-            }).then(function (_new_balance) {
-                vue_this.$prompt('请输入原因', '提示', {
-                    confirmButtonText: '确定',
-                    cancelButtonText: '取消',
-                    inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
-                    inputErrorMessage: '必须输入原因'
-                }).then(({
-                    value
-                }) => {
-                    vue_this.$call_remote_process("contract_management", "change_balance", [vue_this.$cookies.get("zh_ssid"), _contract.name, _new_balance.value, value]).then(function (resp) {
-                        if (resp) {
-                            vue_this.init_all_contract();
-                        }
-                    });
+            var func = () => {
+                var real_reason = "关联物料：" + vue_this.charge_stuff + ", 原因:" + vue_this.charge_reason;
+                vue_this.$call_remote_process("contract_management", "change_balance", [vue_this.$cookies.get("zh_ssid"), vue_this.charge_company, parseFloat(vue_this.charge_value), real_reason]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_all_contract();
+                    }
+                }).finally(function () {
+                    vue_this.charge_value = 0;
+                    vue_this.charge_company = '';
+                    vue_this.charge_stuff = '';
+                    vue_this.charge_reason = '';
+                    vue_this.charge_diag_show = false;
                 });
-            });
+            };
+            if (vue_this.charge_value && vue_this.charge_company && vue_this.charge_stuff && vue_this.charge_reason) {
+                func()
+            } else {
+                vue_this.$alert('信息不完整');
+            }
 
         },
         proc_upload_contract: async function (_array) {
