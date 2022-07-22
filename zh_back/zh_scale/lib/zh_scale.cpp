@@ -236,21 +236,19 @@ static void destroy_scale_buff(const std::string &_ip)
     }
     pthread_mutex_unlock(&g_buff_map_lock);
 }
-static void push_data_in_buff(const std::string &_ip, const std::string &_data)
+static void replace_data_in_buff(const std::string &_ip, const std::string &_data)
 {
     pthread_mutex_lock(&g_buff_map_lock);
     if (g_buff_map.find(_ip) != g_buff_map.end())
     {
         auto &tmp = g_buff_map[_ip];
-        if (tmp.buff.length() < 128)
-        {
-            tmp.buff.append(_data);
-        }
+        tmp.buff.clear();
+        tmp.buff.append(_data);
     }
     pthread_mutex_unlock(&g_buff_map_lock);
 }
 
-static std::string pop_data_from_buff(const std::string &_ip)
+static std::string peek_data_from_buff(const std::string &_ip)
 {
     std::string ret;
     pthread_mutex_lock(&g_buff_map_lock);
@@ -258,7 +256,6 @@ static std::string pop_data_from_buff(const std::string &_ip)
     {
         auto &tmp = g_buff_map[_ip];
         ret = tmp.buff;
-        tmp.buff.clear();
     }
     pthread_mutex_unlock(&g_buff_map_lock);
 
@@ -363,13 +360,13 @@ public:
                     {
                         g_log.log("recv data from %s", _scale_ip.c_str());
                         g_log.log_package(_data.data(), _data.length());
-                        push_data_in_buff(_scale_ip, _data);
+                        replace_data_in_buff(_scale_ip, make_one_frame(_data.data(), _data.length()));
                     }))
             {
                 zh_runtime_get_device_health()[_scale_ip] = 2;
             }
         }
-        auto scale_buff = pop_data_from_buff(_scale_ip);
+        auto scale_buff = peek_data_from_buff(_scale_ip);
         double ret = 0;
         ret = parse_weight(make_one_frame(scale_buff.data(), scale_buff.size()));
 
