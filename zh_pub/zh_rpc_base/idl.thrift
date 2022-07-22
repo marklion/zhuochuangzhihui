@@ -159,12 +159,19 @@ struct user_info {
     5:i64 permission,
     6:string permission_name,
     7:bool need_change_password,
+    8:list<permission_target_info> target_info,
 }
 
 struct user_permission {
     1:string name,
     2:string description,
     3:i64 id,
+}
+
+struct permission_target_info{
+    1:string target,
+    2:bool is_read = false,
+    3:i64 id = 0,
 }
 
 service user_management {
@@ -177,6 +184,9 @@ service user_management {
     bool del_user(1:string ssid, 2:i64 user_id) throws (1:gen_exp e),
     bool reset_user(1:string ssid, 2:i64 user_id, 3:string password) throws (1:gen_exp e),
     bool change_user_password(1:string ssid, 2:string password) throws (1:gen_exp e),
+    list<permission_target_info> get_user_permission_target(1:i64 user_id) throws (1:gen_exp e),
+    bool add_user_permission_target(1:string ssid, 2:i64 user_id, 3:permission_target_info target_info) throws (1:gen_exp e),
+    void del_user_permission_target(1:string ssid, 2:i64 user_id, 3:i64 target_info_id) throws (1:gen_exp e),
 }
 
 struct contract_info {

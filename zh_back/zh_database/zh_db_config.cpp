@@ -231,3 +231,17 @@ std::string zh_double2string_reserve2(double _value)
     ss << _value;
     return ss.str();
 }
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, const std::string &_permission_target, bool _is_read)
+{
+    auto user = zh_rpc_util_get_online_user(ssid);
+    if (user)
+    {
+        auto pt = user->get_children<zh_sql_permission_target>("belong_user", "target == '%s' AND is_read == %ld", _permission_target.c_str(), _is_read);
+        if (pt)
+        {
+            return user;
+        }
+    }
+
+    return std::unique_ptr<zh_sql_user_info>();
+}

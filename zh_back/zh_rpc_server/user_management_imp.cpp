@@ -132,6 +132,15 @@ void user_management_handler::get_all_user(std::vector<user_info> &_return, cons
         tmp.id = itr.get_pri_id();
         tmp.name = itr.name;
         tmp.phone = itr.phone;
+        auto bind_targets = itr.get_all_children<zh_sql_permission_target>("belong_user");
+        for (auto &single_target:bind_targets)
+        {
+            permission_target_info tmp_info;
+            tmp_info.id = single_target.get_pri_id();
+            tmp_info.is_read = single_target.is_read;
+            tmp_info.target = single_target.target;
+            tmp.target_info.push_back(tmp_info);
+        }
         _return.push_back(tmp);
     }
 }
@@ -187,5 +196,63 @@ void user_management_handler::user_logoff(const std::string &ssid)
     if (user_login)
     {
         user_login->remove_record();
+    }
+}
+
+void user_management_handler::get_user_permission_target(std::vector<permission_target_info> &_return, const int64_t user_id)
+{
+    auto user = sqlite_orm::search_record<zh_sql_user_info>(user_id);
+    if (user)
+    {
+        auto pts = user->get_all_children<zh_sql_permission_target>("belong_user");
+        for (auto &itr : pts)
+        {
+            permission_target_info tmp;
+            tmp.id = itr.get_pri_id();
+            tmp.is_read = itr.is_read;
+            tmp.target = itr.target;
+            _return.push_back(tmp);
+        }
+    }
+}
+bool user_management_handler::add_user_permission_target(const std::string &ssid, const int64_t user_id, const permission_target_info &target_info)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid,ZH_PERMISSON_TARGET_USER, false);
+    auto opt_user = sqlite_orm::search_record<zh_sql_user_info>(user_id);
+    if (!user || !opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto exist_record = opt_user->get_children<zh_sql_permission_target>("belong_user", "target == '%s' AND is_read == %ld", target_info.target.c_str(), target_info.is_read);
+    if (exist_record)
+    {
+        ret = true;
+    }
+    else
+    {
+        zh_sql_permission_target tmp;
+        tmp.target = target_info.target;
+        tmp.is_read = target_info.is_read;
+        ret = tmp.insert_record();
+    }
+
+    return ret;
+}
+void user_management_handler::del_user_permission_target(const std::string &ssid, const int64_t user_id, const int64_t target_info_id)
+{
+    auto user = zh_rpc_util_get_online_user(ssid,ZH_PERMISSON_TARGET_USER, false);
+    auto opt_user = sqlite_orm::search_record<zh_sql_user_info>(user_id);
+    if (!user || !opt_user)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+
+    auto exist_record = opt_user->get_children<zh_sql_permission_target>("belong_user", "PRI_ID == %ld", target_info_id);
+    if (exist_record)
+    {
+        exist_record->remove_record();
     }
 }

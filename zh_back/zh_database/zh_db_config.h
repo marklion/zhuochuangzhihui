@@ -5,6 +5,12 @@
 #include "../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
 #include <functional>
 
+#define ZH_PERMISSON_TARGET_USER "user_info"
+#define ZH_PERMISSON_TARGET_ORDER "order_info"
+#define ZH_PERMISSON_TARGET_CASH "cash_info"
+#define ZH_PERMISSON_TARGET_DEVICE "device_info"
+#define ZH_PERMISSON_TARGET_FIELD "field_info"
+
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
 std::string zh_rpc_util_get_datestring(time_t _time = time(NULL));
 time_t zh_rpc_util_get_time_by_string(const std::string &_time_string);
@@ -354,6 +360,7 @@ public:
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, const std::string &_permission_target, bool _is_read);
 std::string zh_rpc_util_gen_ssid();
 
 class zh_sql_history_data : public sql_tree_base
@@ -687,6 +694,27 @@ public:
     virtual std::string table_name()
     {
         return "contract_stuff_price_table";
+    }
+};
+
+class zh_sql_permission_target:public sql_tree_base{
+public:
+    std::string target;
+    bool is_read = false;
+    zh_sql_permission_target() {
+        add_parent_type<zh_sql_user_info>("belong_user");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("target", sqlite_orm_column::STRING, &target));
+        ret.push_back(sqlite_orm_column("is_read", sqlite_orm_column::STRING, &is_read));
+        return ret;
+    }
+
+    virtual std::string table_name()
+    {
+        return "permisson_target_table";
     }
 };
 
