@@ -651,6 +651,11 @@ bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no
     async_led_post(_led_ip, hk_led_make_cmd("未叫号", _plate_no));
     return true;
 }
+bool zh_hk_cast_raster_block(const std::string &_led_ip)
+{
+    async_led_post(_led_ip, hk_led_make_cmd("车辆未完全上磅", ""));
+    return true;
+}
 bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(6, _led_ip);

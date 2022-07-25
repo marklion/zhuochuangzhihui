@@ -654,13 +654,25 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
             auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
             if (plugin_is_installed("zh_hnnc"))
             {
-                if (stuff_info && customer_info && customer_info->is_sale && stuff_info->code.length() > 0 && customer_info->code.length() > 0)
+                if (stuff_info && customer_info && stuff_info->code.length() > 0 && customer_info->code.length() > 0)
                 {
                     auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
-                    pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
-                    if (std_err.length() > 0)
+                    if (customer_info->is_sale)
                     {
-                        ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
+                        pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
+                        if (std_err.length() > 0)
+                        {
+                            ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
+                        }
+                    }
+                    else
+                    {
+                        pmh->zh_plugin_run_plugin("valid_remain " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
+                        if (std_err.length() > 0)
+                        {
+                            std::string err_info = "订单余量不足，请联系" + std::string(getenv("OEM_SHORT")) + "修改";
+                            ZH_RETURN_MSG(err_info);
+                        }
                     }
                 }
             }
@@ -1125,6 +1137,11 @@ void scale_state_machine::open_scale_timer()
                 }
                 ssm->trigger_sm();
             }
+            else
+            {
+                zh_hk_cast_raster_block(ssm->bound_scale.entry_config.led_ip);
+                zh_hk_cast_raster_block(ssm->bound_scale.exit_config.led_ip);
+            }
         },
         this);
 }
@@ -1557,12 +1574,28 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
     {
         req.Add("Invcode", stuff->code);
         req.Add("Custcode", customer->code);
-        req.Add("Emptweight", _order.p_weight);
         req.Add("OTHbillcode", _order.order_number);
-        req.Add("LoadbillNo", _order.order_number.substr(_order.order_number.length() - 11, 11));
         req.Add("Carno", _order.main_vehicle_number);
         if (_order.status < 3)
         {
+            if (customer->is_sale)
+            {
+                req.Add("Emptweight", _order.p_weight);
+                req.Add("transtype", "UpTare");
+                req.Add("PicurlT1", _pic1);
+                req.Add("PicurlT2", _pic2);
+                req.Add("PicurlT3", _pic3);
+                req.Add("LoadbillNo", _order.order_number.substr(_order.order_number.length() - 11, 11));
+            }
+            else
+            {
+                req.Add("Grossweight", _order.p_weight);
+                req.Add("transtype", "UpGrossRece");
+                req.Add("PicurlG1", _pic1);
+                req.Add("PicurlG2", _pic2);
+                req.Add("PicurlG3", _pic3);
+                req.Add("CarType", "N");
+            }
             req.Add("Carlenth", 14);
             req.Add("CarBoxlenth", 12);
             req.Add("CarnormalWeiT", 15);
@@ -1570,23 +1603,32 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
             req.Add("CarType", "N");
             req.Add("Caraxles", 6);
 
-            req.Add("transtype", "UpTare");
-            req.Add("PicurlT1", _pic1);
-            req.Add("PicurlT2", _pic2);
-            req.Add("PicurlT3", _pic3);
             req.Add("Sname", _order.driver_name);
             req.Add("Scode", _order.driver_id);
             req.Add("Sphone", _order.driver_phone);
         }
         else if (_order.status < 4)
         {
-            req.Add("transtype", "UpGross");
+            if (customer->is_sale)
+            {
+                req.Add("LoadbillNo", _order.order_number.substr(_order.order_number.length() - 11, 11));
+                req.Add("Emptweight", _order.p_weight);
+                req.Add("transtype", "UpGross");
+                req.Add("PicurlG1", _pic1);
+                req.Add("PicurlG2", _pic2);
+                req.Add("PicurlG3", _pic3);
+                req.Add("Grossweight", _order.m_weight);
+            }
+            else
+            {
+                req.Add("transtype", "UpTareRece");
+                req.Add("Emptweight", _order.m_weight);
+                req.Add("PicurlT1", _pic1);
+                req.Add("PicurlT2", _pic2);
+                req.Add("PicurlT3", _pic3);
+            }
             req.Add("IsRepeat", "N");
-            req.Add("PicurlG1", _pic1);
-            req.Add("PicurlG2", _pic2);
-            req.Add("PicurlG3", _pic3);
-            req.Add("Netweight", _order.m_weight - _order.p_weight);
-            req.Add("Grossweight", _order.m_weight);
+            req.Add("Netweight", std::abs(_order.m_weight - _order.p_weight));
             req.Add("Billcode", _order.bl_number);
             auto extra_info = neb::CJsonObject(_order.extra_info);
             if (extra_info.KeyExist("myt_info"))
@@ -1625,7 +1667,7 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                         if (pmh && vo)
                         {
                             auto tmp_req = req_json_content;
-                            if (req_json_content("transtype") == "UpGross" || req_json_content("transtype") == "UpEmpt")
+                            if (req_json_content("transtype") == "UpGross" || req_json_content("transtype") == "UpEmpt" || req_json_content("transtype") == "UpTareRece")
                             {
                                 tmp_req.ReplaceAdd("Billcode", vo->bl_number);
                             }
@@ -1642,7 +1684,7 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                                     auto resp = neb::CJsonObject(std_out);
                                     tmp_log.log("bl:%s", resp("Billcode").c_str());
                                     tmp_log.log("nyj:%s", resp["NyjInf"].ToFormattedString().c_str());
-                                    if (req_json_content("transtype") == "UpTare")
+                                    if (req_json_content("transtype") == "UpTare" || req_json_content("transtype") == "UpGrossRece")
                                     {
                                         vo->bl_number = resp("Billcode");
                                     }
@@ -1712,14 +1754,17 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                 }
                 if (plugin_is_installed("zh_meiyitong"))
                 {
-                    ret = ret && push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == 1", _order.company_name.c_str());
+                    if (company)
+                    {
+                        ret = ret && push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                    }
                 }
                 _order.update_record();
 
                 return ret;
             },
             [](zh_sql_vehicle_order &) {});
-        auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == 1", vo->company_name.c_str());
         if (vo->status < 3)
         {
             vo->p_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
@@ -1727,15 +1772,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->p_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_p_status();
             vo->p_weight = fin_weight;
-
-            if (company)
-            {
-                vo->push_status(status, save_hook);
-            }
-            else
-            {
-                vo->push_status(status);
-            }
+            vo->push_status(status, save_hook);
         }
         else if (vo->status < 4 && permit_m_weight)
         {
@@ -1744,14 +1781,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->m_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_m_status();
             vo->m_weight = fin_weight;
-            if (company)
-            {
-                vo->push_status(status, save_hook);
-            }
-            else
-            {
-                vo->push_status(status);
-            }
+            vo->push_status(status, save_hook);
             if (vo->status == 4)
             {
                 recalcu_balance_inventory(*vo);

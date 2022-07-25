@@ -147,3 +147,60 @@ bool ZH_HNNC_push_req(const std::string &_req_json_string)
 
     return ret;
 }
+
+bool ZH_HNNC_fetch_supplier_info()
+{
+    bool ret = false;
+
+    neb::CJsonObject req;
+    req.Add("transtype", "GetPurCust");
+    req.Add("Corpcode", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("corpcode"));
+    ret = post_req_and_print(req);
+
+    return ret;
+}
+bool ZH_HNNC_fetch_supply_order_info(const std::string &_supplier_code)
+{
+    bool ret = false;
+
+    neb::CJsonObject req;
+    req.Add("transtype", "GetPurCustInv");
+    req.Add("Corpcode", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("corpcode"));
+    req.Add("Custcode", _supplier_code);
+
+    ret = post_req_and_print(req);
+
+    return ret;
+}
+bool ZH_HNNC_valid_remain(const std::string &_cust_code, const std::string &_inv_code, int vehicle_count)
+{
+    bool ret = false;
+
+    neb::CJsonObject req;
+    req.Add("transtype", "GetPurInvRemain");
+    req.Add("Corpcode", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("corpcode"));
+    req.Add("Custcode", _cust_code);
+    req.Add("Invcode", _inv_code);
+
+    double require_remain = vehicle_count * 70;
+    ret = send_req_with_token(
+        req,
+        [&](const neb::CJsonObject &res) -> bool
+        {
+            bool lam_ret = false;
+            auto tmp_res = res;
+            if (tmp_res.GetArraySize() > 0)
+            {
+                auto real_resp = tmp_res[0];
+                double cur_remain = std::strtod(real_resp("remain").c_str(), NULL);
+                if (require_remain <= cur_remain)
+                {
+                    lam_ret = true;
+                }
+            }
+
+            return lam_ret;
+        });
+
+    return ret;
+}

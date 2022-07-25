@@ -22,8 +22,11 @@ int main(int argc, char **argv)
                 command("init").set(cmd) |
                 command("enabled").set(cmd) |
                 command("fetchCust").set(cmd) |
+                command("fetchSupplier").set(cmd) |
                 command("push_req").set(cmd) & value("json_string", json_string) |
                 (command("valid_balance").set(cmd) & value("cust_code", customer_code) & value("inv_code", inv_code)) & value("vehicle_count", vehicle_count) |
+                (command("valid_remain").set(cmd) & value("cust_code", customer_code) & value("inv_code", inv_code)) & value("vehicle_count", vehicle_count) |
+                (command("fetchSupplyOrder").set(cmd) & value("Custcode", customer_code)) |
                 (command("fetchOrder").set(cmd) & value("Custcode", customer_code)));
     if (!parse(argc, argv, cli))
     {
@@ -73,6 +76,20 @@ int main(int argc, char **argv)
             iret = 0;
         }
     }
+    else if (cmd == "fetchSupplier")
+    {
+        if (ZH_HNNC_fetch_supplier_info())
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "fetchSupplyOrder")
+    {
+        if (ZH_HNNC_fetch_supply_order_info(customer_code))
+        {
+            iret = 0;
+        }
+    }
     else if (cmd == "fetchOrder")
     {
         if (ZH_HNNC_fetch_order_info(customer_code))
@@ -94,7 +111,15 @@ int main(int argc, char **argv)
             iret = 0;
         }
     }
+    else if (cmd == "valid_remain")
+    {
+        if (ZH_HNNC_valid_remain(customer_code, inv_code, atoi(vehicle_count.c_str())))
+        {
+            iret = 0;
+        }
+    }
     else if (cmd == "push_req")
+
     {
         if (ZH_HNNC_push_req(json_string))
         {
