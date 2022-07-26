@@ -8,7 +8,6 @@
 #define ZH_PERMISSON_TARGET_USER "user_info"
 #define ZH_PERMISSON_TARGET_ORDER "order_info"
 #define ZH_PERMISSON_TARGET_CASH "cash_info"
-#define ZH_PERMISSON_TARGET_DEVICE "device_info"
 #define ZH_PERMISSON_TARGET_FIELD "field_info"
 
 std::string zh_rpc_util_get_timestring(time_t _time = time(NULL));
@@ -700,7 +699,7 @@ public:
 class zh_sql_permission_target:public sql_tree_base{
 public:
     std::string target;
-    bool is_read = false;
+    long is_read = 0;
     zh_sql_permission_target() {
         add_parent_type<zh_sql_user_info>("belong_user");
     }
@@ -708,7 +707,7 @@ public:
     {
         std::vector<sqlite_orm_column> ret;
         ret.push_back(sqlite_orm_column("target", sqlite_orm_column::STRING, &target));
-        ret.push_back(sqlite_orm_column("is_read", sqlite_orm_column::STRING, &is_read));
+        ret.push_back(sqlite_orm_column("is_read", sqlite_orm_column::INTEGER, &is_read));
         return ret;
     }
 

@@ -17,28 +17,6 @@
         <van-button v-if="!cur_order.confirmed" block type="primary" @click="confirm_deliver(true)">确认</van-button>
         <van-button v-else block type="danger" @click="confirm_deliver(false)">取消确认</van-button>
     </div>
-    <div style="margin:15px;" v-if="cur_order.basic_info.status >= 4 && need_print_ticket">
-        <van-button block type="info" @click="ticket_ditail_change_diag = true">打票</van-button>
-    </div>
-    <van-dialog v-model="ticket_ditail_change_diag" title="煤票打印" :showConfirmButton="false" closeOnClickOverlay>
-        <van-form @submit="print_ticket">
-            <van-field v-model="p_weight" type="number" name="皮重" label="皮重" placeholder="请输入皮重" :rules="[{ required: true, message: '请填写皮重' }]" />
-            <van-field v-model="m_weight" type="number" name="毛重" label="毛重" placeholder="请输入毛重" :rules="[{ required: true, message: '请填写毛重' }]" />
-            <van-field :value="(m_weight-p_weight).toFixed(2)" disabled name="净重" label="净重" />
-            <van-field readonly clickable name="picker" :value="dest_company" label="运往公司" placeholder="点击选择公司" @click="show_company_Picker = true" />
-            <van-popup v-model="show_company_Picker" position="bottom">
-                <van-picker show-toolbar :columns="dest_company_pool" @confirm="on_company_confirm" @cancel="show_company_Picker = false" />
-            </van-popup>
-            <van-field readonly clickable name="picker" :value="address" label="运往地址" placeholder="点击选择地址" @click="showPicker = true" />
-            <van-popup v-model="showPicker" position="bottom">
-                <van-picker show-toolbar :columns="all_address" @confirm="onConfirm" @cancel="showPicker = false" />
-            </van-popup>
-            <div style="margin: 16px;">
-                <van-button round block type="info" native-type="submit">提交</van-button>
-            </div>
-        </van-form>
-    </van-dialog>
-
 </div>
 </template>
 
@@ -63,24 +41,10 @@ export default {
                 confirmed: false,
                 basic_info: {},
             },
-            ticket_base_data: {},
             dest_company_pool: [],
         };
     },
     computed: {
-        need_print_ticket: function () {
-            var ret = false;
-
-            if (this.ticket_base_data && this.ticket_base_data.products) {
-                this.ticket_base_data.products.forEach(element => {
-                    if (element.Name == this.cur_order.basic_info.stuff_name) {
-                        ret = true;
-                    }
-                });
-            }
-
-            return ret;
-        },
         all_address: function () {
             var ret = [];
 
@@ -110,29 +74,6 @@ export default {
         onConfirm: function (_value) {
             this.address = _value;
             this.showPicker = false;
-        },
-        print_ticket: function () {
-            var vue_this = this;
-            vue_this.p_weight = parseFloat(vue_this.p_weight);
-            vue_this.m_weight = parseFloat(vue_this.m_weight);
-            var print_req = {
-                "main_vehicle_number": vue_this.cur_order.basic_info.main_vehicle_number,
-                "p_weight": vue_this.p_weight.toFixed(2),
-                "m_weight": vue_this.m_weight.toFixed(2),
-                "axes": "6",
-                "j_weight": (vue_this.m_weight - vue_this.p_weight).toFixed(2),
-                "finish_date": vue_this.$make_time_string(new Date(), '-'),
-                "stuff_name": vue_this.cur_order.basic_info.stuff_name,
-                "company_name": vue_this.dest_company,
-                "company_address": vue_this.address,
-                "use_for": vue_this.cur_order.basic_info.use_for,
-            };
-            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "finish '" + JSON.stringify(print_req) + "'"]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_order();
-                    vue_this.ticket_ditail_change_diag = false;
-                }
-            });
         },
         confirm_deliver: function (_confirm) {
             var vue_this = this;
@@ -167,12 +108,6 @@ export default {
                 vue_this.dest_company = vue_this.cur_order.basic_info.source_dest_name;
             });
         },
-        init_base_data: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "get -k basic_data"]).then(function (resp) {
-                vue_this.ticket_base_data = JSON.parse(resp);
-            });
-        },
         init_dest_company_pool: function () {
             var vue_this = this;
             vue_this.$call_remote_process("stuff_management", "get_all_source_dest", [false]).then(function (resp) {
@@ -185,7 +120,6 @@ export default {
     },
     beforeMount: function () {
         this.init_order();
-        this.init_base_data();
         this.init_dest_company_pool();
     },
 }

@@ -16,7 +16,6 @@
                                 <el-col>
                                     <div class="user_info_show">
                                         <div>当前用户：{{$store.state.user_info.name}}</div>
-                                        <div>权限：{{$store.state.user_info.permission_name}}</div>
                                     </div>
                                 </el-col>
                                 <el-col :span="6">
@@ -76,7 +75,7 @@
                 <van-tabbar-item replace to="/mobile/vehicle_management" icon="newspaper-o">车辆管理</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/all_came_vehicle" icon="label-o">现场管理</van-tabbar-item>
                 <van-tabbar-item replace to="/mobile/self_order_opt" icon="label-o" v-if="$store.state.user_info.permission == 3">司机派车</van-tabbar-item>
-                <van-tabbar-item v-if="$store.state.user_info.permission < 3 || $store.state.user_info.permission == 100" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
+                <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/contract_management" icon="cluster-o">合同管理</van-tabbar-item>
                 <van-tabbar-item v-if="$store.state.user_info.permission < 3" replace to="/mobile/scale_state" icon="eye-o">称重状态</van-tabbar-item>
             </van-tabbar>
         </div>
@@ -123,7 +122,7 @@ export default {
         menu_need_show: function () {
             var ret = [];
             this.cur_menu.forEach((element) => {
-                if (this.$store.state.user_info.permission <= element.permission_need || this.$store.state.user_info.permission == 100) {
+                if (this.$store.state.user_info.permission <= element.permission_need) {
                     ret.push(element);
                 }
             });

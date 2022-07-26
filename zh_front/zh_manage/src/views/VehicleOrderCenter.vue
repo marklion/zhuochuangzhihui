@@ -206,14 +206,6 @@
                         <el-form-item label="运输货物" prop="stuff_name">
                             <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
                         </el-form-item>
-                        <div v-if="need_print_ticket">
-                            <el-form-item label="运往地点" prop="company_address">
-                                <item-for-select v-model="focus_order.company_address" search_key="company_address"></item-for-select>
-                            </el-form-item>
-                            <el-form-item label="用途" prop="use_for">
-                                <item-for-select v-model="focus_order.use_for" search_key="use_for"></item-for-select>
-                            </el-form-item>
-                        </div>
                         <el-form-item label="今天连续派车">
                             <el-switch v-model="form_continue_switch"></el-switch>
                         </el-form-item>
@@ -453,25 +445,6 @@ export default {
             return ret;
         },
     },
-    watch: {
-        "focus_order.company_name": function (_value) {
-            if (_value) {
-                var vue_this = this;
-                vue_this.$call_remote_process("plugin_management", "run_plugin_cmd", [vue_this.$cookies.get("zh_ssid"), "zh_ordos_ticket", "get -k basic_data"]).then(function (resp) {
-                    var basic_data = JSON.parse(resp);
-                    if (basic_data.customers.find((element) => {
-                            return element.Name == _value;
-                        })) {
-                        vue_this.need_print_ticket = true;
-                    } else {
-                        vue_this.need_print_ticket = false;
-                    }
-                });
-            } else {
-                vue_this.need_print_ticket = false;
-            }
-        },
-    },
     data: function () {
         return {
             focus_comapny: '',
@@ -488,7 +461,6 @@ export default {
                 return Math.floor(ms / 1000 / 60);
             },
             pop_info_component: undefined,
-            need_print_ticket: false,
             picker_option: {
                 disabledDate(time) {
                     return time.getTime() > Date.now();

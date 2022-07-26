@@ -172,10 +172,10 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
     {
         cmd_permisson_req = 3;
     }
-    auto user = zh_rpc_util_get_online_user(ssid, cmd_permisson_req);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     std::string error_string;
     zh_plugin_run_plugin(cmd, plugin_name, _return, error_string);
@@ -188,10 +188,10 @@ void plugin_management_handler::run_plugin_cmd(std::string &_return, const std::
 bool plugin_management_handler::install_plugin(const std::string &ssid, const std::string &plugin_name, const std::string &file_name)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     std::string cmd = "mv '" + file_name + "' '/tmp/" + plugin_name + ".tar.gz' && [ -d /plugin ] || mkdir /plugin && tar xf '/tmp/" + plugin_name + ".tar.gz' -C /plugin/ && mkdir '/plugin/" + plugin_name + "/conf' && /plugin/" + plugin_name + "/bin/" + plugin_name + "_plugin init";
@@ -204,20 +204,20 @@ bool plugin_management_handler::install_plugin(const std::string &ssid, const st
 }
 void plugin_management_handler::uninstall_plugin(const std::string &ssid, const std::string &plugin_name)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     std::string cmd = "rm -rf '/plugin/" + plugin_name + "'";
     system(cmd.c_str());
 }
 void plugin_management_handler::get_installed_plugins(std::vector<std::string> &_return, const std::string &ssid)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto all_plugins = internel_get_installed_plugins();
     _return = all_plugins;

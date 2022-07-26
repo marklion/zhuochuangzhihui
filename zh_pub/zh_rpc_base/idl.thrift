@@ -172,6 +172,7 @@ struct permission_target_info{
     1:string target,
     2:bool is_read = false,
     3:i64 id = 0,
+    4:string description,
 }
 
 service user_management {
@@ -187,6 +188,7 @@ service user_management {
     list<permission_target_info> get_user_permission_target(1:i64 user_id) throws (1:gen_exp e),
     bool add_user_permission_target(1:string ssid, 2:i64 user_id, 3:permission_target_info target_info) throws (1:gen_exp e),
     void del_user_permission_target(1:string ssid, 2:i64 user_id, 3:i64 target_info_id) throws (1:gen_exp e),
+    list<permission_target_info> get_all_permission_item() throws (1:gen_exp e),
 }
 
 struct contract_info {

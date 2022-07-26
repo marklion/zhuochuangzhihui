@@ -1,14 +1,5 @@
 <template>
 <div class="user_management_show">
-    <div class="block_title_show">权限说明</div>
-    <el-table :data="all_permissions" style="width: 100%" stripe>
-        <el-table-column prop="id" label="编号" min-width="20px">
-        </el-table-column>
-        <el-table-column prop="name" label="名称" min-width="50px">
-        </el-table-column>
-        <el-table-column prop="description" label="描述">
-        </el-table-column>
-    </el-table>
     <el-row type="flex" justify="space-between" align="middle">
         <el-col>
             <div class="block_title_show">所有用户</div>
@@ -26,13 +17,28 @@
         </el-table-column>
         <el-table-column prop="phone" label="手机号" min-width="30px">
         </el-table-column>
-        <el-table-column prop="permission_name" label="权限">
+        <el-table-column prop="permission_name" label="类型" sortable>
+        </el-table-column>
+        <el-table-column label="模块权限">
+            <template slot-scope="scope">
+                <el-tag v-for="(single_item, index) in scope.row.target_info" :key="index" effect="plain" :type="single_item.is_read?'success':'primary'" :closable="scope.row.name != 'admin'" @close=" del_permission_target(scope.row.id, single_item.id)">
+                    {{single_item.description}}:{{single_item.is_read?'读取':'修改'}}
+                </el-tag>
+            </template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" min-width="50px">
             <template slot-scope="scope">
                 <div v-if="scope.row.name != 'admin'">
                     <el-button type="warning" size="mini" @click="reset_user(scope.row)">重置</el-button>
                     <el-button @click="del_user(scope.row)" type="danger" size="mini">删除</el-button>
+                    <el-popover placement="bottom" width="400" trigger="click" v-if="scope.row.permission_name == '内部用户'">
+                        <el-button size="mini" slot="reference" type="primary">增加模块</el-button>
+                        <el-radio-group v-model="added_permission_target">
+                            <el-radio v-for="(single_permission, index) in permisson_target_info" :key="index" :label="single_permission.target">{{single_permission.description}}</el-radio>
+                        </el-radio-group>
+                        <el-button size="mini" type="primary" @click="change_permisson_target(scope.row.id, true)">增加只读读权限</el-button>
+                        <el-button size="mini" type="success" @click="change_permisson_target(scope.row.id, false)">增加权限</el-button>
+                    </el-popover>
                 </div>
             </template>
         </el-table-column>
@@ -44,11 +50,6 @@
             </el-form-item>
             <el-form-item label="手机号" prop="phone">
                 <el-input v-model="new_user.phone" placeholder="请输入手机号"></el-input>
-            </el-form-item>
-            <el-form-item label="权限" prop="permission_name">
-                <el-select v-model="new_user.permission_name" placeholder="请分配权限">
-                    <el-option v-for="(single_permission, index) in all_permissions" :key="index" :label="single_permission.name" :value="single_permission.name"></el-option>
-                </el-select>
             </el-form-item>
             <el-form-item label="密码" prop="phone">
                 <el-input v-model="new_user.password" disabled></el-input>
@@ -78,6 +79,8 @@ export default {
     name: 'UserMangement',
     data: function () {
         return {
+            added_permission_target: '',
+            permisson_target_info: [],
             all_permissions: [],
             all_user: [],
             show_add_user_diag: false,
@@ -115,11 +118,36 @@ export default {
         };
     },
     methods: {
+        change_permisson_target: function (_user_id, _is_read) {
+            var vue_this = this;
+            vue_this.$call_remote_process("user_management", 'add_user_permission_target', [vue_this.$cookies.get('zh_ssid'), _user_id, {
+                target: vue_this.added_permission_target,
+                is_read: true
+            }]).then(function (resp) {
+                if (resp) {
+                    if (!_is_read) {
+                        vue_this.$call_remote_process("user_management", 'add_user_permission_target', [vue_this.$cookies.get('zh_ssid'), _user_id, {
+                            target: vue_this.added_permission_target,
+                            is_read: false,
+                        }]).then(function (resp) {
+                            if (resp) {
+                                vue_this.init_all_user();
+                            }
+                        })
+                    } else {
+                        vue_this.init_all_user();
+                    }
+                }
+            });
+        },
         init_all_user: function () {
             var vue_this = this;
             vue_this.$call_remote_process("user_management", 'get_all_user', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
                 vue_this.all_user = [];
                 resp.forEach((element, index) => {
+                    if (element.permission_name != '外部用户') {
+                        element.permission_name = '内部用户';
+                    }
                     vue_this.$set(vue_this.all_user, index, element);
                 });
             });
@@ -158,6 +186,7 @@ export default {
                 if (valid) {
                     var shajs = require('sha.js')
                     vue_this.new_user.password = shajs('sha1').update(vue_this.new_user.password).digest('hex');
+                    vue_this.new_user.permission_name = '管理员';
                     vue_this.$call_remote_process("user_management", 'add_user', [vue_this.$cookies.get('zh_ssid'), vue_this.new_user]).then(function (resp) {
                         if (resp) {
                             vue_this.init_all_user();
@@ -190,7 +219,26 @@ export default {
             this.$copyText(_password);
             this.$message('密码已复制');
         },
-
+        get_permission_target: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("user_management", "get_all_permission_item", []).then(function (resp) {
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.permisson_target_info, index, element);
+                });
+            });
+        },
+        del_permission_target: function (_user_id, _permission_id) {
+            var vue_this = this;
+            vue_this.$confirm('确定要取消该权限吗', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                vue_this.$call_remote_process("user_management", "del_user_permission_target", [vue_this.$cookies.get("zh_ssid"), _user_id, _permission_id]).then(function () {
+                    vue_this.init_all_user();
+                })
+            });
+        }
     },
     beforeMount: function () {
         var vue_this = this;
@@ -201,6 +249,7 @@ export default {
             });
         });
         vue_this.init_all_user();
+        vue_this.get_permission_target();
     },
 }
 </script>

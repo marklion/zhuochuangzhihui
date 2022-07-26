@@ -248,7 +248,7 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
 static bool pri_create_order(const std::vector<vehicle_order_info> &orders, const std::string &ssid = "")
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!opt_user)
     {
         if (orders.size() > 0)
@@ -395,11 +395,11 @@ bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid,
 bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
 {
     bool ret = true;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
 
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
     }
 
     for (auto &itr : order)
@@ -419,7 +419,7 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
 {
     bool ret = true;
 
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!opt_user)
     {
         if (order.size() > 0)
@@ -487,10 +487,10 @@ void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_retur
 bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
     if (!vo || vo->status >= 4)
@@ -505,7 +505,7 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
 bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid, const vehicle_order_info &order)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!user)
     {
         auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", order.company_name.c_str());
@@ -765,20 +765,20 @@ bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, cons
 bool vehicle_order_center_handler::call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     return pri_call_vehicle(order_id, is_cancel, user->name);
 }
 
 void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, true);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status >= 1 AND status != 100 AND m_registered == 1 ORDER BY check_in_timestamp");
     for (auto &itr : vos)
@@ -792,10 +792,10 @@ void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_or
 bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
     if (!vo)
@@ -813,10 +813,10 @@ bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, 
 bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
     if (!vo)
@@ -866,10 +866,10 @@ static void recalcu_balance_inventory(zh_sql_vehicle_order &_vo, const std::stri
 bool vehicle_order_center_handler::manual_close(const std::string &ssid, const int64_t order_id)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
     if (!vo)
@@ -891,7 +891,7 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
 void vehicle_order_center_handler::get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid)
 {
     std::string statis_cmd;
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true);
     if (!user)
     {
         user.reset(zh_rpc_util_get_online_user(ssid, 3).release());
@@ -948,10 +948,10 @@ bool vehicle_order_center_handler::print_weight_ticket(const std::string &ssid, 
 {
     bool ret = false;
 
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, true);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
     if (!vo)
@@ -2739,10 +2739,10 @@ void vehicle_order_center_handler::driver_get_last_30_order_number(std::vector<v
 
 void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name, const std::string &stuff_name)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, true);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
     }
     std::string detail_query = "PRI_ID != 0";
     auto contract = opt_user->get_parent<zh_sql_contract>("belong_contract");
@@ -2770,7 +2770,7 @@ void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle
 
 void vehicle_order_center_handler::go_through_plugin_que(std::vector<std::string> &_return, const std::string &ssid)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid);
     if (!user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -2783,10 +2783,10 @@ void vehicle_order_center_handler::go_through_plugin_que(std::vector<std::string
 }
 void vehicle_order_center_handler::cancel_plugin_que(const std::string &ssid)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     g_nc_req_pip.cancel_que();
 }

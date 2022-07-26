@@ -2,10 +2,11 @@
 #define _ZH_RPC_UTIL_H_
 
 #include "../zh_database/zh_db_config.h"
-
+extern std::map<std::string,std::string> g_permisson_description_map;
 #define ZH_RETURN_MSG(_msg)  do {gen_exp e;e.msg = _msg; throw e;} while (0)
 #define ZH_RETURN_UNLOGIN_MSG() ZH_RETURN_MSG("用户未登录")
 #define ZH_RETURN_NO_PRAVILIGE() ZH_RETURN_MSG("无权限")
+#define ZH_RETURN_NEED_PRAVILIGE(_need_target)  do {ZH_RETURN_MSG("无权限，需要" + g_permisson_description_map[_need_target] + "权限");} while(0)
 #define ZH_RETURN_DUP_CONTRACT() ZH_RETURN_MSG("合同已存在")
 #define ZH_RETURN_NO_CONTRACT() ZH_RETURN_MSG("合同不存在")
 #define ZH_RETURN_DUP_STUFF() ZH_RETURN_MSG("物料已存在")

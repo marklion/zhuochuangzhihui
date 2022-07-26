@@ -35,7 +35,7 @@ bool vehicle_management_handler::add_vehicle(const std::string &ssid, const vehi
 {
     bool ret = false;
 
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!opt_user)
     {
         auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vehicle.company_name.c_str());
@@ -81,7 +81,7 @@ bool vehicle_management_handler::add_vehicle(const std::string &ssid, const vehi
 bool vehicle_management_handler::update_vehicle(const std::string &ssid, const vehicle_info &vehicle)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!opt_user)
     {
         auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vehicle.company_name.c_str());
@@ -139,7 +139,7 @@ bool vehicle_management_handler::del_vehicle(const std::string &ssid, const int6
         ZH_RETURN_NO_VEHICLE();
     }
 
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
     if (!opt_user)
     {
         auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", exist_record->company_name.c_str());

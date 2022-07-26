@@ -16,9 +16,9 @@ system_management_handler *system_management_handler::m_inst = nullptr;
 
 bool system_management_handler::reboot_system(const std::string &ssid)
 {
-    if (!zh_rpc_util_get_online_user(ssid, 0))
+    if (!zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false))
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     _exit(-1);
 }
@@ -111,7 +111,7 @@ void system_management_handler::internal_get_device_config(device_config &_retur
 }
 void system_management_handler::get_device_config(device_config &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -124,10 +124,10 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
 {
     bool ret = false;
 
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 0);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     std::ifstream config_file_orig("/conf/device/device_config.json", std::ios::in);
@@ -322,10 +322,10 @@ double system_management_handler::read_scale(const std::string &scale_ip)
 
 void system_management_handler::run_update(const std::string &ssid, const std::string &pack_path)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 0);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     int orig_fd = open(pack_path.c_str(), O_RDONLY);
     int new_fd = open("/root/install.sh", O_WRONLY | O_CREAT | O_TRUNC, 0777);
@@ -368,7 +368,7 @@ void system_management_handler::get_all_scale_brand(std::vector<std::string> &_r
 
 void system_management_handler::get_device_health(std::vector<device_health> &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
     {
         ZH_RETURN_NO_PRAVILIGE();
@@ -426,10 +426,10 @@ bool system_management_handler::led_cast_welcome(const std::string &led_ip)
 
 void system_management_handler::trigger_cap(const std::string &ssid, const std::string &cam_ip)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     zh_hk_manual_trigger(cam_ip);
 }
@@ -460,10 +460,10 @@ bool system_management_handler::is_auto_confirm(const std::string &ssid)
 }
 void system_management_handler::set_auto_confirm(const std::string &ssid, const bool auto_set)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto config = get_cur_config_json();
     config.Delete("auto_confirm");
@@ -475,10 +475,10 @@ void system_management_handler::set_auto_confirm(const std::string &ssid, const 
 
 void system_management_handler::manual_confirm_scale(const std::string &ssid, const std::string &scale_name)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     auto ssm = vehicle_order_center_handler::ssm_map[scale_name];
     if (ssm)
@@ -491,10 +491,10 @@ void system_management_handler::manual_confirm_scale(const std::string &ssid, co
 bool system_management_handler::upload_prompt_image(const std::string &ssid, const std::string &attachment)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     if (attachment.length() > 0)
@@ -526,10 +526,10 @@ void system_management_handler::get_all_prompt_image(std::vector<prompt_image_in
 }
 bool system_management_handler::delete_prompt_image(const std::string &ssid, const int64_t id)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto prompt_img = sqlite_orm::search_record<zh_sql_prompt_image>(id);
     if (prompt_img)
@@ -556,10 +556,10 @@ bool system_management_handler::set_company_address_info(const std::string &ssid
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto config = get_cur_config_json();
@@ -597,10 +597,10 @@ bool system_management_handler::set_register_info(const std::string &ssid, const
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto config = get_cur_config_json();
     auto new_config = neb::CJsonObject();
@@ -621,7 +621,7 @@ bool system_management_handler::set_register_info(const std::string &ssid, const
 void system_management_handler::get_scale_state(std::vector<scale_state_info> &_return, const std::string &ssid)
 {
     auto vch = vehicle_order_center_handler::get_inst();
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid);
     if (vch && user)
     {
         for ( auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++ )
@@ -640,10 +640,10 @@ void system_management_handler::get_scale_state(std::vector<scale_state_info> &_
 }
 void system_management_handler::reset_scale_state(const std::string &ssid, const std::string &scale_name)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
     }
     for (auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++)
     {

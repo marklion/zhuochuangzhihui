@@ -41,10 +41,10 @@ bool add_contract_user(const contract_info &contract, zh_sql_contract &_con_in_s
 bool contract_management_handler::add_contract(const std::string &ssid, const contract_info &contract)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     if (contract_is_dup(contract))
@@ -93,10 +93,10 @@ bool contract_management_handler::add_contract(const std::string &ssid, const co
 bool contract_management_handler::del_contract(const std::string &ssid, const int64_t contract_id)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_contract>(contract_id);
@@ -124,10 +124,10 @@ bool contract_management_handler::del_contract(const std::string &ssid, const in
 bool contract_management_handler::update_contract(const std::string &ssid, const contract_info &contract)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_contract>(contract.id);
@@ -135,7 +135,7 @@ bool contract_management_handler::update_contract(const std::string &ssid, const
     {
         ZH_RETURN_NO_CONTRACT();
     }
-    if (exist_record->credit != contract.credit && !zh_rpc_util_get_online_user(ssid, 100))
+    if (exist_record->credit != contract.credit && !zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, false))
     {
         ZH_RETURN_NO_PRAVILIGE();
     }
@@ -258,14 +258,14 @@ void contract_management_handler::get_history(std::vector<number_change_point> &
     {
         ZH_RETURN_NO_CONTRACT();
     }
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, true);
     if (!user)
     {
         user.reset(zh_rpc_util_get_online_user(ssid, *contract).release());
     }
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
     }
     auto points = contract->get_all_children<zh_sql_balance_point>("belong_contract", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
     for (auto &itr : points)
@@ -306,10 +306,10 @@ bool contract_management_handler::internal_change_balance(const std::string &com
 
 bool contract_management_handler::change_balance(const std::string &ssid, const std::string &company_name, const double new_value, const std::string &reason)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 100);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
     }
     auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
     if (!company)
@@ -322,7 +322,7 @@ bool contract_management_handler::change_balance(const std::string &ssid, const 
 
 void contract_management_handler::get_contract(contract_info &_return, const std::string &ssid, const std::string &company_name)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true);
     auto contract = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
 
     if (!contract)
@@ -350,10 +350,10 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 100);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_contract_stuff_price>(bound_price.id);
@@ -381,10 +381,10 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
 bool contract_management_handler::del_single_contract_price(const std::string &ssid, const int64_t id)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 100);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_contract_stuff_price>(id);
@@ -412,11 +412,11 @@ void contract_management_handler::get_all_single_contract_price(std::vector<cont
 
 void contract_management_handler::export_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name)
 {
-    auto user = zh_rpc_util_get_online_user(ssid,2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, true);
     auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", company_name.c_str());
     if (!user || !company)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
     }
     auto history = company->get_all_children<zh_sql_balance_point>("belong_contract", "datetime(timestamp) >= datetime('%s') AND datetime(timestamp) < datetime('%s')", begin_date.c_str(), end_date.c_str());
     for (auto &itr:history)
