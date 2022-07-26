@@ -26,6 +26,12 @@ public:
     virtual bool del_user(const std::string &ssid, const int64_t user_id);
     virtual bool reset_user(const std::string &ssid, const int64_t user_id, const std::string &password);
     virtual bool change_user_password(const std::string &ssid, const std::string &password);
+    virtual void get_user_permission_target(std::vector<permission_target_info> &_return, const int64_t user_id);
+    virtual bool add_user_permission_target(const std::string &ssid, const int64_t user_id, const permission_target_info &target_info);
+    virtual void del_user_permission_target(const std::string &ssid, const int64_t user_id, const int64_t target_info_id);
+    virtual void get_all_permission_item(std::vector<permission_target_info> &_return);
+    bool pri_add_user_permission_target(const int64_t user_id, const permission_target_info &target_info);
+
 };
 
 #endif // _USER_MANAGEMENT_H_

@@ -20,10 +20,10 @@ bool stuff_is_dup(const stuff_info &stuff)
 bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_info &stuff)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     if (stuff_is_dup(stuff))
@@ -53,10 +53,10 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
 bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff_info &stuff)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_stuff>(stuff.id);
@@ -89,10 +89,10 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
 bool stuff_management_handler::del_stuff(const std::string &ssid, const int64_t id)
 {
     bool ret = false;
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 1);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_stuff>(id);
@@ -239,10 +239,10 @@ std::vector<stuff_change_point> collect_change_point(const std::string &_name, c
 
 void stuff_management_handler::get_change_points_for_range(std::vector<stuff_history> &_return, const std::string &ssid, const std::string &start_date, const std::string &end_date)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto all_stuff = sqlite_orm::search_record_all<zh_sql_stuff>();
     for (auto &itr : all_stuff)
@@ -259,20 +259,20 @@ void stuff_management_handler::get_change_points_for_range(std::vector<stuff_his
 
 void stuff_management_handler::get_last_active(std::string &_return, const std::string &ssid)
 {
-    auto opt_user = zh_rpc_util_get_online_user(ssid, 2);
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true);
     if (!opt_user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     _return = last_active_stuff;
 }
 
 void stuff_management_handler::get_history(std::vector<number_change_point> &_return, const std::string &ssid, const std::string &stuff_name, const int64_t count)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 2);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, true);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
     }
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
     if (!stuff)
@@ -294,10 +294,10 @@ bool stuff_management_handler::change_price(const std::string &ssid, const std::
 {
     bool ret = false;
 
-    auto user = zh_rpc_util_get_online_user(ssid, 100);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
     }
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
     if (!stuff)
@@ -345,10 +345,10 @@ void stuff_management_handler::get_stuff(stuff_info &_return, const std::string 
 bool stuff_management_handler::add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source, const std::string &code)
 {
     bool ret = false;
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == %ld", source_dest_name.c_str(), is_source?1:0);
     if (exist_record)
@@ -378,10 +378,10 @@ void stuff_management_handler::get_all_source_dest(std::vector<stuff_source_dest
 }
 bool stuff_management_handler::del_source_dest(const std::string &ssid, const int64_t id)
 {
-    auto user = zh_rpc_util_get_online_user(ssid, 1);
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
     if (!user)
     {
-        ZH_RETURN_NO_PRAVILIGE();
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>(id);
