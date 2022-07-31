@@ -100,7 +100,48 @@ struct hk_device_timer_param {
     zh_sub_callback_cfg callback_cfg;
     std::string road_ip;
 };
-
+void MessageCallback(LONG lCommand, NET_DVR_ALARMER *pAlarmer, char *pAlarmInfo, DWORD dwBufLen, void *pUser)
+{
+    int i;
+    NET_ITC_STATUS_DETECT_RESULT struAlarmInfo; //状态监测结果结构体
+    memcpy(&struAlarmInfo, pAlarmInfo, sizeof(NET_ITC_STATUS_DETECT_RESULT));
+    switch (lCommand)
+    {
+    case COMM_ITS_GATE_ALARMINFO:
+    {
+        NET_DVR_GATE_ALARMINFO al_info;
+        memcpy(&al_info, pAlarmInfo, sizeof(al_info));
+        break;
+    }
+    case COMM_ITC_STATUS_DETECT_RESULT:
+    {
+        switch (struAlarmInfo.dwStatusType)
+        {
+        case 1: // IO 触发
+        {
+            auto hk_duh = g_device_user_map[pAlarmer->sDeviceIP];
+            if (struAlarmInfo.uStatusParam.struTrigIO.byTriggerIOIndex[1] == 1)
+            {
+                hk_duh.callback_cfg.is_close = true;
+                g_log.log("door is close");
+            }
+            if (struAlarmInfo.uStatusParam.struTrigIO.byTriggerIOIndex[2] == 1)
+            {
+                hk_duh.callback_cfg.is_close = false;
+                g_log.log("door is open");
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    break;
+    default:
+        break;
+    }
+}
+static LONG g_li_handler = -1;
 bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback_cfg)
 {
     bool ret = false;
@@ -110,15 +151,42 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
         auto user_id = NET_DVR_Login_V30(_road_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
         if (user_id >= 0)
         {
+            NET_DVR_IO_INCFG io_cfg = {0};
+            io_cfg.byIoInStatus = 0;
+            io_cfg.dwSize = sizeof(io_cfg);
+            if (!NET_DVR_SetDVRConfig(user_id, NET_DVR_SET_IOINCFG, 2, &io_cfg, sizeof(io_cfg)))
+            {
+                g_log.err("failed to set io cfg:%d", NET_DVR_GetLastError());
+            }
             NET_DVR_SetDVRMessageCallBack_V31(
                 [](LONG lCommand, NET_DVR_ALARMER *pAlarmer, char *pAlarmInfo, DWORD dwBufLen, void *pUser) -> BOOL
                 {
+                    int ev_type = 0;
+                    bool is_close = false;
                     std::string plate_no;
                     std::string cam_ip(pAlarmer->sDeviceIP);
                     switch (lCommand)
                     {
+                    case COMM_ITS_GATE_ALARMINFO:
+                    {
+                        ev_type = 1;
+                        NET_DVR_GATE_ALARMINFO al_info;
+                        memcpy(&al_info, pAlarmInfo, sizeof(al_info));
+                        if (al_info.byExternalDevStatus == DEVICES_STATUS_CLOSED)
+                        {
+                            is_close = true;
+                            g_log.log("door (%s) is close", cam_ip.c_str());
+                        }
+                        if (al_info.byExternalDevStatus == DEVICES_STATUS_OPENED)
+                        {
+                            is_close = false;
+                            g_log.log("door (%s) is open", cam_ip.c_str());
+                        }
+                        break;
+                    }
                     case COMM_UPLOAD_PLATE_RESULT:
                     {
+                        ev_type = 2;
                         NET_DVR_PLATE_RESULT struPlateResult = {0};
                         memcpy(&struPlateResult, pAlarmInfo, sizeof(struPlateResult));
                         g_log.log("车牌号: %s\n", struPlateResult.struPlateInfo.sLicense); //车牌号
@@ -127,6 +195,7 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                     }
                     case COMM_ITS_PLATE_RESULT:
                     {
+                        ev_type = 2;
                         NET_ITS_PLATE_RESULT struITSPlateResult = {0};
                         memcpy(&struITSPlateResult, pAlarmInfo, sizeof(struITSPlateResult));
                         g_log.log("车牌号: %s\n", struITSPlateResult.struPlateInfo.sLicense); //车牌号
@@ -136,20 +205,28 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                     default:
                         break;
                     }
-                    if (plate_no.length() > 2)
+                    auto &hk_duh = g_device_user_map[cam_ip];
+                    if (ev_type == 1)
                     {
-                        plate_no = plate_no.substr(2, plate_no.length() - 2);
+                        hk_duh.callback_cfg.is_close = is_close;
                     }
-                    plate_no = gbk2utf(plate_no);
-                    if (plate_no == "车牌")
+                    else if (ev_type == 2)
                     {
-                        g_log.log("cap no plate no");
-                        return TRUE;
-                    }
-                    auto hk_duh = g_device_user_map[cam_ip];
-                    if (hk_duh.callback_cfg.callback)
-                    {
-                        hk_duh.callback_cfg.callback(plate_no, cam_ip, hk_duh.callback_cfg.pData);
+
+                        if (plate_no.length() > 2)
+                        {
+                            plate_no = plate_no.substr(2, plate_no.length() - 2);
+                        }
+                        plate_no = gbk2utf(plate_no);
+                        if (plate_no == "车牌")
+                        {
+                            g_log.log("cap no plate no");
+                            return TRUE;
+                        }
+                        if (hk_duh.callback_cfg.callback)
+                        {
+                            hk_duh.callback_cfg.callback(plate_no, cam_ip, hk_duh.callback_cfg.pData);
+                        }
                     }
                     return TRUE;
                 },
@@ -236,28 +313,14 @@ struct hk_gate_ctrl_param
     zh_hk_gate_control_cmd cmd;
 };
 
-bool zh_hk_get_cam_IO(const std::string &_nvr_ip, int _io_id)
+bool zh_hk_get_cam_IO(const std::string &_nvr_ip)
 {
     bool ret = false;
 
     auto hk_duh = g_device_user_map[_nvr_ip];
-    if (hk_duh.user_id != -1 && _io_id < MAX_IOIN_NUM)
+    if (hk_duh.user_id != -1)
     {
-        NET_DVR_BARRIERGATE_COND in_param = {0};
-        in_param.byLaneNo = 1;
-        NET_DVR_ENTRANCE_CFG out_cfg = {0};
-        unsigned int status_list[64] = {0};
-        if (NET_DVR_GetDeviceConfig(hk_duh.user_id, NET_DVR_GET_ENTRANCE_PARAMCFG, 1, &in_param, sizeof(in_param), status_list, &out_cfg, sizeof(out_cfg)))
-        {
-            if (out_cfg.byGateSingleIO[_io_id] == 2)
-            {
-                ret = true;
-            }
-        }
-        else
-        {
-            g_log.err("failed to trigger cap:%s, error_code:%d", _nvr_ip.c_str(), NET_DVR_GetLastError());
-        }
+        ret = hk_duh.callback_cfg.is_close;
     }
 
     return ret;
@@ -379,9 +442,19 @@ void __attribute__((constructor)) zh_hk_init(void)
     {
         g_log.err("failed to init hk_lib:%d", NET_DVR_GetLastError());
     }
+
+    // g_li_handler = NET_DVR_StartListen_V30(nullptr, 49914, MessageCallback);
+    if (g_li_handler < 0)
+    {
+        g_log.err("failed to listen hk:%d", NET_DVR_GetLastError());
+    }
 }
 void __attribute__((destructor)) zh_hk_fini(void)
 {
+    if (g_li_handler != -1)
+    {
+        // NET_DVR_StopListen_V30(g_li_handler);
+    }
     NET_DVR_Cleanup();
 }
 void zh_hk_manual_trigger(const std::string &_road_ip)

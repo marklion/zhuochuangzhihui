@@ -66,6 +66,7 @@ struct device_scale_config {
     29:string scale3_nvr_ip,
     30:i64 scale3_channel,
     31:double min_weight = 11,
+    32:bool check_close,
 }
 
 struct device_config {
@@ -149,6 +150,7 @@ service system_management {
     bool set_register_info(1:string ssid, 2:register_config_info register_config) throws (1:gen_exp e),
     list<scale_state_info> get_scale_state(1:string ssid) throws (1:gen_exp e),
     void reset_scale_state(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
+    bool read_cam_io(1:string cam_ip) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -368,6 +370,7 @@ struct vehicle_order_detail {
     16:string call_time,
     17:string err_string,
     18:string call_user_name,
+    19:i64 wait_count,
 }
 
 struct vehicle_order_statistics {

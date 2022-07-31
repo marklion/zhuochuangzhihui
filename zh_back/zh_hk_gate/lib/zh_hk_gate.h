@@ -46,7 +46,7 @@ bool zh_hk_cast_raster_block(const std::string &_led_ip);
 bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_no);
 std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end, const std::string &_user_name = "admin", const std::string &_password = "P@ssw0rd");
 std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name = "admin", const std::string &_password = "P@ssw0rd");
-bool zh_hk_get_cam_IO(const std::string &_nvr_ip, int _io_id);
+bool zh_hk_get_cam_IO(const std::string &_nvr_ip);
 
 
 

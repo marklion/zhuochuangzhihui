@@ -109,6 +109,7 @@ export default {
                 confirmed: false,
                 registered: false,
                 has_called: false,
+                wait_count:0,
             },
 
             show_upload_diag: false,
@@ -147,7 +148,7 @@ export default {
         status: function () {
             var ret = "未排号";
             if (this.cur_vehicle.registered) {
-                ret = '已排号, 等待叫号';
+                ret = '已排号, 等待叫号,前方还有' + this.cur_vehicle.wait_count + '车';
             }
             if (this.cur_vehicle.has_called) {
                 ret = '已叫号, 可以进厂';

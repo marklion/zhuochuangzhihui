@@ -90,6 +90,10 @@
                     <el-descriptions-item label="最低重量">{{single_scale.min_weight}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
                     <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
+                    <el-descriptions-item label="检查关闸称重">
+                        <el-tag v-if="single_scale.check_close" type="success">开启</el-tag>
+                        <el-tag v-else>关闭</el-tag>
+                    </el-descriptions-item>
                     <el-descriptions-item label="磅体1 NVR 用户名">{{single_scale.scale1.username}}</el-descriptions-item>
                     <el-descriptions-item label="磅体1 NVR 密码">{{single_scale.scale1.password}}</el-descriptions-item>
                     <el-descriptions-item label="磅体1 NVR IP">{{single_scale.scale1_nvr_ip}}</el-descriptions-item>
@@ -244,6 +248,9 @@
                     </el-form-item>
                     <el-form-item label="光栅IP-2" prop="raster_ip">
                         <el-input v-model="scale_for_edit.raster_ip[1]" placeholder="请输入光栅IP-2"></el-input>
+                    </el-form-item>
+                    <el-form-item label="检查关闸称重" prop="check_close">
+                        <el-switch v-model="scale_for_edit.check_close"></el-switch>
                     </el-form-item>
                     <el-form-item label="入口打印机IP" prop="entry_printer_ip">
                         <el-input v-model="scale_for_edit.entry_printer_ip" placeholder="请输入入口打印机IP"></el-input>

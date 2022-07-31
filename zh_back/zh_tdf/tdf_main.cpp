@@ -37,6 +37,7 @@ struct tdf_async_data {
 };
 
 static int cur_thread_count = 0;
+static pthread_mutex_t g_thread_pool_lock = PTHREAD_MUTEX_INITIALIZER;
 static void work_thread_main_loop()
 {
     std::cout << "sssss" << std::endl;
@@ -49,7 +50,9 @@ static void work_thread_main_loop()
         {
             sleep(1);
         }
+        pthread_mutex_lock(&g_thread_pool_lock);
         cur_thread_count++;
+        pthread_mutex_unlock(&g_thread_pool_lock);
         std::thread wt(
             [=]()
             {
@@ -58,12 +61,13 @@ static void work_thread_main_loop()
                     pcoming->m_proc(pcoming->m_private, pcoming->m_chrct);
                 }
                 delete pcoming;
+                pthread_mutex_lock(&g_thread_pool_lock);
                 cur_thread_count--;
+                pthread_mutex_unlock(&g_thread_pool_lock);
             });
         wt.detach();
     }
 }
-
 
 class tdf_data;
 class tdf_listen;
@@ -124,7 +128,7 @@ static pthread_mutex_t g_timer_lock;
 
 void tdf_main::close_mq()
 {
-    epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL,  g_mq_main_fd, nullptr);
+    epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, g_mq_main_fd, nullptr);
 }
 tdf_main::tdf_main()
 {

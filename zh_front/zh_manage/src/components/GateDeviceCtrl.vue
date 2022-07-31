@@ -2,7 +2,7 @@
 <div class="gate_device_ctrl_show">
     <el-card>
         <div class="road_block_show">
-            <div>{{entry_status.coming_vehicle?'抓拍车辆:' + entry_status.coming_vehicle:'未抓拍到车辆'}}</div>
+            <div>入口{{entry_close?'已关闸':'未关闸'}}</div>
             <el-row type="flex" :gutter="10" align="center">
                 <el-col :span="4">入口</el-col>
                 <el-col :span="5">
@@ -20,7 +20,7 @@
             </el-row>
         </div>
         <div class="road_block_show">
-            <div>{{exit_status.coming_vehicle?'抓拍车辆:' + exit_status.coming_vehicle:'未抓拍到车辆'}}</div>
+            <div>出口{{exit_close?'已关闸':'未关闸'}}</div>
             <el-row type="flex" :gutter="10" align="center">
                 <el-col :span="4">出口</el-col>
                 <el-col :span="5">
@@ -52,17 +52,13 @@ export default {
     props: {
         entry: String,
         exit: String,
-        entry_led:String,
-        exit_led:String,
+        entry_led: String,
+        exit_led: String,
     },
     data: function () {
         return {
-            entry_status: {
-                coming_vehicle: '',
-            },
-            exit_status: {
-                coming_vehicle: '',
-            },
+            entry_close: false,
+            exit_close: false,
         };
     },
     methods: {
@@ -84,11 +80,11 @@ export default {
         },
         get_road_status: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("system_management", "get_road_status", [vue_this.entry]).then(function (resp) {
-                vue_this.entry_status = resp;
+            vue_this.$call_remote_process("system_management", "read_cam_io", [vue_this.entry]).then(function (resp) {
+                vue_this.entry_close = resp;
             });
-            vue_this.$call_remote_process("system_management", "get_road_status", [vue_this.exit]).then(function (resp) {
-                vue_this.exit_status = resp;
+            vue_this.$call_remote_process("system_management", "read_cam_io", [vue_this.exit]).then(function (resp) {
+                vue_this.exit_close = resp;
             });
         },
         ctrl_gate: function (_cmd, gate_code) {

@@ -716,7 +716,9 @@ void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_retur
     {
         ZH_RETURN_NO_ORDER();
     }
+    auto order_before = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND check_in_timestamp <= %ld AND m_registered == 1 AND status == 1", vo->stuff_name.c_str(), vo->check_in_timestamp);
     make_vehicle_detail_from_sql(_return, *vo);
+    _return.wait_count = order_before.size() - 1;
 }
 
 bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, const bool is_cancel, const std::string &_user_name)
@@ -1126,7 +1128,23 @@ void scale_state_machine::open_scale_timer()
         [](void *_private)
         {
             auto ssm = (scale_state_machine *)_private;
+            bool ready_for_scale = false;
             if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
+            {
+                ready_for_scale = true;
+                if (ssm->bound_scale.check_close)
+                {
+                    if (zh_hk_get_cam_IO(ssm->bound_scale.entry_config.cam_ip) && zh_hk_get_cam_IO(ssm->bound_scale.exit_config.cam_ip))
+                    {
+                        ready_for_scale = true;
+                    }
+                    else
+                    {
+                        ready_for_scale = false;
+                    }
+                }
+            }
+            if (ready_for_scale)
             {
                 // 15848601177
                 auto scale_ret = get_current_weight(ssm->bound_scale.scale_ip, ZH_SCALE_PORT, ssm->bound_scale.scale_brand);

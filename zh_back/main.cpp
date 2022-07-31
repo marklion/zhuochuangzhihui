@@ -58,24 +58,48 @@ std::string make_plain_2_sha1(const std::string &_plain)
 
     return ret;
 }
+void init_user_permissions()
+{
+    prj_permission_config config[] = {
+        {0, "管理员", "管理员可以配置用户，分配权限和其他所有操作"},
+        {1, "操作人员", "操作人员可以进行业务操作"},
+        {2, "观察人员", "观察人员仅可以查看业务数据，无法操作业务"},
+        {3, "外部用户", "外部用户仅可以操作所在公司的派车相关业务"},
+        {100, "财务人员", "只有财务人员才能修改物料价格和公司充值"},
+    };
 
+    for (auto &itr:config)
+    {
+        auto exist_permission = sqlite_orm::search_record<zh_sql_user_permission>("key == '%ld'", itr.key);
+        if (exist_permission)
+        {
+            exist_permission->description = itr.description;
+            exist_permission->name = itr.name;
+            exist_permission->update_record();
+        }
+        else
+        {
+            zh_sql_user_permission tmp;
+            tmp.key = itr.key;
+            tmp.name = itr.name;
+            tmp.description = itr.description;
+            tmp.insert_record();
+        }
+    }
+}
 void init_admin_user()
 {
     std::string admin_phone = "18911992582";
     std::string admin_name = "admin";
     std::string admin_password = make_plain_2_sha1("password");
 
-    auto admin_permission = sqlite_orm::search_record<zh_sql_user_permission>("key == 0");
-    if (admin_permission)
-    {
-        auto exist_admin = admin_permission->get_children<zh_sql_user_info>("permission", "name == '%s'", admin_name.c_str());
+        auto exist_admin = sqlite_orm::search_record<zh_sql_user_info>("name == '%s'", admin_name.c_str());
         if (!exist_admin)
         {
             zh_sql_user_info admin;
             admin.name = admin_name;
             admin.phone = admin_phone;
             admin.password = admin_password;
-            admin.set_parent(*admin_permission, "permission");
             admin.need_change_password = 1;
             admin.insert_record();
             auto umh = user_management_handler::get_inst();
@@ -98,7 +122,6 @@ void init_admin_user()
             tmp.is_read = true;
             umh->pri_add_user_permission_target(exist_admin->get_pri_id(), tmp);
         }
-    }
 }
 
 static void start_checkin_check_timer()
@@ -135,6 +158,7 @@ static void start_checkin_check_timer()
 
 int main(int argc, char const *argv[])
 {
+    init_user_permissions();
     init_admin_user();
 
     std::thread([]
