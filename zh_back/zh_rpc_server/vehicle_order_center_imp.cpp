@@ -559,6 +559,30 @@ bool vehicle_order_center_handler::update_vehicle_order(const std::string &ssid,
     ret = vo->update_record();
     return ret;
 }
+static bool valid_stay_limit(zh_sql_vehicle_order &_order)
+{
+    bool ret = true;
+
+    auto smh = system_management_handler::get_inst();
+    if (smh)
+    {
+        register_config_info rci;
+        smh->get_register_info(rci);
+        if (rci.enabled && rci.leave_limit > 0 && _order.m_cam_time.length() > 0)
+        {
+            auto latest_leave_time = zh_rpc_util_get_time_by_string( _order.m_cam_time) + rci.leave_limit * 60;
+            if (time(nullptr) > latest_leave_time)
+            {
+                auto end_status = zh_sql_order_status::make_end_status();
+                end_status.user_name = "超时自动";
+                _order.push_status(end_status);
+                ret = false;
+            }
+        }
+    }
+
+    return ret;
+}
 static bool vehicle_leave_enough(const std::string &_vehicle_number)
 {
     bool ret = true;
@@ -883,7 +907,10 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
                                         { return true; },
                                         dup_one_order);
     vo->push_status(status, save_hook);
-    recalcu_balance_inventory(*vo, ssid);
+    if (vo->m_cam_time.empty())
+    {
+        recalcu_balance_inventory(*vo, ssid);
+    }
 
     ret = true;
 
@@ -2309,7 +2336,15 @@ void gate_state_machine::gate_cast_reject()
     }
     if (!is_entry)
     {
-        zh_hk_cast_cannot_leave(led_ip, cur_vehicle);
+        if (leave_timeout)
+        {
+            leave_timeout = false;
+            zh_hk_cast_leave_timeout(led_ip, cur_vehicle);
+        }
+        else
+        {
+            zh_hk_cast_cannot_leave(led_ip, cur_vehicle);
+        }
     }
     else
     {
@@ -2357,7 +2392,14 @@ bool gate_state_machine::should_open()
                     }
                     else if (vo->m_weight > 0)
                     {
-                        ret = true;
+                        if (valid_stay_limit(*vo))
+                        {
+                            ret = true;
+                        }
+                        else
+                        {
+                            leave_timeout = true;
+                        }
                     }
                 }
             }
@@ -2828,7 +2870,7 @@ bool vehicle_order_center_handler::record_white_vehicle_stuff(const std::string 
 {
     bool ret = false;
 
-    auto white_vehicle =  sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
+    auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
     if (!white_vehicle)
     {
         ZH_RETURN_NO_VEHICLE();
@@ -2842,7 +2884,7 @@ bool vehicle_order_center_handler::record_white_vehicle_stuff(const std::string 
 
 void vehicle_order_center_handler::get_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number)
 {
-    auto white_vehicle =  sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
+    auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
     if (!white_vehicle)
     {
         ZH_RETURN_NO_VEHICLE();

@@ -129,6 +129,7 @@ public:
     std::string qr_ip;
     int id_reader_timer = -1;
     bool is_entry = false;
+    bool leave_timeout = false;
     tdf_log &get_log()
     {
         return m_log;

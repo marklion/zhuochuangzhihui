@@ -758,6 +758,12 @@ bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no
     async_led_post(_led_ip, hk_led_make_cmd("欢迎光临", _plate_no));
     return true;
 }
+bool zh_hk_cast_leave_timeout(const std::string &_led_ip, const std::string &_plate_no)
+{
+    zh_hk_cast_auto_empty(8, _led_ip);
+    async_led_post(_led_ip, hk_led_make_cmd("场内滞留时间过长，请联系管理员处理", _plate_no));
+    return true;
+}
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no)
 {
     zh_hk_cast_auto_empty(8, _led_ip);

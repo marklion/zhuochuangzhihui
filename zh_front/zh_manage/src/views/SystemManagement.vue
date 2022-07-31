@@ -419,6 +419,9 @@
                             <el-form-item label="最短离场排号间隔">
                                 <el-input v-model="register_time_config.check_in_time"></el-input>
                             </el-form-item>
+                            <el-form-item label="最长离场时间">
+                                <el-input v-model="register_time_config.leave_limit"></el-input>
+                            </el-form-item>
                             <el-form-item>
                                 <el-button type="primary" @click="save_register_info">保存</el-button>
                             </el-form-item>
@@ -513,6 +516,7 @@ export default {
             register_time_config: {
                 pass_time: 0,
                 check_in_time: 0,
+                leave_limit:0,
                 enabled: false,
             },
             auto_confirm: false,
@@ -648,6 +652,7 @@ export default {
                 enabled: true,
                 pass_time: parseInt(vue_this.register_time_config.pass_time),
                 check_in_time: parseInt(vue_this.register_time_config.check_in_time),
+                leave_limit: parseInt(vue_this.register_time_config.leave_limit),
             }]).then(function (resp) {
                 if (resp) {
                     vue_this.get_register_info();

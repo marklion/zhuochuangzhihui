@@ -111,6 +111,7 @@ struct register_config_info {
     1:bool enabled,
     2:i64 pass_time,
     3:i64 check_in_time,
+    4:i64 leave_limit,
 }
 
 struct scale_state_info {

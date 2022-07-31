@@ -589,6 +589,7 @@ void system_management_handler::get_register_info(register_config_info &_return)
         config["register_config"].Get("enable_register", _return.enabled);
         config["register_config"].Get("pass_time", _return.pass_time);
         config["register_config"].Get("check_in_time", _return.check_in_time);
+        config["register_config"].Get("leave_limit", _return.leave_limit);
     }
     else
     {
@@ -609,6 +610,7 @@ bool system_management_handler::set_register_info(const std::string &ssid, const
     new_config.Add("enable_register", register_config.enabled, register_config.enabled);
     new_config.Add("pass_time", register_config.pass_time);
     new_config.Add("check_in_time", register_config.check_in_time);
+    new_config.Add("leave_limit", register_config.leave_limit);
 
     config.Delete("register_config");
     config.Add("register_config", new_config);
