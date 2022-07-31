@@ -30,6 +30,7 @@ public:
     virtual bool add_source_dest(const std::string &ssid, const std::string &source_dest_name, const bool is_source, const std::string &code);
     virtual void get_all_source_dest(std::vector<stuff_source_dest> &_return, const bool is_source);
     virtual bool del_source_dest(const std::string &ssid, const int64_t id);
+    virtual void get_white_list_stuff(std::vector<std::string> &_return);
 };
 
 #endif // _STUFF_MANAGEMENT_H_

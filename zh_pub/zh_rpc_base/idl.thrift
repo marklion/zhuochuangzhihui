@@ -248,6 +248,7 @@ struct stuff_info {
     12:double min_limit,
     13:double max_limit,
     14:string code,
+    15:bool use_for_white_list,
 }
 
 struct stuff_change_point {
@@ -280,6 +281,7 @@ service stuff_management {
     bool add_source_dest(1:string ssid, 2:string source_dest_name, 3:bool is_source, 4:string code) throws (1:gen_exp e),
     list<stuff_source_dest> get_all_source_dest(1:bool is_source) throws (1:gen_exp e),
     bool del_source_dest(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    list<string> get_white_list_stuff() throws (1:gen_exp e),
 }
 
 struct vehicle_info {
@@ -301,6 +303,7 @@ service vehicle_management {
     bool update_vehicle(1:string ssid, 2:vehicle_info vehicle) throws (1:gen_exp e),
     bool del_vehicle(1:string ssid, 2:i64 vehicle_id) throws (1:gen_exp e),
     list<vehicle_info> get_all_vehicle(1:string ssid) throws (1:gen_exp e),
+    list<vehicle_info> get_white_vehicle() throws (1:gen_exp e),
 }
 
 struct order_status_info {
@@ -398,6 +401,7 @@ struct white_record_info {
     3:string date,
     4:string weight,
     5:string group_name,
+    6:string stuff_name,
 }
 
 service vehicle_order_center {
@@ -433,6 +437,8 @@ service vehicle_order_center {
     list<vehicle_order_detail> export_order_by_condition(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name, 5:string stuff_name) throws (1:gen_exp e),
     list<string> go_through_plugin_que(1:string ssid) throws (1:gen_exp e),
     void cancel_plugin_que(1:string ssid) throws (1:gen_exp e),
+    bool record_white_vehicle_stuff(1:string vehicle_number, 2:string stuff_name) throws (1:gen_exp e),
+    string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
 }
 
 service open_api {

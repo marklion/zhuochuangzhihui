@@ -1124,7 +1124,7 @@ void scale_state_machine::open_scale_timer()
     m_log.log("开启定时器");
     manual_confirm_scale = false;
     timer_fd = tdf_main::get_inst().start_timer(
-        2,
+        3,
         [](void *_private)
         {
             auto ssm = (scale_state_machine *)_private;
@@ -1155,7 +1155,7 @@ void scale_state_machine::open_scale_timer()
                 }
                 ssm->trigger_sm();
             }
-            else
+            else if (ssm->m_cur_state->state_name() == "称重")
             {
                 zh_hk_cast_raster_block(ssm->bound_scale.entry_config.led_ip);
                 zh_hk_cast_raster_block(ssm->bound_scale.exit_config.led_ip);
@@ -1245,7 +1245,7 @@ bool scale_state_machine::assume_stable_considering_manual(double _weight)
 bool scale_state_machine::scale_stable()
 {
     bool ret = false;
-    if (continue_weight.size() > 4)
+    if (continue_weight.size() > 2)
     {
         auto cur_weight = [=]() -> double
         {
@@ -1888,6 +1888,20 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         tmp.date = zh_rpc_util_get_timestring();
         tmp.vehicle_number = bound_vehicle_number;
         tmp.weight = fin_weight;
+        auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("main_vehicle_number == '%s' AND in_white_list != 0", bound_vehicle_number.c_str());
+        if (white_vehicle)
+        {
+            if (white_vehicle->use_date != zh_rpc_util_get_datestring())
+            {
+                white_vehicle->use_date = "";
+                white_vehicle->use_stuff = "";
+                white_vehicle->update_record();
+            }
+            else
+            {
+                tmp.use_stuff = white_vehicle->use_stuff;
+            }
+        }
         tmp.insert_record();
     }
     std::string printer_ip;
@@ -2735,6 +2749,7 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
         tmp.date = itr.date;
         tmp.vehicle_number = itr.vehicle_number;
         tmp.weight = zh_double2string_reserve2(itr.weight);
+        tmp.stuff_name = itr.use_stuff;
         auto vmr = sqlite_orm::search_record<zh_sql_vehicle>("main_vehicle_number == '%s'", tmp.vehicle_number.c_str());
         if (vmr)
         {
@@ -2807,4 +2822,39 @@ void vehicle_order_center_handler::cancel_plugin_que(const std::string &ssid)
         ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
     g_nc_req_pip.cancel_que();
+}
+
+bool vehicle_order_center_handler::record_white_vehicle_stuff(const std::string &vehicle_number, const std::string &stuff_name)
+{
+    bool ret = false;
+
+    auto white_vehicle =  sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
+    if (!white_vehicle)
+    {
+        ZH_RETURN_NO_VEHICLE();
+    }
+    white_vehicle->use_stuff = stuff_name;
+    white_vehicle->use_date = zh_rpc_util_get_datestring();
+    ret = white_vehicle->update_record();
+
+    return ret;
+}
+
+void vehicle_order_center_handler::get_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number)
+{
+    auto white_vehicle =  sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
+    if (!white_vehicle)
+    {
+        ZH_RETURN_NO_VEHICLE();
+    }
+    if (white_vehicle->use_date != zh_rpc_util_get_datestring())
+    {
+        white_vehicle->use_stuff = "";
+        white_vehicle->use_date = "";
+        white_vehicle->update_record();
+    }
+    else
+    {
+        _return = white_vehicle->use_stuff;
+    }
 }

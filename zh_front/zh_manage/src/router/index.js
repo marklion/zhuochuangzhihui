@@ -132,6 +132,16 @@ const routes = [
       no_tabbar: true,
     },
   },
+  {
+    path: '/mobile/white_scale',
+    name: 'WhiteScale',
+    component: () => import('../views/WhiteScale.vue'),
+    meta: {
+      mobile: true,
+      no_need_login: true,
+      no_tabbar: true,
+    },
+  },
 ]
 
 const router = new VueRouter({

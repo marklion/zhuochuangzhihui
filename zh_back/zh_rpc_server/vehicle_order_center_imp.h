@@ -217,6 +217,8 @@ public:
     virtual void export_order_by_condition(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &company_name, const std::string &stuff_name);
     virtual void go_through_plugin_que(std::vector<std::string> &_return, const std::string &ssid);
     virtual void cancel_plugin_que(const std::string &ssid);
+    virtual bool record_white_vehicle_stuff(const std::string &vehicle_number, const std::string &stuff_name);
+    virtual void get_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

@@ -174,6 +174,7 @@ public:
     double min_limit = 45;
     double max_limit = 49.5;
     std::string code;
+    long use_for_white_list = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -187,6 +188,7 @@ public:
         ret.push_back(sqlite_orm_column("min_limit", sqlite_orm_column::REAL, &min_limit));
         ret.push_back(sqlite_orm_column("max_limit", sqlite_orm_column::REAL, &max_limit));
         ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
+        ret.push_back(sqlite_orm_column("use_for_white_list", sqlite_orm_column::INTEGER, &use_for_white_list));
 
         return ret;
     }
@@ -229,6 +231,8 @@ public:
     std::string group_name;
     long in_white_list = 0;
     double max_count = 35;
+    std::string use_stuff;
+    std::string use_date;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -241,6 +245,8 @@ public:
         ret.push_back(sqlite_orm_column("group_name", sqlite_orm_column::STRING, &group_name));
         ret.push_back(sqlite_orm_column("in_white_list", sqlite_orm_column::INTEGER, &in_white_list));
         ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
+        ret.push_back(sqlite_orm_column("use_stuff", sqlite_orm_column::STRING, &use_stuff));
+        ret.push_back(sqlite_orm_column("use_date", sqlite_orm_column::STRING, &use_date));
 
         return ret;
     }
@@ -660,12 +666,14 @@ public:
     std::string vehicle_number;
     std::string date;
     double weight = 0;
+    std::string use_stuff;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
         ret.push_back(sqlite_orm_column("vehicle_number", sqlite_orm_column::STRING, &vehicle_number));
         ret.push_back(sqlite_orm_column("date", sqlite_orm_column::STRING, &date));
         ret.push_back(sqlite_orm_column("weight", sqlite_orm_column::REAL, &weight));
+        ret.push_back(sqlite_orm_column("use_stuff", sqlite_orm_column::STRING, &use_stuff));
         return ret;
     }
 

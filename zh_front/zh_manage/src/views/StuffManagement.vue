@@ -50,6 +50,11 @@
                     </template>
                 </el-table-column>
 
+                <el-table-column label="用于白名单" width="180px">
+                    <template slot-scope="scope">
+                        {{scope.row.use_for_white_list?'是':'否'}}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="min_limit" label="最小装车量" width="120px">
                 </el-table-column>
                 <el-table-column prop="max_limit" label="最大装车量" width="120px">
@@ -176,6 +181,10 @@
             </el-form-item>
             <el-form-item label="需要矿(厂)发净重" prop="inventory">
                 <el-switch v-model="focus_stuff.need_enter_weight" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </el-form-item>
+            <el-form-item label="用于白名单" prop="use_for_white_list">
+                <el-switch v-model="focus_stuff.use_for_white_list" active-color="#13ce66" inactive-color="#ff4949">
                 </el-switch>
             </el-form-item>
             <el-form-item label="手动称重" prop="inventory">

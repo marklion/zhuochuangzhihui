@@ -11,10 +11,13 @@
         <el-col :span="4">
             <el-input v-model="search_group" placeholder="过滤分组"></el-input>
         </el-col>
-        <el-col :span="6">
-            {{record_need_show.length}}车, 共计{{vehicle_total_count}}吨.
+        <el-col :span="4">
+            <el-input v-model="search_stuff" placeholder="过滤物料"></el-input>
         </el-col>
         <el-col :span="4">
+            {{record_need_show.length}}车, 共计{{vehicle_total_count}}吨.
+        </el-col>
+        <el-col :span="2">
             <table-import-export export_name="白名单称重导出表.xlsx" :export_table="record_need_show" :item_name_map="col_map()" :no_need_import="true"></table-import-export>
         </el-col>
     </el-row>
@@ -26,6 +29,8 @@
         <el-table-column label="日期" width="250px" prop="date">
         </el-table-column>
         <el-table-column label="分组名" width="250px" prop="group_name">
+        </el-table-column>
+        <el-table-column label="物料" width="250px" prop="stuff_name">
         </el-table-column>
         <el-table-column label="重量" width="250px" prop="weight">
         </el-table-column>
@@ -42,6 +47,7 @@ export default {
         return {
             search_vehicle: '',
             search_group: '',
+            search_stuff: '',
             begin_date: new Date(new Date().setDate(new Date().getDate() - 7)),
             end_date: new Date(),
             record: [],
@@ -58,6 +64,9 @@ export default {
                     },
                     date: {
                         text: '日期'
+                    },
+                    stuff_name: {
+                        text: '物料'
                     },
                 }
                 return ret;
@@ -92,6 +101,15 @@ export default {
                 tmp_ret = [];
                 ret.forEach(element => {
                     if (PinyinMatch.match(element.group_name, this.search_group)) {
+                        tmp_ret.push(element);
+                    }
+                });
+                ret = tmp_ret;
+            }
+            if (this.search_stuff) {
+                tmp_ret = [];
+                ret.forEach(element => {
+                    if (PinyinMatch.match(element.group_name, this.search_stuff)) {
                         tmp_ret.push(element);
                     }
                 });

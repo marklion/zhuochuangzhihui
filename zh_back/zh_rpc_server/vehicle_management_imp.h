@@ -20,6 +20,7 @@ public:
     virtual bool update_vehicle(const std::string &ssid, const vehicle_info &vehicle);
     virtual bool del_vehicle(const std::string &ssid, const int64_t vehicle_id);
     virtual void get_all_vehicle(std::vector<vehicle_info> &_return, const std::string &ssid);
+    virtual void get_white_vehicle(std::vector<vehicle_info> &_return);
 };
 
 #endif // _VEHICLE_MANAGEMENT_IMP_H_

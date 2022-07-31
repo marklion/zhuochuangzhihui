@@ -41,6 +41,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.min_limit = stuff.min_limit;
     tmp.max_limit = stuff.max_limit;
     tmp.code = stuff.code;
+    tmp.use_for_white_list = stuff.use_for_white_list;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -77,6 +78,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->max_limit = stuff.max_limit;
     exist_record->min_limit = stuff.min_limit;
     exist_record->code = stuff.code;
+    exist_record->use_for_white_list = stuff.use_for_white_list;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -157,6 +159,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.max_limit = itr.max_limit;
         tmp.min_limit = itr.min_limit;
         tmp.code = itr.code;
+        tmp.use_for_white_list = itr.use_for_white_list;
 
         _return.push_back(tmp);
     }
@@ -392,4 +395,13 @@ bool stuff_management_handler::del_source_dest(const std::string &ssid, const in
     exist_record->remove_record();
 
     return true;
+}
+
+void stuff_management_handler::get_white_list_stuff(std::vector<std::string> &_return)
+{
+    auto stuffs = sqlite_orm::search_record_all<zh_sql_stuff>("use_for_white_list != 0");
+    for (auto &itr:stuffs)
+    {
+        _return.push_back(itr.name);
+    }
 }

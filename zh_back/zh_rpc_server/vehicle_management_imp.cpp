@@ -188,3 +188,14 @@ void vehicle_management_handler::get_all_vehicle(std::vector<vehicle_info> &_ret
         _return.push_back(tmp);
     }
 }
+
+void vehicle_management_handler:: get_white_vehicle(std::vector<vehicle_info> &_return)
+{
+    auto vehicles = sqlite_orm::search_record_all<zh_sql_vehicle>("in_white_list != 0");
+    for (auto &itr:vehicles)
+    {
+        vehicle_info tmp;
+        tmp.main_vehicle_number = itr.main_vehicle_number;
+        _return.push_back(tmp);
+    }
+}

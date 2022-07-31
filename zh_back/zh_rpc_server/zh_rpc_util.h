@@ -27,6 +27,6 @@ extern std::map<std::string,std::string> g_permisson_description_map;
 struct zh_sub_callback_cfg {
     void *pData = nullptr;
     void (*callback)(const std::string &, const std::string &, void *);
-    bool is_close = false;
+    bool is_close = true;
 };
 #endif // _ZH_RPC_UTIL_H_
