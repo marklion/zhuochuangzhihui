@@ -29,6 +29,11 @@ public:
     virtual bool external_trigger_gate_qr(const std::string &road_ip, const std::string &qr_code);
     virtual bool external_trigger_scale_qr(const std::string &scale_ip, const std::string &qr_code, const std::string &scale_name);
     virtual void get_video(std::string &_return, const std::string &nvr_ip, const int64_t channel_id, const std::string &start_time, const std::string &stop_time);
+    virtual void get_all_video_path(std::vector<video_param> &_return);
+    virtual bool add_video_path(const std::string &ssid, const video_param &_video_param);
+    virtual void del_video_path(const std::string &ssid, const int64_t id);
+    virtual bool set_video_path(const std::string &ssid, const std::string &_video_path);
+    virtual void stop_video(const std::string& ssid);
 };
 
 #endif // _OPEN_API_IMP_H_

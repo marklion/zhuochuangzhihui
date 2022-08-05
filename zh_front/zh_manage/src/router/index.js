@@ -28,6 +28,10 @@ const routes = [
     path: '/stuff_management',
     name: 'StuffManagement',
     component: () => import('../views/StuffManagement.vue')
+  },{
+    path: '/video_stream',
+    name: 'VideoStream',
+    component: () => import('../views/VideoStream.vue')
   },
   {
     path: '/vehicle_management',

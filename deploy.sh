@@ -35,12 +35,13 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 131`
+    line=`expr $line - 132`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
     /conf/change_base_url.sh ${BASE_URL} /conf/frpc.ini
     [ "${BASE_URL}" != "" ] && frpc -c /conf/frpc.ini &
+    cp /conf/ngx_http_flv_live_module.so /lib/nginx/modules/
     nginx -c /conf/nginx.conf
     service cups start
     pushd /zh_rest_node

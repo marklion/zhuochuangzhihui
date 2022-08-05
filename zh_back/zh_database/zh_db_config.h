@@ -725,4 +725,22 @@ public:
     }
 };
 
+class zh_sql_video_path:public sql_tree_base{
+public:
+    std::string name;
+    std::string path;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("path", sqlite_orm_column::STRING, &path));
+        return ret;
+    }
+
+    virtual std::string table_name()
+    {
+        return "video_path_table";
+    }
+};
+
 #endif // _ZH_DB_CONFIG_H_

@@ -442,6 +442,12 @@ service vehicle_order_center {
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
 }
 
+struct video_param{
+    1:string name,
+    2:string path,
+    3:i64 id,
+}
+
 service open_api {
     bool vehicle_come(1:string plateNo, 2:string road) throws (1:gen_exp e),
     bool vehicle_leave(1:string plateNo, 2:string road) throws (1:gen_exp e),
@@ -452,6 +458,11 @@ service open_api {
     bool external_trigger_gate_qr(1:string road_ip, 2:string qr_code) throws (1:gen_exp e),
     bool external_trigger_scale_qr(1:string scale_ip, 2:string qr_code, 3:string scale_name) throws (1:gen_exp e),
     string get_video(1:string nvr_ip, 2:i64 channel_id, 3:string start_time, 4:string stop_time) throws (1:gen_exp e),
+    list<video_param> get_all_video_path() throws (1:gen_exp e),
+    bool add_video_path(1:string ssid, 2:video_param _video_param) throws (1:gen_exp e),
+    void del_video_path(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    bool set_video_path(1:string ssid, 2:string video_path) throws (1:gen_exp e),
+    void stop_video(1:string ssid) throws (1:gen_exp e),
 }
 
 service plugin_management {
