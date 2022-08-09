@@ -15,15 +15,19 @@ int main(int argc, char **argv)
     std::string user_name;
     std::string password;
     std::string verify_code;
+    std::string vehicle_nubmer;
+    std::string p_weight;
     bool need_verify_code = false;
     using namespace clipp;
     auto cli = ((command("login").set(cmd) & (required("-g").set(need_verify_code) | required("-u") & value("username", user_name) & required("-p") & value("password", password) & required("-v") & value("verify_code", verify_code))) |
                 (command("get").set(cmd) & required("-k") & value("json key", key)) |
-                (command("set").set(cmd) & required("-k") & value("json key", key)  & value("json value", json_string) & option("-o").set(json_obj)) |
+                (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
                 command("init").set(cmd) |
                 command("refresh").set(cmd) |
+                command("enabled").set(cmd) |
                 command("tids").set(cmd) |
                 (command("finish").set(cmd) & value("req_json", json_string)) |
+                (command("p_weight").set(cmd) & value("vehicle_number", vehicle_nubmer) & value("p_weight", p_weight)) |
                 (command("print").set(cmd) & value("req_json", json_string)));
     if (!parse(argc, argv, cli))
     {
@@ -112,6 +116,20 @@ int main(int argc, char **argv)
     {
         zh_ordos_ticket_refresh();
         iret = 0;
+    }
+    else if (cmd == "enabled")
+    {
+        if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
+        {
+            iret = 0;
+        }
+    }
+    else if (cmd == "p_weight")
+    {
+        if (zh_ordos_ticket_p_weight(vehicle_nubmer, p_weight))
+        {
+            iret = 0;
+        }
     }
 
     return iret;

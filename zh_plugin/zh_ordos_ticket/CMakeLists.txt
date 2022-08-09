@@ -14,4 +14,4 @@ aux_source_directory(../../zh_back/zh_tdf TDF_SRC)
 add_library(zh_ordos_ticket STATIC ${API_SRC} ${PUB_SRC} ${TDF_SRC})
 add_executable(zh_ordos_ticket_plugin ${PLUGIN_SRC})
 
-target_link_libraries(zh_ordos_ticket_plugin zh_ordos_ticket)
+target_link_libraries(zh_ordos_ticket_plugin zh_ordos_ticket pthread rt)

@@ -7,6 +7,7 @@
 #include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
 
+static tdf_log g_log("ordos_ticket_audit", "/plugin/audit.log", "/plugin/audit.log");
 void zh_ordos_ticket_order_finish(const std::string &_msg)
 {
     std::cout << "proc order finish,msg:" << _msg << std::endl;
@@ -23,6 +24,8 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
     cli.set_bearer_token_auth(config("token").c_str());
     httplib::Headers ref = {{"Referer", config("remote_url") + "/view/access_process/gross_weight"}, {"Origin", config("remote_url")}};
     cli.set_default_headers(ref);
+
+    g_log.log("send req to ordos_ticket:%s,req:%s", _url.c_str(), _req.c_str());
     auto res = cli.Get(_url.c_str());
     if (_req.length() > 0)
     {
@@ -39,6 +42,7 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
         {
             std::cerr << res->body << std::endl;
         }
+        g_log.log("recv from ordos_ticket:%s", res_body.ToFormattedString().c_str());
         auto token = res->get_header_value("Token");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "token", token);
     }
@@ -78,7 +82,7 @@ static void zh_ordos_fetch_basic()
     basic_config.AddEmptySubArray("commonlyDestinations");
     auto all_location = zh_ordos_req_with_token("/getFilterLocations");
     auto location_config = neb::CJsonObject(all_location)["locations"];
-    for (auto i =0; i <  location_config.GetArraySize(); i++)
+    for (auto i = 0; i < location_config.GetArraySize(); i++)
     {
         neb::CJsonObject tmp;
         tmp.Add("DestinationID", location_config[i]("ID"));
@@ -126,9 +130,9 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
 {
     bool ret = false;
     neb::CJsonObject print_req(_msg);
-    //for debug
-    // auto orig_url = zh_ordos_ticket_get_config()("remote_url");
-    // zh_ordos_set_config("remote_url", "https://www.fastmock.site/mock/34e68b17ea9b4e8b3d37f02809fed8af/thirdParty");
+    // for debug
+    //  auto orig_url = zh_ordos_ticket_get_config()("remote_url");
+    //  zh_ordos_set_config("remote_url", "https://www.fastmock.site/mock/34e68b17ea9b4e8b3d37f02809fed8af/thirdParty");
     auto gross_info = neb::CJsonObject(_msg);
     neb::CJsonObject curb_weight;
 
@@ -153,13 +157,13 @@ bool zh_ordos_ticket_print_ticket(const std::string &_msg)
 
     zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString());
     zh_ordos_req_with_token("/vehicles/supervisory_gross_weight", gross_info.ToString());
-    //for debug
-    // zh_ordos_set_config("remote_url", orig_url);
+    // for debug
+    //  zh_ordos_set_config("remote_url", orig_url);
     auto ticket_number = print_req("WarehouseDetail");
 
-    //for debug
-    // auto prev_number = atol(ticket_number.substr(1, ticket_number.length() - 1).c_str()) - 1;
-    // ticket_number = ticket_number.substr(0, 1) + std::to_string(prev_number);
+    // for debug
+    //  auto prev_number = atol(ticket_number.substr(1, ticket_number.length() - 1).c_str()) - 1;
+    //  ticket_number = ticket_number.substr(0, 1) + std::to_string(prev_number);
     neb::CJsonObject config(zh_plugin_conf_get_config(PLUGIN_CONF_FILE));
 
     std::string set_print_cmd = "lpadmin -x rp;lpadmin -p rp -E -v '" + config("device_uri") + "' && lpadmin -d rp";
@@ -244,4 +248,23 @@ void zh_ordos_ticket_refresh()
     {
         zh_ordos_fetch_basic();
     }
+}
+
+bool zh_ordos_ticket_p_weight(const std::string &_vehicle_number, const std::string &_p_weight)
+{
+    bool ret = false;
+
+    neb::CJsonObject curb_weight;
+
+    curb_weight.Add("VehicleNum", _vehicle_number);
+    curb_weight.Add("CurbWeight", _p_weight);
+    curb_weight.Add("Axes", "6");
+    curb_weight.Add("GPS", zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("gps"));
+
+    if (zh_ordos_req_with_token("/vehicles/curb_weight", curb_weight.ToString()).length() > 0)
+    {
+        ret = true;
+    }
+
+    return ret;
 }

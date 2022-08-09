@@ -3,6 +3,7 @@ const app = express();
 const port = 9098;
 const thrift = require('thrift');
 const zh_rpc_open_api= require('./gen_code/open_api')
+const zh_rpc_vehicle_order_center = require('./gen_code/vehicle_order_center')
 'use strict';
 
 const fs = require('fs');
@@ -29,7 +30,23 @@ function request_rpc(service_name, process_name, params) {
     });
 }
 
-app.post('/zh_rest/vehicle_event', async (req, res)=>{
+app.get('/zh_rest/vehicle_info/:order_number', async (req, res) => {
+    try {
+        var resp = await request_rpc('vehicle_order_center', 'get_order_detail', ['', req.params.order_number]);
+        res.send({
+            main_vehicle_number: resp.basic_info.main_vehicle_number,
+            stuff_name: resp.basic_info.stuff_name,
+            company_name: resp.basic_info.company_name,
+            p_weight: resp.basic_info.p_weight.toFixed(2),
+            m_weight: resp.basic_info.m_weight.toFixed(2),
+            j_weight: (resp.basic_info.m_weight - resp.basic_info.p_weight).toFixed(2),
+        });
+    } catch (error) {
+        res.send({ error: error })
+    }
+});
+
+app.post('/zh_rest/vehicle_event', async (req, res) => {
     var ret = { err_msg: '无权限' };
     try {
         for (let i in req.body.params.events) {
@@ -42,8 +59,7 @@ app.post('/zh_rest/vehicle_event', async (req, res)=>{
                     ret.err_msg = "";
                 }
             }
-            if ((element.eventType == 771760131 && element.data.eventCmd == 3) || (element.eventType == 771760134 && element.data.eventCmd == 4))
-            {
+            if ((element.eventType == 771760131 && element.data.eventCmd == 3) || (element.eventType == 771760134 && element.data.eventCmd == 4)) {
                 var road_code = element.data.roadwayIndex;
                 var plateNo = element.data.plateNo;
                 var resp = await request_rpc("open_api", 'vehicle_leave', [plateNo, road_code]);

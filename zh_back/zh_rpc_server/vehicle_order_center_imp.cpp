@@ -1499,6 +1499,49 @@ struct zh_rest_api_req_pipe
     }
 };
 static zh_rest_api_req_pipe g_nc_req_pip;
+static bool push_req_to_ordos_ticket(zh_sql_vehicle_order &_order)
+{
+    bool ret = true;
+
+    if (_order.status < 3)
+    {
+        g_nc_req_pip.push_req(
+            zh_rest_api_meta(
+                neb::CJsonObject(),
+                _order.order_number,
+                [](const neb::CJsonObject &, const std::string &_order_number) -> bool
+                {
+                    sleep(1);
+                    bool push_p_ret = false;
+                    auto pmh = plugin_management_handler::get_inst();
+                    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", _order_number.c_str());
+                    if (vo && pmh)
+                    {
+                        std::string std_out;
+                        std::string std_err;
+                        pmh->zh_plugin_run_plugin(
+                            "p_weight " +
+                                vo->main_vehicle_number + " " +
+                                zh_double2string_reserve2(vo->p_weight),
+                            "zh_ordos_ticket", std_out, std_err);
+                        if (std_err.length() > 0)
+                        {
+                            vo->err_string = "外挂过皮失败：" + std_err;
+                        }
+                        else
+                        {
+                            push_p_ret = true;
+                            vo->err_string = "";
+                        }
+                        vo->update_record();
+
+                        return push_p_ret;
+                    }
+                }));
+    }
+
+    return ret;
+}
 static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nvr_ip, int _nvr_channel, const std::string &_username, const std::string &_password)
 {
     bool ret = true;
@@ -1803,6 +1846,14 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                     if (company)
                     {
                         ret = ret && push_req_to_myt(_order, bound_scale.scale2_nvr_ip, bound_scale.scale2_channel, bound_scale.scale2.username, bound_scale.scale2.password);
+                    }
+                }
+                if (plugin_is_installed("zh_ordos_ticket"))
+                {
+                    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == 1", _order.company_name.c_str());
+                    if (company)
+                    {
+                        ret = ret && push_req_to_ordos_ticket(_order);
                     }
                 }
                 _order.update_record();
