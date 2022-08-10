@@ -131,14 +131,15 @@
             <el-table :data="all_customer_stuff_price" style="width: 100%" stripe>
                 <el-table-column type="index" label="编号" width="50px">
                 </el-table-column>
-                <el-table-column prop="customer_name" label="客户名称" width="120px">
+                <el-table-column prop="customer_name" label="客户名称" width="320px">
                 </el-table-column>
                 <el-table-column prop="stuff_name" label="物料名称" width="120px">
                 </el-table-column>
                 <el-table-column prop="price" label="单价" width="120px">
                 </el-table-column>
-                <el-table-column label="操作" width="220px">
+                <el-table-column label="操作" width="320px">
                     <template slot-scope="scope">
+                        <el-button type="text" size="mini" @click="show_single_stuff_price_history(scope.row)" class="el-icon-s-data">修改历史</el-button>
                         <el-button type="warning" size="mini" @click="open_customer_price_diag(scope.row, false)">修改</el-button>
                         <el-button type="danger" size="mini" @click="del_customer_stuff_price(scope.row)">删除</el-button>
                     </template>
@@ -261,6 +262,7 @@ export default {
                 is_source: false,
             },
             price_focus_stuff: '',
+            price_focus_single_id: 0,
             price_history: [],
             price_history_load_end: false,
             price_history_loading: false,
@@ -414,22 +416,29 @@ export default {
         open_price_history_diag: function () {
             this.$refs.lazy_load.check();
         },
-        get_price_history: function () {
+        get_price_history: async function () {
             var vue_this = this;
+            var resp = [];
             if (vue_this.price_focus_stuff) {
-                vue_this.$call_remote_process("stuff_management", "get_history", [vue_this.$cookies.get("zh_ssid"), vue_this.price_focus_stuff, vue_this.price_history.length]).then(function (resp) {
-                    vue_this.price_history_loading = false;
-                    resp.forEach((element) => {
-                        vue_this.price_history.push(element)
-                    });
-                    if (resp.length < 10) {
-                        vue_this.price_history_load_end = true;
-                    }
+                if (vue_this.price_focus_single_id != 0) {
+                    resp = await vue_this.$call_remote_process("contract_management", "get_single_price_history", [vue_this.$cookies.get("zh_ssid"), vue_this.price_focus_single_id, vue_this.price_history.length]);
+                } else {
+                    resp = await vue_this.$call_remote_process("stuff_management", "get_history", [vue_this.$cookies.get("zh_ssid"), vue_this.price_focus_stuff, vue_this.price_history.length]);
+                }
+                resp.forEach((element) => {
+                    vue_this.price_history.push(element)
                 });
-
+                if (resp.length < 10) {
+                    vue_this.price_history_load_end = true;
+                }
             } else {
                 vue_this.price_history_load_end = true;
             }
+        },
+        show_single_stuff_price_history: function (_single_price) {
+            this.price_focus_stuff = _single_price.stuff_name;
+            this.price_focus_single_id = _single_price.id;
+            this.show_price_history_diag = true;
         },
         show_price_history: function (_stuff) {
             this.price_focus_stuff = _stuff.name;
@@ -437,6 +446,7 @@ export default {
         },
         close_price_history_diag: function () {
             this.price_focus_stuff = '';
+            this.price_focus_single_id = 0;
             this.price_history = [];
             this.price_history_load_end = false;
             this.price_history_loading = false;

@@ -1969,16 +1969,9 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("main_vehicle_number == '%s' AND in_white_list != 0", bound_vehicle_number.c_str());
         if (white_vehicle)
         {
-            if (white_vehicle->use_date != zh_rpc_util_get_datestring())
-            {
-                white_vehicle->use_date = "";
-                white_vehicle->use_stuff = "";
-                white_vehicle->update_record();
-            }
-            else
-            {
-                tmp.use_stuff = white_vehicle->use_stuff;
-            }
+            tmp.use_stuff = white_vehicle->use_stuff;
+            white_vehicle->use_stuff = "";
+            white_vehicle->update_record();
         }
         tmp.insert_record();
     }
@@ -2616,7 +2609,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
         }
         if (ret.empty())
         {
-            auto vw = sqlite_orm::search_record<zh_sql_vehicle>("(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1", _id_no.c_str(), _vehicle_number.c_str());
+            auto vw = sqlite_orm::search_record<zh_sql_vehicle>("(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1 AND use_stuff != ''", _id_no.c_str(), _vehicle_number.c_str());
             if (vw)
             {
                 ret = vw->main_vehicle_number;
@@ -2940,14 +2933,5 @@ void vehicle_order_center_handler::get_white_vehicle_stuff(std::string &_return,
     {
         ZH_RETURN_NO_VEHICLE();
     }
-    if (white_vehicle->use_date != zh_rpc_util_get_datestring())
-    {
-        white_vehicle->use_stuff = "";
-        white_vehicle->use_date = "";
-        white_vehicle->update_record();
-    }
-    else
-    {
-        _return = white_vehicle->use_stuff;
-    }
+    _return = white_vehicle->use_stuff;
 }

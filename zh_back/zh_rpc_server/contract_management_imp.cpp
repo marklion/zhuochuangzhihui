@@ -357,9 +357,18 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
     }
 
     auto exist_record = sqlite_orm::search_record<zh_sql_contract_stuff_price>(bound_price.id);
+    zh_sql_single_stuff_price_point tmp;
     if (!exist_record)
     {
         exist_record.reset(new zh_sql_contract_stuff_price());
+    }
+    else
+    {
+        tmp.change_value = bound_price.price - exist_record->price;
+        tmp.new_value = bound_price.price;
+        tmp.reason = "";
+        tmp.timestamp = zh_rpc_util_get_timestring();
+        tmp.set_parent(*exist_record, "belong_price");
     }
     if (exist_record)
     {
@@ -369,6 +378,7 @@ bool contract_management_handler::add_single_contract_price(const std::string &s
         if (exist_record->get_pri_id() > 0)
         {
             ret = exist_record->update_record();
+            tmp.insert_record();
         }
         else
         {
@@ -419,7 +429,31 @@ void contract_management_handler::export_history(std::vector<number_change_point
         ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
     }
     auto history = company->get_all_children<zh_sql_balance_point>("belong_contract", "datetime(timestamp) >= datetime('%s') AND datetime(timestamp) < datetime('%s')", begin_date.c_str(), end_date.c_str());
-    for (auto &itr:history)
+    for (auto &itr : history)
+    {
+        number_change_point tmp;
+        tmp.change_value = itr.change_value;
+        tmp.new_value = itr.new_value;
+        tmp.reason = itr.reason;
+        tmp.timestamp = itr.timestamp;
+        _return.push_back(tmp);
+    }
+}
+
+void contract_management_handler::get_single_price_history(std::vector<number_change_point> &_return, const std::string &ssid, const int64_t single_id, const int64_t count)
+{
+    auto single_price = sqlite_orm::search_record<zh_sql_contract_stuff_price>(single_id);
+    if (!single_price)
+    {
+        ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_CASH, true);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_CASH);
+    }
+    auto points = single_price->get_all_children<zh_sql_single_stuff_price_point>("belong_price", "PRI_ID != 0 ORDER BY PRI_ID DESC LIMIT 10 OFFSET %ld", count);
+    for (auto &itr : points)
     {
         number_change_point tmp;
         tmp.change_value = itr.change_value;

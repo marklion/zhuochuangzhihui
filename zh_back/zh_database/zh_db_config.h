@@ -704,6 +704,18 @@ public:
     }
 };
 
+class zh_sql_single_stuff_price_point:public zh_sql_history_data {
+public:
+    zh_sql_single_stuff_price_point() {
+        add_parent_type<zh_sql_contract_stuff_price>("belong_price");
+    }
+
+    virtual std::string table_name()
+    {
+        return "single_stuff_price_point_table";
+    }
+};
+
 class zh_sql_permission_target:public sql_tree_base{
 public:
     std::string target;

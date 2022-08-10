@@ -235,6 +235,7 @@ service contract_management {
     bool del_single_contract_price(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<contract_stuff_price> get_all_single_contract_price() throws (1:gen_exp e),
     list<number_change_point> export_history(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name) throws (1:gen_exp e),
+    list<number_change_point> get_single_price_history(1:string ssid, 2:i64 single_id, 3:i64 count) throws (1:gen_exp e),
 }
 
 struct stuff_info {
