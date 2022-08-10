@@ -2,26 +2,31 @@
 <div id="app">
     <el-row>
         <el-col :span="20">
-            <iframe src="http://58.18.38.116:8811/" style="padding: 0;width:100%;" height="1000px" frameborder="1"></iframe>
+            <iframe src="http://58.18.38.116:8811/" style="padding: 0;width:100%; height:100vh;" frameborder="1"></iframe>
         </el-col>
         <el-col :span="4">
-            <el-form ref="config" :model="config" label-width="auto">
-                <el-form-item label="远端地址">
-                    <el-input v-model="config.remote_url"></el-input>
-                </el-form-item>
-                <el-form-item label="GPS">
-                    <el-input v-model="config.gps"></el-input>
-                </el-form-item>
-                <el-form-item label="key_code">
-                    <el-input v-model="config.key_code"></el-input>
-                </el-form-item>
-                <el-form-item label="key_sid">
-                    <el-input v-model="config.key_sid"></el-input>
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="set_config">保存</el-button>
-                </el-form-item>
-            </el-form>
+            <el-collapse v-model="activeNames">
+                <el-collapse-item title="参数配置" name="1">
+                    <el-form ref="config" :model="config" label-width="auto">
+                        <el-form-item label="远端地址">
+                            <el-input v-model="config.remote_url"></el-input>
+                        </el-form-item>
+                        <el-form-item label="GPS">
+                            <el-input v-model="config.gps"></el-input>
+                        </el-form-item>
+                        <el-form-item label="key_code">
+                            <el-input v-model="config.key_code"></el-input>
+                        </el-form-item>
+                        <el-form-item label="key_sid">
+                            <el-input v-model="config.key_sid"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="set_config">保存</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-collapse-item>
+            </el-collapse>
             <el-descriptions v-if="found_vehicle.main_vehicle_number" :title="found_vehicle.main_vehicle_number" :column="1" size="mini" border>
                 <el-descriptions-item label="物料">{{found_vehicle.stuff_name}}</el-descriptions-item>
                 <el-descriptions-item label="客户">{{found_vehicle.company_name}}</el-descriptions-item>
@@ -35,11 +40,11 @@
 </template>
 
 <script>
-import ws from 'nodejs-websocket'
 export default {
     name: 'zh_ordors_tool',
     data: function () {
         return {
+            activeNames: [],
             weight: '0.00',
             scan_result: '',
             config: {
@@ -101,6 +106,8 @@ export default {
     beforeMount: function () {
         var vue_this = this;
         vue_this.get_config();
+        const ws = window.require('nodejs-websocket');
+        console.log(ws)
         const server10 = ws.createServer(connect => {
             setInterval(() => {
                 connect.sendText(vue_this.weight);
