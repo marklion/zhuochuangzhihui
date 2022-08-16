@@ -1533,7 +1533,7 @@ static bool push_req_to_ordos_ticket(zh_sql_vehicle_order &_order)
                             push_p_ret = true;
                             vo->err_string = "";
                         }
-                        vo->update_record();
+                        vo->update_record("err_string");
 
                         return push_p_ret;
                     }
@@ -1590,7 +1590,8 @@ static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nv
                         {
                             vo->err_string = "上传监管平台失败：" + std_err;
                         }
-                        vo->update_record();
+                        vo->update_record("err_string");
+                        vo->update_record("extra_info");
                     }
 
                     return push_p_ret;
@@ -1642,7 +1643,7 @@ static bool push_req_to_myt(zh_sql_vehicle_order &_order, const std::string &_nv
                         {
                             vo->err_string = "上传监管平台失败：" + std_err;
                         }
-                        vo->update_record();
+                        vo->update_record("err_string");
                     }
                     return push_m_ret;
                 }));
@@ -1789,7 +1790,9 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                                 {
                                     vo->err_string = "上传NC失败：" + std_err;
                                 }
-                                vo->update_record();
+                                vo->update_record("err_string");
+                                vo->update_record("extra_info");
+                                vo->update_record("bl_number");
                             }
                         }
                         return push_ret;

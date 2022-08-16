@@ -31,12 +31,12 @@ using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
 
-struct prj_permission_config {
+struct prj_permission_config
+{
     long key;
     std::string name;
     std::string description;
 };
-
 
 std::string make_plain_2_sha1(const std::string &_plain)
 {
@@ -68,7 +68,7 @@ void init_user_permissions()
         {100, "财务人员", "只有财务人员才能修改物料价格和公司充值"},
     };
 
-    for (auto &itr:config)
+    for (auto &itr : config)
     {
         auto exist_permission = sqlite_orm::search_record<zh_sql_user_permission>("key == '%ld'", itr.key);
         if (exist_permission)
@@ -93,35 +93,34 @@ void init_admin_user()
     std::string admin_name = "admin";
     std::string admin_password = make_plain_2_sha1("password");
 
-        auto exist_admin = sqlite_orm::search_record<zh_sql_user_info>("name == '%s'", admin_name.c_str());
-        if (!exist_admin)
-        {
-            zh_sql_user_info admin;
-            admin.name = admin_name;
-            admin.phone = admin_phone;
-            admin.password = admin_password;
-            admin.need_change_password = 1;
-            admin.insert_record();
-            auto umh = user_management_handler::get_inst();
-            permission_target_info tmp;
-            tmp.is_read = false;
-            tmp.target = ZH_PERMISSON_TARGET_USER;
-            umh->pri_add_user_permission_target(admin.get_pri_id(), tmp);
-            tmp.is_read = true;
-            umh->pri_add_user_permission_target(admin.get_pri_id(), tmp);
+    auto exist_admin = sqlite_orm::search_record<zh_sql_user_info>("name == '%s'", admin_name.c_str());
+    if (!exist_admin)
+    {
+        zh_sql_user_info admin;
+        admin.name = admin_name;
+        admin.phone = admin_phone;
+        admin.password = admin_password;
+        admin.need_change_password = 1;
+        admin.insert_record();
+        auto umh = user_management_handler::get_inst();
+        permission_target_info tmp;
+        tmp.is_read = false;
+        tmp.target = ZH_PERMISSON_TARGET_USER;
+        umh->pri_add_user_permission_target(admin.get_pri_id(), tmp);
+        tmp.is_read = true;
+        umh->pri_add_user_permission_target(admin.get_pri_id(), tmp);
+    }
+    else
+    {
+        auto umh = user_management_handler::get_inst();
+        permission_target_info tmp;
+        tmp.is_read = false;
+        tmp.target = ZH_PERMISSON_TARGET_USER;
+        umh->pri_add_user_permission_target(exist_admin->get_pri_id(), tmp);
 
-        }
-        else
-        {
-            auto umh = user_management_handler::get_inst();
-            permission_target_info tmp;
-            tmp.is_read = false;
-            tmp.target = ZH_PERMISSON_TARGET_USER;
-            umh->pri_add_user_permission_target(exist_admin->get_pri_id(), tmp);
-
-            tmp.is_read = true;
-            umh->pri_add_user_permission_target(exist_admin->get_pri_id(), tmp);
-        }
+        tmp.is_read = true;
+        umh->pri_add_user_permission_target(exist_admin->get_pri_id(), tmp);
+    }
 }
 
 static void start_checkin_check_timer()

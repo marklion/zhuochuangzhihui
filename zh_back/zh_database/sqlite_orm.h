@@ -257,35 +257,42 @@ public:
         std::string sql_cmd = "DELETE FROM " + table_name() + " WHERE PRI_ID == " + std::to_string(m_pri_id) + ";";
         execute_sql_cmd(sql_cmd, m_sqlite_file);
     }
-    bool update_record()
+    std::string make_update_cmd(const std::string &_related_col = "")
+    {
+        std::string sql_cmd = "UPDATE " + table_name() + " SET ";
+        for (auto &single_column : columns_defined())
+        {
+            if (_related_col.length() == 0 || _related_col == single_column.m_name)
+            {
+                sql_cmd.append(single_column.m_name + " = ");
+                switch (single_column.m_type)
+                {
+                case sqlite_orm_column::INTEGER:
+                    sql_cmd.append(std::to_string(*(static_cast<long *>(single_column.m_data))));
+                    break;
+                case sqlite_orm_column::STRING:
+                    sql_cmd.append("'" + escape_single_quotes(*(static_cast<std::string *>(single_column.m_data))) + "'");
+                    break;
+                case sqlite_orm_column::REAL:
+                    sql_cmd.append(std::to_string(*(static_cast<double *>(single_column.m_data))));
+                    break;
+                default:
+                    break;
+                }
+                sql_cmd.append(",");
+            }
+        }
+        sql_cmd.pop_back();
+        sql_cmd.append(" WHERE PRI_ID = " + std::to_string(m_pri_id) + ";");
+
+        return sql_cmd;
+    }
+    bool update_record(const std::string &_related_col = "")
     {
         bool ret = false;
         // refresh table structure
         fetch_table();
-
-        std::string sql_cmd = "UPDATE " + table_name() + " SET ";
-        for (auto &single_column : columns_defined())
-        {
-            sql_cmd.append(single_column.m_name + " = ");
-            switch (single_column.m_type)
-            {
-            case sqlite_orm_column::INTEGER:
-                sql_cmd.append(std::to_string(*(static_cast<long *>(single_column.m_data))));
-                break;
-            case sqlite_orm_column::STRING:
-                sql_cmd.append("'" + escape_single_quotes(*(static_cast<std::string *>(single_column.m_data))) + "'");
-                break;
-            case sqlite_orm_column::REAL:
-                sql_cmd.append(std::to_string(*(static_cast<double *>(single_column.m_data))));
-                break;
-            default:
-                break;
-            }
-            sql_cmd.append(",");
-        }
-        sql_cmd.pop_back();
-        sql_cmd.append(" WHERE PRI_ID = " + std::to_string(m_pri_id) + ";");
-        ret = execute_sql_cmd(sql_cmd, m_sqlite_file);
+        ret = execute_sql_cmd(make_update_cmd(_related_col), m_sqlite_file);
 
         return ret;
     }
@@ -304,34 +311,34 @@ public:
         sql_cmd.append(";");
         if (execute_sql_cmd(sql_cmd, tmp_record.m_sqlite_file, &search_ret))
         {
-            for (auto &itr:search_ret)
+            for (auto &itr : search_ret)
             {
                 sql_record single_record;
                 single_record.m_pri_id = atol(itr["PRI_ID"].c_str());
-                for (auto &single_column :single_record.columns_defined())
+                for (auto &single_column : single_record.columns_defined())
                 {
                     switch (single_column.m_type)
                     {
-                        case sqlite_orm_column::INTEGER:
+                    case sqlite_orm_column::INTEGER:
                         *(static_cast<long *>(single_column.m_data)) = atol(itr[single_column.m_name].c_str());
                         break;
-                        case sqlite_orm_column::STRING:
+                    case sqlite_orm_column::STRING:
                         *(static_cast<std::string *>(single_column.m_data)) = itr[single_column.m_name].c_str();
                         break;
-                        case sqlite_orm_column::REAL:
+                    case sqlite_orm_column::REAL:
+                    {
+                        double tmp_val = 0;
+                        try
                         {
-                            double tmp_val = 0;
-                            try
-                            {
-                                tmp_val = std::stod(itr[single_column.m_name]);
-                            }
-                            catch (...)
-                            {
-                            }
-                            *(static_cast<double *>(single_column.m_data)) = tmp_val;
+                            tmp_val = std::stod(itr[single_column.m_name]);
                         }
-                        break;
+                        catch (...)
+                        {
                         }
+                        *(static_cast<double *>(single_column.m_data)) = tmp_val;
+                    }
+                    break;
+                    }
                 }
                 ret.push_back(single_record);
             }
