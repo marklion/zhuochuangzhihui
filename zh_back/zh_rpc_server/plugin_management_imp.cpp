@@ -87,7 +87,12 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
             FD_ZERO(&set);
             FD_SET(pipfd[0], &set);
             FD_SET(pipfd_err[0], &set);
-            if (0 < select(pipfd_err[0] + 1, &set, nullptr, nullptr, nullptr))
+            int max_fd = pipfd[0];
+            if (pipfd_err[0] > max_fd)
+            {
+                max_fd = pipfd_err[0];
+            }
+            if (0 < select(max_fd + 1, &set, nullptr, nullptr, nullptr))
             {
                 if (FD_ISSET(pipfd[0], &set))
                 {
