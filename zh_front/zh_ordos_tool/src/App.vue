@@ -2,7 +2,7 @@
 <div id="app">
     <el-row>
         <el-col :span="20">
-            <iframe src="http://58.18.38.116:8811/" style="padding: 0;width:100%; height:100vh;" frameborder="1"></iframe>
+            <iframe src="http://10.90.60.110" style="padding: 0;width:100%; height:100vh;" frameborder="1"></iframe>
         </el-col>
         <el-col :span="4">
             <el-collapse v-model="activeNames">

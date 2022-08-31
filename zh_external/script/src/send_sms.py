@@ -43,7 +43,7 @@ class Sample:
         client = Sample.create_client(os.getenv('ALI_KEY_ID'), os.getenv('ALI_KEY_SEC'))
         send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
             phone_numbers=args[0],
-            sign_name='掌易助理',
+            sign_name='卓创智汇',
             template_code='SMS_230657225',
             template_param='{"driver_name":"' + args[1] + '", "oem_name":"' + args[2] + '"}'
         )

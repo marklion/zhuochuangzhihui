@@ -59,6 +59,7 @@ public:
         need_id = _need_id;
         need_qr = _need_qr;
     }
+    bool is_gate = false;
     std::string pass_permit(const std::string &_vehicle_number, const std::string &_id_no, const std::string &_qr_code);
 };
 class scale_state_machine : public tdf_state_machine {

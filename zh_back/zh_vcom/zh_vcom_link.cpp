@@ -198,8 +198,8 @@ bool zh_vcom_link::proc_modbus(int _address, std::function<bool(modbus_t *, void
             if (0 == modbus_get_response_timeout(mctx, &sec, &usec))
             {
                 g_log.log("get response timeout sec:%d, usec:%d", sec, usec);
-                sec = 10;
-                usec = 0;
+                sec = 0;
+                usec = 700000;
                 if (0 == modbus_set_response_timeout(mctx, sec, usec))
                 {
                     g_log.log("set response timeout sec:%d, usec:%d", sec, usec);

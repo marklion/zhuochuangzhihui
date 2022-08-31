@@ -2260,6 +2260,7 @@ gate_state_machine::gate_state_machine(
                                  this->trigger_sm();
                              })
 {
+    this->ctrl_policy.is_gate = true;
     if (_road_ip.length() > 0)
     {
         zh_sub_callback_cfg tmp_cfg;
@@ -2612,7 +2613,12 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
         }
         if (ret.empty())
         {
-            auto vw = sqlite_orm::search_record<zh_sql_vehicle>("(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1 AND use_stuff != ''", _id_no.c_str(), _vehicle_number.c_str());
+            std::string qurey_cmd = "(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1 AND use_stuff != ''";
+            if (is_gate)
+            {
+                qurey_cmd = "(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1";
+            }
+            auto vw = sqlite_orm::search_record<zh_sql_vehicle>(qurey_cmd.c_str(), _id_no.c_str(), _vehicle_number.c_str());
             if (vw)
             {
                 ret = vw->main_vehicle_number;
