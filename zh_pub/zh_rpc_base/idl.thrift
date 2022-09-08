@@ -471,4 +471,6 @@ service plugin_management {
     bool install_plugin(1:string ssid, 2:string plugin_name, 3:string file_name) throws (1:gen_exp e),
     void uninstall_plugin(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
     list<string> get_installed_plugins(1:string ssid) throws (1:gen_exp e),
+    list<string> get_que_by_name(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
+    void pop_event_from_que(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
 }

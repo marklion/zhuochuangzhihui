@@ -465,6 +465,13 @@
                             <el-button type="text" style="float:right;" @click="uninstall_plugin(single_plugin)">卸载</el-button>
                         </div>
                         <component :is="get_component_from_plugin_name(single_plugin)"></component>
+                        <el-col :span="20">
+                            <el-divider content-position="left">插件队列</el-divider>
+                        </el-col>
+                        <el-col :span="4">
+                            <el-button type="danger" size="small" @click="pop_event_from_que(single_plugin)">弹出</el-button>
+                        </el-col>
+                        <plugin-que :plugin_name="single_plugin"></plugin-que>
                     </el-card>
 
                 </vue-cell>
@@ -496,12 +503,14 @@ import {
     VueGrid,
     VueCell
 } from 'vue-grd';
+import PluginQue from '../components/PluginQue.vue'
 export default {
     name: 'SystemManagement',
     components: {
         "gate-device-ctrl": GateDeviceCtrl,
         "item-for-select": ItemForSelect,
         "id-qr-read": IdQrRead,
+        "plugin-que": PluginQue,
         VueGrid,
         VueCell
     },
@@ -516,7 +525,7 @@ export default {
             register_time_config: {
                 pass_time: 0,
                 check_in_time: 0,
-                leave_limit:0,
+                leave_limit: 0,
                 enabled: false,
             },
             auto_confirm: false,
@@ -620,6 +629,17 @@ export default {
         };
     },
     methods: {
+        pop_event_from_que: function (_plugin_name) {
+            var vue_this = this;
+            vue_this.$dialog.confirm({
+                title: '弹出确认',
+                message: '确定要弹出该任务吗？'
+            }).then(function () {
+                vue_this.$call_remote_process("plugin_management", "pop_event_from_que", [vue_this.$cookies.get("zh_ssid"), _plugin_name]).then(function () {
+                    vue_this.init_plugins();
+                });
+            });
+        },
         init_plugin_que: function () {
             var vue_this = this;
             vue_this.$call_remote_process("vehicle_order_center", "go_through_plugin_que", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {

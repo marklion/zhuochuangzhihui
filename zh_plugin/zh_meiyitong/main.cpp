@@ -109,6 +109,7 @@ int main(int argc, char **argv)
     }
     else if (cmd == "init")
     {
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
         if (ZH_MEIYITONG_get_product_info())
         {
             iret = 0;
