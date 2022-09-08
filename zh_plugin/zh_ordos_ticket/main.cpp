@@ -100,6 +100,7 @@ int main(int argc, char **argv)
     }
     else if (cmd == "init")
     {
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
         if (zh_ordos_ticket_init())
         {
             iret = 0;

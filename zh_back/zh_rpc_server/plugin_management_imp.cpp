@@ -202,7 +202,14 @@ bool plugin_management_handler::install_plugin(const std::string &ssid, const st
     std::string cmd = "mv '" + file_name + "' '/tmp/" + plugin_name + ".tar.gz' && [ -d /plugin ] || mkdir /plugin && tar xf '/tmp/" + plugin_name + ".tar.gz' -C /plugin/ && mkdir '/plugin/" + plugin_name + "/conf' && /plugin/" + plugin_name + "/bin/" + plugin_name + "_plugin init";
     if (0 == system(cmd.c_str()))
     {
-        ret = true;
+        if (subscribe_event(plugin_name))
+        {
+            ret = true;
+        }
+        else
+        {
+            uninstall_plugin(ssid, plugin_name);
+        }
     }
 
     return ret;
@@ -216,6 +223,7 @@ void plugin_management_handler::uninstall_plugin(const std::string &ssid, const 
     }
     std::string cmd = "rm -rf '/plugin/" + plugin_name + "'";
     system(cmd.c_str());
+    unsubscribe_event(plugin_name);
 }
 void plugin_management_handler::get_installed_plugins(std::vector<std::string> &_return, const std::string &ssid)
 {
@@ -231,7 +239,7 @@ void plugin_management_handler::get_installed_plugins(std::vector<std::string> &
 std::vector<std::string> plugin_management_handler::internel_get_installed_plugins()
 {
     std::vector<std::string> _return;
-    std::string cmd = "ls /plugin/";
+    std::string cmd = "ls /plugin/ -l | grep '^d' | awk '{print $NF}'";
     auto read_fd = popen(cmd.c_str(), "r");
     if (read_fd)
     {
@@ -258,4 +266,106 @@ std::vector<std::string> plugin_management_handler::internel_get_installed_plugi
         }
     }
     return _return;
+}
+
+void plugin_management_handler::deliver_event(const plugin_event_info &_event)
+{
+    pthread_mutex_lock(&m_que_lock);
+    for (auto itr = event_deliver_map.begin(); itr != event_deliver_map.end(); itr++)
+    {
+        std::string std_out;
+        std::string std_err;
+        zh_plugin_run_plugin("proc_event -c " +  _event.get_cmd() + " xxx -t", itr->first, std_out, std_err);
+        if (std_err.empty())
+        {
+            itr->second.push_back(_event);
+        }
+    }
+    pthread_cond_signal(&que_cond);
+    pthread_mutex_unlock(&m_que_lock);
+}
+
+bool plugin_management_handler::subscribe_event(const std::string &_plugin_name)
+{
+    bool ret = false;
+
+    pthread_mutex_lock(&m_que_lock);
+    if (event_deliver_map.find(_plugin_name) == event_deliver_map.end())
+    {
+        std::list<plugin_event_info> tmp;
+        event_deliver_map[_plugin_name] = tmp;
+        ret = true;
+    }
+    pthread_mutex_unlock(&m_que_lock);
+
+    return ret;
+}
+void plugin_management_handler::unsubscribe_event(const std::string &_plugin_name)
+{
+    pthread_mutex_lock(&m_que_lock);
+    event_deliver_map.erase(_plugin_name);
+    pthread_mutex_unlock(&m_que_lock);
+}
+
+void plugin_management_handler::finish_event(const std::string &_plugin_name, bool runing_only)
+{
+    pthread_mutex_lock(&m_que_lock);
+
+    if (event_deliver_map.find(_plugin_name) != event_deliver_map.end())
+    {
+        auto &que = event_deliver_map[_plugin_name];
+        if (que.size() > 0)
+        {
+            auto &tmp = que.front();
+            bool need_pop = false;
+            if (!runing_only)
+            {
+                need_pop = true;
+            }
+            else if (_plugin_name == tmp.plugin_name)
+            {
+                need_pop = true;
+            }
+            if (need_pop)
+            {
+                que.pop_front();
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&m_que_lock);
+}
+
+void plugin_management_handler::get_que_by_name(std::vector<std::string> & _return, const std::string& ssid, const std::string& plugin_name)
+{
+    if (zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true))
+    {
+        pthread_mutex_lock(&m_que_lock);
+        if (event_deliver_map.find(plugin_name) != event_deliver_map.end())
+        {
+            auto &tmp = event_deliver_map[plugin_name];
+            for (auto &itr : tmp)
+            {
+                _return.push_back(itr.order_number + itr.get_cmd());
+            }
+        }
+        pthread_mutex_unlock(&m_que_lock);
+    }
+}
+
+void plugin_management_handler::pop_event_from_que(const std::string &ssid, const std::string &plugin_name)
+{
+    if (zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true))
+    {
+        pthread_mutex_lock(&m_que_lock);
+        if (event_deliver_map.find(plugin_name) != event_deliver_map.end())
+        {
+            auto &tmp = event_deliver_map[plugin_name];
+            if (tmp.size() > 0)
+            {
+                tmp.pop_back();
+            }
+        }
+        pthread_mutex_unlock(&m_que_lock);
+    }
 }

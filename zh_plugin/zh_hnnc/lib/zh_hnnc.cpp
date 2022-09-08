@@ -34,7 +34,7 @@ static bool send_req_with_token(const neb::CJsonObject _req, const std::function
     if (config.KeyExist("token"))
     {
         httplib::Client cli(config("remote_url"));
-        cli.set_read_timeout(8, 0);
+        cli.set_read_timeout(20, 0);
         httplib::Headers ref = {{"X-AUTH-TOKEN", config("token")}};
         cli.set_default_headers(ref);
         auto begin_point = time(NULL);

@@ -13,6 +13,25 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
+
+static void generate_order_event(zh_sql_vehicle_order &_order)
+{
+    plugin_event_info pei;
+    pei.order_number = _order.order_number;
+    pei.type = (plugin_event_info::event_type)(_order.status);
+    auto pmh = plugin_management_handler::get_inst();
+    if (pmh)
+    {
+        pmh->deliver_event(pei);
+    }
+}
+
+static bool change_order_status(zh_sql_vehicle_order &_order,zh_sql_order_status &_status, const zh_order_save_hook &_hook = zh_order_save_hook())
+{
+    _order.push_status(_status, _hook);
+    generate_order_event(_order);
+}
+
 static bool plugin_is_installed(const std::string &_plugin_name)
 {
     bool ret = false;
@@ -337,7 +356,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         {
             tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
             auto create_status = zh_sql_order_status::make_create_status(ssid);
-            tmp.push_status(create_status);
+            change_order_status(tmp, create_status);
             bool auto_confirm = false;
             if (ssid.length() > 0)
             {
@@ -346,7 +365,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
             if (!opt_user || !opt_user->get_parent<zh_sql_contract>("belong_contract") || auto_confirm)
             {
                 auto before_come_status = zh_sql_order_status::make_before_come_status();
-                tmp.push_status(before_come_status);
+                change_order_status(tmp, before_come_status);
             }
             ret = tmp.update_record();
         }
@@ -408,7 +427,7 @@ bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid
         if (single_order)
         {
             auto tmp = zh_sql_order_status::make_before_come_status(ssid);
-            single_order->push_status(tmp);
+            change_order_status(*single_order, tmp);
         }
     }
 
@@ -458,12 +477,12 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
         if (op_by_drvier)
         {
             auto cancel_status = zh_sql_order_status::make_end_status();
-            itr.push_status(cancel_status);
+            change_order_status(itr, cancel_status);
         }
         else
         {
             auto cancel_status = zh_sql_order_status::make_end_status(ssid);
-            itr.push_status(cancel_status);
+            change_order_status(itr, cancel_status);
         }
     }
 
@@ -570,12 +589,12 @@ static bool valid_stay_limit(zh_sql_vehicle_order &_order)
         smh->get_register_info(rci);
         if (rci.enabled && rci.leave_limit > 0 && _order.m_cam_time.length() > 0)
         {
-            auto latest_leave_time = zh_rpc_util_get_time_by_string( _order.m_cam_time) + rci.leave_limit * 60;
+            auto latest_leave_time = zh_rpc_util_get_time_by_string(_order.m_cam_time) + rci.leave_limit * 60;
             if (time(nullptr) > latest_leave_time)
             {
                 auto end_status = zh_sql_order_status::make_end_status();
                 end_status.user_name = "超时自动";
-                _order.push_status(end_status);
+                change_order_status(_order, end_status);
                 ret = false;
             }
         }
@@ -656,6 +675,14 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
         vo->check_in_timestamp = 0;
         if (vo->m_called)
         {
+            auto pmh = plugin_management_handler::get_inst();
+            if (pmh)
+            {
+                plugin_event_info pei;
+                pei.type = plugin_event_info::cancel_call_driver;
+                pei.order_number = vo->order_number;
+                pmh->deliver_event(pei);
+            }
             vo->m_called = 0;
             vo->call_timestamp = 0;
             std::string oem_name;
@@ -763,18 +790,27 @@ bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, cons
     }
     auto orig_called = vo->m_called;
     vo->m_called = is_cancel ? 0 : 1;
+    plugin_event_info pei;
+    pei.order_number = vo->order_number;
     if (is_cancel)
     {
         vo->call_timestamp = 0;
+        pei.type = plugin_event_info::cancel_call_driver;
     }
     else
     {
         vo->call_timestamp = time(nullptr);
         vo->call_user_name = _user_name;
+        pei.type = plugin_event_info::call_driver;
     }
     ret = vo->update_record();
     if (ret && vo->m_called && orig_called != vo->m_called)
     {
+        auto pmh = plugin_management_handler::get_inst();
+        if (pmh)
+        {
+            pmh->deliver_event(pei);
+        }
         std::string oem_name;
         system_management_handler::get_inst()->get_oem_name(oem_name);
         std::string sms_cmd = "python3 /script/send_sms.py '" + vo->driver_phone + "' '" + vo->driver_name + "' '" + oem_name + "'";
@@ -830,7 +866,7 @@ bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, 
     }
 
     auto status = zh_sql_order_status::make_p_status(ssid);
-    vo->push_status(status);
+    change_order_status(*vo, status);
     vo->p_weight = weight;
     ret = vo->update_record();
 
@@ -851,7 +887,7 @@ bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, 
     }
 
     auto status = zh_sql_order_status::make_m_status(ssid);
-    vo->push_status(status);
+    change_order_status(*vo, status);
     vo->m_weight = weight;
     ret = vo->update_record();
 
@@ -906,7 +942,7 @@ bool vehicle_order_center_handler::manual_close(const std::string &ssid, const i
     auto save_hook = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
                                         { return true; },
                                         dup_one_order);
-    vo->push_status(status, save_hook);
+    change_order_status(*vo, status, save_hook);
     if (vo->m_cam_time.empty())
     {
         recalcu_balance_inventory(*vo, ssid);
@@ -1871,7 +1907,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->p_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_p_status();
             vo->p_weight = fin_weight;
-            vo->push_status(status, save_hook);
+            change_order_status(*vo, status, save_hook);
         }
         else if (vo->status < 4 && permit_m_weight)
         {
@@ -1880,7 +1916,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             vo->m_cam_time = zh_rpc_util_get_timestring();
             auto status = zh_sql_order_status::make_m_status();
             vo->m_weight = fin_weight;
-            vo->push_status(status, save_hook);
+            change_order_status(*vo, status, save_hook);
             if (vo->status == 4)
             {
                 recalcu_balance_inventory(*vo);
@@ -1890,7 +1926,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                     auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
                                                           { return true; },
                                                           dup_one_order);
-                    vo->push_status(end_status, save_hook_1);
+                    change_order_status(*vo, end_status, save_hook_1);
                 }
             }
         }
@@ -2478,7 +2514,7 @@ void gate_state_machine::record_vehicle_pass()
             }
         }
         auto status = zh_sql_order_status::make_in_status();
-        vo->push_status(status);
+        change_order_status(*vo, status);
     }
     if (!is_entry && vo)
     {
@@ -2494,12 +2530,12 @@ void gate_state_machine::record_vehicle_pass()
             }
         }
         auto out_status = zh_sql_order_status::make_out_status();
-        vo->push_status(out_status);
+        change_order_status(*vo, out_status);
         auto end_status = zh_sql_order_status::make_end_status();
         auto save_hook_1 = zh_order_save_hook([](zh_sql_vehicle_order &) -> bool
                                               { return true; },
                                               dup_one_order);
-        vo->push_status(end_status, save_hook_1);
+        change_order_status(*vo, end_status, save_hook_1);
     }
 }
 
@@ -2588,8 +2624,8 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
                 tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
                 auto create_status = zh_sql_order_status::make_create_status();
                 auto before_come_status = zh_sql_order_status::make_before_come_status();
-                tmp.push_status(create_status);
-                tmp.push_status(before_come_status);
+                change_order_status(tmp, create_status);
+                change_order_status(tmp, before_come_status);
             }
         }
         auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
