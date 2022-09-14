@@ -106,6 +106,8 @@
                     <el-descriptions-item label="磅体3 NVR 密码">{{single_scale.scale3.password}}</el-descriptions-item>
                     <el-descriptions-item label="磅体3 NVR IP">{{single_scale.scale3_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="磅体3 通道">{{single_scale.scale3_channel}}</el-descriptions-item>
+                    <el-descriptions-item label="红绿灯IP1">{{single_scale.traffic_light_ip1}}</el-descriptions-item>
+                    <el-descriptions-item label="红绿灯IP2">{{single_scale.traffic_light_ip2}}</el-descriptions-item>
                     <el-descriptions-item label="身份证验证">
                         <el-tag v-if="single_scale.need_id" type="success">必选验证</el-tag>
                         <el-tag v-else>可选验证</el-tag>
@@ -311,6 +313,12 @@
                     </el-form-item>
                     <el-form-item label="磅体3通道" prop="scale3_channel">
                         <el-input v-model="scale_for_edit.scale3_channel"></el-input>
+                    </el-form-item>
+                    <el-form-item label="红绿灯IP1" prop="traffic_light_ip1">
+                        <el-input v-model="scale_for_edit.traffic_light_ip1"></el-input>
+                    </el-form-item>
+                    <el-form-item label="红绿灯IP2" prop="traffic_light_ip2">
+                        <el-input v-model="scale_for_edit.traffic_light_ip2"></el-input>
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="edit_scale">确认</el-button>
@@ -565,6 +573,8 @@ export default {
                 scale1: {},
                 scale2: {},
                 scale3: {},
+                traffic_light_ip1: '',
+                traffic_light_ip2: '',
             },
             rules: {
                 name: [{

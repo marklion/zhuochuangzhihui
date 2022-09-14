@@ -67,6 +67,8 @@ struct device_scale_config {
     30:i64 scale3_channel,
     31:double min_weight = 11,
     32:bool check_close,
+    33:string traffic_light_ip1,
+    34:string traffic_light_ip2,
 }
 
 struct device_config {

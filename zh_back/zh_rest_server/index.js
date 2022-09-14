@@ -46,6 +46,125 @@ app.get('/zh_rest/vehicle_info/:order_number', async (req, res) => {
     }
 });
 
+app.post('/zh_rest/vehicle_order/get', async (req, res) =>{
+    var ret = { err_msg: '无权限' };
+
+    try {
+        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone]);
+        if (resp) {
+            const Int64 = require('node-int64');
+            console.log(resp.basic_info.id);
+            var id = new Int64(resp.basic_info.id.buffer);
+            console.log(id);
+            ret = { basic_info: { id: id.toNumber() } };
+        }
+    } catch (error) {
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+    }
+
+    res.send(ret);
+});
+
+app.post('/zh_rest/vehicle_order/del', async (req, res) => {
+    var ret = { err_msg: '无权限' };
+    try {
+        var ssid = req.query.zh_ssid;
+        console.log(ssid);
+        console.log(req.body);
+        var resp = await request_rpc('vehicle_order_center', 'cancel_vehicle_order', [ssid, req.body]);
+        if (resp) {
+            ret.err_msg = '';
+        }
+    } catch (error) {
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+    }
+
+    res.send(ret);
+});
+
+app.post('/zh_rest/vehicle_order/add', async (req, res) => {
+    var ret = { err_msg: '无权限' };
+    try {
+        var ssid = req.query.zh_ssid;
+        var resp = await request_rpc('vehicle_order_center', 'create_vehicle_order', [ssid, req.body]);
+        if (resp) {
+            ret.err_msg = '';
+        }
+    } catch (error) {
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+    }
+
+    res.send(ret);
+});
+app.post('/zh_rest/order_register/add', async (req, res) => {
+    var ret = { err_msg: '无权限' };
+    try {
+        var resp = await request_rpc('vehicle_order_center', 'driver_check_in', [req.body.id, false]);
+        if (resp) {
+            ret.err_msg = '';
+        }
+    } catch (error) {
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+
+    }
+    res.send(ret);
+});
+app.post('/zh_rest/order_register/get', async (req, res) => {
+    var ret = { err_msg: '无权限' };
+
+    try {
+        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone]);
+        if (resp) {
+            console.log(resp);
+            const Int64 = require('node-int64');
+            var wait_count = new Int64(resp.wait_count.buffer);
+            ret = {
+                wait_count: wait_count.toNumber(),
+                checkin_time: resp.checkin_time,
+                enter_location: '',
+            };
+            console.log(ret);
+        }
+    } catch (error) {
+        console.log(error);
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+    }
+
+    res.send(ret);
+});
+app.post('/zh_rest/order_register/del', async (req, res) => {
+    var ret = { err_msg: '无权限' };
+    try {
+        var resp = await request_rpc('vehicle_order_center', 'driver_check_in', [req.body.id, true]);
+        if (resp) {
+            ret.err_msg = '';
+        }
+    } catch (error) {
+        ret.err_msg = error;
+        if (error.msg) {
+            ret.err_msg = error.msg;
+        }
+
+    }
+    res.send(ret);
+});
+
+
 app.post('/zh_rest/vehicle_event', async (req, res) => {
     var ret = { err_msg: '无权限' };
     try {

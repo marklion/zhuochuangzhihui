@@ -107,6 +107,8 @@ public:
     std::unique_ptr<zh_sql_vehicle_order> record_order();
     bool assume_stable_considering_manual(double _weight);
     void proc_manual_confirm_scale();
+    void set_traffic_lights_red();
+    void set_traffic_lights_green();
 };
 
 class gate_sm_vehicle_come : public tdf_state_machine_state

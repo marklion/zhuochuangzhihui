@@ -8,6 +8,7 @@
 #include "../zh_scale/lib/zh_scale.h"
 #include "../zh_qr/lib/zh_qr_lib.h"
 #include "plugin_management_imp.h"
+#include "../zh_traffic_light/lib/zh_traffic_light.h"
 #include <sstream>
 
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
@@ -30,6 +31,7 @@ static bool change_order_status(zh_sql_vehicle_order &_order,zh_sql_order_status
 {
     _order.push_status(_status, _hook);
     generate_order_event(_order);
+    return true;
 }
 
 static bool plugin_is_installed(const std::string &_plugin_name)
@@ -465,7 +467,7 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
     for (auto &itr : order)
     {
         auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
-        if (!single_order || single_order->status >= 2)
+        if (!single_order || (single_order->status >= 2 && single_order->status != 100))
         {
             ZH_RETURN_ORDER_CANNOT_CANCEL(itr.main_vehicle_number);
         }
@@ -767,9 +769,13 @@ void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_retur
     {
         ZH_RETURN_NO_ORDER();
     }
-    auto order_before = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND check_in_timestamp <= %ld AND m_registered == 1 AND status == 1", vo->stuff_name.c_str(), vo->check_in_timestamp);
+    auto order_before = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND check_in_timestamp <= %ld AND m_registered == 1 AND status == 1 AND m_called == 0", vo->stuff_name.c_str(), vo->check_in_timestamp);
     make_vehicle_detail_from_sql(_return, *vo);
     _return.wait_count = order_before.size() - 1;
+    if (vo->m_called)
+    {
+        _return.wait_count = -1;
+    }
 }
 
 bool vehicle_order_center_handler::pri_call_vehicle(const int64_t order_id, const bool is_cancel, const std::string &_user_name)
@@ -1570,9 +1576,8 @@ static bool push_req_to_ordos_ticket(zh_sql_vehicle_order &_order)
                             vo->err_string = "";
                         }
                         vo->update_record("err_string");
-
-                        return push_p_ret;
                     }
+                    return push_p_ret;
                 }));
     }
 
@@ -2025,6 +2030,21 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     }
     system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
 }
+
+void scale_state_machine::set_traffic_lights_red()
+{
+    auto ip1 = bound_scale.traffic_light_ip1;
+    auto ip2 = bound_scale.traffic_light_ip2;
+    ZH_TRLI_set_red(ip1);
+    ZH_TRLI_set_red(ip2);
+}
+void scale_state_machine::set_traffic_lights_green()
+{
+    auto ip1 = bound_scale.traffic_light_ip1;
+    auto ip2 = bound_scale.traffic_light_ip2;
+    ZH_TRLI_set_green(ip1);
+    ZH_TRLI_set_green(ip2);
+}
 void scale_state_machine::open_trigger_switch()
 {
     m_log.log("开启触发开关");
@@ -2207,11 +2227,13 @@ void scale_sm_vehicle_come::after_enter(tdf_state_machine &_sm)
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     ssm.clean_bound_info();
     ssm.open_trigger_switch();
+    ssm.set_traffic_lights_green();
 }
 void scale_sm_vehicle_come::before_leave(tdf_state_machine &_sm)
 {
     auto &ssm = dynamic_cast<scale_state_machine &>(_sm);
     ssm.trigger_switch = false;
+    ssm.set_traffic_lights_red();
 }
 std::unique_ptr<tdf_state_machine_state> scale_sm_scale::change_state(tdf_state_machine &_sm)
 {
