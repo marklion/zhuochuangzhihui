@@ -106,6 +106,8 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         tmp.scale3_channel = atoi(scale_config[i]("scale3_channel").c_str());
         scale_config[i].Get("min_weight", tmp.min_weight);
         scale_config[i].Get("check_close", tmp.check_close);
+        tmp.traffic_light_ip1 = scale_config[i]("traffic_light_ip1");
+        tmp.traffic_light_ip2 = scale_config[i]("traffic_light_ip2");
         _return.scale.push_back(tmp);
     }
     config.Get("auto_order", _return.auto_order);
@@ -216,6 +218,8 @@ bool system_management_handler::edit_device_config(const std::string &ssid, cons
         scale.Add("scale3_channel", itr.scale3_channel);
         scale.Add("min_weight", itr.min_weight);
         scale.Add("check_close", itr.check_close, itr.check_close);
+        scale.Add("traffic_light_ip1", itr.traffic_light_ip1);
+        scale.Add("traffic_light_ip2", itr.traffic_light_ip2);
         tmp["scale"].Add(scale);
     }
     std::ofstream config_file("/conf/device/device_config.json", std::ios::out);

@@ -363,7 +363,7 @@ void plugin_management_handler::pop_event_from_que(const std::string &ssid, cons
             auto &tmp = event_deliver_map[plugin_name];
             if (tmp.size() > 0)
             {
-                tmp.pop_back();
+                tmp.pop_front();
             }
         }
         pthread_mutex_unlock(&m_que_lock);
