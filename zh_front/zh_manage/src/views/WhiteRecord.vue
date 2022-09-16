@@ -109,7 +109,7 @@ export default {
             if (this.search_stuff) {
                 tmp_ret = [];
                 ret.forEach(element => {
-                    if (PinyinMatch.match(element.group_name, this.search_stuff)) {
+                    if (PinyinMatch.match(element.stuff_name, this.search_stuff)) {
                         tmp_ret.push(element);
                     }
                 });
