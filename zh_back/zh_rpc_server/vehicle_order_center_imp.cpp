@@ -651,7 +651,7 @@ static bool pri_calcu_balanc(zh_sql_contract &_company, zh_sql_stuff &_stuff, in
     return ret;
 }
 
-bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel)
+bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, const bool is_cancel, const std::string& driver_id)
 {
     bool ret = false;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
@@ -756,6 +756,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
                 }
             }
         }
+    }
+    if (driver_id.length() > 0)
+    {
+        vo->driver_id = driver_id;
     }
     ret = vo->update_record();
 
@@ -1869,6 +1873,10 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
             {
                 permit_m_weight = true;
             }
+        }
+        else
+        {
+            permit_m_weight = true;
         }
         auto save_hook = zh_order_save_hook(
             [&](zh_sql_vehicle_order &_order)

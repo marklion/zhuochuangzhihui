@@ -68,6 +68,9 @@ class Sample:
 
 
 if __name__ == '__main__':
+    env_key_str = os.getenv('ALI_KEY_ID')
+    if 'none' == env_key_str:
+        sys.exit(0)
     if Sample.main(sys.argv[1:]):
         sys.exit(0)
     else:

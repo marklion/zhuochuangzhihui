@@ -197,7 +197,7 @@ public:
     std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
     std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
     virtual bool update_vehicle_order(const std::string &ssid, const vehicle_order_info &order);
-    virtual bool driver_check_in(const int64_t order_id, const bool is_cancel);
+    virtual bool driver_check_in(const int64_t order_id, const bool is_cancel, const std::string& driver_id);
     virtual void driver_get_order(vehicle_order_detail &_return, const std::string &order_number);
     virtual bool call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel);
     virtual void get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid);
