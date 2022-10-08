@@ -521,7 +521,7 @@ export default {
             var d = date.getDate();
             d = d < 10 ? ('0' + d) : d;
 
-            ret = y + m + d;
+            ret = y.toString() + m.toString() + d.toString();
             var last_date = await idb.get("last_date");
             var last_no = await idb.get("last_no");
             if (last_date && last_no && last_date.getDay() == date.getDay()) {
