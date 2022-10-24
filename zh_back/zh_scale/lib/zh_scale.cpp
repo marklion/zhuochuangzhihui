@@ -395,6 +395,114 @@ public:
     }
 } g_zh_scale_kld2008_tf0;
 
+class zh_scale_tld:public zh_scale_if {
+public:
+    std::string make_one_frame(const char *_data, int _length)
+    {
+        std::string ret;
+
+        if (_length >= 17)
+        {
+            auto tail = _data + _length - 1;
+            auto head = tail - 16;
+            while (*head != 0x02 && head > _data)
+            {
+                head--;
+            }
+            tail = head + 16;
+            if (*head == 0x02 && *tail == 0x0d)
+            {
+                ret.assign(head, tail - head + 1);
+            }
+        }
+
+        return ret;
+    }
+    double parse_weight(const std::string &_frame)
+    {
+        double ret = 0;
+        if (_frame.length() > 10)
+        {
+            int dot_pos = _frame[1] & 0x07;
+            int pow_number = 2 - dot_pos;
+            if (pow_number > 0)
+            {
+                pow_number = 0;
+            }
+            for (auto i = 0; i < 6; i++)
+            {
+                auto tmp_number = _frame[4 + i];
+                if (tmp_number >= '0' && tmp_number <= '9')
+                {
+                    tmp_number = tmp_number - '0';
+                }
+                else
+                {
+                    tmp_number = 0;
+                }
+                ret += tmp_number * pow(10, 5 + pow_number - i);
+            }
+        }
+
+        return ret;
+    }
+    virtual double get_weight(const std::string &_scale_ip, unsigned short _port)
+    {
+        if (!buff_is_added(_scale_ip))
+        {
+            if (!tdf_main::get_inst().connect_remote(
+                    _scale_ip,
+                    _port,
+                    [=](const std::string &_chrct)
+                    {
+                        g_log.log("connect to %s", _scale_ip.c_str());
+                        create_scale_buff(_scale_ip, _chrct);
+                        zh_runtime_get_device_health()[_scale_ip] = 1;
+                    },
+                    [=](const std::string &_chrct)
+                    {
+                        g_log.err("disconnected %s", _scale_ip.c_str());
+                        destroy_scale_buff(_scale_ip);
+                    },
+                    [=](const std::string &_chcrt, const std::string &_data)
+                    {
+                        g_log.log("recv data from %s", _scale_ip.c_str());
+                        g_log.log_package(_data.data(), _data.length());
+                        replace_data_in_buff(_scale_ip, make_one_frame(_data.data(), _data.length()));
+                    }))
+            {
+                zh_runtime_get_device_health()[_scale_ip] = 2;
+            }
+        }
+        auto scale_buff = peek_data_from_buff(_scale_ip);
+        double ret = 0;
+        ret = parse_weight(make_one_frame(scale_buff.data(), scale_buff.size()));
+
+        return ret;
+    }
+    virtual void clean_scale(const std::string &_scale_ip, unsigned short _port)
+    {
+        disconnect_scale(_scale_ip);
+        return;
+    }
+    virtual std::unique_ptr<zh_scale_if> clone_self()
+    {
+        return std::unique_ptr<zh_scale_tld>(new zh_scale_tld(*this));
+    }
+    zh_scale_tld()
+    {
+        std::string brand_name = "托利多连续";
+        if (g_scale_map[brand_name] == NULL)
+        {
+            g_scale_map[brand_name] = this;
+        }
+    }
+    void reset_connection(const std::string &_scale_ip)
+    {
+        disconnect_scale(_scale_ip);
+    }
+} g_zh_scale_tld;
+
 double get_current_weight(const std::string &_scale_ip, unsigned short _port, const std::string &_brand)
 {
     double ret = 0.001;
