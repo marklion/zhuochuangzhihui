@@ -709,21 +709,29 @@ bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, cons
             {
                 if (stuff_info && customer_info && stuff_info->code.length() > 0 && customer_info->code.length() > 0)
                 {
+                    vo->update_record();
                     auto related_vehicle = sqlite_orm::search_record_all<zh_sql_vehicle_order>("company_name == '%s' AND stuff_name == '%s' AND m_registered == 1 AND status != 100", customer_info->name.c_str(), stuff_info->name.c_str());
                     if (customer_info->is_sale)
                     {
-                        pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
+                        pmh->zh_plugin_run_plugin("valid_balance " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size()), "zh_hnnc", std_out, std_err);
                         if (std_err.length() > 0)
                         {
+                            vo->m_registered = 0;
+                            vo->check_in_timestamp  = 0;
+                            vo->update_record();
                             ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                         }
                     }
                     else
                     {
-                        pmh->zh_plugin_run_plugin("valid_remain " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size() + 1), "zh_hnnc", std_out, std_err);
+                        pmh->zh_plugin_run_plugin("valid_remain " + customer_info->code + " " + stuff_info->code + " " + std::to_string(related_vehicle.size()), "zh_hnnc", std_out, std_err);
                         if (std_err.length() > 0)
                         {
                             std::string err_info = "订单余量不足，请联系" + std::string(getenv("OEM_SHORT")) + "修改";
+                            vo->m_registered = 0;
+                            vo->check_in_timestamp  = 0;
+                            vo->update_record();
+                            ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                             ZH_RETURN_MSG(err_info);
                         }
                     }
