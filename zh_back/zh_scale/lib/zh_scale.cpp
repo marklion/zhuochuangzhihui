@@ -218,7 +218,14 @@ struct zh_scale_kl_buff{
 
 static std::map<std::string,zh_scale_kl_buff> g_buff_map;
 static pthread_mutex_t g_buff_map_lock = PTHREAD_MUTEX_INITIALIZER;
-static void create_scale_buff(const std::string &_ip, const std::string&_chrct)
+static void __attribute__((constructor)) init_this_module()
+{
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&g_buff_map_lock, &attr);
+}
+static void create_scale_buff(const std::string &_ip, const std::string &_chrct)
 {
     pthread_mutex_lock(&g_buff_map_lock);
     zh_scale_kl_buff tmp;
@@ -395,7 +402,8 @@ public:
     }
 } g_zh_scale_kld2008_tf0;
 
-class zh_scale_tld:public zh_scale_if {
+class zh_scale_tld : public zh_scale_if
+{
 public:
     std::string make_one_frame(const char *_data, int _length)
     {

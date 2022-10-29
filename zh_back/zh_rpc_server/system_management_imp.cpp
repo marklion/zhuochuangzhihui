@@ -657,20 +657,26 @@ void system_management_handler::reset_scale_state(const std::string &ssid, const
     {
         if (itr->first == scale_name)
         {
-            device_config dc;
-            internal_get_device_config(dc);
-            auto scale_config_itr = std::find_if(
-                dc.scale.begin(),
-                dc.scale.end(),
-                [&](const device_scale_config &_item)
+            tdf_main::get_inst().Async_to_mainthread(
+                [](void *_private, const std::string &_chrct)
                 {
-                    return _item.name == itr->first;
-                });
-            if (scale_config_itr != dc.scale.end())
-            {
-                vehicle_order_center_handler::ssm_map.erase(itr);
-                vehicle_order_center_handler::ssm_map[scale_config_itr->name] = std::make_shared<scale_state_machine>(*scale_config_itr);
-            }
+                    device_config dc;
+                    system_management_handler::get_inst()->internal_get_device_config(dc);
+                    auto scale_config_itr = std::find_if(
+                        dc.scale.begin(),
+                        dc.scale.end(),
+                        [&](const device_scale_config &_item)
+                        {
+                            return _item.name == _chrct;
+                        });
+                    if (scale_config_itr != dc.scale.end())
+                    {
+                        vehicle_order_center_handler::ssm_map.erase(_chrct);
+                        vehicle_order_center_handler::ssm_map[scale_config_itr->name] = std::make_shared<scale_state_machine>(*scale_config_itr);
+                    }
+                },
+                nullptr, scale_name);
+
             break;
         }
     }
