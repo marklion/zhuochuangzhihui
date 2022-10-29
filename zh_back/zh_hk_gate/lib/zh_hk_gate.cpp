@@ -380,6 +380,7 @@ struct hk_led_connector
             else
             {
                 g_log.err("failed to connect:%s", strerror(errno));
+                close(fd);
             }
         }
         else

@@ -1711,7 +1711,20 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
     neb::CJsonObject req;
 
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _order.stuff_name.c_str());
-    auto customer = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
+    auto customers = sqlite_orm::search_record_all<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
+    std::unique_ptr<zh_sql_contract> customer;
+    if (stuff)
+    {
+        for (auto &itr:customers)
+        {
+            auto relation_fl = stuff->get_children<zh_sql_follow_stuff>("belong_stuff", "belong_contract_ext_key == %ld", itr.get_pri_id());
+            if (relation_fl)
+            {
+                customer.reset(relation_fl->get_parent<zh_sql_contract>("belong_contract").release());
+                break;
+            }
+        }
+    }
     if (stuff && customer)
     {
         req.Add("Invcode", stuff->code);
