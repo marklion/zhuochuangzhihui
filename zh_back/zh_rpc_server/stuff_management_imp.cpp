@@ -133,15 +133,20 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
     if (customer_contract)
     {
         query_cmd = "(PRI_ID == 0";
-        auto followed_stuff = customer_contract->get_all_children<zh_sql_follow_stuff>("belong_contract");
-        for (auto &itr : followed_stuff)
+        auto same_contracts = sqlite_orm::search_record_all<zh_sql_contract>("name == '%s'", customer_contract->name.c_str());
+        for (auto &single_con:same_contracts)
         {
-            auto stuff = itr.get_parent<zh_sql_stuff>("belong_stuff");
-            if (stuff)
+            auto followed_stuff = single_con.get_all_children<zh_sql_follow_stuff>("belong_contract");
+            for (auto &itr : followed_stuff)
             {
-                query_cmd += " OR PRI_ID == " + std::to_string(stuff->get_pri_id());
+                auto stuff = itr.get_parent<zh_sql_stuff>("belong_stuff");
+                if (stuff)
+                {
+                    query_cmd += " OR PRI_ID == " + std::to_string(stuff->get_pri_id());
+                }
             }
         }
+
         query_cmd += ")";
     }
     auto all_stuff = sqlite_orm::search_record_all<zh_sql_stuff>(query_cmd);
@@ -353,14 +358,14 @@ bool stuff_management_handler::add_source_dest(const std::string &ssid, const st
     {
         ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
     }
-    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == %ld", source_dest_name.c_str(), is_source?1:0);
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_source_dest>("name == '%s' AND is_source == %ld", source_dest_name.c_str(), is_source ? 1 : 0);
     if (exist_record)
     {
         exist_record->remove_record();
     }
     zh_sql_stuff_source_dest tmp;
     tmp.name = source_dest_name;
-    tmp.is_source = is_source?1:0;
+    tmp.is_source = is_source ? 1 : 0;
     tmp.id = code;
     ret = tmp.insert_record();
 
@@ -368,8 +373,8 @@ bool stuff_management_handler::add_source_dest(const std::string &ssid, const st
 }
 void stuff_management_handler::get_all_source_dest(std::vector<stuff_source_dest> &_return, const bool is_source)
 {
-    auto all_ssd = sqlite_orm::search_record_all<zh_sql_stuff_source_dest>("is_source == %ld", is_source?1:0);
-    for (auto &itr:all_ssd)
+    auto all_ssd = sqlite_orm::search_record_all<zh_sql_stuff_source_dest>("is_source == %ld", is_source ? 1 : 0);
+    for (auto &itr : all_ssd)
     {
         stuff_source_dest tmp;
         tmp.id = itr.get_pri_id();
@@ -400,7 +405,7 @@ bool stuff_management_handler::del_source_dest(const std::string &ssid, const in
 void stuff_management_handler::get_white_list_stuff(std::vector<std::string> &_return)
 {
     auto stuffs = sqlite_orm::search_record_all<zh_sql_stuff>("use_for_white_list != 0");
-    for (auto &itr:stuffs)
+    for (auto &itr : stuffs)
     {
         _return.push_back(itr.name);
     }

@@ -15,6 +15,26 @@ vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
 
+static std::unique_ptr<zh_sql_contract> get_real_contract(const std::string &_name, const std::string &_stuff_name)
+{
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _stuff_name.c_str());
+    auto customers = sqlite_orm::search_record_all<zh_sql_contract>("name == '%s'", _name.c_str());
+    std::unique_ptr<zh_sql_contract> customer;
+    if (stuff)
+    {
+        for (auto &itr : customers)
+        {
+            auto relation_fl = stuff->get_children<zh_sql_follow_stuff>("belong_stuff", "belong_contract_ext_key == %ld", itr.get_pri_id());
+            if (relation_fl)
+            {
+                customer.reset(relation_fl->get_parent<zh_sql_contract>("belong_contract").release());
+                break;
+            }
+        }
+    }
+
+    return customer;
+}
 static void generate_order_event(zh_sql_vehicle_order &_order)
 {
     plugin_event_info pei;
@@ -27,7 +47,7 @@ static void generate_order_event(zh_sql_vehicle_order &_order)
     }
 }
 
-static bool change_order_status(zh_sql_vehicle_order &_order,zh_sql_order_status &_status, const zh_order_save_hook &_hook = zh_order_save_hook())
+static bool change_order_status(zh_sql_vehicle_order &_order, zh_sql_order_status &_status, const zh_order_save_hook &_hook = zh_order_save_hook())
 {
     _order.push_status(_status, _hook);
     generate_order_event(_order);
@@ -651,7 +671,7 @@ static bool pri_calcu_balanc(zh_sql_contract &_company, zh_sql_stuff &_stuff, in
     return ret;
 }
 
-bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, const bool is_cancel, const std::string& driver_id)
+bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel, const std::string &driver_id)
 {
     bool ret = false;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
@@ -704,7 +724,7 @@ bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, cons
             std::string std_out;
             std::string std_err;
             auto stuff_info = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
-            auto customer_info = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
+            auto customer_info = get_real_contract(vo->company_name, vo->stuff_name);
             if (plugin_is_installed("zh_hnnc"))
             {
                 if (stuff_info && customer_info && stuff_info->code.length() > 0 && customer_info->code.length() > 0)
@@ -717,7 +737,7 @@ bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, cons
                         if (std_err.length() > 0)
                         {
                             vo->m_registered = 0;
-                            vo->check_in_timestamp  = 0;
+                            vo->check_in_timestamp = 0;
                             vo->update_record();
                             ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                         }
@@ -729,9 +749,8 @@ bool vehicle_order_center_handler:: driver_check_in(const int64_t order_id, cons
                         {
                             std::string err_info = "订单余量不足，请联系" + std::string(getenv("OEM_SHORT")) + "修改";
                             vo->m_registered = 0;
-                            vo->check_in_timestamp  = 0;
+                            vo->check_in_timestamp = 0;
                             vo->update_record();
-                            ZH_RETURN_MSG("余额不足，无法排号，请联系货主充值");
                             ZH_RETURN_MSG(err_info);
                         }
                     }
@@ -1711,7 +1730,8 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
     neb::CJsonObject req;
 
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _order.stuff_name.c_str());
-    auto customer = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
+    auto customer = get_real_contract(_order.company_name, _order.stuff_name);
+
     if (stuff && customer)
     {
         req.Add("Invcode", stuff->code);
@@ -1910,8 +1930,8 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                 }
                 if (plugin_is_installed("zh_ordos_ticket"))
                 {
-                    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s' AND is_sale == 1", _order.company_name.c_str());
-                    if (company)
+                    auto company = get_real_contract(_order.company_name, _order.stuff_name);
+                    if (company && company->is_sale)
                     {
                         ret = ret && push_req_to_ordos_ticket(_order);
                     }
