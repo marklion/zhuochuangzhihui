@@ -365,7 +365,7 @@ public:
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, long required_permission);
 std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, zh_sql_contract &_contract);
-std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, const std::string &_permission_target, bool _is_read);
+std::unique_ptr<zh_sql_user_info> zh_rpc_util_get_online_user(const std::string &ssid, const std::string &_permission_target, bool _is_read = false);
 std::string zh_rpc_util_gen_ssid();
 
 class zh_sql_history_data : public sql_tree_base

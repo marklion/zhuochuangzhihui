@@ -60,6 +60,7 @@ public:
     virtual void get_scale_state(std::vector<scale_state_info> &_return, const std::string &ssid);
     virtual void reset_scale_state(const std::string &ssid, const std::string &scale_name);
     virtual bool read_cam_io(const std::string &cam_ip);
+    virtual bool switch_device_state(const std::string &ssid, const std::string &device_name);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
