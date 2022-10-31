@@ -186,7 +186,7 @@ public:
 
         return m_inst;
     }
-    virtual void get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date);
+    virtual void get_order_by_anchor(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date);
     virtual void get_gate_info(gate_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual void get_weight_info(weight_relate_info &_return, const std::string &ssid, const int64_t order_id);
     virtual bool create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);

@@ -205,7 +205,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
         _return.basic_info.is_sale = false;
     }
 }
-void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_info> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
+void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid);
     if (!opt_user)
@@ -263,7 +263,7 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
     {
         vehicle_order_detail tmp;
         make_vehicle_detail_from_sql(tmp, itr);
-        _return.push_back(tmp.basic_info);
+        _return.push_back(tmp);
     }
 }
 void vehicle_order_center_handler::get_gate_info(gate_relate_info &_return, const std::string &ssid, const int64_t order_id)
