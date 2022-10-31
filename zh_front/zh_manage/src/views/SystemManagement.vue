@@ -3,7 +3,11 @@
     <el-tabs v-model="activeName">
         <el-tab-pane label="设备配置" name="device_config">
             <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
-                <el-descriptions :column="4" border :title="single_gate.name">
+                <el-descriptions :column="4" border>
+                    <template #title>
+                        <span>{{single_gate.name}}</span>
+                        <el-tag v-if="!single_gate.is_online" type="danger">停用</el-tag>
+                    </template>
                     <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 NVR IP">{{single_gate.entry_nvr_ip}}</el-descriptions-item>
@@ -59,13 +63,20 @@
                     </el-descriptions-item>
 
                     <template slot="extra">
+                        <el-button type="warning" size="small" @click="change_state(single_gate.name)">
+                            {{single_gate.is_online?'停用':'启用'}}
+                        </el-button>
                         <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
                     </template>
                 </el-descriptions>
             </div>
             <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :column="4" :title="single_scale.name">
+                <el-descriptions border :column="4">
+                    <template #title>
+                        <span>{{single_scale.name}}</span>
+                        <el-tag v-if="!single_scale.is_online" type="danger">停用</el-tag>
+                    </template>
                     <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 NVR IP">{{single_scale.entry_nvr_ip}}</el-descriptions-item>
                     <el-descriptions-item label="入口 通道">{{single_scale.entry_channel}}</el-descriptions-item>
@@ -117,6 +128,9 @@
                         <el-tag v-else>可选验证</el-tag>
                     </el-descriptions-item>
                     <template slot="extra">
+                        <el-button type="warning" size="small" @click="change_state(single_scale.name)">
+                            {{single_scale.is_online?'停用':'启用'}}
+                        </el-button>
                         <el-button type="success" size="small" @click="open_scale_operate(single_scale)">操作</el-button>
                         <el-button type="primary" size="small" @click="open_scale_edit(single_scale)">编辑</el-button>
                     </template>
@@ -639,6 +653,14 @@ export default {
         };
     },
     methods: {
+        change_state: function (_name) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "switch_device_state", [vue_this.$cookies.get('zh_ssid'), _name]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_device_info();
+                }
+            });
+        },
         pop_event_from_que: function (_plugin_name) {
             var vue_this = this;
             vue_this.$dialog.confirm({

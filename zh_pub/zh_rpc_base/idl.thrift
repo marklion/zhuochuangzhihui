@@ -30,6 +30,7 @@ struct device_gate_config {
     15:i64 exit_channel,
     16:nvr_login_info entry_login,
     17:nvr_login_info exit_login,
+    18:bool is_online,
 }
 
 
@@ -69,6 +70,7 @@ struct device_scale_config {
     32:bool check_close,
     33:string traffic_light_ip1,
     34:string traffic_light_ip2,
+    35:bool is_online,
 }
 
 struct device_config {
@@ -120,6 +122,7 @@ struct scale_state_info {
     1:string name,
     2:string cur_status,
     3:string weight_pip,
+    4:bool is_pause,
 }
 
 service system_management {
@@ -154,6 +157,7 @@ service system_management {
     list<scale_state_info> get_scale_state(1:string ssid) throws (1:gen_exp e),
     void reset_scale_state(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
     bool read_cam_io(1:string cam_ip) throws (1:gen_exp e),
+    bool switch_device_state(1:string ssid, 2:string device_name) throws (1:gen_exp e),
 }
 
 struct user_info {

@@ -61,6 +61,9 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         gate_config[i].Get("entry_nvr_password", tmp.entry_login.password);
         gate_config[i].Get("exit_nvr_username", tmp.exit_login.username);
         gate_config[i].Get("exit_nvr_password", tmp.exit_login.password);
+        bool is_pause = false;
+        gate_config[i].Get("pause", is_pause);
+        tmp.is_online = !is_pause;
         _return.gate.push_back(tmp);
     }
     for (int i = 0; i < scale_config.GetArraySize(); i++)
@@ -108,6 +111,9 @@ void system_management_handler::internal_get_device_config(device_config &_retur
         scale_config[i].Get("check_close", tmp.check_close);
         tmp.traffic_light_ip1 = scale_config[i]("traffic_light_ip1");
         tmp.traffic_light_ip2 = scale_config[i]("traffic_light_ip2");
+        bool is_pause = false;
+        scale_config[i].Get("pause", is_pause);
+        tmp.is_online = !is_pause;
         _return.scale.push_back(tmp);
     }
     config.Get("auto_order", _return.auto_order);
@@ -687,5 +693,127 @@ bool system_management_handler::read_cam_io(const std::string &cam_ip)
 
     ret = zh_hk_get_cam_IO(cam_ip);
 
+    return ret;
+}
+
+static void pri_change_device_state(const std::string &_device_name)
+{
+    std::ifstream config_file_orig("/conf/device/device_config.json", std::ios::in);
+    std::istreambuf_iterator<char> beg(config_file_orig), end;
+    std::string config_string(beg, end);
+    neb::CJsonObject tmp(config_string);
+    auto &scale_configs = tmp["scale"];
+    auto &gate_configs = tmp["gate"];
+    for (auto i = 0; i < scale_configs.GetArraySize(); i++)
+    {
+        if (scale_configs[i]("name") == _device_name)
+        {
+            bool orig_pause_state = false;
+            if (scale_configs[i].Get("pause", orig_pause_state) && orig_pause_state == true)
+            {
+                scale_configs[i].Delete("pause");
+                scale_configs[i].Add("pause", false, false);
+            }
+            else
+            {
+                scale_configs[i].Delete("pause");
+                scale_configs[i].Add("pause", true, true);
+            }
+            break;
+        }
+    }
+    for (auto i = 0; i < gate_configs.GetArraySize(); i++)
+    {
+        if (gate_configs[i]("name") == _device_name)
+        {
+            bool orig_pause_state = false;
+            if (gate_configs[i].Get("pause", orig_pause_state) && orig_pause_state == true)
+            {
+                gate_configs[i].Delete("pause");
+                gate_configs[i].Add("pause", false, false);
+            }
+            else
+            {
+                gate_configs[i].Delete("pause");
+                gate_configs[i].Add("pause", true, true);
+            }
+            break;
+        }
+    }
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
+    config_file << tmp.ToFormattedString();
+    config_file.close();
+}
+
+bool system_management_handler::switch_device_state(const std::string &ssid, const std::string &device_name)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+    pri_change_device_state(device_name);
+    tdf_main::get_inst().Async_to_mainthread(
+        [](void *_private, const std::string &_chrct)
+        {
+            device_config dc;
+            system_management_handler::get_inst()->internal_get_device_config(dc);
+            auto scale_config_itr = std::find_if(
+                dc.scale.begin(),
+                dc.scale.end(),
+                [&](const device_scale_config &_item)
+                {
+                    return _item.name == _chrct;
+                });
+            if (scale_config_itr != dc.scale.end())
+            {
+                if (scale_config_itr->is_online && vehicle_order_center_handler::ssm_map.find(_chrct) == vehicle_order_center_handler::ssm_map.end())
+                {
+                    vehicle_order_center_handler::ssm_map[scale_config_itr->name] = std::make_shared<scale_state_machine>(*scale_config_itr);
+                }
+                else if (!scale_config_itr->is_online && vehicle_order_center_handler::ssm_map.find(_chrct) != vehicle_order_center_handler::ssm_map.end())
+                {
+                    vehicle_order_center_handler::ssm_map.erase(_chrct);
+                }
+            }
+            auto gate_config_itr = std::find_if(
+                dc.gate.begin(),
+                dc.gate.end(),
+                [&](const device_gate_config &_item)
+                {
+                    return _item.name == _chrct;
+                });
+            if (gate_config_itr != dc.gate.end())
+            {
+                if (gate_config_itr->is_online)
+                {
+                    if (vehicle_order_center_handler::gsm_map.find(gate_config_itr->entry_config.cam_ip) == vehicle_order_center_handler::gsm_map.end())
+                    {
+                        vehicle_order_center_handler::gsm_map[gate_config_itr->entry_config.cam_ip] = std::make_shared<gate_state_machine>(gate_config_itr->entry_config.cam_ip, gate_config_itr->entry_id_reader_ip, gate_config_itr->entry_qr_ip, true);
+                    }
+                    if (vehicle_order_center_handler::gsm_map.find(gate_config_itr->exit_config.cam_ip) == vehicle_order_center_handler::gsm_map.end())
+                    {
+                        vehicle_order_center_handler::gsm_map[gate_config_itr->exit_config.cam_ip] = std::make_shared<gate_state_machine>(gate_config_itr->exit_config.cam_ip, gate_config_itr->exit_id_reader_ip, gate_config_itr->exit_qr_ip, false);
+                    }
+                }
+                else
+                {
+                    if (vehicle_order_center_handler::gsm_map.find(gate_config_itr->entry_config.cam_ip) != vehicle_order_center_handler::gsm_map.end())
+                    {
+                        vehicle_order_center_handler::gsm_map.erase(gate_config_itr->entry_config.cam_ip);
+                    }
+                    if (vehicle_order_center_handler::gsm_map.find(gate_config_itr->exit_config.cam_ip) == vehicle_order_center_handler::gsm_map.end())
+                    {
+                        vehicle_order_center_handler::gsm_map.erase(gate_config_itr->exit_config.cam_ip);
+                    }
+
+                }
+            }
+        },
+        nullptr, device_name);
+
+    ret = true;
     return ret;
 }
