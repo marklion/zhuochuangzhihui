@@ -93,12 +93,12 @@
                         <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
                     </template>
                 </el-table-column>
-                <el-table-column label="运输货物" width="130px">
+                <el-table-column label="运输货物" width="110px">
                     <template slot-scope="scope">
                         <div slot="reference" @mouseenter="e=> show_pop_info2(e, scope.row.stuff_name)" @mouseleave="visible2 = false">{{scope.row.stuff_name}}</div>
                     </template>
                 </el-table-column>
-                <el-table-column label="状态" width="200px">
+                <el-table-column label="状态" width="220px">
                     <template slot-scope="scope">
                         <div>
                             {{scope.row.status_details[scope.row.status_details.length - 1].name}}
@@ -111,6 +111,9 @@
                         </div>
                         <div v-if="scope.row.end_time && scope.row.status != 100">
                             <el-tag type="success">{{scope.row.end_time}} 连续派车</el-tag>
+                        </div>
+                        <div v-if="scope.row.registered && scope.row.status != 100">
+                            排号时间:{{scope.row.checkin_time}}
                         </div>
                     </template>
                 </el-table-column>
@@ -393,7 +396,10 @@ export default {
         order_need_show: function () {
             var ret = [];
 
-            this.all_order.forEach(element => {
+            this.all_order.forEach(item => {
+                var element = item.basic_info;
+                element.registered = item.registered;
+                element.checkin_time = item.checkin_time;
                 switch (this.activeName) {
                     case 'all':
                         ret.push(element);
