@@ -65,6 +65,7 @@ public:
 class scale_state_machine : public tdf_state_machine {
 public:
     tdf_log m_log;
+    std::string failure_reason;
     device_scale_config bound_scale;
     std::string bound_vehicle_number;
     std::string enter_cam_ip;

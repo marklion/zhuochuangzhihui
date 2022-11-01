@@ -1309,13 +1309,27 @@ bool scale_state_machine::should_open()
                 if (vo->status == 3 && !vo->m_permit)
                 {
                     ret = false;
+                    failure_reason = "未确认装卸货";
                 }
+            }
+            else
+            {
+                failure_reason = "车辆未排号";
             }
         }
         else
         {
             ret = true;
         }
+    }
+    else
+    {
+        failure_reason = "未找到车辆信息";
+    }
+
+    if (ret)
+    {
+        failure_reason = "";
     }
 
     return ret;
@@ -2256,6 +2270,11 @@ void scale_sm_vehicle_come::do_action(tdf_state_machine &_sm)
     {
         ssm.record_entry_exit();
         ssm.open_enter();
+    }
+    else
+    {
+        zh_hk_cast_cannot_scale(ssm.bound_scale.entry_config.led_ip, ssm.failure_reason);
+        zh_hk_cast_cannot_scale(ssm.bound_scale.exit_config.led_ip, ssm.failure_reason);
     }
 }
 void scale_sm_vehicle_come::after_enter(tdf_state_machine &_sm)

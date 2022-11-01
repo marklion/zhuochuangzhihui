@@ -787,6 +787,12 @@ bool zh_hk_cast_leave_bye(const std::string &_led_ip, const std::string &_plate_
     async_led_post(_led_ip, hk_led_make_cmd("一路顺风", _plate_no));
     return true;
 }
+bool zh_hk_cast_cannot_scale(const std::string &_led_ip, const std::string &_msg)
+{
+    zh_hk_cast_auto_empty(8, _led_ip);
+    async_led_post(_led_ip, hk_led_make_cmd(_msg, ""));
+    return true;
+}
 
 std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id, const NET_DVR_TIME &_start, const NET_DVR_TIME &_end, const std::string &_user_name, const std::string &_password)
 {
