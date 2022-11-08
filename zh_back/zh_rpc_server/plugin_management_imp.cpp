@@ -64,6 +64,8 @@ void plugin_management_handler::zh_plugin_run_plugin(const std::string &_cmd, co
 {
     int pipfd[2];
     int pipfd_err[2];
+    tdf_log tmp_log("plugin_exec", "/plugin/audit.log", "/plugin/audit.log");
+    tmp_log.log("execute cmd:%s from plugin:%s", _cmd.c_str(), _plugin_name.c_str());
     std::string plug_cmd = "/plugin/" + _plugin_name + "/bin/" + _plugin_name + "_plugin";
     if (access(plug_cmd.c_str(), X_OK) != 0)
     {
