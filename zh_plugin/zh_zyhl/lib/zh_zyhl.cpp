@@ -15,7 +15,7 @@ static bool send_req_to_zyhl(const std::string &_url, const neb::CJsonObject &_r
     auto remote_url = config("zyhl_url");
     if (appid.length() > 0 && secret.length() > 0 && remote_url.length() > 0)
     {
-        httplib::Client cli(remote_url);
+        httplib::Client cli(config("zyhl_url_host"));
         cli.set_read_timeout(20, 0);
         cli.set_follow_location(true);
         auto begin_point = time(NULL);
@@ -104,7 +104,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
                     tmp.Add("sale_address", single_item["product"]("area"));
                     tmp.Add("createTime", single_item("delivery_date"));
                     tmp.Add("companyName", single_item["customer_company"]("name"));
-                    tmp.Add("stuffName", single_item["product"]("name"));
+                    tmp.Add("stuffName", single_item["product"]("type"));
                     fetch_req.Add(tmp);
                 }
             }
@@ -184,7 +184,7 @@ static std::string send_file_to_zyhl(const std::string &_id, const std::string &
     auto remote_url = config("zyhl_url");
     if (appid.length() > 0 && secret.length() > 0 && remote_url.length() > 0)
     {
-        httplib::Client cli(remote_url);
+        httplib::Client cli(config("zyhl_url_host"));
         cli.set_read_timeout(20, 0);
         cli.set_follow_location(true);
         auto begin_point = time(NULL);
