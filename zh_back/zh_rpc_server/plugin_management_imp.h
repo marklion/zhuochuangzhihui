@@ -49,19 +49,21 @@ struct plugin_event_info{
         return ret;
     }
 };
-class plugin_management_handler:public plugin_managementIf{
+class plugin_management_handler : public plugin_managementIf
+{
 private:
     static plugin_management_handler *m_inst;
     tdf_log m_log;
     pthread_mutex_t m_que_lock;
     pthread_cond_t que_cond = PTHREAD_COND_INITIALIZER;
-    plugin_management_handler():m_log("plugin_management") {
+    plugin_management_handler() : m_log("plugin_management")
+    {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&m_que_lock, &attr);
         auto installed_plugins = internel_get_installed_plugins();
-        for (auto &itr:installed_plugins)
+        for (auto &itr : installed_plugins)
         {
             subscribe_event(itr);
         }
@@ -74,7 +76,7 @@ private:
                     timeval now;
                     timespec outtime;
                     gettimeofday(&now, NULL);
-                    outtime.tv_sec = now.tv_sec + 5;
+                    outtime.tv_sec = now.tv_sec + 120;
                     outtime.tv_nsec = now.tv_usec * 1000;
                     pthread_cond_timedwait(&que_cond, &m_que_lock, &outtime);
                     std::list<plugin_event_info> wait_do;
@@ -88,17 +90,36 @@ private:
                         }
                     }
                     pthread_mutex_unlock(&m_que_lock);
-                    for (auto &itr:wait_do)
+                    for (auto &itr : wait_do)
                     {
-                        std::string std_out;
-                        std::string std_err;
-                        zh_plugin_run_plugin("proc_event -c " + itr.get_cmd() + " " + itr.order_number, itr.plugin_name, std_out, std_err );
-                        if (std_err.empty())
+                        struct tmp_aw_param
                         {
-                            finish_event(itr.plugin_name, true);
-                        }
+                            plugin_management_handler *self_this = nullptr;
+                            std::string cmd;
+                            std::string order_number;
+                            std::string plugin_name;
+                        } *p_tmp_aw = new tmp_aw_param();
+                        p_tmp_aw->cmd = itr.get_cmd();
+                        p_tmp_aw->self_this = this;
+                        p_tmp_aw->order_number = itr.order_number;
+                        p_tmp_aw->plugin_name = itr.plugin_name;
+                        tdf_main::get_inst().Async_to_workthread(
+                            [](void *_private, const std::string &_chrct)
+                            {
+                                auto self_this = (tmp_aw_param *)(_private);
+                                std::string std_out;
+                                std::string std_err;
+                                self_this->self_this->zh_plugin_run_plugin("proc_event -c " + self_this->cmd + " " + self_this->order_number, self_this->plugin_name, std_out, std_err);
+                                if (std_err.empty())
+                                {
+                                    self_this->self_this->finish_event(self_this->plugin_name, true);
+                                }
+                                delete self_this;
+                            },
+                            p_tmp_aw, "");
                     }
-                } })
+                }
+            })
             .detach();
     }
     std::map<std::string, std::list<plugin_event_info>> event_deliver_map;
@@ -122,6 +143,6 @@ public:
     bool subscribe_event(const std::string &_plugin_name);
     void unsubscribe_event(const std::string &_plugin_name);
     void finish_event(const std::string &_plugin_name, bool runing_only = false);
-    virtual void get_que_by_name(std::vector<std::string> & _return, const std::string& ssid, const std::string& plugin_name);
-    virtual void pop_event_from_que(const std::string& ssid, const std::string& plugin_name);
+    virtual void get_que_by_name(std::vector<std::string> &_return, const std::string &ssid, const std::string &plugin_name);
+    virtual void pop_event_from_que(const std::string &ssid, const std::string &plugin_name);
 };

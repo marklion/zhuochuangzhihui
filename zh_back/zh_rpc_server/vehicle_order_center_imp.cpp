@@ -277,7 +277,7 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
 {
     bool ret = false;
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR driver_id == '%s')", order.id, order.main_vehicle_number.c_str(), order.driver_id.c_str());
+    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR (driver_id != '' AND driver_id == '%s') OR (driver_phone != '' AND driver_phone == '%s'))", order.id, order.main_vehicle_number.c_str(), order.driver_id.c_str(), order.driver_phone.c_str());
     if (exist_record)
     {
         ret = true;
@@ -303,13 +303,35 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         ZH_RETURN_NO_PRAVILIGE();
     }
 
+    auto order_is_same = [](const vehicle_order_info &_fir, const vehicle_order_info &_sec)->bool{
+        bool same = false;
+        if (_fir.main_vehicle_number == _sec.main_vehicle_number)
+        {
+            same = true;
+        }
+        else if (_fir.behind_vehicle_number.length() > 0 && _fir.behind_vehicle_number == _sec.behind_vehicle_number)
+        {
+            same = true;
+        }
+        else if (_fir.driver_phone.length() > 0 && _fir.driver_phone == _sec.driver_phone)
+        {
+            same = true;
+        }
+        else if (_fir.driver_id.length() > 0 && _fir.driver_id== _sec.driver_id)
+        {
+            same = true;
+        }
+
+        return same;
+    };
+
     for (auto itr = orders.begin(); itr != orders.end(); ++itr)
     {
         auto find_begin_ret = std::find_if(
             orders.begin(), itr,
             [&](const vehicle_order_info &_val)
             {
-                return (itr->main_vehicle_number == _val.main_vehicle_number || itr->driver_id == _val.driver_id);
+                return order_is_same(*itr, _val);
             });
         if (find_begin_ret != itr)
         {
@@ -319,7 +341,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
             itr + 1, orders.end(),
             [&](const vehicle_order_info &_val)
             {
-                return (itr->main_vehicle_number == _val.main_vehicle_number || itr->driver_id == _val.driver_id);
+                return order_is_same(*itr, _val);
             });
 
         if (find_end_ret != orders.end())
