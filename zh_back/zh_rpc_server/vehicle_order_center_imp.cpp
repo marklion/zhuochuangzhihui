@@ -1274,6 +1274,11 @@ void scale_state_machine::open_scale_timer()
                 {
                     tdf_state_machine_lock a(*ssm);
                     continue_push_same_weight(ssm->continue_weight, scale_ret);
+                    if (ssm->continue_weight.size() == 1 && ssm->m_cur_state->state_name() == "称重")
+                    {
+                        zh_hk_cast_holding(ssm->bound_scale.entry_config.led_ip, ssm->bound_vehicle_number);
+                        zh_hk_cast_holding(ssm->bound_scale.exit_config.led_ip, ssm->bound_vehicle_number);
+                    }
                 }
                 ssm->trigger_sm();
             }
