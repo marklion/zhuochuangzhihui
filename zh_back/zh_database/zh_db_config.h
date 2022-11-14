@@ -233,6 +233,7 @@ public:
     double max_count = 35;
     std::string use_stuff;
     std::string use_date;
+    long in_black_list = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -247,6 +248,7 @@ public:
         ret.push_back(sqlite_orm_column("max_count", sqlite_orm_column::REAL, &max_count));
         ret.push_back(sqlite_orm_column("use_stuff", sqlite_orm_column::STRING, &use_stuff));
         ret.push_back(sqlite_orm_column("use_date", sqlite_orm_column::STRING, &use_date));
+        ret.push_back(sqlite_orm_column("in_black_list", sqlite_orm_column::INTEGER, &in_black_list));
 
         return ret;
     }

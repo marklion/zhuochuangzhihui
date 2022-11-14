@@ -286,6 +286,34 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
     return ret;
 }
 
+static std::string _is_in_black_list(const vehicle_order_info &_order)
+{
+    std::string ret;
+    std::string tail_string = "在黑名单";
+
+    auto all_black_info = sqlite_orm::search_record_all<zh_sql_vehicle>("in_black_list == 1");
+    for (auto &itr:all_black_info)
+    {
+        if (_order.main_vehicle_number == itr.main_vehicle_number)
+        {
+            ret = _order.main_vehicle_number + tail_string;
+            break;
+        }
+        if (_order.behind_vehicle_number == itr.behind_vehicle_number && _order.behind_vehicle_number.size() > 0)
+        {
+            ret = _order.behind_vehicle_number + tail_string;
+            break;
+        }
+        if (_order.driver_id == itr.driver_id)
+        {
+            ret = _order.driver_id + tail_string;
+            break;
+        }
+    }
+
+    return ret;
+}
+
 static bool pri_create_order(const std::vector<vehicle_order_info> &orders, const std::string &ssid = "")
 {
     bool ret = false;
@@ -355,6 +383,14 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         if (vehicle_order_is_dup(order))
         {
             ZH_RETURN_DUP_ORDER();
+        }
+    }
+    for (auto &order:orders)
+    {
+        auto black_info = _is_in_black_list(order);
+        if (black_info.length() > 0)
+        {
+            ZH_RETURN_MSG(black_info);
         }
     }
 
@@ -2791,10 +2827,8 @@ static void pri_confirm_self_order(zh_sql_user_info user, const int64_t order_id
         one_info.end_time = zh_rpc_util_get_datestring().substr(0, 10);
     }
     tmp.push_back(one_info);
-    if (pri_create_order(tmp))
-    {
-        order->remove_record();
-    }
+    order->remove_record();
+    pri_create_order(tmp);
 }
 
 bool vehicle_order_center_handler::create_driver_self_order(const driver_self_order &order)

@@ -303,6 +303,7 @@ struct vehicle_info {
     8:string group_name,
     9:bool in_white_list,
     10:double max_count = 35,
+    11:bool in_black_list,
 }
 
 
