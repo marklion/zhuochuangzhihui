@@ -165,6 +165,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.min_limit = itr.min_limit;
         tmp.code = itr.code;
         tmp.use_for_white_list = itr.use_for_white_list;
+        tmp.auto_call_count = itr.auto_call_count;
 
         _return.push_back(tmp);
     }
@@ -409,4 +410,26 @@ void stuff_management_handler::get_white_list_stuff(std::vector<std::string> &_r
     {
         _return.push_back(itr.name);
     }
+}
+
+bool stuff_management_handler::set_auto_call_count(const std::string &ssid, const std::string &stuff_name, const int64_t auto_call_count)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
+    }
+
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", stuff_name.c_str());
+    if (!stuff)
+    {
+        ZH_RETURN_NO_STUFF();
+    }
+
+    stuff->auto_call_count = auto_call_count;
+    ret = stuff->update_record(ssid);
+
+    return ret;
 }

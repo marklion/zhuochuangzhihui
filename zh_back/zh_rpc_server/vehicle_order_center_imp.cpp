@@ -51,6 +51,11 @@ static bool change_order_status(zh_sql_vehicle_order &_order, zh_sql_order_statu
 {
     _order.push_status(_status, _hook);
     generate_order_event(_order);
+    auto voc = vehicle_order_center_handler::get_inst();
+    if (voc)
+    {
+        voc->execute_auto_call(_order.stuff_name);
+    }
     return true;
 }
 
@@ -847,6 +852,7 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
         vo->driver_id = driver_id;
     }
     ret = vo->update_record();
+    execute_auto_call(vo->stuff_name);
 
     return ret;
 }
@@ -1455,7 +1461,7 @@ bool scale_state_machine::scale_stable()
                         {
                             zh_hk_cast_need_drop(bound_scale.entry_config.led_ip, bound_vehicle_number);
                             zh_hk_cast_need_drop(bound_scale.exit_config.led_ip, bound_vehicle_number);
-                            ret = true;
+                            lack_weight = true;
                         }
                         else if (cur_weight < stuff->min_limit)
                         {
@@ -3117,4 +3123,20 @@ void vehicle_order_center_handler::get_white_vehicle_stuff(std::string &_return,
         ZH_RETURN_NO_VEHICLE();
     }
     _return = white_vehicle->use_stuff;
+}
+void vehicle_order_center_handler::execute_auto_call(const std::string &_stuff_name)
+{
+    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _stuff_name.c_str());
+    auto related_in_vehicles = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called == 1", _stuff_name.c_str());
+    auto related_wait_vehicle =sqlite_orm::search_record<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called != 1 AND m_registered == 1 ORDER BY check_in_timestamp", _stuff_name.c_str());
+
+    if (stuff && stuff->auto_call_count > 0)
+    {
+        long count_left = stuff->auto_call_count - related_in_vehicles.size();
+        if (related_wait_vehicle && count_left > 0)
+        {
+            pri_call_vehicle(related_wait_vehicle->get_pri_id(), false, "自动叫号");
+            execute_auto_call(_stuff_name);
+        }
+    }
 }

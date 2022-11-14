@@ -175,6 +175,7 @@ public:
     double max_limit = 49.5;
     std::string code;
     long use_for_white_list = 0;
+    long auto_call_count = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -189,6 +190,7 @@ public:
         ret.push_back(sqlite_orm_column("max_limit", sqlite_orm_column::REAL, &max_limit));
         ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
         ret.push_back(sqlite_orm_column("use_for_white_list", sqlite_orm_column::INTEGER, &use_for_white_list));
+        ret.push_back(sqlite_orm_column("auto_call_count", sqlite_orm_column::INTEGER, &auto_call_count));
 
         return ret;
     }
