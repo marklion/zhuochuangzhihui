@@ -2827,10 +2827,8 @@ static void pri_confirm_self_order(zh_sql_user_info user, const int64_t order_id
         one_info.end_time = zh_rpc_util_get_datestring().substr(0, 10);
     }
     tmp.push_back(one_info);
-    if (pri_create_order(tmp))
-    {
-        order->remove_record();
-    }
+    order->remove_record();
+    pri_create_order(tmp);
 }
 
 bool vehicle_order_center_handler::create_driver_self_order(const driver_self_order &order)
