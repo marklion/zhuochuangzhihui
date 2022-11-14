@@ -32,6 +32,8 @@
             </el-table-column>
             <el-table-column prop="in_white_list" label="加入白名单" width="100px" :formatter="format_white">
             </el-table-column>
+            <el-table-column prop="in_black_list" label="加入黑名单" width="100px" :formatter="format_black">
+            </el-table-column>
             <el-table-column prop="max_count" label="最大净重" width="100px">
             </el-table-column>
             <el-table-column fixed="right" label="操作" width="150px">
@@ -68,6 +70,10 @@
                 </el-form-item>
                 <el-form-item v-if="$store.state.user_info.permission != 3 && focus_vehicle.company_name == ''" label="添加白名单" prop="in_white_list">
                     <el-switch v-model="focus_vehicle.in_white_list" active-color="#13ce66" inactive-color="#ff4949">
+                    </el-switch>
+                </el-form-item>
+                <el-form-item v-if="$store.state.user_info.permission != 3 && focus_vehicle.company_name == ''" label="添加黑名单" prop="in_black_list">
+                    <el-switch v-model="focus_vehicle.in_black_list" active-color="#13ce66" inactive-color="#ff4949">
                     </el-switch>
                 </el-form-item>
                 <el-form-item label="分组名" prop="group_name">
@@ -281,6 +287,13 @@ export default {
                     console.log(err);
                 }
                 vue_this.init_all_vehicle();
+            }
+        },
+        format_black: function (value) {
+            if (value.in_black_list) {
+                return "是";
+            } else {
+                return "否";
             }
         },
         format_white: function (value) {
