@@ -1461,7 +1461,7 @@ bool scale_state_machine::scale_stable()
                         {
                             zh_hk_cast_need_drop(bound_scale.entry_config.led_ip, bound_vehicle_number);
                             zh_hk_cast_need_drop(bound_scale.exit_config.led_ip, bound_vehicle_number);
-                            ret = true;
+                            lack_weight = true;
                         }
                         else if (cur_weight < stuff->min_limit)
                         {
