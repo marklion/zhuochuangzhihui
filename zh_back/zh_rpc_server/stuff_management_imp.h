@@ -31,6 +31,7 @@ public:
     virtual void get_all_source_dest(std::vector<stuff_source_dest> &_return, const bool is_source);
     virtual bool del_source_dest(const std::string &ssid, const int64_t id);
     virtual void get_white_list_stuff(std::vector<std::string> &_return);
+    virtual bool set_auto_call_count(const std::string &ssid, const std::string &stuff_name, const int64_t auto_call_count);
 };
 
 #endif // _STUFF_MANAGEMENT_H_

@@ -257,6 +257,7 @@ struct stuff_info {
     13:double max_limit,
     14:string code,
     15:bool use_for_white_list,
+    16:i64 auto_call_count,
 }
 
 struct stuff_change_point {
@@ -290,6 +291,7 @@ service stuff_management {
     list<stuff_source_dest> get_all_source_dest(1:bool is_source) throws (1:gen_exp e),
     bool del_source_dest(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<string> get_white_list_stuff() throws (1:gen_exp e),
+    bool set_auto_call_count(1:string ssid, 2:string stuff_name, 3:i64 auto_call_count) throws (1:gen_exp e),
 }
 
 struct vehicle_info {
