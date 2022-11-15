@@ -2207,32 +2207,66 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
         return;
     }
     auto order_number = _qr_code.substr(order_number_begin, order_number_end - order_number_begin);
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
-    if (vo && vo->status >= 4)
+    if (order_number.length() > 0 && order_number[0] == 'v')
     {
-        print_weight_ticket(vo);
+        auto vehicle_recored_id = order_number.substr(1);
+        auto vr = sqlite_orm::search_record<zh_sql_vehicle>(atoi(vehicle_recored_id.c_str()));
+        if (vr)
+        {
+            tdf_state_machine_lock a(*this);
+            if (_road_ip == bound_scale.entry_qr_ip)
+            {
+                if (trigger_switch)
+                {
+                    entry_param.vehicle_number = vr->main_vehicle_number;
+                }
+                else
+                {
+                    zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
+                }
+            }
+            else if (_road_ip == bound_scale.exit_qr_ip)
+            {
+                if (trigger_switch)
+                {
+                    exit_param.vehicle_number= vr->main_vehicle_number;
+                }
+                else
+                {
+                    zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
+                }
+            }
+        }
     }
-    tdf_state_machine_lock a(*this);
-    if (_road_ip == bound_scale.entry_qr_ip)
+    else
     {
-        if (trigger_switch)
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+        if (vo && vo->status >= 4)
         {
-            entry_param.qr_code = order_number;
+            print_weight_ticket(vo);
         }
-        else
+        tdf_state_machine_lock a(*this);
+        if (_road_ip == bound_scale.entry_qr_ip)
         {
-            zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
+            if (trigger_switch)
+            {
+                entry_param.qr_code = order_number;
+            }
+            else
+            {
+                zh_hk_cast_exit_busy(bound_scale.entry_config.led_ip);
+            }
         }
-    }
-    else if (_road_ip == bound_scale.exit_qr_ip)
-    {
-        if (trigger_switch)
+        else if (_road_ip == bound_scale.exit_qr_ip)
         {
-            exit_param.qr_code = order_number;
-        }
-        else
-        {
-            zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
+            if (trigger_switch)
+            {
+                exit_param.qr_code = order_number;
+            }
+            else
+            {
+                zh_hk_cast_exit_busy(bound_scale.exit_config.led_ip);
+            }
         }
     }
 }
@@ -3099,10 +3133,8 @@ void vehicle_order_center_handler::cancel_plugin_que(const std::string &ssid)
     g_nc_req_pip.cancel_que();
 }
 
-bool vehicle_order_center_handler::record_white_vehicle_stuff(const std::string &vehicle_number, const std::string &stuff_name)
+void vehicle_order_center_handler::record_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number, const std::string &stuff_name)
 {
-    bool ret = false;
-
     auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("in_white_list != 0 AND main_vehicle_number == '%s'", vehicle_number.c_str());
     if (!white_vehicle)
     {
@@ -3110,9 +3142,9 @@ bool vehicle_order_center_handler::record_white_vehicle_stuff(const std::string 
     }
     white_vehicle->use_stuff = stuff_name;
     white_vehicle->use_date = zh_rpc_util_get_datestring();
-    ret = white_vehicle->update_record();
+    white_vehicle->update_record();
 
-    return ret;
+    _return = std::to_string(white_vehicle->get_pri_id());
 }
 
 void vehicle_order_center_handler::get_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number)
@@ -3128,7 +3160,7 @@ void vehicle_order_center_handler::execute_auto_call(const std::string &_stuff_n
 {
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _stuff_name.c_str());
     auto related_in_vehicles = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called == 1", _stuff_name.c_str());
-    auto related_wait_vehicle =sqlite_orm::search_record<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called != 1 AND m_registered == 1 ORDER BY check_in_timestamp", _stuff_name.c_str());
+    auto related_wait_vehicle = sqlite_orm::search_record<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called != 1 AND m_registered == 1 ORDER BY check_in_timestamp", _stuff_name.c_str());
 
     if (stuff && stuff->auto_call_count > 0)
     {

@@ -101,7 +101,7 @@ bool open_api_handler::external_trigger_scale_qr(const std::string &scale_ip, co
     auto ssm = vehicle_order_center_handler::get_inst()->get_scale_sm(scale_name);
     if (ssm)
     {
-        ssm->proc_trigger_qr(qr_code, scale_ip + "\r");
+        ssm->proc_trigger_qr(qr_code + "\r", scale_ip);
         ssm->trigger_sm();
     }
 
