@@ -419,7 +419,7 @@ service vehicle_order_center {
     list<vehicle_order_detail> get_order_by_anchor(1:string ssid, 2:i64 anchor, 3:string status_name, 4:string enter_date) throws (1:gen_exp e),
     gate_relate_info get_gate_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
-    bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order, 3:bool from_api) throws (1:gen_exp e),
     bool confirm_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),

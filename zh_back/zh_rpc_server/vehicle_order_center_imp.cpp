@@ -319,7 +319,7 @@ static std::string _is_in_black_list(const vehicle_order_info &_order)
     return ret;
 }
 
-static bool pri_create_order(const std::vector<vehicle_order_info> &orders, const std::string &ssid = "")
+static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool from_api, const std::string &ssid = "")
 {
     bool ret = false;
     auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, false);
@@ -336,7 +336,8 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         ZH_RETURN_NO_PRAVILIGE();
     }
 
-    auto order_is_same = [](const vehicle_order_info &_fir, const vehicle_order_info &_sec)->bool{
+    auto order_is_same = [](const vehicle_order_info &_fir, const vehicle_order_info &_sec) -> bool
+    {
         bool same = false;
         if (_fir.main_vehicle_number == _sec.main_vehicle_number)
         {
@@ -350,7 +351,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
         {
             same = true;
         }
-        else if (_fir.driver_id.length() > 0 && _fir.driver_id== _sec.driver_id)
+        else if (_fir.driver_id.length() > 0 && _fir.driver_id == _sec.driver_id)
         {
             same = true;
         }
@@ -390,7 +391,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
             ZH_RETURN_DUP_ORDER();
         }
     }
-    for (auto &order:orders)
+    for (auto &order : orders)
     {
         auto black_info = _is_in_black_list(order);
         if (black_info.length() > 0)
@@ -437,6 +438,8 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, cons
             }
         }
 
+        tmp.from_api = from_api;
+
         if (op_permit && tmp.insert_record())
         {
             tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
@@ -482,18 +485,18 @@ static void dup_one_order(zh_sql_vehicle_order &vo)
 
             std::vector<vehicle_order_info> tmp;
             tmp.push_back(tmp_order);
-            pri_create_order(tmp);
+            pri_create_order(tmp, false);
         }
     }
 }
-bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders)
+bool vehicle_order_center_handler::create_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &orders, const bool from_api)
 {
     auto ssid_verify = ssid;
     if (ssid_verify.length() <= 0)
     {
         ssid_verify = "xxx";
     }
-    return pri_create_order(orders, ssid_verify);
+    return pri_create_order(orders, from_api, ssid_verify);
 }
 
 bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
@@ -550,7 +553,7 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
     for (auto &itr : order)
     {
         auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
-        if (!single_order || (single_order->status >= 2 && single_order->status != 100))
+        if (!single_order || (single_order->status >= 2 && single_order->status != 100) || single_order->from_api)
         {
             ZH_RETURN_ORDER_CANNOT_CANCEL(itr.main_vehicle_number);
         }
@@ -2229,7 +2232,7 @@ void scale_state_machine::proc_trigger_qr(const std::string &_qr_code, const std
             {
                 if (trigger_switch)
                 {
-                    exit_param.vehicle_number= vr->main_vehicle_number;
+                    exit_param.vehicle_number = vr->main_vehicle_number;
                 }
                 else
                 {
@@ -2868,7 +2871,7 @@ static void pri_confirm_self_order(zh_sql_user_info user, const int64_t order_id
     }
     tmp.push_back(one_info);
     order->remove_record();
-    pri_create_order(tmp);
+    pri_create_order(tmp, false);
 }
 
 bool vehicle_order_center_handler::create_driver_self_order(const driver_self_order &order)

@@ -310,6 +310,7 @@ public:
     std::string err_string;
     double price = 0;
     std::string call_user_name;
+    long from_api = 0;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -356,6 +357,7 @@ public:
         ret.push_back(sqlite_orm_column("err_string", sqlite_orm_column::STRING, &err_string));
         ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
         ret.push_back(sqlite_orm_column("call_user_name", sqlite_orm_column::STRING, &call_user_name));
+        ret.push_back(sqlite_orm_column("from_api", sqlite_orm_column::INTEGER, &from_api));
 
         return ret;
     }
