@@ -448,7 +448,7 @@ service vehicle_order_center {
     list<vehicle_order_detail> export_order_by_condition(1:string ssid, 2:string begin_date, 3:string end_date, 4:string company_name, 5:string stuff_name) throws (1:gen_exp e),
     list<string> go_through_plugin_que(1:string ssid) throws (1:gen_exp e),
     void cancel_plugin_que(1:string ssid) throws (1:gen_exp e),
-    bool record_white_vehicle_stuff(1:string vehicle_number, 2:string stuff_name) throws (1:gen_exp e),
+    string record_white_vehicle_stuff(1:string vehicle_number, 2:string stuff_name) throws (1:gen_exp e),
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
 }
 

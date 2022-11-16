@@ -23,15 +23,26 @@
             </div>
         </van-form>
     </van-dialog>
+
+    <van-dialog v-model="qr_show" title="过磅码" :showConfirmButton="false">
+        <div style="text-align:center;">
+            <vue-qr :text="'http:///#/mobile/self_order/v' + qr_string"></vue-qr>
+            <div>
+                此码对准地磅扫描器
+            </div>
+        </div>
+    </van-dialog>
 </div>
 </template>
 
 <script>
 import PinyinMatch from "pinyin-match"
+import vueQr from 'vue-qr'
 export default {
     name: 'WhiteScaleShow',
     data: function () {
         return {
+            qr_show: false,
             init_number_diag: false,
             search_number: '',
             record: [],
@@ -42,7 +53,11 @@ export default {
             set_stuff: '',
             stuff_for_select: [],
             showPicker: false,
+            qr_string: '',
         };
+    },
+    components: {
+        vueQr
     },
     methods: {
         onConfirm(value) {
@@ -100,9 +115,8 @@ export default {
             vue_this.$call_remote_process("vehicle_order_center", "record_white_vehicle_stuff", [vue_this.set_number, vue_this.set_stuff]).then(function (resp) {
                 vue_this.set_diag = false;
                 if (resp) {
-                    vue_this.$dialog.alert({
-                        message: '设置成功'
-                    });
+                    vue_this.qr_string = resp;
+                    vue_this.qr_show = true;
                 }
             });
         },
