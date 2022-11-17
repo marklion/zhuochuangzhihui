@@ -92,7 +92,7 @@ app.post('/zh_rest/vehicle_order/add', async (req, res) => {
     var ret = { err_msg: '无权限' };
     try {
         var ssid = req.query.zh_ssid;
-        var resp = await request_rpc('vehicle_order_center', 'create_vehicle_order', [ssid, req.body]);
+        var resp = await request_rpc('vehicle_order_center', 'create_vehicle_order', [ssid, req.body, true]);
         if (resp) {
             ret.err_msg = '';
         }
