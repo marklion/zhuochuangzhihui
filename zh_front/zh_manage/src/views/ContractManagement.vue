@@ -159,13 +159,31 @@
         </van-nav-bar>
         <van-search v-model="search_key" placeholder="公司名过滤" />
         <van-cell v-for="(single_contract , index) in contract_need_show" is-link :key="index" :title="single_contract.name" :label="'余额:' + single_contract.balance" @click="show_qr = true;cur_qr_name = single_contract.name"></van-cell>
-        <van-dialog v-model="show_qr" title="请司机扫描此码自助派车和排号" :showConfirmButton="false" closeOnClickOverlay>
-            <div style="text-align: center;">
-                <vue-qr :text="'http://' + domain_name + '/#/mobile/self_order?user=' + cur_qr_name"></vue-qr>
-                <div>
-                    {{cur_qr_name}}
-                </div>
+        <van-dialog v-model="show_qr" title="客户独立定价" :showConfirmButton="false" closeOnClickOverlay>
+            <van-cell center v-for="(single_price, index) in focus_price_company" :key="index" :title="single_price.stuff_name" :value="single_price.price.toFixed(2)">
+                <template #right-icon>
+                    <van-button size="mini" type="warning" @click="focus_customer_stuff_price.id = single_price.id;focus_customer_stuff_price.stuff_name = single_price.stuff_name;focus_customer_stuff_price.price = single_price.price;focus_add = false;show_edit_price = true;focus_customer_stuff_price.customer_name = cur_qr_name">
+                        修改
+                    </van-button>
+                    <van-button size="mini" type="danger" @click="delete_stuff_price(single_price.id)">删除</van-button>
+                </template>
+            </van-cell>
+            <div style="margin:12px;">
+                <van-button type="primary" block size="small" @click="show_edit_price = true;focus_add = true;focus_customer_stuff_price.customer_name = cur_qr_name">新增</van-button>
             </div>
+        </van-dialog>
+
+        <van-dialog @close="focus_customer_stuff_price.id = 0" v-model="show_edit_price" :title="focus_add?'新增':'修改' + '独立定价'" :showConfirmButton="false" closeOnClickOverlay>
+            <van-form @submit="edit_stuff_price">
+                <van-field :rules="[{ required: true, message: '请指定物料' }]" readonly :disabled="!focus_add" clickable name="picker" :value="focus_customer_stuff_price.stuff_name" label="物料" placeholder="点击选择物料" @click="show_stuff_picker= true" />
+                <van-popup get-container="body" v-model="show_stuff_picker" position="bottom">
+                    <van-picker show-toolbar :columns="all_stuffs" @confirm="confirm_pick_stuff" @cancel="show_stuff_picker = false" />
+                </van-popup>
+                <van-field v-model="focus_customer_stuff_price.price" label="单价" type="number" placeholder="请输入单价" :rules="[{ required: true, message: '请输入单价' }]" />
+                <div style="margin: 16px;">
+                    <van-button round block type="info" native-type="submit">保存</van-button>
+                </div>
+            </van-form>
         </van-dialog>
     </div>
 
@@ -211,7 +229,6 @@ import Vant from 'vant';
 import 'vant/lib/index.css';
 import ItemForSelect from "../components/ItemForSelect.vue"
 import PinyinMatch from "pinyin-match"
-import vueQr from 'vue-qr'
 Vue.use(Vant);
 Vue.use(VueClipboard)
 export default {
@@ -219,10 +236,19 @@ export default {
     components: {
         "table-import-export": TableImportExport,
         "item-for-select": ItemForSelect,
-        vueQr
     },
     data: function () {
         return {
+            show_edit_price: false,
+            all_stuffs: [],
+            show_stuff_picker: false,
+            focus_add: false,
+            focus_customer_stuff_price: {
+                id: 0,
+                stuff_name: '',
+                customer_name: '',
+                price: 0
+            },
             pickerOptions: {
                 shortcuts: [{
                     text: '最近一周',
@@ -286,6 +312,7 @@ export default {
                     label: '消费'
                 },
             ],
+            all_customer_stuff_price: [],
             charge_company: '',
             charge_stuff: '',
             charge_value: '',
@@ -381,6 +408,17 @@ export default {
         };
     },
     computed: {
+        focus_price_company: function () {
+            var ret = [];
+
+            this.all_customer_stuff_price.forEach(element => {
+                if (element.customer_name == this.cur_qr_name) {
+                    ret.push(element);
+                }
+            });
+
+            return ret;
+        },
         date_range: {
             get: function () {
                 var ret = [];
@@ -437,6 +475,50 @@ export default {
         },
     },
     methods: {
+        delete_stuff_price: function (_id) {
+            var vue_this = this;
+            this.$dialog.confirm({
+                title: '删除确认',
+                message: "确定要删除吗?"
+            }).then(function () {
+                vue_this.$call_remote_process("contract_management", "del_single_contract_price", [vue_this.$cookies.get("zh_ssid"), _id]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_stuff_company();
+                    }
+                });
+            });
+        },
+        init_all_stuff: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("stuff_management", 'get_all_stuff', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
+                vue_this.all_stuffs = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_stuffs, index, element.name);
+                });
+            });
+        },
+        edit_stuff_price: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("contract_management", "add_single_contract_price", [vue_this.$cookies.get("zh_ssid"), vue_this.focus_customer_stuff_price]).then(function (resp) {
+                if (resp) {
+                    vue_this.show_edit_price = false;
+                    vue_this.init_stuff_company();
+                }
+            });
+        },
+        confirm_pick_stuff: function (_stuff_name) {
+            this.focus_customer_stuff_price.stuff_name = _stuff_name;
+            this.show_stuff_picker = false;
+        },
+        init_stuff_company: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("contract_management", "get_all_single_contract_price", []).then(function (resp) {
+                vue_this.all_customer_stuff_price = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_customer_stuff_price, index, element);
+                });
+            });
+        },
         advance_export_record: function () {
             var vue_this = this;
             vue_this.$call_remote_process("contract_management", "export_history", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.balance_focus_company]).then(function (resp) {
@@ -616,6 +698,8 @@ export default {
         vue_this.$call_remote_process("system_management", "get_domain_name", []).then(function (resp) {
             vue_this.domain_name = resp;
         });
+        this.init_stuff_company();
+        this.init_all_stuff();
     },
 }
 </script>
