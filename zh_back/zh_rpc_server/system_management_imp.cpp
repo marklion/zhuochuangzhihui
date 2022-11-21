@@ -817,3 +817,34 @@ bool system_management_handler::switch_device_state(const std::string &ssid, con
     ret = true;
     return ret;
 }
+
+bool system_management_handler::need_seal_no()
+{
+    bool ret = false;
+
+    auto config = get_cur_config_json();
+    if (config("need_seal_no") == "true")
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+bool system_management_handler::set_need_seal_no(const std::string &ssid, const bool need_sn)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+
+    if (!opt_user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+
+    auto config = get_cur_config_json();
+    config.Delete("need_seal_no");
+    config.Add("need_seal_no", need_sn, need_sn);
+    std::ofstream config_file("/conf/device/device_config.json", std::ios::out);
+    config_file << config.ToFormattedString();
+    config_file.close();
+
+    return true;
+}

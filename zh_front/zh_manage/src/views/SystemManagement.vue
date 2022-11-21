@@ -411,6 +411,9 @@
             <el-divider direction="vertical"></el-divider>
             <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
             </el-switch>
+            <el-divider direction="vertical"></el-divider>
+            <el-switch v-model="need_seal_no" @change="change_need_seal_no" active-text="需要铅封号" inactive-text="无需铅封号">
+            </el-switch>
             <div v-if="register_time_config.enabled">
                 <el-divider>排号配置</el-divider>
                 <el-row :gutter="20">
@@ -551,6 +554,7 @@ export default {
                 enabled: false,
             },
             auto_confirm: false,
+            need_seal_no: false,
             get_component_from_plugin_name: function (_plugin_name) {
                 var comp = require(`../components/${_plugin_name}.vue`);
                 return comp.default;
@@ -929,6 +933,24 @@ export default {
                 });
             });
         },
+        init_need_seal_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "need_seal_no", []).then(function (resp) {
+                if (resp) {
+                    vue_this.need_seal_no = true;
+                } else {
+                    vue_this.need_seal_no = false;
+                }
+            });
+        },
+        change_need_seal_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "set_need_seal_no", [vue_this.$cookies.get("zh_ssid"), vue_this.need_seal_no]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_need_seal_no();
+                }
+            });
+        },
         change_auto_confirm: function () {
             var vue_this = this;
             vue_this.$call_remote_process("system_management", "set_auto_confirm", [vue_this.$cookies.get("zh_ssid"), vue_this.auto_confirm]);
@@ -958,6 +980,7 @@ export default {
         this.get_company_address_info();
         this.get_register_info();
         this.init_plugin_que();
+        this.init_need_seal_no();
 
     },
 }

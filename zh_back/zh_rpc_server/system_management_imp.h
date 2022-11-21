@@ -61,6 +61,8 @@ public:
     virtual void reset_scale_state(const std::string &ssid, const std::string &scale_name);
     virtual bool read_cam_io(const std::string &cam_ip);
     virtual bool switch_device_state(const std::string &ssid, const std::string &device_name);
+    virtual bool need_seal_no();
+    virtual bool set_need_seal_no(const std::string &ssid, const bool need_sn);
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_

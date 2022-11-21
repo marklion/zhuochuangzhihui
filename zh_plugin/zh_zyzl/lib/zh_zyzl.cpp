@@ -179,7 +179,7 @@ static std::string _util_get_datestring(time_t _time)
     auto date_time = _util_get_timestring(_time);
     return date_time.substr(0, 10);
 }
-bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, const std::string &_m_time, double p_weight, double m_weight, double j_weight)
+bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, const std::string &_m_time, double p_weight, double m_weight, double j_weight, const std::string &_ticket_no, const std::string &_seal_no)
 {
     bool ret = false;
     std::string push_weight_path = "/push_weight";
@@ -193,6 +193,8 @@ bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, 
     req.Add("jWeight", j_weight);
     req.Add("pTime", _p_time);
     req.Add("mTime", _m_time);
+    req.Add("ticketNo", _ticket_no);
+    req.Add("sealNo", _seal_no);
 
     if (send_to_zyzl(
             push_weight_path,

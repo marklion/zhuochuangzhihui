@@ -74,7 +74,7 @@ app.post('/zh_rest/vehicle_order/del', async (req, res) => {
         var ssid = req.query.zh_ssid;
         console.log(ssid);
         console.log(req.body);
-        var resp = await request_rpc('vehicle_order_center', 'cancel_vehicle_order', [ssid, req.body]);
+        var resp = await request_rpc('vehicle_order_center', 'cancel_vehicle_order', [ssid, req.body, true]);
         if (resp) {
             ret.err_msg = '';
         }

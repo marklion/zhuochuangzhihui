@@ -43,6 +43,9 @@
                     <el-descriptions-item label="状态错误" v-if="cur_vehicle.err_string">
                         {{cur_vehicle.err_string}}
                     </el-descriptions-item>
+                    <el-descriptions-item label="铅封号" v-if="cur_vehicle.basic_info.seal_no">
+                        {{cur_vehicle.basic_info.seal_no}}
+                    </el-descriptions-item>
                     <template slot="extra">
                         <div style="padding:5px;" v-if="$store.state.user_info.permission != 3">
                             <el-button size="mini" type="danger" @click="manual_close">手动结束运输</el-button>

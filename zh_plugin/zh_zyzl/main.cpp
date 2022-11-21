@@ -40,6 +40,7 @@ struct weight_detail {
     double p_weight;
     double m_weight;
     std::string seal_no;
+    std::string ticket_no;
 };
 
 static weight_detail get_weight_detail(const std::string &_order_number)
@@ -58,6 +59,8 @@ static weight_detail get_weight_detail(const std::string &_order_number)
     ret.m_time = tmp.m_time;
     ret.p_weight = tmp.basic_info.p_weight;
     ret.m_weight = tmp.basic_info.m_weight;
+    ret.ticket_no = tmp.basic_info.order_number;
+    ret.seal_no = tmp.basic_info.seal_no;
     return ret;
 }
 
@@ -67,7 +70,7 @@ static bool push_weight_wapper(const std::string &_plate, const std::string &_or
 
     auto wd = get_weight_detail(_order_number);
 
-    return ZH_ZYZL_push_weight(_plate, wd.p_time, wd.m_time, wd.p_weight, wd.m_weight, wd.m_weight - wd.p_weight);
+    return ZH_ZYZL_push_weight(_plate, wd.p_time, wd.m_time, wd.p_weight, wd.m_weight, wd.m_weight - wd.p_weight, wd.ticket_no, wd.seal_no);
 }
 
 static bool call_vehicle_wapper(const std::string &_plate, const std::string &_order_number)

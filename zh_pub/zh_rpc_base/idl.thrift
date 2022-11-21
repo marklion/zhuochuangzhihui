@@ -158,6 +158,8 @@ service system_management {
     void reset_scale_state(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
     bool read_cam_io(1:string cam_ip) throws (1:gen_exp e),
     bool switch_device_state(1:string ssid, 2:string device_name) throws (1:gen_exp e),
+    bool need_seal_no() throws (1:gen_exp e),
+    bool set_need_seal_no(1:string ssid, 2:bool need_sn) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -351,6 +353,7 @@ struct vehicle_order_info {
     24:bool is_sale,
     25:string bl_number,
     26:double price,
+    27:string seal_no,
 }
 
 struct gate_relate_info {
@@ -421,7 +424,7 @@ service vehicle_order_center {
     weight_relate_info get_weight_info(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     bool create_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order, 3:bool from_api) throws (1:gen_exp e),
     bool confirm_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
-    bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
+    bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order, 3:bool from_api) throws (1:gen_exp e),
     vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),
     bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed) throws (1:gen_exp e),
     bool update_vehicle_order(1:string ssid, 2:vehicle_order_info order) throws (1:gen_exp e),
@@ -450,6 +453,7 @@ service vehicle_order_center {
     void cancel_plugin_que(1:string ssid) throws (1:gen_exp e),
     string record_white_vehicle_stuff(1:string vehicle_number, 2:string stuff_name) throws (1:gen_exp e),
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
+    bool set_seal_no(1:string ssid, 2:string order_number, 3:string seal_no) throws (1:gen_exp e),
 }
 
 struct video_param{

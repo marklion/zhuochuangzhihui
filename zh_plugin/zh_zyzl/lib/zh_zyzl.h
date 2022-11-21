@@ -32,7 +32,7 @@ struct zy_sync_plan_data{
 zy_sync_plan_data json_to_struct_plan(const neb::CJsonObject &_json);
 bool ZH_ZYZL_call_vehicle(const std::string &_plate);
 bool ZH_ZYZL_push_p(const std::string &_plate);
-bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, const std::string &_m_time, double p_weight, double m_weight, double j_weight);
+bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, const std::string &_m_time, double p_weight, double m_weight, double j_weight, const std::string &_ticket_no, const std::string &_seal_no);
 void ZH_ZYZL_sync_plans(const std::list<zy_sync_plan_data> &_plan_date);
 std::string ZH_ZYZL_pull_ticket(const std::string &_plate);
 

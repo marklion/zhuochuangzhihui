@@ -209,6 +209,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     {
         _return.basic_info.is_sale = false;
     }
+    _return.basic_info.seal_no = vo->seal_no;
 }
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
@@ -522,7 +523,7 @@ bool vehicle_order_center_handler::confirm_vehicle_order(const std::string &ssid
     return ret;
 }
 
-bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order)
+bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order, const bool from_api)
 {
     bool ret = true;
 
@@ -553,7 +554,7 @@ bool vehicle_order_center_handler::cancel_vehicle_order(const std::string &ssid,
     for (auto &itr : order)
     {
         auto single_order = sqlite_orm::search_record<zh_sql_vehicle_order>(itr.id);
-        if (!single_order || (single_order->status >= 2 && single_order->status != 100) || single_order->from_api)
+        if (!single_order || (single_order->status >= 2 && single_order->status != 100) || (single_order->from_api && !from_api))
         {
             ZH_RETURN_ORDER_CANNOT_CANCEL(itr.main_vehicle_number);
         }
@@ -603,6 +604,14 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
     if (!vo || vo->status >= 4)
     {
         ZH_RETURN_NO_PRAVILIGE();
+    }
+    auto smh = system_management_handler::get_inst();
+    if (smh)
+    {
+        if (smh->need_seal_no() && vo->seal_no.length() == 0)
+        {
+            ZH_RETURN_MSG("需要先设定铅封号");
+        }
     }
     vo->m_permit = confirmed;
     ret = vo->update_record();
@@ -3174,4 +3183,25 @@ void vehicle_order_center_handler::execute_auto_call(const std::string &_stuff_n
             execute_auto_call(_stuff_name);
         }
     }
+}
+
+bool vehicle_order_center_handler::set_seal_no(const std::string &ssid, const std::string &order_number, const std::string &seal_no)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
+    }
+
+    auto order = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (!order)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+
+    order->seal_no = seal_no;
+    ret = order->update_record();
+
+    return ret;
 }
