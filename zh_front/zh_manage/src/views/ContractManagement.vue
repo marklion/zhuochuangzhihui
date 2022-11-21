@@ -434,6 +434,9 @@ export default {
         balance_history_need_show: function () {
             var ret = [];
             this.balance_history.forEach(element => {
+                if (this.$store.state.focus_stuff.length > 0 && !element.reason.includes(this.$store.state.focus_stuff)) {
+                    return;
+                }
                 if (this.history_type == 0) {
                     ret.push(element);
                 } else if (this.history_type == 1 && !element.reason.includes('（系统自动）')) {
