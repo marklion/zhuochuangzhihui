@@ -311,6 +311,7 @@ public:
     double price = 0;
     std::string call_user_name;
     long from_api = 0;
+    std::string seal_no;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -358,6 +359,7 @@ public:
         ret.push_back(sqlite_orm_column("price", sqlite_orm_column::REAL, &price));
         ret.push_back(sqlite_orm_column("call_user_name", sqlite_orm_column::STRING, &call_user_name));
         ret.push_back(sqlite_orm_column("from_api", sqlite_orm_column::INTEGER, &from_api));
+        ret.push_back(sqlite_orm_column("seal_no", sqlite_orm_column::STRING, &seal_no));
 
         return ret;
     }

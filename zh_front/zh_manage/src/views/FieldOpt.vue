@@ -1,10 +1,11 @@
 <template>
 <div class="field_opt_show">
-    <van-nav-bar class="nav_bar_show" @click-left="$router.replace({name:'AllCameVehicle'})" title="装卸货确认">
+    <van-nav-bar class="nav_bar_show" @click-left="$router.replace({name:'AllCameVehicle'})" title="装卸详情">
         <template #left>
             <van-icon name="home-o" color="red" size="20">主页</van-icon>
         </template>
     </van-nav-bar>
+    <van-divider>装卸货确认</van-divider>
     <van-cell :title="cur_order.basic_info.main_vehicle_number" :value="cur_order.basic_info.stuff_name" :label="cur_order.basic_info.source_dest_name"></van-cell>
     <van-cell :title="cur_order.basic_info.driver_name" :value="cur_order.basic_info.driver_phone" :label="cur_order.basic_info.company_name"></van-cell>
     <van-cell title="一次称重" :value="cur_order.basic_info.p_weight"></van-cell>
@@ -16,6 +17,13 @@
     <div style="margin:15px;" v-if="cur_order.basic_info.status >= 1 && cur_order.basic_info.status != 100">
         <van-button v-if="!cur_order.confirmed" block type="primary" @click="confirm_deliver(true)">确认</van-button>
         <van-button v-else block type="danger" @click="confirm_deliver(false)">取消确认</van-button>
+    </div>
+    <div v-if="need_seal_no">
+        <van-divider>铅封号</van-divider>
+        <van-field v-model="seal_no" label="铅封号" placeholder="请输入铅封号" />
+        <div style="margin:15px;" v-if="cur_order.basic_info.status != 100">
+            <van-button block type="info" @click="set_seal_no">保存</van-button>
+        </div>
     </div>
 </div>
 </template>
@@ -30,6 +38,8 @@ export default {
     name: 'FieldOpt',
     data: function () {
         return {
+            seal_no: '',
+            need_seal_no: false,
             show_company_Picker: false,
             showPicker: false,
             ticket_ditail_change_diag: false,
@@ -67,6 +77,14 @@ export default {
         },
     },
     methods: {
+        set_seal_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "set_seal_no", [vue_this.$cookies.get("zh_ssid"), this.cur_order.basic_info.order_number, this.seal_no]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_order();
+                }
+            });
+        },
         on_company_confirm: function (_value) {
             this.dest_company = _value;
             this.show_company_Picker = false;
@@ -106,6 +124,7 @@ export default {
                 vue_this.m_weight = vue_this.cur_order.basic_info.m_weight;
                 vue_this.address = vue_this.cur_order.basic_info.company_address;
                 vue_this.dest_company = vue_this.cur_order.basic_info.source_dest_name;
+                vue_this.seal_no = vue_this.cur_order.basic_info.seal_no;
             });
         },
         init_dest_company_pool: function () {
@@ -117,10 +136,17 @@ export default {
                 });
             });
         },
+        init_need_seal_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "need_seal_no", []).then(function (resp) {
+                vue_this.need_seal_no = resp;
+            });
+        },
     },
     beforeMount: function () {
         this.init_order();
         this.init_dest_company_pool();
+        this.init_need_seal_no();
     },
 }
 </script>
