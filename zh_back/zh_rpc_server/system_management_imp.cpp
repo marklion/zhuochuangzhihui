@@ -848,3 +848,40 @@ bool system_management_handler::set_need_seal_no(const std::string &ssid, const 
 
     return true;
 }
+
+void system_management_handler::trigger_cam_vehicle_number(const std::string &ssid, const std::string &vehicle_number, const std::string &device_ip, const std::string &device_name)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD);
+
+    if (!opt_user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
+    }
+
+    std::string cmd = "zh_manual_tool -p " + device_ip + " -v '" + vehicle_number + "'";
+    if (device_name.length() > 0)
+    {
+        cmd += " -s '" + device_name + "'";
+    }
+
+    system(cmd.c_str());
+}
+void system_management_handler::get_cam_pic(std::string& _return, const std::string& ssid, const std::string& device_ip)
+{
+    auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD);
+
+    if (!opt_user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_FIELD);
+    }
+
+    std::string cmd = "zh_hk_gate_test pic " + device_ip + " 1 admin P@ssw0rd 2>/dev/null | grep http";
+    auto fp = popen(cmd.c_str(), "r");
+    if (fp)
+    {
+        char buff[2048] = {0};
+        fread(buff, 1, sizeof(buff), fp);
+        _return = buff;
+        pclose(fp);
+    }
+}

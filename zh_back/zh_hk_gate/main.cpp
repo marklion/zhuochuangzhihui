@@ -18,17 +18,23 @@ static NET_DVR_TIME dateTime2unix(const std::string &_time, int _min = 0)
 }
 int main(int argc, char const *argv[])
 {
-    if (argc < 5)
+    if (argc < 3)
     {
-        std::cout << "usage: " << argv[0] << "(pic|video) nvr_ip nvr_channel nvr_username nvr_password [begin_time] [end_time]" << std::endl;
+        std::cout << "usage: " << argv[0] << "(pic|video|reboot) nvr_ip nvr_channel nvr_username nvr_password [begin_time] [end_time]" << std::endl;
         return -1;
     }
 
     std::string cmd = argv[1];
     std::string nvr_ip = argv[2];
-    int nvr_channel = atoi(argv[3]);
-    std::string username = argv[4];
-    std::string password = argv[5];
+    int nvr_channel = 0;
+    std::string username;
+    std::string password;
+    if (argc > 3)
+    {
+        nvr_channel = atoi(argv[3]);
+        username = argv[4];
+        password = argv[5];
+    }
     std::string begin_time;
     std::string end_time;
     if (argc > 6)
@@ -45,6 +51,10 @@ int main(int argc, char const *argv[])
     else if (cmd == "video")
     {
         path_name = zh_hk_get_channel_video(nvr_ip, nvr_channel, dateTime2unix(begin_time), dateTime2unix(end_time), username, password);
+    }
+    else if (cmd == "reboot")
+    {
+        zh_hk_reboot_cam(nvr_ip);
     }
 
     std::cout << path_name << std::endl;

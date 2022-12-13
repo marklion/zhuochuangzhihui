@@ -55,9 +55,19 @@
                 <van-button type="primary" v-if="single_cam.is_scale" size="small" @click="manual_confirm_scale(single_cam.ip)">手动确认称重</van-button>
                 <van-button type="warning" size="small" @click="trigger_gate_opt(single_cam.ip, 1)">开闸</van-button>
                 <van-button type="danger" size="small" @click="trigger_gate_opt(single_cam.ip, 0)">关闸</van-button>
+                <van-button type="info" size="small" @click="open_trigger_vehicle_diag(single_cam)">手动输入车号触发</van-button>
+                <van-button type="primary" size="small" @click="get_cam_pic(single_cam.ip)">拍照</van-button>
             </van-collapse-item>
         </van-collapse>
     </van-popup>
+
+    <van-dialog v-model="show_trigger_vehicle_number" title="输入车号触发" :showConfirmButton="false" closeOnClickOverlay>
+        <van-field v-model="trigger_vehicle" center clearable label="车牌号" placeholder="请输入车牌">
+            <template #button>
+                <van-button size="small" type="primary" @click="trigger_vehicle_number(trigger_device_ip, trigger_device_name)">触发</van-button>
+            </template>
+        </van-field>
+    </van-dialog>
 
 </div>
 </template>
@@ -75,6 +85,10 @@ export default {
     name: 'AllCameVehicle',
     data: function () {
         return {
+            trigger_device_ip: '',
+            trigger_device_name: '',
+            trigger_vehicle: '',
+            show_trigger_vehicle_number: false,
             all_stuff_info: [],
             act_page: 0,
             show_opt_cell: false,
@@ -159,6 +173,24 @@ export default {
         },
     },
     methods: {
+        get_cam_pic: function (_ip) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_cam_pic", [vue_this.$cookies.get("zh_ssid"), _ip]).then(function (resp) {
+                ImagePreview([resp]);
+            });
+        },
+        open_trigger_vehicle_diag: function (_device) {
+            this.trigger_device_ip = _device.ip;
+            this.trigger_device_name = _device.name.split(' ').slice(0, -1).join('');
+            this.show_trigger_vehicle_number = true;
+        },
+        trigger_vehicle_number: function (_ip, _name) {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", 'trigger_cam_vehicle_number', [vue_this.$cookies.get("zh_ssid"), vue_this.trigger_vehicle, _ip, _name]).then(function () {
+                vue_this.show_trigger_vehicle_number = false;
+                vue_this.trigger_vehicle = '';
+            });
+        },
         change_auto_call_count: function (_value, _detail) {
             console.log(_value);
             console.log(_detail);

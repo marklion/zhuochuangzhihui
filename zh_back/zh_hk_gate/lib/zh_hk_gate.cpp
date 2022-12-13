@@ -141,7 +141,6 @@ void MessageCallback(LONG lCommand, NET_DVR_ALARMER *pAlarmer, char *pAlarmInfo,
         break;
     }
 }
-static LONG g_li_handler = -1;
 bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback_cfg)
 {
     bool ret = false;
@@ -443,19 +442,9 @@ void __attribute__((constructor)) zh_hk_init(void)
     {
         g_log.err("failed to init hk_lib:%d", NET_DVR_GetLastError());
     }
-
-    // g_li_handler = NET_DVR_StartListen_V30(nullptr, 49914, MessageCallback);
-    if (g_li_handler < 0)
-    {
-        g_log.err("failed to listen hk:%d", NET_DVR_GetLastError());
-    }
 }
 void __attribute__((destructor)) zh_hk_fini(void)
 {
-    if (g_li_handler != -1)
-    {
-        // NET_DVR_StopListen_V30(g_li_handler);
-    }
     NET_DVR_Cleanup();
 }
 void zh_hk_manual_trigger(const std::string &_road_ip)
@@ -858,7 +847,7 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
         ret = ret.substr(store_prefix.length(), ret.length() - store_prefix.length());
     }
 
-    return "http://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + web_prefix + ret;
+    return "https://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + web_prefix + ret;
 }
 
 std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name, const std::string &_password)
@@ -893,5 +882,19 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
     auto end_point = time(NULL);
     g_log.log("cap pic spend %d second", end_point - begin_point);
 
-    return "http://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
+    return "https://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
+}
+
+void zh_hk_reboot_cam(const std::string &_ip)
+{
+    NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto user_id = NET_DVR_Login_V30(_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
+    if (user_id >= 0)
+    {
+        NET_DVR_RebootDVR(user_id);
+    }
+    else
+    {
+        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
+    }
 }

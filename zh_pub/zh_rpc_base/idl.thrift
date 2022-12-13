@@ -160,6 +160,8 @@ service system_management {
     bool switch_device_state(1:string ssid, 2:string device_name) throws (1:gen_exp e),
     bool need_seal_no() throws (1:gen_exp e),
     bool set_need_seal_no(1:string ssid, 2:bool need_sn) throws (1:gen_exp e),
+    void trigger_cam_vehicle_number(1:string ssid, 2:string vehicle_number, 3:string device_ip, 4:string device_name) throws (1:gen_exp e),
+    string get_cam_pic(1:string ssid, 2:string device_ip) throws (1:gen_exp e),
 }
 
 struct user_info {
