@@ -456,6 +456,12 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool
                 auto before_come_status = zh_sql_order_status::make_before_come_status();
                 change_order_status(tmp, before_come_status);
             }
+            auto enable_check_in = system_management_handler::get_inst()->check_in_enabled();
+            if (!enable_check_in)
+            {
+                tmp.m_registered = true;
+                tmp.check_in_timestamp = time(nullptr);
+            }
             ret = tmp.update_record();
         }
     }
@@ -753,6 +759,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (!vo)
     {
         ZH_RETURN_NO_ORDER();
+    }
+    if (!system_management_handler::get_inst()->check_in_enabled())
+    {
+        ZH_RETURN_NO_PRAVILIGE();
     }
     if (vo->status != 1)
     {

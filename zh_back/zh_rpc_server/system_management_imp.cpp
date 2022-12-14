@@ -885,3 +885,15 @@ void system_management_handler::get_cam_pic(std::string& _return, const std::str
         pclose(fp);
     }
 }
+bool system_management_handler::check_in_enabled()
+{
+    bool ret = true;
+
+    auto config = get_cur_config_json();
+    if (config("disable_check_in") == "true")
+    {
+        ret = false;
+    }
+
+    return ret;
+}
