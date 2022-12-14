@@ -65,6 +65,7 @@ public:
     virtual bool set_need_seal_no(const std::string &ssid, const bool need_sn);
     virtual void trigger_cam_vehicle_number(const std::string &ssid, const std::string &vehicle_number, const std::string &device_ip, const std::string &device_name);
     virtual void get_cam_pic(std::string& _return, const std::string& ssid, const std::string& device_ip);
+    bool check_in_enabled();
 };
 
 #endif // _SYSTEM_MANAGEMENT_IMP_H_
