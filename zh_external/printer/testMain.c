@@ -56,68 +56,60 @@ int main(int argc, char **argv)
 {
 	int ret = -1;
 
-	ret = OpenPort(NET_PORT, argv[1]);
+	ret = OpenPort(SERIAL_PORT, argv[1]);
 	if (ret >= 0)
 	{
 		int type = 4;
 		ret = POS_Status_RTQueryTypeStatus(type);
 		if (ret == 0)
 		{
-			ret = QueryErrState();
+			int isFont = 1;
+			int isBold = 1;
+			int isDoubleWidth = 1;
+			int isDoubleHeight = 1;
+			int isUnderLine = 1;
+			ret = POS_Control_SetPrintFontE(isFont, isBold, isDoubleWidth, isDoubleHeight, isUnderLine);
+			ret |= POS_Control_SetPrintFontC(isDoubleWidth, isDoubleHeight, isUnderLine);
 			if (ret == 0)
 			{
-				int isFont = 1;
-				int isBold = 1;
-				int isDoubleWidth = 1;
-				int isDoubleHeight = 1;
-				int isUnderLine = 1;
-				ret = POS_Control_SetPrintFontE(isFont, isBold, isDoubleWidth, isDoubleHeight, isUnderLine);
-				ret |= POS_Control_SetPrintFontC(isDoubleWidth, isDoubleHeight, isUnderLine);
-				if (ret == 0)
+				POS_Control_AlignType(1);
+				char header_content[] = "卓创智汇自动称重";
+				char header_gbk[1024];
+				u2g(header_content, strlen(header_content), header_gbk, sizeof(header_gbk));
+				ret |= POS_Output_PrintString(header_gbk);
+
+				char tmpp[4096];
+				u2g(argv[2], strlen(argv[2]), tmpp, sizeof(tmpp));
+
+				ret |= POS_Output_PrintString(tmpp);
+
+				if (argc >= 4)
 				{
-					POS_Control_AlignType(1);
-					char header_content[] = "卓创智汇自动称重";
-					char header_gbk[1024];
-					u2g(header_content, strlen(header_content), header_gbk, sizeof(header_gbk));
-					ret |= POS_Output_PrintString(header_gbk);
-
-					char tmpp[4096];
-					u2g(argv[2],strlen(argv[2]),tmpp,sizeof(tmpp));
-
-					ret |= POS_Output_PrintString(tmpp);
-
-					if (argc >= 4)
-					{
-						char qr_gbk[2048];
-						u2g(argv[3], strlen(argv[3]), qr_gbk, sizeof(qr_gbk));
-						ret |= POS_Output_PrintBar2code(2, 76, 0, 3,qr_gbk);
-					}
-					ret |= POS_Output_PrintBuffAndFeedLines(5);
+					char qr_gbk[2048];
+					u2g(argv[3], strlen(argv[3]), qr_gbk, sizeof(qr_gbk));
+					ret |= POS_Output_PrintBar2code(2, 76, 0, 3, qr_gbk);
+				}
+				ret |= POS_Output_PrintBuffAndFeedLines(5);
+				if (0 == ret)
+				{
+					ret = POS_Control_CutPaper(0, 0);
 					if (0 == ret)
 					{
-						ret = POS_Control_CutPaper(0, 0);
-						if (0 == ret)
-						{
-						}
-						else
-						{
-							printf("POS_Control_CutPaper() fail ret=%d\n", ret);
-						}
 					}
 					else
 					{
-						printf("POS_Output_PrintString() fail ret=%d\n", ret);
+						printf("POS_Control_CutPaper() fail ret=%d\n", ret);
 					}
 				}
 				else
 				{
-					printf("POS_Control_SetPrintFontE() fail ret=%d\n", ret);
-					printf("POS_Control_SetPrintFontC() fail ret=%d\n", ret);
+					printf("POS_Output_PrintString() fail ret=%d\n", ret);
 				}
 			}
 			else
 			{
-				printf("QueryErrState ERR,ret:%d\n", ret);
+				printf("POS_Control_SetPrintFontE() fail ret=%d\n", ret);
+				printf("POS_Control_SetPrintFontC() fail ret=%d\n", ret);
 			}
 		}
 		else if (1 == ret)

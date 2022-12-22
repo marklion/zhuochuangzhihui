@@ -15,6 +15,7 @@ public:
     zh_printer_dev(const std::string &_ip);
     bool print_string(const std::string &_content);
     bool print_qr(const std::string &_qr_code);
+    void cut_paper();
 };
 
 #endif // _ZH_PRINTER_H_

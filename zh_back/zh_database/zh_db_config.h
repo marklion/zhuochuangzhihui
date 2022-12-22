@@ -312,6 +312,7 @@ public:
     std::string call_user_name;
     long from_api = 0;
     std::string seal_no;
+    std::string max_load;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -360,6 +361,7 @@ public:
         ret.push_back(sqlite_orm_column("call_user_name", sqlite_orm_column::STRING, &call_user_name));
         ret.push_back(sqlite_orm_column("from_api", sqlite_orm_column::INTEGER, &from_api));
         ret.push_back(sqlite_orm_column("seal_no", sqlite_orm_column::STRING, &seal_no));
+        ret.push_back(sqlite_orm_column("max_load", sqlite_orm_column::STRING, &max_load));
 
         return ret;
     }

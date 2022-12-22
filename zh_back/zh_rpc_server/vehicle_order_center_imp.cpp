@@ -752,7 +752,7 @@ static bool pri_calcu_balanc(zh_sql_contract &_company, zh_sql_stuff &_stuff, in
     return ret;
 }
 
-bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel, const std::string &driver_id)
+bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel, const std::string &driver_id, const std::string& max_load)
 {
     bool ret = false;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
@@ -777,6 +777,7 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
         ZH_RETURN_MSG("离场时间过短，无法排号，请稍后排号");
     }
     vo->m_registered = is_cancel ? 0 : 1;
+    vo->max_load = max_load;
     if (!vo->m_registered)
     {
         vo->check_in_timestamp = 0;
@@ -2117,6 +2118,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         {
             m_time = m_status->timestamp;
         }
+        std::string max_load = vo->max_load;
         if (vo->p_weight != 0)
         {
             p_weight_string = zh_double2string_reserve2(vo->p_weight) + "吨";
@@ -2125,6 +2127,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         {
             m_weight_string = zh_double2string_reserve2(vo->m_weight) + "吨";
             j_weight_string = zh_double2string_reserve2(abs(vo->p_weight - vo->m_weight));
+            max_load = "";
         }
         content += "一次称重" + p_type + p_weight_string + "\n";
         content += "称重时间：" + p_time + "\n";
@@ -2136,6 +2139,10 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "---------------\n";
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
+        if (max_load.length() > 0)
+        {
+            content += "最大装车量：" + max_load + "\n吨";
+        }
         qr_code = "http://" + std::string(getenv("BASE_URL"));
         qr_code += std::string(getenv("URL_REMOTE")) + "/#/mobile/field_opt/" + vo->order_number;
     }

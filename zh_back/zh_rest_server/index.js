@@ -108,7 +108,7 @@ app.post('/zh_rest/vehicle_order/add', async (req, res) => {
 app.post('/zh_rest/order_register/add', async (req, res) => {
     var ret = { err_msg: '无权限' };
     try {
-        var resp = await request_rpc('vehicle_order_center', 'driver_check_in', [req.body.id, false, req.body.driver_id]);
+        var resp = await request_rpc('vehicle_order_center', 'driver_check_in', [req.body.id, false, req.body.driver_id, req.body.max_load]);
         if (resp) {
             ret.err_msg = '';
         }
