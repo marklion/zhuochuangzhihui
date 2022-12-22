@@ -266,6 +266,7 @@ bool system_management_handler::print_content(const std::string &printer_ip, con
     {
         tmp.print_qr(qr_code);
     }
+    tmp.cut_paper();
 
     return true;
 }

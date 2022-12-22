@@ -21,7 +21,7 @@
 ** 功能：把要打印的字符串放入缓冲区
 ** 示例：打印ASCII abcdefg Print_ASCII("abcdefg");
 */
-	void Print_ASCII(unsigned char *buf);
+	void Print_ASCII(const char *buf);
 
 	/*
 ** 函数：void Set_Right_Interval(unsigned char interval)

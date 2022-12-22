@@ -34,7 +34,7 @@ void print_And_Line(void)
 ** 参数： buf  要发送的字符串数据
    功能： 把要打印的字符串放入缓冲区
 */
-void Print_ASCII(unsigned char *buf)
+void Print_ASCII(const char *buf)
 {
 	while(*buf != '\0')
     {

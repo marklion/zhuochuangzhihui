@@ -143,7 +143,7 @@ static void start_checkin_check_timer()
                     {
                         try
                         {
-                            vehicle_order_center_handler::get_inst()->driver_check_in(itr.get_pri_id(), true, "");
+                            vehicle_order_center_handler::get_inst()->driver_check_in(itr.get_pri_id(), true, "", "");
                         }
                         catch (gen_exp &e)
                         {
