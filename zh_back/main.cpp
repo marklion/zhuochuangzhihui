@@ -138,7 +138,7 @@ static void start_checkin_check_timer()
                 if (rci.enabled && rci.pass_time > 0)
                 {
                     need_pass_time -= rci.pass_time * 60;
-                    auto checkin_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 AND call_timestamp < %d AND call_timestamp != 0", need_pass_time);
+                    auto checkin_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 1 AND call_timestamp < %d AND call_timestamp != 0 AND is_scaling == 0", need_pass_time);
                     for (auto &itr : checkin_order)
                     {
                         try

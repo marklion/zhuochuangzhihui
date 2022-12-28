@@ -2341,6 +2341,12 @@ void scale_state_machine::record_entry_exit()
         enter_cam_ip = bound_scale.entry_config.cam_ip;
         exit_cam_ip = bound_scale.exit_config.cam_ip;
         m_log.log("记录当前车辆:%s,入口：%s, 出口：%s", bound_vehicle_number.c_str(), enter_cam_ip.c_str(), exit_cam_ip.c_str());
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
+        if (vo)
+        {
+            vo->is_scaling = 1;
+            vo->update_record();
+        }
         return;
     }
 
@@ -2351,8 +2357,15 @@ void scale_state_machine::record_entry_exit()
         enter_cam_ip = bound_scale.exit_config.cam_ip;
         exit_cam_ip = bound_scale.entry_config.cam_ip;
         m_log.log("记录当前车辆:%s,入口：%s, 出口：%s", bound_vehicle_number.c_str(), enter_cam_ip.c_str(), exit_cam_ip.c_str());
+        auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
+        if (vo)
+        {
+            vo->is_scaling = 1;
+            vo->update_record();
+        }
         return;
     }
+
 }
 
 void scale_state_machine::broadcast_enter_scale()
