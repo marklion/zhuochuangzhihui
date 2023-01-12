@@ -5,7 +5,6 @@
 #include "../../zh_database/zh_db_config.h"
 #include <sys/wait.h>
 
-tdf_log g_log("id_reader");
 std::vector<std::string> split_string(const std::string &s, const std::string &seperator)
 {
     std::vector<std::string> result;
@@ -65,7 +64,6 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
         char sam_id[64] = {0};
         if (1 == GetSamdId(sam_id))
         {
-            g_log.log("sam id: %s", sam_id);
             if (0 != FindCardCmd())
             {
                 if (0 != SelCardCmd())
@@ -85,39 +83,32 @@ std::string zh_read_id_no(const std::string &ip, unsigned short port)
                             }
                             else
                             {
-                                g_log.err("iconv convert failed: %s", strerror(errno));
                             }
                             iconv_close(cd);
                         }
                         else
                         {
-                            g_log.err("iconv open failed: %s", strerror(errno));
                         }
                     }
                     else
                     {
-                        g_log.err("read card failed");
                     }
                 }
                 else
                 {
-                    g_log.err("select card failed");
                 }
             }
             else
             {
-                g_log.err("find card failed");
             }
             read_ret = true;
         }
         else
         {
-            g_log.err("get samid failed");
         }
     }
     else
     {
-        g_log.err("open id reader failed");
     }
     CloseComm();
 

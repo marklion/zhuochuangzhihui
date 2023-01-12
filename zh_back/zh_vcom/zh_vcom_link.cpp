@@ -103,8 +103,6 @@ std::string zh_vcom_link::get_pts()
                                             return;
                                         }else
                                         {
-                                            g_log.log("recv from com ip:%s port:%d", ip.c_str(), port);
-                                            g_log.log_package(tmp, read_len);
                                             write(ptm_fd, tmp, read_len);
                                         }
                                     }
@@ -115,8 +113,6 @@ std::string zh_vcom_link::get_pts()
                                         if (read_len > 0)
                                         {
                                             send(socket_fd, tmp, read_len, 0);
-                                            g_log.log("send to com ip:%s port:%d", ip.c_str(), port);
-                                            g_log.log_package(tmp, read_len);
                                         }
                                         else
                                         {
@@ -197,12 +193,10 @@ bool zh_vcom_link::proc_modbus(int _address, std::function<bool(modbus_t *, void
             unsigned int usec;
             if (0 == modbus_get_response_timeout(mctx, &sec, &usec))
             {
-                g_log.log("get response timeout sec:%d, usec:%d", sec, usec);
                 sec = 0;
                 usec = 700000;
                 if (0 == modbus_set_response_timeout(mctx, sec, usec))
                 {
-                    g_log.log("set response timeout sec:%d, usec:%d", sec, usec);
                 }
             }
             if (0 == modbus_connect(mctx))

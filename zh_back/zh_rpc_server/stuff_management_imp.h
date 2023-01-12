@@ -32,6 +32,10 @@ public:
     virtual bool del_source_dest(const std::string &ssid, const int64_t id);
     virtual void get_white_list_stuff(std::vector<std::string> &_return);
     virtual bool set_auto_call_count(const std::string &ssid, const std::string &stuff_name, const int64_t auto_call_count);
+    virtual bool add_stuff_inv_info(const std::string& ssid, const std::string& name);
+    virtual void del_stuff_inv_info(const std::string& ssid, const int64_t id);
+    virtual bool update_stuff_inv_info(const std::string& ssid, const stuff_inv_info& sii);
+    virtual void get_stuff_inv_info(std::vector<stuff_inv_info> & _return, const std::string& ssid);
 };
 
 #endif // _STUFF_MANAGEMENT_H_

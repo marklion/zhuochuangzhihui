@@ -146,7 +146,18 @@
                 </el-table-column>
             </el-table>
         </el-tab-pane>
+        <el-tab-pane label="货仓配置" name="stuff_inv_info">
+            <el-button size="small" type="primary" @click="add_stuff_inv_info">新增</el-button>
+            <el-descriptions v-for="(single_sii, index) in all_sii" :key="index" :title="single_sii.name" :column="4" size="small" border>
+                <template slot="extra">
+                    <el-button type="success" size="small" @click="open_edit_sii(single_sii)">编辑</el-button>
+                    <el-button type="danger" size="small" @click="del_stuff_inv_info(single_sii)">删除</el-button>
+                </template>
+                <el-descriptions-item v-for="(single_sie, sie_index) in single_sii.sie" :key="sie_index" :label="single_sie.stuff_name">{{single_sie.inventory}}</el-descriptions-item>
+            </el-descriptions>
+        </el-tab-pane>
     </el-tabs>
+
     <el-dialog :title="(focus_customer_stuff_price.id == 0?'新增':'修改') + '独立定价'" :visible.sync="customer_stuff_diag" width="60%" @keyup.enter.native="opt_customer_stuff_price">
         <el-form :model="focus_customer_stuff_price" ref="focus_customer_stuff_price_form" label-width="150px">
             <el-form-item label="公司名称" prop="customer_name">
@@ -225,6 +236,23 @@
             </el-table>
         </van-list>
     </el-drawer>
+
+    <el-dialog @close="close_edit_sii" title="编辑货仓" :visible.sync="edit_sii_diag" width="60%" @keyup.enter.native="update_stuff_inv_info">
+        <el-form :model="focus_sii" ref="edit_sii" label-width="150px">
+            <el-form-item label="货仓名称" prop="name">
+                <el-input v-model="focus_sii.name" placeholder="请输入货仓名称"></el-input>
+            </el-form-item>
+            <el-form-item v-for="(single_sie, index) in  focus_sii.sie" :key="index" :label="single_sie.stuff_name">
+                <el-input v-model="single_sie.inventory" type="number" placeholder="请输入库存"></el-input>
+                <el-button @click.prevent="del_stuff_from_sie(single_sie.stuff_name)">删除</el-button>
+            </el-form-item>
+
+            <el-form-item>
+                <el-button type="primary" @click="add_sub_stuff">新增物料</el-button>
+                <el-button type="success" @click="update_stuff_inv_info">确认</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
 </div>
 </template>
 
@@ -244,6 +272,9 @@ export default {
     },
     data: function () {
         return {
+            focus_sii: {},
+            edit_sii_diag: false,
+            all_sii: [],
             customer_stuff_diag: false,
             focus_customer_stuff_price: {
                 id: 0,
@@ -622,11 +653,89 @@ export default {
                 is_source: false,
             };
         },
+        add_sub_stuff: function () {
+            this.$prompt('请输入物料名', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+            }).then(({
+                value
+            }) => {
+                this.focus_sii.sie.push({
+                    stuff_name: value,
+                    inventory: 0
+                });
+            });
+        },
+        init_stuff_inv_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("stuff_management", "get_stuff_inv_info", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.all_sii = [];
+                resp.forEach((element, index) => {
+                    vue_this.$set(vue_this.all_sii, index, element);
+                });
+            });
+        },
+        add_stuff_inv_info: function () {
+            var vue_this = this;
+            this.$prompt('请输入货仓名', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("stuff_management", "add_stuff_inv_info", [vue_this.$cookies.get("zh_ssid"), value]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_stuff_inv_info();
+                    }
+                });
+            });
+        },
+        del_stuff_inv_info: function (_sii) {
+            this.$confirm('确认删除' + _sii.name + '吗？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                var vue_this = this;
+                vue_this.$call_remote_process("stuff_management", "del_stuff_inv_info", [vue_this.$cookies.get("zh_ssid"), _sii.id]).then(function () {
+                    vue_this.init_stuff_inv_info();
+                });
+
+            });
+        },
+        update_stuff_inv_info: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("stuff_management", "update_stuff_inv_info", [vue_this.$cookies.get("zh_ssid"), vue_this.focus_sii]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_stuff_inv_info();
+                    vue_this.edit_sii_diag = false;
+                }
+            });
+        },
+        open_edit_sii: function (_sii) {
+            this.focus_sii = {
+                ..._sii
+            };
+            this.edit_sii_diag = true;
+        },
+        close_edit_sii: function () {
+            this.focus_sii = {};
+            this.init_stuff_inv_info();
+        },
+        del_stuff_from_sie: function (_stuff_name) {
+            for (var i = 0; i < this.focus_sii.sie.length; i++) {
+                if (this.focus_sii.sie[i].stuff_name == _stuff_name) {
+                    this.focus_sii.sie.splice(i, 1);
+                    break;
+                }
+            }
+        },
     },
     beforeMount: function () {
         this.init_all_stuff();
         this.init_all_stuff_source_dest();
         this.init_customer_stuff_price();
+        this.init_stuff_inv_info();
     },
 
 }

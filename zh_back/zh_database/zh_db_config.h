@@ -161,6 +161,45 @@ public:
         return "user_login_table";
     }
 };
+
+class zh_sql_stuff_inv_info:public sql_tree_base
+{
+public:
+    std::string name;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "stuff_inv_info_table";
+    }
+};
+
+class zh_sql_stuff_inv_element:public sql_tree_base
+{
+public:
+    std::string stuff_name;
+    double inventory = 0;
+    zh_sql_stuff_inv_element() {
+        add_parent_type<zh_sql_stuff_inv_info>("belong_sii");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+        ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
+        ret.push_back(sqlite_orm_column("inventory", sqlite_orm_column::REAL, &inventory));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "stuff_inv_element_table";
+    }
+};
 class zh_sql_stuff : public sql_tree_base
 {
 public:
@@ -314,6 +353,7 @@ public:
     std::string seal_no;
     std::string max_load;
     long is_scaling = 0;
+    std::string bound_inv_name;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -364,6 +404,7 @@ public:
         ret.push_back(sqlite_orm_column("seal_no", sqlite_orm_column::STRING, &seal_no));
         ret.push_back(sqlite_orm_column("max_load", sqlite_orm_column::STRING, &max_load));
         ret.push_back(sqlite_orm_column("is_scaling", sqlite_orm_column::INTEGER, &is_scaling));
+        ret.push_back(sqlite_orm_column("bound_inv_name", sqlite_orm_column::STRING, &bound_inv_name));
 
         return ret;
     }

@@ -433,3 +433,128 @@ bool stuff_management_handler::set_auto_call_count(const std::string &ssid, cons
 
     return ret;
 }
+
+bool stuff_management_handler::add_stuff_inv_info(const std::string& ssid, const std::string& name)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_inv_info>("name == '%s'", name.c_str());
+    if (exist_record)
+    {
+        ZH_RETURN_MSG("信息已存在");
+    }
+
+    zh_sql_stuff_inv_info tmp;
+    tmp.name = name;
+
+    ret = tmp.insert_record();
+
+    return ret;
+}
+void stuff_management_handler::del_stuff_inv_info(const std::string& ssid, const int64_t id)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_inv_info>(id);
+    if (!exist_record)
+    {
+        ZH_RETURN_MSG("信息不存在");
+    }
+    auto all_sie = exist_record->get_all_children<zh_sql_stuff_inv_element>("belong_sii");
+    for (auto &itr:all_sie)
+    {
+        itr.remove_record();
+    }
+    exist_record->remove_record();
+}
+bool stuff_management_handler::update_stuff_inv_info(const std::string &ssid, const stuff_inv_info &sii)
+{
+    bool ret = false;
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+
+    bool has_dup = false;
+    for (auto itr = sii.sie.begin(); itr != sii.sie.end(); itr++)
+    {
+        if (sii.sie.end() != std::find_if(
+            itr + 1,
+            sii.sie.end(),
+            [&](const stuff_inv_element &_item){
+                return _item.stuff_name == itr->stuff_name;
+            }))
+        {
+            has_dup = true;
+            break;
+        }
+    }
+    if (has_dup)
+    {
+        ZH_RETURN_MSG("物料重复了");
+    }
+
+    auto exist_record = sqlite_orm::search_record<zh_sql_stuff_inv_info>(sii.id);
+    if (!exist_record)
+    {
+        ZH_RETURN_MSG("信息不存在");
+    }
+    auto all_sie = exist_record->get_all_children<zh_sql_stuff_inv_element>("belong_sii");
+    for (auto &itr : all_sie)
+    {
+        itr.remove_record();
+    }
+
+    for (auto &itr : sii.sie)
+    {
+        zh_sql_stuff_inv_element tmp;
+        tmp.set_parent(*exist_record, "belong_sii");
+        tmp.stuff_name = itr.stuff_name;
+        tmp.inventory = itr.inventory;
+        tmp.insert_record();
+    }
+
+    exist_record->name = sii.name;
+
+    ret = exist_record->update_record();
+
+    return ret;
+}
+void stuff_management_handler::get_stuff_inv_info(std::vector<stuff_inv_info> &_return, const std::string &ssid)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_USER);
+    }
+
+    auto all_exist_record = sqlite_orm::search_record_all<zh_sql_stuff_inv_info>();
+    for (auto &itr:all_exist_record)
+    {
+        stuff_inv_info sii;
+        sii.name = itr.name;
+        sii.id = itr.get_pri_id();
+        auto all_sie = itr.get_all_children<zh_sql_stuff_inv_element>("belong_sii");
+        for (auto &itr_sie:all_sie)
+        {
+            stuff_inv_element sie;
+            sie.id = itr_sie.get_pri_id();
+            sie.stuff_name = itr_sie.stuff_name;
+            sie.inventory = itr_sie.inventory;
+            sii.sie.push_back(sie);
+        }
+
+        _return.push_back(sii);
+    }
+}

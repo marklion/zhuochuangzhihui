@@ -3,7 +3,7 @@
 #include "../../zh_database/zh_db_config.h"
 #include <modbus/modbus.h>
 
-tdf_log g_log("traffic_light");
+static tdf_log g_log("traffic_light");
 
 static bool set_modbus_light(const std::string &_ip, bool _close)
 {
@@ -11,6 +11,8 @@ static bool set_modbus_light(const std::string &_ip, bool _close)
     auto mtx = modbus_new_tcp(_ip.c_str(), MODBUS_TCP_DEFAULT_PORT);
     if (mtx)
     {
+        modbus_set_byte_timeout(mtx, 3, 0);
+        modbus_set_response_timeout(mtx, 3, 0);
         if (0 == modbus_connect(mtx))
         {
             if (1 == modbus_write_bit(mtx, 0, _close))

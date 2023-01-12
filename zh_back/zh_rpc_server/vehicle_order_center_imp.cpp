@@ -49,13 +49,21 @@ static void generate_order_event(zh_sql_vehicle_order &_order)
 
 static bool change_order_status(zh_sql_vehicle_order &_order, zh_sql_order_status &_status, const zh_order_save_hook &_hook = zh_order_save_hook())
 {
+    tdf_log tmp_log("scale sm");
+    long begin_change = time(nullptr);
     _order.push_status(_status, _hook);
+    long change_status_point = time(nullptr);
+    tmp_log.log("change spend:%ld", change_status_point - begin_change);
     generate_order_event(_order);
+    long gen_event_point = time(nullptr);
+    tmp_log.log("gen event spend:%ld", gen_event_point - change_status_point);
     auto voc = vehicle_order_center_handler::get_inst();
     if (voc)
     {
         voc->execute_auto_call(_order.stuff_name);
     }
+    long auto_call_point = time(nullptr);
+    tmp_log.log("exe auto call:%ld", auto_call_point - gen_event_point);
     return true;
 }
 
@@ -598,7 +606,7 @@ void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_retur
     }
     make_vehicle_detail_from_sql(_return, *vo);
 }
-bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed)
+bool vehicle_order_center_handler::confirm_order_deliver(const std::string& ssid, const std::string& order_number, const bool confirmed, const std::string& inv_name)
 {
     bool ret = false;
     auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
@@ -620,6 +628,7 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid
         }
     }
     vo->m_permit = confirmed;
+    vo->bound_inv_name = inv_name;
     ret = vo->update_record();
     return ret;
 }
@@ -1033,6 +1042,16 @@ static void recalcu_balance_inventory(zh_sql_vehicle_order &_vo, const std::stri
             stuff->update_record(_vo.order_number);
         }
     }
+    auto sii = sqlite_orm::search_record<zh_sql_stuff_inv_info>("name == '%s'", _vo.bound_inv_name.c_str());
+    if (sii)
+    {
+        auto sie = sii->get_children<zh_sql_stuff_inv_element>("belong_sii", "stuff_name == '%s'", _vo.stuff_name.c_str());
+        if (sie)
+        {
+            sie->inventory += _vo.p_weight - _vo.m_weight;
+            sie->update_record();
+        }
+    }
     auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _vo.company_name.c_str());
     if (company && stuff && company->is_sale)
     {
@@ -1129,6 +1148,7 @@ bool vehicle_order_center_handler::upload_enter_weight_attachment(const int64_t 
     }
     vo->enter_weight = enter_weight;
     ret = vo->update_record();
+    execute_auto_call(vo->stuff_name);
 
     return ret;
 }
@@ -1989,6 +2009,7 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
 
 std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
 {
+    get_log().log("begin record:%d", time(nullptr));
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
     if (vo)
     {
@@ -2047,6 +2068,8 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                 return ret;
             },
             [](zh_sql_vehicle_order &) {});
+
+    get_log().log("finish find:%d", time(nullptr));
         if (vo->status < 3)
         {
             vo->p_nvr_ip1 = bound_scale.entry_nvr_ip + ":" + std::to_string(bound_scale.entry_channel);
@@ -2077,6 +2100,7 @@ std::unique_ptr<zh_sql_vehicle_order> scale_state_machine::record_order()
                 }
             }
         }
+    get_log().log("do change:%d", time(nullptr));
     }
     return vo;
 }
@@ -2365,7 +2389,6 @@ void scale_state_machine::record_entry_exit()
         }
         return;
     }
-
 }
 
 void scale_state_machine::broadcast_enter_scale()
@@ -3202,7 +3225,12 @@ void vehicle_order_center_handler::execute_auto_call(const std::string &_stuff_n
 {
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _stuff_name.c_str());
     auto related_in_vehicles = sqlite_orm::search_record_all<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called == 1", _stuff_name.c_str());
-    auto related_wait_vehicle = sqlite_orm::search_record<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called != 1 AND m_registered == 1 ORDER BY check_in_timestamp", _stuff_name.c_str());
+    std::string weight_upload_filter = "";
+    if (stuff && stuff->need_enter_weight)
+    {
+        weight_upload_filter = " AND enter_weight_attachment_ext_key > 0";
+    }
+    auto related_wait_vehicle = sqlite_orm::search_record<zh_sql_vehicle_order>("stuff_name == '%s' AND status != 100 AND m_called != 1 AND m_registered == 1 %s ORDER BY check_in_timestamp", _stuff_name.c_str(), weight_upload_filter.c_str());
 
     if (stuff && stuff->auto_call_count > 0)
     {
@@ -3232,6 +3260,30 @@ bool vehicle_order_center_handler::set_seal_no(const std::string &ssid, const st
 
     order->seal_no = seal_no;
     ret = order->update_record();
+
+    return ret;
+}
+
+bool vehicle_order_center_handler::manual_push_nc(const std::string &order_number, const bool is_p)
+{
+    bool ret = false;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (vo)
+    {
+        auto orig_status = vo->status;
+        if (is_p)
+        {
+            vo->status = 2;
+        }
+        else
+        {
+            vo->status = 3;
+        }
+        push_req_to_hn(*vo, "http://backup", "http://backup", "http://backup");
+        vo->status = orig_status;
+        vo->update_record();
+        ret = true;
+    }
 
     return ret;
 }
