@@ -27,7 +27,6 @@ extern bool execute_sql_cmd(const std::string &_sql_cmd, const std::string &_sql
                 g_log.err("max retry times arrived: %s", (char *)_priv);
                 return 0;
             }
-            g_log.log("retry sql :%s for %d times", (char *)_priv, _count);
             return 1; },
             (void *)(_sql_cmd.c_str()));
         char *errmsg = nullptr;
@@ -59,43 +58,6 @@ extern bool execute_sql_cmd(const std::string &_sql_cmd, const std::string &_sql
                 _ret, &errmsg))
         {
             ret = true;
-            std::string output_log = "result of " + _sql_cmd + " is ";
-            if (_ret)
-            {
-                if (_ret->size() > 0 && _sql_cmd.find("last_insert_rowid()") == _sql_cmd.npos && _sql_cmd.find("PRAGMA") == _sql_cmd.npos)
-                {
-                    output_log.append("\n");
-                    bool header = true;
-                    for (auto &itr : *(_ret))
-                    {
-                        if (header)
-                        {
-                            header = false;
-                            auto map_itr = itr.begin();
-                            for (; map_itr != itr.end(); ++map_itr)
-                            {
-                                output_log.append("| " + map_itr->first);
-                            }
-                            output_log.append("\n");
-                        }
-                        auto map_itr = itr.begin();
-                        for (; map_itr != itr.end(); ++map_itr)
-                        {
-                            output_log.append("|" + map_itr->second);
-                        }
-                        output_log.append("\n");
-                    }
-                }
-                else
-                {
-                    output_log.append("no thing");
-                }
-            }
-            else
-            {
-                output_log.append("success");
-            }
-            g_log.log(output_log);
         }
         if (nullptr != errmsg)
         {
@@ -127,7 +89,6 @@ sqlite_orm_lock::sqlite_orm_lock()
     auto ret = pthread_mutex_lock(&sqlite_orm_lock::lock);
     if (0 == ret)
     {
-        g_log.log("lock sql");
     }
     else
     {
@@ -137,5 +98,4 @@ sqlite_orm_lock::sqlite_orm_lock()
 sqlite_orm_lock::~sqlite_orm_lock()
 {
     pthread_mutex_unlock(&sqlite_orm_lock::lock);
-    g_log.log("unlock sql");
 }

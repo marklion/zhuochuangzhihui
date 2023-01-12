@@ -7,7 +7,6 @@
 #include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
 
-static tdf_log g_log("ordos_ticket_audit", "/plugin/audit.log", "/plugin/audit.log");
 void zh_ordos_ticket_order_finish(const std::string &_msg)
 {
     std::cout << "proc order finish,msg:" << _msg << std::endl;
@@ -25,7 +24,6 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
     httplib::Headers ref = {{"Referer", config("remote_url") + "/view/access_process/gross_weight"}, {"Origin", config("remote_url")}};
     cli.set_default_headers(ref);
 
-    g_log.log("send req to ordos_ticket:%s,req:%s", _url.c_str(), _req.c_str());
     auto res = cli.Get(_url.c_str());
     if (_req.length() > 0)
     {
@@ -42,7 +40,6 @@ static std::string zh_ordos_req_with_token(const std::string &_url, const std::s
         {
             std::cerr << res->body << std::endl;
         }
-        g_log.log("recv from ordos_ticket:%s", res_body.ToFormattedString().c_str());
         auto token = res->get_header_value("Token");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "token", token);
     }

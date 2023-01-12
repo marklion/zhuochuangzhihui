@@ -194,7 +194,7 @@ public:
     virtual bool confirm_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order);
     virtual bool cancel_vehicle_order(const std::string &ssid, const std::vector<vehicle_order_info> &order, const bool from_api);
     virtual void get_order_detail(vehicle_order_detail &_return, const std::string &ssid, const std::string &order_number);
-    virtual bool confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed);
+    virtual bool confirm_order_deliver(const std::string& ssid, const std::string& order_number, const bool confirmed, const std::string& inv_name);
     std::shared_ptr<scale_state_machine> get_scale_sm(const std::string &_name);
     std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
     virtual bool update_vehicle_order(const std::string &ssid, const vehicle_order_info &order);
@@ -226,6 +226,7 @@ public:
     virtual void get_white_vehicle_stuff(std::string &_return, const std::string &vehicle_number);
     void execute_auto_call(const std::string &_stuff_name);
     virtual bool set_seal_no(const std::string &ssid, const std::string &order_number, const std::string &seal_no);
+    virtual bool manual_push_nc(const std::string &order_number, const bool is_p);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

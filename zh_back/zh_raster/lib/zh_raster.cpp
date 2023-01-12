@@ -49,9 +49,6 @@ bool raster_was_block(const std::string &ip, unsigned short port)
                 buff[2] ^= buff[3];
                 buff[3] ^= buff[2];
                 buff[2] ^= buff[3];
-                g_log.log("%s,%s,%s,%s", int_2_bin_string(buff[0]).c_str(), int_2_bin_string(buff[1]).c_str(), int_2_bin_string(buff[2]).c_str(), int_2_bin_string(buff[3]).c_str());
-                g_log.log_package((char *)buff, sizeof(buff));
-                g_log.log("%04X,%04X", reply[0],reply[1]);
                 if ((buff[1] & 0x03)  == 0 && (buff[0] & 0xf0) == 0)
                 {
                     ret = false;

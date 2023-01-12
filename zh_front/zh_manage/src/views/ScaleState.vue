@@ -10,6 +10,11 @@
                     <van-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</van-button>
                 </template>
             </van-cell>
+            <van-field v-model="push_order_number" center clearable label="单号">
+                <template #button>
+                    <van-button size="small" type="primary" @click="push_hnnc">补推</van-button>
+                </template>
+            </van-field>
         </van-tab>
         <van-tab title="监控">
             <van-dropdown-menu>
@@ -33,9 +38,20 @@ export default {
             active: 0,
             scale_state: [],
             all_video_param: [],
+            push_order_number: ''
         };
     },
     methods: {
+        push_hnnc:function() {
+            var vue_this = this;
+            var order_number = this.push_order_number.slice(1);
+            var push_p = false;
+            if (this.push_order_number.slice(0,1) == 'p')
+            {
+                push_p = true;
+            }
+            vue_this.$call_remote_process("vehicle_order_center", "manual_push_nc", [order_number, push_p]);
+        },
         set_video_path: function (_path) {
             var vue_this = this;
             vue_this.$call_remote_process("open_api", "set_video_path", [vue_this.$cookies.get("zh_ssid"), _path]);

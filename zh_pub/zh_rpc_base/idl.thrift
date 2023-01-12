@@ -281,6 +281,18 @@ struct stuff_source_dest{
     4:string code,
 }
 
+struct stuff_inv_element {
+    1:i64 id,
+    2:string stuff_name,
+    3:double inventory,
+}
+
+struct stuff_inv_info {
+    1:i64 id,
+    2:string name,
+    3:list<stuff_inv_element> sie,
+}
+
 service stuff_management {
     bool add_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
     bool update_stuff(1:string ssid, 2:stuff_info stuff) throws (1:gen_exp e),
@@ -296,6 +308,10 @@ service stuff_management {
     bool del_source_dest(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     list<string> get_white_list_stuff() throws (1:gen_exp e),
     bool set_auto_call_count(1:string ssid, 2:string stuff_name, 3:i64 auto_call_count) throws (1:gen_exp e),
+    bool add_stuff_inv_info(1:string ssid, 2:string name) throws (1:gen_exp e),
+    void del_stuff_inv_info(1:string ssid, 2:i64 id) throws (1:gen_exp e),
+    bool update_stuff_inv_info(1:string ssid, 2:stuff_inv_info sii) throws (1:gen_exp e),
+    list<stuff_inv_info> get_stuff_inv_info(1:string ssid) throws (1:gen_exp e),
 }
 
 struct vehicle_info {
@@ -428,7 +444,7 @@ service vehicle_order_center {
     bool confirm_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order) throws (1:gen_exp e),
     bool cancel_vehicle_order(1:string ssid, 2:list<vehicle_order_info> order, 3:bool from_api) throws (1:gen_exp e),
     vehicle_order_detail get_order_detail(1:string ssid, 2:string order_number) throws (1:gen_exp e),
-    bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed) throws (1:gen_exp e),
+    bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed, 4:string inv_name) throws (1:gen_exp e),
     bool update_vehicle_order(1:string ssid, 2:vehicle_order_info order) throws (1:gen_exp e),
     bool driver_check_in(1:i64 order_id, 2:bool is_cancel, 3:string driver_id, 4:string max_load) throws (1:gen_exp e),
     vehicle_order_detail driver_get_order(1:string order_number) throws (1:gen_exp e),
@@ -456,6 +472,7 @@ service vehicle_order_center {
     string record_white_vehicle_stuff(1:string vehicle_number, 2:string stuff_name) throws (1:gen_exp e),
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
     bool set_seal_no(1:string ssid, 2:string order_number, 3:string seal_no) throws (1:gen_exp e),
+    bool manual_push_nc(1:string order_number, 2:bool is_p) throws (1:gen_exp e),
 }
 
 struct video_param{
