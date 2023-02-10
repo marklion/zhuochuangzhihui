@@ -9,7 +9,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <mqueue.h>
-#include "CJsonObject.hpp"
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
@@ -19,6 +18,7 @@
 #include <sys/syscall.h>
 #include <sys/prctl.h>
 #include "../../zh_tdf/tdf_include.h"
+#include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
 
 #define LOCAL_DEV_MSG_TAKE_PICTURE "take_picture"
 #define LOCAL_DEV_MSG_MANUAL_TRIIGER "manual_trigger"
