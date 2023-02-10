@@ -6,6 +6,7 @@ all:$(CONF_DELIVER_PATH) $(SUB_DIR)
 	cp $(SRC_DIR)/zh_conf/nginx.conf $(CONF_DELIVER_PATH)
 	cp $(SRC_DIR)/zh_conf/frpc.ini $(CONF_DELIVER_PATH)
 	cp $(SRC_DIR)/zh_conf/change_base_url.sh $(CONF_DELIVER_PATH)
+	cp $(SRC_DIR)/zh_conf/core_config.yaml $(CONF_DELIVER_PATH)
 	cp $(SRC_DIR)/zh_conf/ngx_http_flv_live_module.so $(CONF_DELIVER_PATH)
 
 $(SUB_DIR):

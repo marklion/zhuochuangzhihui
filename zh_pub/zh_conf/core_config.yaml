@@ -1,0 +1,42 @@
+# 组件模板配置
+fake_cam: &fake_cam_ref
+  program_name: "/bin/fake_cam"
+  cmd_args:
+    - "ip"
+    - "ip2"
+
+state_machine1_define: &smd1_ref
+  program_name: "/bin/scale_sm1"
+  cmd_args:
+    - enter_cam
+    - exit_cam
+    - enter_led
+    - exit_led
+    - enter_traffic_light
+    - exit_traffic_light
+    - enter_speaker
+    - exit_speaker
+    - enter_id
+    - exit_id
+    - enter_qr
+    - exit_qr
+    - enter_printer
+    - exit_printer
+    - enter_monitor
+    - exit_monitor
+    - enter_gate
+    - exit_gate
+    - scale
+
+# 组件组合配置
+components:
+  - name: test_cam0
+    ip: 127.0.0.1
+    msg_center: "sm0"
+    <<: *fake_cam_ref
+  - name: "sm0"
+    enter_cam: test_cam0
+    <<: *smd1_ref
+
+
+
