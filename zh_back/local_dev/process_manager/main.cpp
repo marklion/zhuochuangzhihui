@@ -179,10 +179,6 @@ static void make_global_proc_map()
         for (auto j = 0; j < process_meta["cmd_args"].GetArraySize(); j++)
         {
             auto tmp_arg = process_meta(process_meta["cmd_args"](j));
-            if (tmp_arg.length() <= 0)
-            {
-                break;
-            }
             real_cmd_args.push_back(tmp_arg);
         }
         g_proc_map[device_name].cmd_args = real_cmd_args;

@@ -17,8 +17,10 @@
 #include <memory>
 #include <sys/syscall.h>
 #include <sys/prctl.h>
+#include <iconv.h>
 #include "../../zh_tdf/tdf_include.h"
 #include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
+#include "../../zh_vcom/zh_vcom_link.h"
 
 #define LOCAL_DEV_MSG_TAKE_PICTURE "take_picture"
 #define LOCAL_DEV_MSG_MANUAL_TRIIGER "manual_trigger"
@@ -55,8 +57,11 @@
 #define LOCAL_DEV_EVENT_GATE_IS_CLOSE_KEY "gate_is_close_resp_key"
 #define LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT "scale_cur_weight_resp"
 #define LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT_KEY "scale_cur_weight_resp_key"
+#define LOCAL_DEV_EVENT_DEVICE_STATUS "device_status"
+#define LOCAL_DEV_EVENT_DEVICE_STATUS_KEY "device_status_key"
 
-#define PRINT_LOG(format, ...) do {printf(format, ##__VA_ARGS__);fflush(stdout);fflush(stderr);} while(0)
+#define PRINT_LOG(format, ...) do {printf(format"\n", ##__VA_ARGS__);fflush(stdout);} while(0)
+#define PRINT_ERR(format, ...) do {fprintf(stderr, format"\n", ##__VA_ARGS__);fflush(stderr);} while(0)
 
 
 class epoll_node_t{
@@ -115,7 +120,10 @@ public:
 };
 
 
-
-
+std::vector<std::string> split_string(const std::string &s, const std::string &seperator);
+std::string utf2gbk(const std::string &_gbk);
+int connect_to_device_tcp_server(const std::string &_ip, unsigned short _port);
+std::string local_dev_get_datestring(time_t _time = time(nullptr));
+std::string local_dev_get_timestring(time_t _time = time(nullptr));
 
 #endif // _LOCAL_UTILS_H_

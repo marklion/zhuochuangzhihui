@@ -62,7 +62,7 @@ zh_traffic_light:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-local_dev:$(DELIVER_PATH) zh_tdf zh_database
+local_dev:$(DELIVER_PATH) zh_tdf zh_database zh_vcom
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 	cp $(SRC_DIR)/$@/yaml2json $(DELIVER_PATH)/bin/

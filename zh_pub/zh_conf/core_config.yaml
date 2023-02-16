@@ -5,6 +5,24 @@ fake_cam: &fake_cam_ref
     - "ip"
     - "ip2"
 
+ser_id_reader: &si_reader_ref
+  program_name: "/bin/ser_id_reader"
+  cmd_args:
+    - "ip"
+    - "port"
+
+ser_qr_reader: &sq_reader_ref
+  program_name: "/bin/ser_qr_reader"
+  cmd_args:
+    - "ip"
+    - "port"
+
+ser_printer: &s_printer_ref
+  program_name: "/bin/ser_printer"
+  cmd_args:
+    - "ip"
+    - "port"
+
 state_machine1_define: &smd1_ref
   program_name: "/bin/scale_sm1"
   cmd_args:
@@ -34,9 +52,26 @@ components:
     ip: 127.0.0.1
     msg_center: "sm0"
     <<: *fake_cam_ref
+  - name: "reader0"
+    ip: 127.0.0.1
+    port: 30203
+    msg_center: "sm0"
+    <<: *si_reader_ref
+  - name: "scanner0"
+    ip: 127.0.0.1
+    port: 30204
+    msg_center: "sm0"
+    <<: *sq_reader_ref
+  - name: "printer0"
+    ip: 127.0.0.1
+    port: 30204
+    msg_center: "sm0"
+    <<: *s_printer_ref
   - name: "sm0"
     enter_cam: test_cam0
+    enter_id: reader0
+    enter_qr: scanner0
+    enter_printer: printer0
     <<: *smd1_ref
-
 
 
