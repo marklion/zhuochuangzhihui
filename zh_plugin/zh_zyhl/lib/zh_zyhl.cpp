@@ -269,6 +269,7 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
                         neb::CJsonObject load_req;
                         load_req.Add("id", single_plan("id"));
                         load_req.Add("load_number", _weight);
+                        load_req.Add("load_date", util_get_datestring(time(nullptr)));
 
                         if (send_req_to_zyhl("/thirdparty/update_loadnumber", load_req, [](const neb::CJsonObject &_enter_resp) -> bool
                                              { return true; }))

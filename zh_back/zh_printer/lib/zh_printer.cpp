@@ -78,7 +78,7 @@ bool zh_printer_dev::print_string(const std::string &_content)
     Set_ChineseCode(3);
     char buff[2048];
     SetCharacterSize(1, 1);
-    Set_LeftSpaceNum(128, 0);
+    Set_LeftSpaceNum(10, 0);
     Sel_Align_Way(0);
     strcpy((char *)buff, getenv("OEM_NAME"));
     strcat((char *)buff, "\n称重单");

@@ -184,8 +184,6 @@ bool zh_led_plan_call_show()
                 }
 
                 modbus_close(mtx);
-                auto new_cmd = "/plugin/zh_led_plan_call/bin/zh_led_plan_call_plugin show";
-                system(new_cmd);
             }
             else
             {
@@ -197,6 +195,8 @@ bool zh_led_plan_call_show()
         {
             g_log.err("failed to open tcp modbus:%s", modbus_strerror(errno));
         }
+        auto new_cmd = "/plugin/zh_led_plan_call/bin/zh_led_plan_call_plugin show";
+        system(new_cmd);
     }
 
     return true;

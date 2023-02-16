@@ -195,7 +195,10 @@ int main(int argc, char const *argv[])
             } },
         plugin_management_handler::get_inst());
     start_checkin_check_timer();
+    tdf_main::get_inst().start_timer(60, [](void *){
 
+    system("for pl_itr in `ls /plugin -l | grep ^d | awk '{print $NF}'`; do /plugin/${pl_itr}/bin/${pl_itr}_plugin init; done");
+    }, nullptr, true);
     tp_server.serve();
 
     return 0;
