@@ -2121,6 +2121,10 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
             content += "磅单号：" + vo->bl_number + "\n";
         }
         content += "称重车辆：" + vo->main_vehicle_number + "\n";
+        if (vo->behind_vehicle_number.length() > 0)
+        {
+            content += "挂车号：" + vo->behind_vehicle_number+ "\n";
+        }
         content += "---------------\n";
         std::string m_weight_string = "未称重";
         std::string j_weight_string = "未知";
