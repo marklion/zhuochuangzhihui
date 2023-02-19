@@ -40,7 +40,7 @@ static void emp_proc_func(const std::string &_order_number)
     g_log.log("proc event %s", _order_number.c_str());
 }
 
-static std::map<std::string, std::function<void(const std::string &, double)>> g_proc_map =
+static std::map<std::string, std::function<bool(const std::string &, double)>> g_proc_map =
     {
         {"vehicle_p_weight", push_vehicle_enter},
         {"vehicle_m_weight", push_vehicle_weight}};
@@ -56,6 +56,7 @@ int main(int argc, char **argv)
     std::string order_number;
     std::string event_name;
     std::string plan_date;
+    std::string file_name;
     bool cmd_test = false;
     using namespace clipp;
     auto cli = ((command("get").set(cmd) & required("-k") & value("json key", key)) |
@@ -64,8 +65,8 @@ int main(int argc, char **argv)
                 command("pull").set(cmd) |
                 command("enabled").set(cmd) |
                 (command("fetch_plan").set(cmd) & value("date", plan_date)) |
-                (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test))
-                );
+                (command("upload_file").set(cmd) & value("file", file_name)) |
+                (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test)));
     if (!parse(argc, argv, cli))
     {
         std::cerr << "Usage:\n"
@@ -125,6 +126,11 @@ int main(int argc, char **argv)
         fetch_plan_from_zyhl(plan_date);
         iret = 0;
     }
+    else if (cmd == "upload_file")
+    {
+        std::cout << send_file_to_zyhl("", file_name) << std::endl;
+        iret = 0;
+    }
     else if (cmd == "proc_event")
     {
         auto itr = g_proc_map.find(event_name);
@@ -140,8 +146,10 @@ int main(int argc, char **argv)
                 auto vehicle_number = get_vehicle_number_by_order_number(order_number, count);
                 if (vehicle_number.length() > 0)
                 {
-                    itr->second(vehicle_number, count);
-                    iret = 0;
+                    if (itr->second(vehicle_number, count))
+                    {
+                        iret = 0;
+                    }
                 }
             }
         }

@@ -40,6 +40,10 @@ static void generate_order_event(zh_sql_vehicle_order &_order)
     plugin_event_info pei;
     pei.order_number = _order.order_number;
     pei.type = (plugin_event_info::event_type)(_order.status);
+    if (pei.type == 100)
+    {
+        pei.type = plugin_event_info::order_close;
+    }
     auto pmh = plugin_management_handler::get_inst();
     if (pmh)
     {
@@ -2455,6 +2459,8 @@ void scale_sm_vehicle_come::do_action(tdf_state_machine &_sm)
     {
         zh_hk_cast_cannot_scale(ssm.bound_scale.entry_config.led_ip, ssm.failure_reason);
         zh_hk_cast_cannot_scale(ssm.bound_scale.exit_config.led_ip, ssm.failure_reason);
+        ssm.entry_param.clear();
+        ssm.exit_param.clear();
     }
 }
 void scale_sm_vehicle_come::after_enter(tdf_state_machine &_sm)

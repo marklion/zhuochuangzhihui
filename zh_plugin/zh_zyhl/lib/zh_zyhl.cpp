@@ -82,45 +82,46 @@ void fetch_plan_from_zyhl(const std::string &_date)
 {
     neb::CJsonObject get_plan_req;
     get_plan_req.Add("date", _date);
-    send_req_to_zyhl(
-        "/thirdparty/list_plan",
-        get_plan_req,
-        [](const neb::CJsonObject _response) -> bool
+    auto date_ystd = util_get_datestring(time(nullptr) - (3600*24));
+    neb::CJsonObject fetch_req;
+    auto collect_plan = [&](const neb::CJsonObject _response) -> bool
+    {
+        auto resp = _response;
+        for (auto i = 0; i < resp.GetArraySize(); i++)
         {
-            auto resp = _response;
-            neb::CJsonObject fetch_req;
-            for (auto i = 0; i < resp.GetArraySize(); i++)
+            auto single_item = resp[i];
+            if (single_item.IsNull("number"))
             {
-                auto single_item = resp[i];
-                if (single_item.IsNull("carEntery"))
-                {
-                    neb::CJsonObject tmp;
-                    tmp.Add("plateNo", single_item("driver_no"));
-                    tmp.Add("backPlateNo", single_item("driver_no2"));
-                    tmp.Add("driverName", single_item("driver_name"));
-                    tmp.Add("driverPhone", single_item("driver_tel"));
-                    tmp.Add("driverId", single_item(""));
-                    tmp.Add("useFor", "气站");
-                    tmp.Add("sale_address", single_item["product"]("area"));
-                    tmp.Add("createTime", single_item("delivery_date"));
-                    tmp.Add("companyName", single_item["customer_company"]("name"));
-                    tmp.Add("stuffName", single_item["product"]("type"));
-                    fetch_req.Add(tmp);
-                }
+                neb::CJsonObject tmp;
+                tmp.Add("plateNo", single_item("driver_no"));
+                tmp.Add("backPlateNo", single_item("driver_no2"));
+                tmp.Add("driverName", single_item("driver_name"));
+                tmp.Add("driverPhone", single_item("driver_tel"));
+                tmp.Add("driverId", single_item(""));
+                tmp.Add("useFor", "气站");
+                tmp.Add("sale_address", single_item["product"]("area"));
+                tmp.Add("createTime", single_item("delivery_date"));
+                tmp.Add("companyName", single_item["customer_company"]("name"));
+                tmp.Add("stuffName", single_item["product"]("type"));
+                fetch_req.Add(tmp);
             }
+        }
 
-            g_log.log("call %s with args %s", "/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", fetch_req.ToString().c_str());
-            auto sub_proc_stdin = popen("/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", "w");
-            if (sub_proc_stdin)
-            {
-                if (0 >= fwrite(fetch_req.ToString().c_str(), fetch_req.ToString().size(), 1, sub_proc_stdin))
-                {
-                    g_log.err("failed to write req to sub process:%s", strerror(errno));
-                }
-                pclose(sub_proc_stdin);
-            }
-            return true;
-        });
+        return true;
+    };
+    send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
+    get_plan_req.ReplaceAdd("date", date_ystd);
+    send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
+    g_log.log("call %s with args %s", "/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", fetch_req.ToString().c_str());
+    auto sub_proc_stdin = popen("/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", "w");
+    if (sub_proc_stdin)
+    {
+        if (0 >= fwrite(fetch_req.ToString().c_str(), fetch_req.ToString().size(), 1, sub_proc_stdin))
+        {
+            g_log.err("failed to write req to sub process:%s", strerror(errno));
+        }
+        pclose(sub_proc_stdin);
+    }
 }
 static std::string util_get_timestring(time_t _time)
 {
@@ -175,7 +176,8 @@ bool push_vehicle_enter(const std::string &_vehicle_number, double _xxx)
 
     return ret;
 }
-static std::string send_file_to_zyhl(const std::string &_id, const std::string &_path)
+
+std::string send_file_to_zyhl(const std::string &_id, const std::string &_path)
 {
     std::string ret;
     auto config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE);
@@ -249,9 +251,47 @@ static std::string send_file_to_zyhl(const std::string &_id, const std::string &
 
     return ret;
 }
+static std::string get_attch_name(const std::string &_vehicle_number)
+{
+    std::string ret;
+    std::string pull_cmd = "/plugin/zh_zyzl/bin/zh_zyzl_plugin pull_ticket " + _vehicle_number;
+    g_log.log("call %s", pull_cmd.c_str());
+    auto path_file = popen(pull_cmd.c_str(), "r");
+    if (path_file)
+    {
+        char file_name_buff[4096] = "";
+        fread(file_name_buff, sizeof(file_name_buff), 1, path_file);
+        pclose(path_file);
+        file_name_buff[strlen(file_name_buff) - 1] = 0;
+        g_log.log("attach_filename:%s", file_name_buff);
+        struct stat file_st;
+        if (0 == stat(file_name_buff, &file_st))
+        {
+            if (file_st.st_size > 0)
+            {
+                auto first_size = file_st.st_size;
+                sleep(20);
+                if (0 == stat(file_name_buff, &file_st))
+                {
+                    if (file_st.st_size == first_size)
+                    {
+                        ret = file_name_buff;
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
 bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
 {
     bool ret = false;
+
+    auto file_name_att = get_attch_name(_vehicle_number);
+    if (file_name_att.length() <= 0)
+    {
+        return ret;
+    }
     neb::CJsonObject get_plan_req;
     get_plan_req.Add("date", util_get_datestring(time(nullptr)));
     if (send_req_to_zyhl(
@@ -274,24 +314,14 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
                         if (send_req_to_zyhl("/thirdparty/update_loadnumber", load_req, [](const neb::CJsonObject &_enter_resp) -> bool
                                              { return true; }))
                         {
-                            sleep(100);
-                            std::string pull_cmd = "/plugin/zh_zyzl/bin/zh_zyzl_plugin pull_ticket " + _vehicle_number;
-                            g_log.log("call %s", pull_cmd.c_str());
-                            auto path_file = popen(pull_cmd.c_str(), "r");
-                            if (path_file)
+                            auto file_id = send_file_to_zyhl(single_plan("id"), file_name_att);
+                            neb::CJsonObject bind_file_req;
+                            bind_file_req.Add("file", "https://lng.hy3416.com/51jiaye/api/file/download?id=" + file_id);
+                            bind_file_req.Add("id", single_plan("id"));
+                            if (send_req_to_zyhl("/thirdparty/add_invoice", bind_file_req, [](const neb::CJsonObject &) -> bool
+                                                 { return true; }))
                             {
-                                char file_name_buff[4096] = "";
-                                fread(file_name_buff, sizeof(file_name_buff), 1, path_file);
-                                pclose(path_file);
-                                auto file_id = send_file_to_zyhl(single_plan("id"), file_name_buff);
-                                neb::CJsonObject bind_file_req;
-                                bind_file_req.Add("file", file_id);
-                                bind_file_req.Add("id", single_plan("id"));
-                                if (send_req_to_zyhl("/thirdparty/add_invoice", bind_file_req, [](const neb::CJsonObject &) -> bool
-                                                     { return true; }))
-                                {
-                                    push_ret = true;
-                                }
+                                push_ret = true;
                             }
                         }
                         break;
