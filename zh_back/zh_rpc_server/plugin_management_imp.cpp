@@ -277,10 +277,16 @@ void plugin_management_handler::deliver_event(const plugin_event_info &_event)
     {
         std::string std_out;
         std::string std_err;
-        zh_plugin_run_plugin("proc_event -c " +  _event.get_cmd() + " xxx -t", itr->first, std_out, std_err);
+        auto tmp_event = _event;
+        zh_plugin_run_plugin("get -k prio_key", itr->first, std_out, std_err);
+        if (std_out.length() > 0)
+        {
+            tmp_event.prio_key = atol(std_out.c_str());
+        }
+        zh_plugin_run_plugin("proc_event -c " + _event.get_cmd() + " xxx -t", itr->first, std_out, std_err);
         if (std_err.empty())
         {
-            itr->second.push_back(_event);
+            itr->second.push_back(tmp_event);
         }
     }
     pthread_cond_signal(&que_cond);
@@ -338,7 +344,7 @@ void plugin_management_handler::finish_event(const std::string &_plugin_name, bo
     pthread_mutex_unlock(&m_que_lock);
 }
 
-void plugin_management_handler::get_que_by_name(std::vector<std::string> & _return, const std::string& ssid, const std::string& plugin_name)
+void plugin_management_handler::get_que_by_name(std::vector<std::string> &_return, const std::string &ssid, const std::string &plugin_name)
 {
     if (zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, true))
     {

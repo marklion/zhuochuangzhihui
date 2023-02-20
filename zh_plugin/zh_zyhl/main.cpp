@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     auto cli = ((command("get").set(cmd) & required("-k") & value("json key", key)) |
                 (command("set").set(cmd) & required("-k") & value("json key", key) & value("json value", json_string) & option("-o").set(json_obj)) |
                 command("init").set(cmd) |
+                command("refresh").set(cmd) |
                 command("pull").set(cmd) |
                 command("enabled").set(cmd) |
                 (command("fetch_plan").set(cmd) & value("date", plan_date)) |
@@ -111,13 +112,13 @@ int main(int argc, char **argv)
     else if (cmd == "init")
     {
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
-        if (fork() == 0)
+        iret = 0;
+    }
+    else if (cmd == "refresh")
+    {
+        if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
         {
-            do
-            {
-                fetch_plan_from_zyhl(util_get_datestring(time(nullptr)));
-                sleep(180);
-            } while (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true");
+            fetch_plan_from_zyhl(util_get_datestring(time(nullptr)));
         }
         iret = 0;
     }

@@ -111,16 +111,19 @@ void fetch_plan_from_zyhl(const std::string &_date)
     };
     send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
     get_plan_req.ReplaceAdd("date", date_ystd);
-    send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
-    g_log.log("call %s with args %s", "/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", fetch_req.ToString().c_str());
-    auto sub_proc_stdin = popen("/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", "w");
-    if (sub_proc_stdin)
+    auto send_ret = send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
+    if (send_ret)
     {
-        if (0 >= fwrite(fetch_req.ToString().c_str(), fetch_req.ToString().size(), 1, sub_proc_stdin))
+        g_log.log("call %s with args %s", "/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", fetch_req.ToString().c_str());
+        auto sub_proc_stdin = popen("/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", "w");
+        if (sub_proc_stdin)
         {
-            g_log.err("failed to write req to sub process:%s", strerror(errno));
+            if (0 >= fwrite(fetch_req.ToString().c_str(), fetch_req.ToString().size(), 1, sub_proc_stdin))
+            {
+                g_log.err("failed to write req to sub process:%s", strerror(errno));
+            }
+            pclose(sub_proc_stdin);
         }
-        pclose(sub_proc_stdin);
     }
 }
 static std::string util_get_timestring(time_t _time)
@@ -140,39 +143,54 @@ std::string util_get_datestring(time_t _time)
     return date_time.substr(0, 10);
 }
 
+static neb::CJsonObject get_zyhl_plans()
+{
+    neb::CJsonObject cur_plans;
+    neb::CJsonObject get_plan_req;
+    auto date_ystd = util_get_datestring(time(nullptr) - (3600 * 24));
+    get_plan_req.Add("date", date_ystd);
+    auto plan_proc_resp = [&](const neb::CJsonObject &_resp) -> bool
+    {
+        auto resp = _resp;
+        for (auto i = 0; i < resp.GetArraySize(); i++)
+        {
+            cur_plans.Add(resp[i]);
+        }
+        return true;
+    };
+    send_req_to_zyhl(
+        "/thirdparty/list_plan",
+        get_plan_req,
+        plan_proc_resp);
+    get_plan_req.Replace("date", util_get_datestring(time(nullptr)));
+    send_req_to_zyhl(
+        "/thirdparty/list_plan",
+        get_plan_req,
+        plan_proc_resp);
+    return cur_plans;
+}
+
 bool push_vehicle_enter(const std::string &_vehicle_number, double _xxx)
 {
     bool ret = false;
-    neb::CJsonObject get_plan_req;
-    get_plan_req.Add("date", util_get_datestring(time(nullptr)));
-    if (send_req_to_zyhl(
-            "/thirdparty/list_plan",
-            get_plan_req,
-            [&](const neb::CJsonObject &_resp) -> bool
-            {
-                bool push_ret = false;
-                auto cur_plans = _resp;
-                for (auto i = 0; i < cur_plans.GetArraySize(); i++)
-                {
-                    auto &single_plan = cur_plans[i];
-                    if (single_plan("driver_no") == _vehicle_number)
-                    {
-                        neb::CJsonObject enter_req;
-                        enter_req.Add("plan_id", single_plan("id"));
-                        if (send_req_to_zyhl("/thirdparty/enter", enter_req, [](const neb::CJsonObject &_enter_resp) -> bool
-                                             { return true; }))
-                        {
-                            push_ret = true;
-                        }
-                        break;
-                    }
-                }
+    auto cur_plans = get_zyhl_plans();
 
-                return push_ret;
-            }))
+    for (auto i = 0; i < cur_plans.GetArraySize(); i++)
     {
-        ret = true;
+        auto &single_plan = cur_plans[i];
+        if (single_plan("driver_no") == _vehicle_number)
+        {
+            neb::CJsonObject enter_req;
+            enter_req.Add("plan_id", single_plan("id"));
+            if (send_req_to_zyhl("/thirdparty/enter", enter_req, [](const neb::CJsonObject &_enter_resp) -> bool
+                                 { return true; }))
+            {
+                ret = true;
+            }
+            break;
+        }
     }
+    ret = true;
 
     return ret;
 }
@@ -292,45 +310,32 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
     {
         return ret;
     }
-    neb::CJsonObject get_plan_req;
-    get_plan_req.Add("date", util_get_datestring(time(nullptr)));
-    if (send_req_to_zyhl(
-            "/thirdparty/list_plan",
-            get_plan_req,
-            [&](const neb::CJsonObject &_resp) -> bool
-            {
-                bool push_ret = false;
-                auto cur_plans = _resp;
-                for (auto i = 0; i < cur_plans.GetArraySize(); i++)
-                {
-                    auto &single_plan = cur_plans[i];
-                    if (single_plan("driver_no") == _vehicle_number)
-                    {
-                        neb::CJsonObject load_req;
-                        load_req.Add("id", single_plan("id"));
-                        load_req.Add("load_number", _weight);
-                        load_req.Add("load_date", util_get_datestring(time(nullptr)));
-
-                        if (send_req_to_zyhl("/thirdparty/update_loadnumber", load_req, [](const neb::CJsonObject &_enter_resp) -> bool
-                                             { return true; }))
-                        {
-                            auto file_id = send_file_to_zyhl(single_plan("id"), file_name_att);
-                            neb::CJsonObject bind_file_req;
-                            bind_file_req.Add("file", "https://lng.hy3416.com/51jiaye/api/file/download?id=" + file_id);
-                            bind_file_req.Add("id", single_plan("id"));
-                            if (send_req_to_zyhl("/thirdparty/add_invoice", bind_file_req, [](const neb::CJsonObject &) -> bool
-                                                 { return true; }))
-                            {
-                                push_ret = true;
-                            }
-                        }
-                        break;
-                    }
-                }
-                return push_ret;
-            }))
+    auto cur_plans = get_zyhl_plans();
+    for (auto i = 0; i < cur_plans.GetArraySize(); i++)
     {
-        ret = true;
+        auto &single_plan = cur_plans[i];
+        if (single_plan("driver_no") == _vehicle_number)
+        {
+            neb::CJsonObject load_req;
+            load_req.Add("id", single_plan("id"));
+            load_req.Add("load_number", _weight);
+            load_req.Add("load_date", util_get_datestring(time(nullptr)));
+
+            if (send_req_to_zyhl("/thirdparty/update_loadnumber", load_req, [](const neb::CJsonObject &_enter_resp) -> bool
+                                 { return true; }))
+            {
+                auto file_id = send_file_to_zyhl(single_plan("id"), file_name_att);
+                neb::CJsonObject bind_file_req;
+                bind_file_req.Add("file", "https://lng.hy3416.com/51jiaye/api/file/download?id=" + file_id);
+                bind_file_req.Add("id", single_plan("id"));
+                if (send_req_to_zyhl("/thirdparty/add_invoice", bind_file_req, [](const neb::CJsonObject &) -> bool
+                                     { return true; }))
+                {
+                    ret = true;
+                }
+            }
+            break;
+        }
     }
 
     return ret;

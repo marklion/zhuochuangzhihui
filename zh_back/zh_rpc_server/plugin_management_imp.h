@@ -8,6 +8,7 @@ struct plugin_event_info{
         create_order,confirm_order,vehicle_come_in,vehicle_p_weight,vehicle_m_weight,vehicle_leave,order_close,driver_register,call_driver,driver_unregister,cancel_call_driver
     } type;
     std::string plugin_name;
+    long prio_key = 0;
     std::string get_cmd() const {
         std::string ret;
         switch (type) {
@@ -90,6 +91,9 @@ private:
                         }
                     }
                     pthread_mutex_unlock(&m_que_lock);
+                    wait_do.sort(
+                        [](const plugin_event_info &_fr, const plugin_event_info &_se)
+                        { return _fr.prio_key < _se.prio_key; });
                     for (auto &itr : wait_do)
                     {
                         std::string std_out;
