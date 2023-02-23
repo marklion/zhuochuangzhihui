@@ -269,21 +269,24 @@ zy_sync_plan_data json_to_struct_plan(const neb::CJsonObject &_json)
 void ZH_ZYZL_sync_plans(const std::list<zy_sync_plan_data> &_plan_data)
 {
     std::list<zy_sync_plan_data> orig_remote_plans;
-    send_to_zyzl(
-        "/all_vehicle_info",
-        neb::CJsonObject(),
-        [&](const neb::CJsonObject &_resp) -> bool
-        {
-            auto remote_json = _resp;
-            for (auto i = 0; i < remote_json.GetArraySize(); i++)
-            {
-                auto single_plan = remote_json[i];
-                orig_remote_plans.push_back(json_to_struct_plan(single_plan));
-            }
+    if (false == send_to_zyzl(
+                     "/all_vehicle_info",
+                     neb::CJsonObject(),
+                     [&](const neb::CJsonObject &_resp) -> bool
+                     {
+                         auto remote_json = _resp;
+                         for (auto i = 0; i < remote_json.GetArraySize(); i++)
+                         {
+                             auto single_plan = remote_json[i];
+                             orig_remote_plans.push_back(json_to_struct_plan(single_plan));
+                         }
 
-            return true;
-        },
-        true);
+                         return true;
+                     },
+                     true))
+    {
+        return;
+    }
 
     for (auto &itr : _plan_data)
     {

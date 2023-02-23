@@ -33,7 +33,18 @@ public:
     virtual bool add_video_path(const std::string &ssid, const video_param &_video_param);
     virtual void del_video_path(const std::string &ssid, const int64_t id);
     virtual bool set_video_path(const std::string &ssid, const std::string &_video_path);
-    virtual void stop_video(const std::string& ssid);
+    virtual void stop_video(const std::string &ssid);
+    virtual void get_device_status(std::vector<device_status> &_return, const std::string &phone);
+    virtual void do_device_opt_gate_control(const std::string &phone, const std::string &name, const bool is_enter, const bool is_open);
+    virtual void do_device_opt_confirm_scale(const std::string &phone, const std::string &name);
+    virtual void do_device_opt_reset_scale(const std::string &phone, const std::string &name);
+    virtual void do_device_opt_trigger_cap(const std::string &phone, const std::string &name, const bool is_enter, const std::string &vehicle_number);
+    virtual void do_device_opt_take_pic(std::string &_return, const std::string &phone, const std::string &name, const bool is_enter);
+    virtual void get_queue_node(std::vector<field_queue_node> &_return, const std::string &phone);
+    virtual bool field_queue_call(const std::string &phone, const int64_t id, const bool is_call);
+    virtual bool field_queue_pass(const std::string &phone, const int64_t id);
+    virtual bool field_queue_confirm(const std::string &phone, const int64_t id, const bool is_confirm);
+    virtual bool field_queue_set_seal(const std::string &phone, const int64_t id, const std::string &seal_no);
 };
 
 #endif // _OPEN_API_IMP_H_

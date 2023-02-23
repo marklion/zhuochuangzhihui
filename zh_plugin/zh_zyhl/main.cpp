@@ -65,7 +65,6 @@ int main(int argc, char **argv)
                 command("refresh").set(cmd) |
                 command("pull").set(cmd) |
                 command("enabled").set(cmd) |
-                (command("fetch_plan").set(cmd) & value("date", plan_date)) |
                 (command("upload_file").set(cmd) & value("file", file_name)) |
                 (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test)));
     if (!parse(argc, argv, cli))
@@ -112,19 +111,19 @@ int main(int argc, char **argv)
     else if (cmd == "init")
     {
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "begin_time_point", std::to_string(time(nullptr) / 300));
         iret = 0;
     }
     else if (cmd == "refresh")
     {
         if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
         {
-            fetch_plan_from_zyhl(util_get_datestring(time(nullptr)));
+            if ((time(nullptr) / 300) > atoi(zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("begin_time_point").c_str()))
+            {
+                zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "begin_time_point", std::to_string(time(nullptr) / 300));
+                fetch_plan_from_zyhl(util_get_datestring(time(nullptr)));
+            }
         }
-        iret = 0;
-    }
-    else if (cmd == "fetch_plan")
-    {
-        fetch_plan_from_zyhl(plan_date);
         iret = 0;
     }
     else if (cmd == "upload_file")

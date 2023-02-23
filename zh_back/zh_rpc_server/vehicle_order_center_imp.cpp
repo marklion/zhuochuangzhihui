@@ -890,6 +890,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (driver_id.length() > 0)
     {
         vo->driver_id = driver_id;
+        if (driver_id[driver_id.length() - 1] == 'X')
+        {
+            vo->driver_id[driver_id.length() - 1] = 'x';
+        }
     }
     ret = vo->update_record();
     execute_auto_call(vo->stuff_name);
@@ -2127,7 +2131,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "称重车辆：" + vo->main_vehicle_number + "\n";
         if (vo->behind_vehicle_number.length() > 0)
         {
-            content += "挂车号：" + vo->behind_vehicle_number+ "\n";
+            content += "挂车号：" + vo->behind_vehicle_number + "\n";
         }
         content += "---------------\n";
         std::string m_weight_string = "未称重";
@@ -2891,10 +2895,10 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
                 change_order_status(tmp, before_come_status);
             }
         }
-        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(driver_id = '%s' OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
+        auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(substr(driver_id,1,17) == substr('%s',1,17) OR order_number == '%s' OR main_vehicle_number = '%s') AND status != 100", _id_no.c_str(), _qr_code.c_str(), _vehicle_number.c_str());
         for (auto &itr : vos)
         {
-            if (need_id && itr.driver_id != _id_no)
+            if (need_id && itr.driver_id.substr(0, 17) != _id_no.substr(0, 17))
             {
                 continue;
             }
@@ -2902,7 +2906,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
             {
                 continue;
             }
-            if ((_id_no.length() > 0 && _id_no == itr.driver_id) ||
+            if ((_id_no.length() > 0 && _id_no.substr(0, 17) == itr.driver_id.substr(0, 17)) ||
                 (_qr_code.length() > 0 && itr.order_number == _qr_code) ||
                 (_vehicle_number.length() > 0 && itr.main_vehicle_number == _vehicle_number))
             {
@@ -2912,7 +2916,7 @@ std::string gate_ctrl_policy::pass_permit(const std::string &_vehicle_number, co
         }
         if (ret.empty())
         {
-            std::string qurey_cmd = "(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1 AND use_stuff != ''";
+            std::string qurey_cmd = "(substr(driver_id,1,17) = substr('%s',1,17) OR main_vehicle_number = '%s') AND in_white_list == 1 AND use_stuff != ''";
             if (is_gate)
             {
                 qurey_cmd = "(driver_id = '%s' OR main_vehicle_number = '%s') AND in_white_list == 1";

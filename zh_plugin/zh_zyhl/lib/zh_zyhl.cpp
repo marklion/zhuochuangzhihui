@@ -84,6 +84,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
     get_plan_req.Add("date", _date);
     auto date_ystd = util_get_datestring(time(nullptr) - (3600*24));
     neb::CJsonObject fetch_req;
+    std::list<neb::CJsonObject> req_list;
     auto collect_plan = [&](const neb::CJsonObject _response) -> bool
     {
         auto resp = _response;
@@ -103,7 +104,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
                 tmp.Add("createTime", single_item("delivery_date"));
                 tmp.Add("companyName", single_item["customer_company"]("name"));
                 tmp.Add("stuffName", single_item["product"]("type"));
-                fetch_req.Add(tmp);
+                req_list.push_back(tmp);
             }
         }
 
@@ -114,6 +115,20 @@ void fetch_plan_from_zyhl(const std::string &_date)
     auto send_ret = send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
     if (send_ret)
     {
+        req_list.sort(
+            [](const neb::CJsonObject &_fir, const neb::CJsonObject &_sec)
+            {
+                return _fir("plateNo") < _sec("plateNo");
+            });
+        req_list.unique(
+            [](const neb::CJsonObject &_fir, const neb::CJsonObject &_sec)
+            {
+                return _fir("plateNo") == _sec("plateNo");
+            });
+        for (auto &single_req : req_list)
+        {
+            fetch_req.Add(single_req);
+        }
         g_log.log("call %s with args %s", "/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", fetch_req.ToString().c_str());
         auto sub_proc_stdin = popen("/plugin/zh_zyzl/bin/zh_zyzl_plugin sync_plan", "w");
         if (sub_proc_stdin)

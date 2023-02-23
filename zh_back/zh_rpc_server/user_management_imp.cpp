@@ -170,6 +170,42 @@ void user_management_handler::self_info(user_info &_return, const std::string &s
     _return.phone = user_info->phone;
     _return.need_change_password = user_info->need_change_password == 0 ? false : true;
 }
+
+std::string user_management_handler::pri_user_login(zh_sql_user_info &user_info)
+{
+    std::string ret;
+
+    auto create_new_login_ssid = [&]() -> std::string
+    {
+        zh_sql_user_login new_login;
+        new_login.ssid = zh_rpc_util_gen_ssid();
+        new_login.timestamp = time(NULL) / 3600;
+        new_login.set_parent(user_info, "online_user");
+        new_login.insert_record();
+        return new_login.ssid;
+    };
+
+    auto user_login = user_info.get_children<zh_sql_user_login>("online_user");
+    if (user_login)
+    {
+        if (!zh_rpc_util_get_online_user(user_login->ssid))
+        {
+            user_login->remove_record();
+            ret = create_new_login_ssid();
+        }
+        else
+        {
+            ret = user_login->ssid;
+        }
+    }
+    else
+    {
+        ret = create_new_login_ssid();
+    }
+
+    return ret;
+}
+
 void user_management_handler::user_login(std::string &_return, const std::string &phone, const std::string &password)
 {
     auto user_info = sqlite_orm::search_record<zh_sql_user_info>("phone == '%s' AND password == '%s'", phone.c_str(), password.c_str());
@@ -177,19 +213,7 @@ void user_management_handler::user_login(std::string &_return, const std::string
     {
         ZH_RETURN_MSG("用户名或密码错误");
     }
-    auto user_login = user_info->get_children<zh_sql_user_login>("online_user");
-    if (user_login && !zh_rpc_util_get_online_user(user_login->ssid))
-    {
-        user_login->remove_record();
-    }
-    zh_sql_user_login new_login;
-    new_login.ssid = zh_rpc_util_gen_ssid();
-    new_login.timestamp = time(NULL) / 3600;
-    new_login.set_parent(*user_info, "online_user");
-    if (new_login.insert_record())
-    {
-        _return = new_login.ssid;
-    }
+    _return = pri_user_login(*user_info);
 }
 
 void user_management_handler::user_logoff(const std::string &ssid)
@@ -205,7 +229,6 @@ void user_management_handler::user_logoff(const std::string &ssid)
         user_login->remove_record();
     }
 }
-
 
 void user_management_handler::get_user_permission_target(std::vector<permission_target_info> &_return, const int64_t user_id)
 {
