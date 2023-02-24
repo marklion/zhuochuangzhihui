@@ -8,6 +8,7 @@
 #include "../zh_database/zh_db_config.h"
 #include "../zh_hk_gate/lib/zh_hk_gate.h"
 #include "../zh_id_reader/lib/zh_id_reader.h"
+#include "../../zh_pub/zh_cpp_pub/Base64.h"
 
 
 class scale_sm_vehicle_come:public tdf_state_machine_state {
@@ -199,7 +200,7 @@ public:
     std::shared_ptr<gate_state_machine> get_gate_sm(const std::string &_road_way);
     virtual bool update_vehicle_order(const std::string &ssid, const vehicle_order_info &order);
     virtual bool driver_check_in(const int64_t order_id, const bool is_cancel, const std::string& driver_id, const std::string& max_load);
-    virtual void driver_get_order(vehicle_order_detail &_return, const std::string &order_number);
+    virtual void driver_get_order(vehicle_order_detail &_return, const std::string &order_number, const std::string &plate);
     virtual bool call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel);
     virtual void get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid);
     virtual bool manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight);

@@ -50,7 +50,7 @@ app.post('/zh_rest/vehicle_order/get', async (req, res) =>{
     var ret = { err_msg: '无权限' };
 
     try {
-        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone]);
+        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone, req.query.plate]);
         if (resp) {
             const Int64 = require('node-int64');
             console.log(resp.basic_info.id);
@@ -125,7 +125,7 @@ app.post('/zh_rest/order_register/get', async (req, res) => {
     var ret = { err_msg: '无权限' };
 
     try {
-        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone]);
+        var resp = await request_rpc('vehicle_order_center', 'driver_get_order', [req.query.phone, req.query.plate]);
         if (resp) {
             console.log(resp);
             const Int64 = require('node-int64');

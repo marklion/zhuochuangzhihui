@@ -901,9 +901,12 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     return ret;
 }
 
-void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number)
+void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number, const std::string &plate)
 {
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_phone == '%s' AND status != 100 AND status != 0", order_number.c_str());
+    std::string pure_plate;
+    Base64::Decode(plate, &pure_plate);
+    std::cout << pure_plate << std::endl;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' OR main_vehicle_number == '%s') AND status != 100 AND status != 0", order_number.c_str(), pure_plate.c_str());
     if (!vo)
     {
         ZH_RETURN_NO_ORDER();
