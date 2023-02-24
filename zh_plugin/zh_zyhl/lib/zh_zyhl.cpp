@@ -193,7 +193,7 @@ bool push_vehicle_enter(const std::string &_vehicle_number, double _xxx)
     for (auto i = 0; i < cur_plans.GetArraySize(); i++)
     {
         auto &single_plan = cur_plans[i];
-        if (single_plan("driver_no") == _vehicle_number)
+        if (single_plan("driver_no") == _vehicle_number && single_plan.IsNull("number"))
         {
             neb::CJsonObject enter_req;
             enter_req.Add("plan_id", single_plan("id"));
@@ -329,7 +329,7 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
     for (auto i = 0; i < cur_plans.GetArraySize(); i++)
     {
         auto &single_plan = cur_plans[i];
-        if (single_plan("driver_no") == _vehicle_number)
+        if (single_plan("driver_no") == _vehicle_number && single_plan.IsNull("number"))
         {
             neb::CJsonObject load_req;
             load_req.Add("id", single_plan("id"));
