@@ -416,26 +416,36 @@ export default {
                             vue_this.init_cur_plan_data();
                             vue_this.$message('撤销成功');
                         });
-
                     };
-                    if (vue_this.focus_vehicle.m_time) {
+                    vue_this.$prompt('请输入授权码', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                    }).then(async ({
+                        value
+                    }) => {
                         var token_from_idb = await idb.get("zy_token");
-                        var undo_ret = await axios.post(vue_this.remote_path() + "/pa_rest/undo_vehicle?token=" + token_from_idb, {
-                            id: vue_this.focus_vehicle.id
-                        });
-                        if (undo_ret.data.result) {
-                            tmp_vehicle.m_time = '';
-                            tmp_vehicle.m_weight = 0;
-                            await idb.set(tmp_vehicle.id, tmp_vehicle)
-                            vue_this.init_cur_plan_data();
-                            vue_this.$message('撤销成功');
-                        } else {
-                            vue_this.$message('无法撤销');
+                        try {
+                            var undo_ret = await axios.post(vue_this.remote_path() + "/pa_rest/undo_vehicle?token=" + token_from_idb, {
+                                id: vue_this.focus_vehicle.id,
+                                auth_code: value,
+                            });
+                            if (undo_ret.data.result) {
+                                if (vue_this.focus_vehicle.m_time) {
+                                    tmp_vehicle.m_time = '';
+                                    tmp_vehicle.m_weight = 0;
+                                    await idb.set(tmp_vehicle.id, tmp_vehicle)
+                                    vue_this.init_cur_plan_data();
+                                    vue_this.$message('撤销成功');
+                                } else {
+                                    undo_idb_func();
+                                }
+                            } else {
+                                vue_this.$message('无法撤销');
+                            }
+                        } catch (error) {
+                            console.log(error);
                         }
-                    } else {
-                        undo_idb_func();
-                    }
-
+                    });
                 });
             }
         },
