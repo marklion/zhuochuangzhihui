@@ -4,7 +4,9 @@ class scale_sm1 : public abs_state_machine
 {
 public:
     using abs_state_machine::abs_state_machine;
-    virtual void proc_event_vehicle_come(ssm_device_type _device_type, const std::string &_vehicle_number){};
+    virtual void proc_event_vehicle_come(ssm_device_type _device_type, const std::string &_vehicle_number){
+        PRINT_LOG("plate is %s", _vehicle_number.c_str());
+    };
     virtual void proc_event_vehicle_id_come(ssm_device_type _device_type, const std::string &_id){};
     virtual void proc_event_vehicle_qr_scan(ssm_device_type _device_type, const std::string &_qr_code)
     {
@@ -12,7 +14,17 @@ public:
     };
     virtual void proc_event_picture_resp(ssm_device_type _device_type, const std::string &_picture){};
     virtual void proc_event_video_record_resp(ssm_device_type _device_type, const std::string &_video){};
-    virtual void proc_event_gate_is_close(ssm_device_type _device_type, bool _is_close){};
+    virtual void proc_event_gate_is_close(ssm_device_type _device_type, bool _is_close)
+    {
+        if (_is_close)
+        {
+            PRINT_LOG("gate is close");
+        }
+        else
+        {
+            PRINT_LOG("gate is open");
+        }
+    };
     virtual void proc_event_cur_weight(ssm_device_type _device_type, double _weight){};
 };
 

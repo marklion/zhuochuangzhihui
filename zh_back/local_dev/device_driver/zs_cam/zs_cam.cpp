@@ -1,6 +1,8 @@
 #include "../abs_device_driver.h"
+extern "C"
+{
 #include "VzLPRClientSDK.h"
-
+}
 static int g_zc_handler = -1;
 static std::string make_frame(unsigned char _cmd, const std::string &_data)
 {
