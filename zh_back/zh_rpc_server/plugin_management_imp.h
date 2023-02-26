@@ -77,7 +77,7 @@ private:
                     timeval now;
                     timespec outtime;
                     gettimeofday(&now, NULL);
-                    outtime.tv_sec = now.tv_sec + 100;
+                    outtime.tv_sec = now.tv_sec + 4;
                     outtime.tv_nsec = now.tv_usec * 1000;
                     pthread_cond_timedwait(&que_cond, &m_que_lock, &outtime);
                     std::list<plugin_event_info> wait_do;

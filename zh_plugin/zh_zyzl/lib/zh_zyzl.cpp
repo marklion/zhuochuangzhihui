@@ -323,19 +323,6 @@ std::string ZH_ZYZL_pull_ticket(const std::string &_plate)
     {
         ret = file_name;
     }
-    else
-    {
-        auto bl_id = get_id_from_plate(_plate);
-
-        if (bl_id.length() > 0)
-        {
-            std::string pull_cmd = "/root/store_file.sh " + bl_id + " " + file_name;
-            if (0 == system(pull_cmd.c_str()))
-            {
-                ret = file_name;
-            }
-        }
-    }
 
     return ret;
 }
