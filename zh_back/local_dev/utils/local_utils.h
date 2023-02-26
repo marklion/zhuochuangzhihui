@@ -122,6 +122,7 @@ public:
 
 std::vector<std::string> split_string(const std::string &s, const std::string &seperator);
 std::string utf2gbk(const std::string &_gbk);
+std::string gbk2utf(const std::string &_utf);
 int connect_to_device_tcp_server(const std::string &_ip, unsigned short _port);
 std::string local_dev_get_datestring(time_t _time = time(nullptr));
 std::string local_dev_get_timestring(time_t _time = time(nullptr));

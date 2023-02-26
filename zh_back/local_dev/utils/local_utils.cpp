@@ -64,6 +64,18 @@ int u2g(char *inbuf, int inlen, char *outbuf, int outlen)
 {
     return code_convert("utf-8", "gb2312", inbuf, inlen, outbuf, outlen);
 }
+int g2u(char *inbuf, int inlen, char *outbuf, int outlen)
+{
+    return code_convert("gb2312","utf-8", inbuf, inlen, outbuf, outlen);
+}
+std::string gbk2utf(const std::string &_utf)
+{
+    char in_buff[9600] = {0};
+    char out_buff[9600] = {0};
+    strcpy(in_buff, _utf.c_str());
+    g2u(in_buff, strlen(in_buff), out_buff, sizeof(out_buff));
+    return std::string(out_buff);
+}
 std::string utf2gbk(const std::string &_gbk)
 {
     char in_buff[9600] = {0};

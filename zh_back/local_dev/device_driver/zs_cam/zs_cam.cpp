@@ -30,16 +30,25 @@ public:
     {
         std::string ret;
         std::string pic_path = "/logo_res/plate_snap/" + self_name + "_" + local_dev_get_timestring() + ".jpg";
-        if (0 == VzLPRClient_SaveSnapImageToJpeg(g_zc_handler, pic_path.c_str()))
+        int zs_ret = -1;
+        if (0 == (zs_ret = VzLPRClient_SaveSnapImageToJpeg(g_zc_handler, ("/manage_dist" + pic_path).c_str())))
         {
             ret = pic_path;
+        }
+        else
+        {
+            PRINT_ERR("faile to snap:%d", zs_ret);
         }
 
         return ret;
     }
     virtual void manual_trigger()
     {
-        VzLPRClient_ForceTrigger(g_zc_handler);
+        auto zs_ret = VzLPRClient_ForceTrigger(g_zc_handler);
+        if (zs_ret != 0)
+        {
+            PRINT_ERR("failed to force trigger:%d", zs_ret);
+        }
     }
 
     // 屏幕能力
@@ -60,13 +69,19 @@ public:
     // 道闸能力
     virtual void gate_control(bool _make_close)
     {
+        int zs_ret = -1;
         if (_make_close)
         {
-            VzLPRClient_SetIOOutputAuto(g_zc_handler, 1, 1000);
+            zs_ret = VzLPRClient_SetIOOutputAuto(g_zc_handler, 1, 1000);
         }
         else
         {
-            VzLPRClient_SetIOOutputAuto(g_zc_handler, 0, 1000);
+            zs_ret = VzLPRClient_SetIOOutputAuto(g_zc_handler, 0, 1000);
+        }
+
+        if (zs_ret != 0)
+        {
+            PRINT_ERR("failed to gate control:%d", zs_ret);
         }
     }
     virtual bool gate_is_close()
@@ -74,10 +89,14 @@ public:
         bool ret = false;
 
         int val = 1;
-        VzLPRClient_GetGPIOValue(g_zc_handler, 0, &val);
-        if (0 == val)
+        auto zs_ret = VzLPRClient_GetGPIOValue(g_zc_handler, 0, &val);
+        if (1 == val)
         {
             ret = true;
+        }
+        if (zs_ret != 0)
+        {
+            PRINT_ERR("failed to get gate status:%d", zs_ret);
         }
 
         return ret;
@@ -111,8 +130,9 @@ int plate_callback(VzLPRClientHandle handle, void *pUserData,
     std::string plate = pResult->license;
     if (plate.length() > 0)
     {
+        auto utf_plate = gbk2utf(plate);
         pzs->pub_device_status(true);
-        pzs->pub_vehicle_come(plate);
+        pzs->pub_vehicle_come(utf_plate);
     }
 
     return 0;
@@ -120,26 +140,43 @@ int plate_callback(VzLPRClientHandle handle, void *pUserData,
 int main(int argc, char const *argv[])
 {
     zs_cam zc(argc, argv, {"ip", "port", "username", "password"});
-    bool healthy = false;
-    if (0 == VzLPRClient_Setup())
+    bool healthy = true;
+    int zs_ret = -1;
+    if (0 == (zs_ret = VzLPRClient_Setup()))
     {
-        if (0 == VZLPRClient_SetCommonNotifyCallBack(common_callback, &healthy))
+        if (0 == (zs_ret = VZLPRClient_SetCommonNotifyCallBack(common_callback, &healthy)))
         {
             auto handler = VzLPRClient_Open(zc.get_device_arg("ip").c_str(), (unsigned short)atoi(zc.get_device_arg("port").c_str()), zc.get_device_arg("username").c_str(), zc.get_device_arg("password").c_str());
             if (handler > 0)
             {
                 g_zc_handler = handler;
-                if (0 == VzLPRClient_SetPlateInfoCallBack(handler, plate_callback, &zc, false))
+                if (0 == (zs_ret = VzLPRClient_SetPlateInfoCallBack(handler, plate_callback, &zc, false)))
                 {
                     while (healthy)
                     {
                         zc.proc_msg();
                     }
                 }
+                else
+                {
+                    PRINT_ERR("failed to set callback:%d", zs_ret);
+                }
+            }
+            else
+            {
+                PRINT_ERR("failed to open device:%s %s %s %s", zc.get_device_arg("ip").c_str(), zc.get_device_arg("port").c_str(), zc.get_device_arg("username").c_str(), zc.get_device_arg("password").c_str());
             }
             VzLPRClient_Close(handler);
         }
+        else
+        {
+            PRINT_ERR("failed to set common callback:%d", zs_ret);
+        }
         VzLPRClient_Cleanup();
+    }
+    else
+    {
+        PRINT_ERR("failed to setup device:%d", zs_ret);
     }
     sleep(15);
     zc.pub_device_status(false);
