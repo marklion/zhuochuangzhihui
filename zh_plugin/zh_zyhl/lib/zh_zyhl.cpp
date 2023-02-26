@@ -110,9 +110,12 @@ void fetch_plan_from_zyhl(const std::string &_date)
 
         return true;
     };
-    send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
-    get_plan_req.ReplaceAdd("date", date_ystd);
     auto send_ret = send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
+    if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("need_ystd") == "true")
+    {
+        get_plan_req.ReplaceAdd("date", date_ystd);
+        send_ret = send_req_to_zyhl("/thirdparty/list_plan", get_plan_req, collect_plan);
+    }
     if (send_ret)
     {
         req_list.sort(
@@ -173,10 +176,13 @@ static neb::CJsonObject get_zyhl_plans()
         }
         return true;
     };
-    send_req_to_zyhl(
-        "/thirdparty/list_plan",
-        get_plan_req,
-        plan_proc_resp);
+    if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("need_ystd") == "true")
+    {
+        send_req_to_zyhl(
+            "/thirdparty/list_plan",
+            get_plan_req,
+            plan_proc_resp);
+    }
     get_plan_req.Replace("date", util_get_datestring(time(nullptr)));
     send_req_to_zyhl(
         "/thirdparty/list_plan",
