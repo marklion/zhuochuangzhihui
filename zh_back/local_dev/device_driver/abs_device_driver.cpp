@@ -86,7 +86,7 @@ void abs_device_driver::pub_device_status(bool _is_healthy)
     event_content.Add(LOCAL_DEV_EVENT_DEVICE_STATUS_KEY, _is_healthy, _is_healthy);
     send_event(event_content.ToString());
 }
-int abs_device_driver::get_fd()
+int abs_device_driver::get_fd() const
 {
     return fd;
 }

@@ -7,7 +7,7 @@ class abs_device_driver {
 public:
     abs_device_driver(int argc, const char *const* argv, const std::vector<std::string> &_device_arg_param);
     virtual ~abs_device_driver();
-    int get_fd();
+    int get_fd() const;
     std::string get_device_arg(const std::string &_arg_key) const;
     void proc_msg();
     void send_event(const std::string &_event);

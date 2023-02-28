@@ -26,10 +26,29 @@ enum ssm_device_type
     scale
 };
 
+class abs_state_machine;
+class abs_state_machine_state{
+public:
+    virtual void proc_event_vehicle_come(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_vehicle_number){};
+    virtual void proc_event_vehicle_id_come(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_id){};
+    virtual void proc_event_vehicle_qr_scan(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_qr_code){};
+    virtual void proc_event_picture_resp(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_picture){};
+    virtual void proc_event_video_record_resp(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_video){};
+    virtual void proc_event_gate_is_close(abs_state_machine &_sm, ssm_device_type _device_type, bool _is_close){};
+    virtual void proc_event_cur_weight(abs_state_machine &_sm, ssm_device_type _device_type, double _weight){};
+    virtual void proc_event_timeout(abs_state_machine &_sm) {};
+    virtual void after_enter(abs_state_machine &_sm) {};
+    virtual void before_exit(abs_state_machine &_sm) {};
+    virtual std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm) {
+        return nullptr;
+    };
+};
+
 class abs_state_machine
 {
 protected:
     int self_que_fd = -1;
+    std::unique_ptr<abs_state_machine_state> m_cur_state;
     std::map<ssm_device_type, std::string> type_name_map;
     std::map<ssm_device_type, bool> device_health_map;
     virtual void proc_event_vehicle_come(ssm_device_type _device_type, const std::string &_vehicle_number){};
@@ -40,7 +59,7 @@ protected:
     virtual void proc_event_gate_is_close(ssm_device_type _device_type, bool _is_close){};
     virtual void proc_event_cur_weight(ssm_device_type _device_type, double _weight){};
 public:
-    abs_state_machine(int argc, const char *const *argv)
+    abs_state_machine(int argc, const char *const *argv, abs_state_machine_state *_init_state):m_cur_state(_init_state)
     {
         std::string self_que_name = "/" + std::string(argv[0]);
         auto tmp_fd = mq_open(self_que_name.c_str(), O_RDONLY);
@@ -143,6 +162,19 @@ public:
         msg.Add("msg_type", LOCAL_DEV_MSG_SCALE_CUR_WEIGHT);
         send_msg(_device, msg.ToString());
     }
+    void init_sm()
+    {
+        m_cur_state->after_enter(*this);
+    }
+    void sm_change() {
+        auto next_state = m_cur_state->get_next(*this);
+        if (next_state)
+        {
+            m_cur_state->before_exit(*this);
+            m_cur_state.reset(next_state.release());
+            m_cur_state->after_enter(*this);
+        }
+    }
     void proc_msg()
     {
         char buff[9600] = {0};
@@ -169,38 +201,38 @@ public:
                 {
                     bool is_close = false;
                     msg.Get(LOCAL_DEV_EVENT_GATE_IS_CLOSE_KEY, is_close);
-                    proc_event_gate_is_close(device_type, is_close);
+                    m_cur_state->proc_event_gate_is_close(*this, device_type, is_close);
                 }
                 else if (LOCAL_DEV_EVENT_ID_COME == msg_type)
                 {
                     auto id = msg(LOCAL_DEV_EVENT_ID_COME_KEY);
-                    proc_event_vehicle_id_come(device_type, id);
+                    m_cur_state->proc_event_vehicle_id_come(*this, device_type, id);
                 }
                 else if (LOCAL_DEV_EVENT_QR_SCAN == msg_type)
                 {
                     auto qr_code = msg(LOCAL_DEV_EVENT_QR_SCAN_KEY);
-                    proc_event_vehicle_qr_scan(device_type, qr_code);
+                    m_cur_state->proc_event_vehicle_qr_scan(*this, device_type, qr_code);
                 }
                 else if (LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT == msg_type)
                 {
                     double weight = 0;
                     msg.Get(LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT_KEY, weight);
-                    proc_event_cur_weight(device_type, weight);
+                    m_cur_state->proc_event_cur_weight(*this, device_type, weight);
                 }
                 else if (LOCAL_DEV_EVENT_TAKE_PICTURE == msg_type)
                 {
                     auto picture = msg(LOCAL_DEV_EVENT_TAKE_PICTURE_KEY);
-                    proc_event_picture_resp(device_type, picture);
+                    m_cur_state->proc_event_picture_resp(*this, device_type, picture);
                 }
                 else if (LOCAL_DEV_EVENT_GET_VIDEO_RECORD == msg_type)
                 {
                     auto video = msg(LOCAL_DEV_EVENT_GET_VIDEO_RECORD_KEY);
-                    proc_event_video_record_resp(device_type, video);
+                    m_cur_state->proc_event_video_record_resp(*this, device_type, video);
                 }
                 else if (LOCAL_DEV_EVENT_VEHICLE_COME == msg_type)
                 {
                     auto vehicle_nubmer = msg(LOCAL_DEV_EVENT_VEHICLE_COME_KEY);
-                    proc_event_vehicle_come(device_type, vehicle_nubmer);
+                    m_cur_state->proc_event_vehicle_come(*this, device_type, vehicle_nubmer);
                 }
                 else if (LOCAL_DEV_EVENT_DEVICE_STATUS == msg_type)
                 {
