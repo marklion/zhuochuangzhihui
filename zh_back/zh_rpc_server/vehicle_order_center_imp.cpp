@@ -1351,7 +1351,11 @@ void scale_state_machine::open_scale_timer()
         {
             auto ssm = (scale_state_machine *)_private;
             bool ready_for_scale = false;
-            if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
+            if (ssm->manual_confirm_scale)
+            {
+                ready_for_scale = true;
+            }
+            else if (!raster_was_block(ssm->bound_scale.raster_ip[0], ZH_RASTER_PORT) && !raster_was_block(ssm->bound_scale.raster_ip[1], ZH_RASTER_PORT))
             {
                 ready_for_scale = true;
                 if (ssm->bound_scale.check_close)
