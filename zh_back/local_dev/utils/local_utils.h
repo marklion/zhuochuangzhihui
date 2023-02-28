@@ -20,6 +20,7 @@
 #include <iconv.h>
 #include "../../zh_tdf/tdf_include.h"
 #include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
+#include "../../../zh_pub/zh_cpp_pub/Base64.h"
 #include "../../zh_vcom/zh_vcom_link.h"
 
 #define LOCAL_DEV_MSG_TAKE_PICTURE "take_picture"

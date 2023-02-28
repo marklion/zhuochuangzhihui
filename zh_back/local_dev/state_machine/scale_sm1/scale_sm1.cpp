@@ -13,6 +13,7 @@ public:
             sleep(1);
             send_manual_trigger_msg(_device_type);
         }
+        send_led_show_msg(_device_type, _vehicle_number, "嘿嘿", "123123123123123", "ddd");
     };
     virtual void proc_event_vehicle_id_come(ssm_device_type _device_type, const std::string &_id){};
     virtual void proc_event_vehicle_qr_scan(ssm_device_type _device_type, const std::string &_qr_code)

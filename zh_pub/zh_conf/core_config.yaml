@@ -11,6 +11,7 @@ zs_cam: &zs_cam_ref
     - "port"
     - "username"
     - "password"
+    - "boudrate"
 
 ser_id_reader: &si_reader_ref
   program_name: "/bin/ser_id_reader"
@@ -60,6 +61,7 @@ components:
     port: 80
     username: admin
     password: admin
+    boudrate: 19200
     msg_center: "sm0"
     <<: *zs_cam_ref
   # - name: test_cam0
@@ -84,6 +86,7 @@ components:
   - name: "sm0"
     # enter_cam: test_cam0
     exit_cam: zs_cam0
+    exit_led: zs_cam0
     # enter_id: reader0
     # enter_qr: scanner0
     # enter_printer: printer0
