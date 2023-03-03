@@ -13,11 +13,19 @@
 
 #define PLUGIN_CONF_FILE "/plugin/zh_zyhl/conf/plugin.json"
 static tdf_log g_log("zh_zyhl", "/plugin/audit.log", "/plugin/audit.log");
+static bool clear_xy_vehicle(const std::string &_order_number)
+{
+    bool ret = false;
+    using namespace ::apache::thrift;
+    using namespace ::apache::thrift::protocol;
+    using namespace ::apache::thrift::transport;
+    THR_DEF_CIENT(vehicle_order_center);
+    THR_CONNECT(vehicle_order_center);
+    ret = client->clear_vehicle_xy(_order_number);
+    TRH_CLOSE();
 
-#define THR_DEF_CIENT(x) x##Client *client = nullptr
-#define THR_CONNECT(x) std::shared_ptr<TTransport> transport(new THttpClient("localhost", 8123, "/zh_rpc"));std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport)); transport->open();  std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); client = new x##Client(mp)
-#define TRH_CLOSE() transport->close()
-
+    return ret;
+}
 static std::string get_vehicle_number_by_order_number(const std::string &_order_number, double &_count)
 {
     using namespace ::apache::thrift;
@@ -148,6 +156,10 @@ int main(int argc, char **argv)
                 {
                     if (itr->second(vehicle_number, count))
                     {
+                        if ("vehicle_m_weight" == event_name)
+                        {
+                            clear_xy_vehicle(order_number);
+                        }
                         iret = 0;
                     }
                 }

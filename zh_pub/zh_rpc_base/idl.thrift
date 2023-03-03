@@ -473,6 +473,8 @@ service vehicle_order_center {
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
     bool set_seal_no(1:string ssid, 2:string order_number, 3:string seal_no) throws (1:gen_exp e),
     bool manual_push_nc(1:string order_number, 2:bool is_p) throws (1:gen_exp e),
+    list<vehicle_order_detail> get_today_xy_vehicle() throws (1:gen_exp e),
+    bool clear_vehicle_xy(1:string order_number) throws (1:gen_exp e),
 }
 
 struct video_param{

@@ -228,6 +228,8 @@ public:
     void execute_auto_call(const std::string &_stuff_name);
     virtual bool set_seal_no(const std::string &ssid, const std::string &order_number, const std::string &seal_no);
     virtual bool manual_push_nc(const std::string &order_number, const bool is_p);
+    virtual void get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return);
+    virtual bool clear_vehicle_xy(const std::string &order_number);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

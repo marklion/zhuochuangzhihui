@@ -3316,3 +3316,35 @@ bool vehicle_order_center_handler::manual_push_nc(const std::string &order_numbe
 
     return ret;
 }
+void vehicle_order_center_handler::get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return)
+{
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'", zh_rpc_util_get_datestring().c_str());
+    for (auto &itr:vos)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, itr);
+        _return.push_back(tmp);
+    }
+}
+bool vehicle_order_center_handler::clear_vehicle_xy(const std::string &order_number)
+{
+    bool ret = false;
+
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (vo)
+    {
+        if (vo->seal_no != "泄压完成" && vo->seal_no != "正在泄压")
+        {
+            auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'",
+            vo->main_vehicle_number.c_str(), zh_rpc_util_get_datestring().c_str());
+            for (auto &itr:vos)
+            {
+                itr.seal_no = "泄压完成";
+                itr.update_record();
+                ret = true;
+            }
+        }
+    }
+
+    return ret;
+}

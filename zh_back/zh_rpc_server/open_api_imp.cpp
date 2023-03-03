@@ -341,18 +341,31 @@ void open_api_handler::get_device_status(std::vector<device_status> &_return, co
         tmp.type_id = 1;
         _return.push_back(tmp);
     }
-    for (auto &itr:dc.scale)
+    for (auto &itr : dc.scale)
     {
         device_status tmp;
-        tmp.cur_weight = zh_double2string_reserve2(smh->read_scale(itr.scale_ip));
+        bool need_real_weight = true;
         tmp.enter_gate_is_close = smh->read_cam_io(itr.entry_config.cam_ip);
         tmp.exit_gate_is_close = smh->read_cam_io(itr.exit_config.cam_ip);
+        if (tmp.enter_gate_is_close && tmp.exit_gate_is_close)
+        {
+            need_real_weight = false;
+        }
         tmp.name = itr.name;
-        for (auto &single_ssi:ssi_vec)
+        for (auto &single_ssi : ssi_vec)
         {
             if (single_ssi.name == tmp.name)
             {
                 tmp.scale_status = single_ssi.cur_status;
+                if (need_real_weight)
+                {
+                    tmp.cur_weight = zh_double2string_reserve2(smh->read_scale(itr.scale_ip));
+                }
+                else
+                {
+
+                    tmp.cur_weight = single_ssi.weight_pip.back();
+                }
                 break;
             }
         }
@@ -482,7 +495,7 @@ void open_api_handler::get_queue_node(std::vector<field_queue_node> &_return, co
     auto voch = vehicle_order_center_handler::get_inst();
     std::vector<vehicle_order_detail> all_node;
     voch->get_registered_vehicle(all_node, ssid);
-    for (auto &itr:all_node)
+    for (auto &itr : all_node)
     {
         field_queue_node tmp;
         tmp.back_plate = itr.basic_info.behind_vehicle_number;
