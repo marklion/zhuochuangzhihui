@@ -2,6 +2,7 @@
 #define _STATE_MACHINE_COMMON_H_
 
 #include "../utils/local_utils.h"
+#include "../../zh_database/zh_db_config.h"
 
 enum ssm_device_type
 {
@@ -39,6 +40,7 @@ public:
     virtual void proc_event_timeout(abs_state_machine &_sm) {};
     virtual void after_enter(abs_state_machine &_sm) {};
     virtual void before_exit(abs_state_machine &_sm) {};
+    virtual void proc_manual_confirm(abs_state_machine &_sm) {};
     virtual std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm) {
         return nullptr;
     };
@@ -48,7 +50,6 @@ class abs_state_machine
 {
 protected:
     int self_que_fd = -1;
-    std::unique_ptr<abs_state_machine_state> m_cur_state;
     std::map<ssm_device_type, std::string> type_name_map;
     std::map<ssm_device_type, bool> device_health_map;
     virtual void proc_event_vehicle_come(ssm_device_type _device_type, const std::string &_vehicle_number){};
@@ -59,6 +60,7 @@ protected:
     virtual void proc_event_gate_is_close(ssm_device_type _device_type, bool _is_close){};
     virtual void proc_event_cur_weight(ssm_device_type _device_type, double _weight){};
 public:
+    std::unique_ptr<abs_state_machine_state> m_cur_state;
     abs_state_machine(int argc, const char *const *argv, abs_state_machine_state *_init_state):m_cur_state(_init_state)
     {
         std::string self_que_name = "/" + std::string(argv[0]);
@@ -202,37 +204,44 @@ public:
                     bool is_close = false;
                     msg.Get(LOCAL_DEV_EVENT_GATE_IS_CLOSE_KEY, is_close);
                     m_cur_state->proc_event_gate_is_close(*this, device_type, is_close);
+                    proc_event_gate_is_close(device_type, is_close);
                 }
                 else if (LOCAL_DEV_EVENT_ID_COME == msg_type)
                 {
                     auto id = msg(LOCAL_DEV_EVENT_ID_COME_KEY);
                     m_cur_state->proc_event_vehicle_id_come(*this, device_type, id);
+                    proc_event_vehicle_id_come(device_type, id);
                 }
                 else if (LOCAL_DEV_EVENT_QR_SCAN == msg_type)
                 {
                     auto qr_code = msg(LOCAL_DEV_EVENT_QR_SCAN_KEY);
                     m_cur_state->proc_event_vehicle_qr_scan(*this, device_type, qr_code);
+                    proc_event_vehicle_qr_scan(device_type, qr_code);
                 }
                 else if (LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT == msg_type)
                 {
                     double weight = 0;
                     msg.Get(LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT_KEY, weight);
                     m_cur_state->proc_event_cur_weight(*this, device_type, weight);
+                    proc_event_cur_weight(device_type, weight);
                 }
                 else if (LOCAL_DEV_EVENT_TAKE_PICTURE == msg_type)
                 {
                     auto picture = msg(LOCAL_DEV_EVENT_TAKE_PICTURE_KEY);
                     m_cur_state->proc_event_picture_resp(*this, device_type, picture);
+                    proc_event_picture_resp(device_type, picture);
                 }
                 else if (LOCAL_DEV_EVENT_GET_VIDEO_RECORD == msg_type)
                 {
                     auto video = msg(LOCAL_DEV_EVENT_GET_VIDEO_RECORD_KEY);
                     m_cur_state->proc_event_video_record_resp(*this, device_type, video);
+                    proc_event_video_record_resp(device_type, video);
                 }
                 else if (LOCAL_DEV_EVENT_VEHICLE_COME == msg_type)
                 {
                     auto vehicle_nubmer = msg(LOCAL_DEV_EVENT_VEHICLE_COME_KEY);
                     m_cur_state->proc_event_vehicle_come(*this, device_type, vehicle_nubmer);
+                    proc_event_vehicle_come(device_type, vehicle_nubmer);
                 }
                 else if (LOCAL_DEV_EVENT_DEVICE_STATUS == msg_type)
                 {
@@ -248,6 +257,30 @@ public:
             }
         }
     }
+};
+struct focus_face_set
+{
+    ssm_device_type cur_enter_gate;
+    ssm_device_type cur_enter_cam;
+    ssm_device_type cur_enter_led;
+    ssm_device_type cur_exit_gate;
+    ssm_device_type cur_exit_cam;
+    ssm_device_type cur_exit_led;
+};
+enum cur_enter_vehicle_type
+{
+    enter_type_vehicle_order,
+    enter_type_white_record,
+    enter_type_no_thing,
+};
+class abs_scale_state_machine : public abs_state_machine
+{
+public:
+    using abs_state_machine::abs_state_machine;
+    cur_enter_vehicle_type scale_type = enter_type_no_thing;
+    std::string scale_vehicle;
+    double cur_scale_weight = 0;
+    std::unique_ptr<focus_face_set> m_face;
 };
 
 #endif // _STATE_MACHINE_COMMON_H_

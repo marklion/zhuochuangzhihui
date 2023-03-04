@@ -49,5 +49,5 @@ target_link_libraries(kl_scale abs_device_driver)
 target_link_libraries(ser_id_reader abs_device_driver ${VCOM_LIB} termb)
 target_link_libraries(ser_qr_reader abs_device_driver)
 target_link_libraries(ser_printer abs_device_driver)
-target_link_libraries(scale_sm1 local_dev_util rt)
+target_link_libraries(scale_sm1 ${SQLITE_ORM_LIB} local_dev_util rt)
 
