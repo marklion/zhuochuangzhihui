@@ -439,10 +439,13 @@ public:
     }
     virtual bool proc_in()
     {
+        long sec = 0;
+        read(timer_fd, &sec, sizeof(sec));
         if (m_pscale && m_pscale->m_cur_state)
         {
             m_pscale->m_cur_state->proc_event_timeout(*m_pscale);
         }
+        return true;
     }
     virtual int get_fd() const
     {

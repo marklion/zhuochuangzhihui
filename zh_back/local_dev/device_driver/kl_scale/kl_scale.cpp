@@ -106,6 +106,8 @@ int main(int argc, char const *argv[])
         sch.add_node(*g_p_ks);
         sch.run();
     }
+    g_p_ks->pub_device_status(false);
+    sleep(15);
 
     return 0;
 }

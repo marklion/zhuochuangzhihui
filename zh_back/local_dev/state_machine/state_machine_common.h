@@ -49,6 +49,8 @@ public:
 class abs_state_machine
 {
 protected:
+    std::map<ssm_device_type, std::list<std::string>> type_pic_req_map;
+    std::map<ssm_device_type, std::list<std::string>> type_video_req_map;
     int self_que_fd = -1;
     std::map<ssm_device_type, std::string> type_name_map;
     std::map<ssm_device_type, bool> device_health_map;
@@ -86,6 +88,16 @@ public:
     {
         auto recv_device =  "/" + type_name_map[_device];
         auto tmp_fd = mq_open(recv_device.c_str(), O_WRONLY);
+        if (tmp_fd >= 0)
+        {
+            PRINT_LOG("send msg:%s", _msg.c_str());
+            mq_send(tmp_fd, _msg.c_str(), _msg.length(), 0);
+            mq_close(tmp_fd);
+        }
+    }
+    void trans_msg_to(const std::string &_reciever, const std::string &_msg)
+    {
+        auto tmp_fd = mq_open(("/" + _reciever).c_str(), O_WRONLY);
         if (tmp_fd >= 0)
         {
             PRINT_LOG("send msg:%s", _msg.c_str());
@@ -177,6 +189,87 @@ public:
             m_cur_state->after_enter(*this);
         }
     }
+    ssm_device_type get_device_type_by_msg_type(const std::string &msg_type, const std::string &_device_name)
+    {
+        ssm_device_type ret = (ssm_device_type)-1;
+        if (LOCAL_DEV_EVENT_GATE_IS_CLOSE == msg_type)
+        {
+            auto tmp = enter_gate;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_gate;
+            }
+        }
+        else if (LOCAL_DEV_EVENT_ID_COME == msg_type)
+        {
+            auto tmp = enter_id;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_id;
+            }
+        }
+        else if (LOCAL_DEV_EVENT_QR_SCAN == msg_type)
+        {
+            auto tmp = enter_qr;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_qr;
+            }
+        }
+        else if (LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT == msg_type)
+        {
+            ret = scale;
+        }
+        else if (LOCAL_DEV_EVENT_TAKE_PICTURE == msg_type)
+        {
+            auto tmp = enter_cam;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_cam;
+            }
+        }
+        else if (LOCAL_DEV_EVENT_GET_VIDEO_RECORD == msg_type)
+        {
+            auto tmp = enter_monitor;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_monitor;
+            }
+        }
+        else if (LOCAL_DEV_EVENT_VEHICLE_COME == msg_type)
+        {
+            auto tmp = enter_cam;
+            if (type_name_map[tmp] == _device_name)
+            {
+                ret = tmp;
+            }
+            else
+            {
+                ret = exit_cam;
+            }
+        }
+        return ret;
+    }
     void proc_msg()
     {
         char buff[9600] = {0};
@@ -189,14 +282,7 @@ public:
             neb::CJsonObject msg(std::string(buff, recv_len));
             auto msg_type = msg("msg_type");
             auto device_name = msg("device_name");
-            ssm_device_type device_type = (ssm_device_type)-1;
-            for (auto itr = type_name_map.begin(); itr!= type_name_map.end(); ++itr)
-            {
-                if (itr->second == device_name)
-                {
-                    device_type = itr->first;
-                }
-            }
+            ssm_device_type device_type = get_device_type_by_msg_type(msg_type, device_name);
             if (-1 != device_type)
             {
                 if (LOCAL_DEV_EVENT_GATE_IS_CLOSE == msg_type)
@@ -230,12 +316,26 @@ public:
                     auto picture = msg(LOCAL_DEV_EVENT_TAKE_PICTURE_KEY);
                     m_cur_state->proc_event_picture_resp(*this, device_type, picture);
                     proc_event_picture_resp(device_type, picture);
+                    auto &pic_req_list = type_pic_req_map[device_type];
+                    if (pic_req_list.size() > 0)
+                    {
+                        auto reciever = pic_req_list.front();
+                        pic_req_list.pop_front();
+                        trans_msg_to(reciever, msg.ToString());
+                    }
                 }
                 else if (LOCAL_DEV_EVENT_GET_VIDEO_RECORD == msg_type)
                 {
                     auto video = msg(LOCAL_DEV_EVENT_GET_VIDEO_RECORD_KEY);
                     m_cur_state->proc_event_video_record_resp(*this, device_type, video);
                     proc_event_video_record_resp(device_type, video);
+                    auto &video_req_list = type_video_req_map[device_type];
+                    if (video_req_list.size() > 0)
+                    {
+                        auto reciever = video_req_list.front();
+                        video_req_list.pop_front();
+                        trans_msg_to(reciever, msg.ToString());
+                    }
                 }
                 else if (LOCAL_DEV_EVENT_VEHICLE_COME == msg_type)
                 {
@@ -243,17 +343,52 @@ public:
                     m_cur_state->proc_event_vehicle_come(*this, device_type, vehicle_nubmer);
                     proc_event_vehicle_come(device_type, vehicle_nubmer);
                 }
+
+            }
+            else
+            {
+                if (LOCAL_DEV_REQ_TAKE_PICTURE == msg_type)
+                {
+                    bool is_enter = false;
+                    msg.Get(LOCAL_DEV_REQ_TAKE_PICTURE_KEY, is_enter);
+                    auto cam = enter_cam;
+                    if (!is_enter)
+                    {
+                        cam = exit_cam;
+                    }
+                    send_take_picture_msg(cam);
+                    type_pic_req_map[cam].push_back(device_name);
+                }
+                else if (LOCAL_DEV_REQ_TAKE_VIDEO == msg_type)
+                {
+                    bool is_enter = false;
+                    msg.Get(LOCAL_DEV_REQ_TAKE_VIDEO_KEY1, is_enter);
+                    auto begin_date = msg(LOCAL_DEV_REQ_TAKE_VIDEO_KEY2);
+                    auto end_date = msg(LOCAL_DEV_REQ_TAKE_VIDEO_KEY3);
+                    auto cam = enter_monitor;
+                    if (!is_enter)
+                    {
+                        cam = exit_monitor;
+                    }
+                    send_get_video_record_msg(cam, begin_date, end_date);
+                    type_video_req_map[cam].push_back(device_name);
+                }
                 else if (LOCAL_DEV_EVENT_DEVICE_STATUS == msg_type)
                 {
                     bool healthy;
                     msg.Get(LOCAL_DEV_EVENT_DEVICE_STATUS_KEY, healthy);
-                    device_health_map[device_type] = healthy;
-                    PRINT_LOG("recv %d status:%d", device_type, healthy);
+                    for (auto itr = type_name_map.begin(); itr != type_name_map.end(); ++itr)
+                    {
+                        if (itr->second == device_name)
+                        {
+                            device_health_map[itr->first] = healthy;
+                        }
+                    }
                 }
-            }
-            else
-            {
-                PRINT_ERR("recv msg from %s, but it has not registed to this sm", device_name.c_str());
+                else
+                {
+                    PRINT_ERR("recv msg from %s, but it has not registed to this sm", device_name.c_str());
+                }
             }
         }
     }

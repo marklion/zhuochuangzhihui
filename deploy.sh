@@ -35,7 +35,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 133`
+    line=`expr $line - 132`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /

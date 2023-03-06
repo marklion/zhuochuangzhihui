@@ -193,7 +193,7 @@ static void start_process()
     {
         std::string mq_name = "/" + itr->first;
         auto fd = mq_open(mq_name.c_str(), O_RDWR | O_CREAT, 0666, nullptr);
-        if (fd)
+        if (fd >= 0)
         {
             mq_close(fd);
         }

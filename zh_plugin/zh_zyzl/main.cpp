@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <iostream>
-#include "clipp.h"
 #include "../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/vehicle_order_center.h"

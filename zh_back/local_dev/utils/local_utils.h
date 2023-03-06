@@ -21,6 +21,7 @@
 #include "../../zh_tdf/tdf_include.h"
 #include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
 #include "../../../zh_pub/zh_cpp_pub/Base64.h"
+#include "../../../zh_pub/zh_cpp_pub/clipp.h"
 #include "../../zh_vcom/zh_vcom_link.h"
 
 #define LOCAL_DEV_MSG_TAKE_PICTURE "take_picture"
@@ -60,6 +61,12 @@
 #define LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT_KEY "scale_cur_weight_resp_key"
 #define LOCAL_DEV_EVENT_DEVICE_STATUS "device_status"
 #define LOCAL_DEV_EVENT_DEVICE_STATUS_KEY "device_status_key"
+#define LOCAL_DEV_REQ_TAKE_PICTURE "req_take_picture"
+#define LOCAL_DEV_REQ_TAKE_PICTURE_KEY "req_take_picture_key"
+#define LOCAL_DEV_REQ_TAKE_VIDEO "req_take_video"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY1 "req_take_video_key1"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY2 "req_take_video_key2"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY3 "req_take_video_key3"
 
 #define PRINT_LOG(format, ...) do {printf(format"\n", ##__VA_ARGS__);fflush(stdout);} while(0)
 #define PRINT_ERR(format, ...) do {fprintf(stderr, format"\n", ##__VA_ARGS__);fflush(stderr);} while(0)
@@ -90,7 +97,7 @@ public:
         };
         if (0 == epoll_ctl(epfd, EPOLL_CTL_ADD, _node.get_fd(), &tmp_event))
         {
-            m_epoll_log.log("add %d to epoll", _node.get_fd());
+            // m_epoll_log.log("add %d to epoll", _node.get_fd());
             ret = true;
         }
         else
@@ -110,7 +117,7 @@ public:
             if (0 < epoll_wait(epfd, &tmp, 1, -1))
             {
                 auto p_node = (epoll_node_t *)(tmp.data.ptr);
-                m_epoll_log.log("node fd:%d came event", p_node->get_fd());
+                // m_epoll_log.log("node fd:%d came event", p_node->get_fd());
                 if (!p_node->proc_in())
                 {
                     break;
