@@ -295,7 +295,7 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
 {
     bool ret = false;
 
-    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND (main_vehicle_number == '%s' OR (driver_id != '' AND driver_id == '%s') OR (driver_phone != '' AND driver_phone == '%s'))", order.id, order.main_vehicle_number.c_str(), order.driver_id.c_str(), order.driver_phone.c_str());
+    auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND main_vehicle_number == '%s'", order.id, order.main_vehicle_number.c_str());
     if (exist_record)
     {
         ret = true;
@@ -357,14 +357,6 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool
             same = true;
         }
         else if (_fir.behind_vehicle_number.length() > 0 && _fir.behind_vehicle_number == _sec.behind_vehicle_number)
-        {
-            same = true;
-        }
-        else if (_fir.driver_phone.length() > 0 && _fir.driver_phone == _sec.driver_phone)
-        {
-            same = true;
-        }
-        else if (_fir.driver_id.length() > 0 && _fir.driver_id == _sec.driver_id)
         {
             same = true;
         }
@@ -793,6 +785,11 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     {
         ZH_RETURN_MSG("离场时间过短，无法排号，请稍后排号");
     }
+    auto same_driver_vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' OR (driver_id != '' AND driver_id == '%s')) AND PRI_ID != %ld AND status != 100 AND m_registered == 1", vo->driver_phone.c_str(), vo->driver_id.c_str(), vo->get_pri_id());
+    if (same_driver_vo && !is_cancel)
+    {
+        ZH_RETURN_MSG(same_driver_vo->main_vehicle_number + "已排号，相同司机请完成该车后再排号");
+    }
     vo->m_registered = is_cancel ? 0 : 1;
     vo->max_load = max_load;
     if (!vo->m_registered)
@@ -906,7 +903,7 @@ void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_retur
     std::string pure_plate;
     Base64::Decode(plate, &pure_plate);
     std::cout << pure_plate << std::endl;
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' OR main_vehicle_number == '%s') AND status != 100 AND status != 0", order_number.c_str(), pure_plate.c_str());
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' AND main_vehicle_number == '%s') AND status != 100 AND status != 0", order_number.c_str(), pure_plate.c_str());
     if (!vo)
     {
         ZH_RETURN_NO_ORDER();
