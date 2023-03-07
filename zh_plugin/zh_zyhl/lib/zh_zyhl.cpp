@@ -164,6 +164,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
                 tmp.Add("createTime", single_item("delivery_date"));
                 tmp.Add("companyName", single_item["customer_company"]("name"));
                 tmp.Add("stuffName", single_item["product"]("type"));
+                tmp.Add("transCompanyName", single_item["transport_company"]("name"));
                 req_list.push_back(tmp);
             }
         }
