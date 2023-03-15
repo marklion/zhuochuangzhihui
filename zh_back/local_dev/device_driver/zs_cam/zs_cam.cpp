@@ -226,7 +226,7 @@ public:
 
         int val = 1;
         auto zs_ret = VzLPRClient_GetGPIOValue(g_zc_handler, 0, &val);
-        if (1 == val)
+        if (0 == val)
         {
             ret = true;
         }
@@ -267,8 +267,11 @@ int plate_callback(VzLPRClientHandle handle, void *pUserData,
     if (plate.length() > 0)
     {
         auto utf_plate = gbk2utf(plate);
-        pzs->pub_device_status(true);
-        pzs->pub_vehicle_come(utf_plate);
+        if (utf_plate.find("无") == std::string::npos)
+        {
+            pzs->pub_device_status(true);
+            pzs->pub_vehicle_come(utf_plate);
+        }
     }
 
     return 0;
@@ -307,7 +310,7 @@ int main(int argc, char const *argv[])
                 }
                 else
                 {
-                    PRINT_ERR("failed to open ser port:%d", ser_handler);
+                    PRINT_ERR("failed to open ser port:%lld", ser_handler);
                 }
                 g_zc_handler = handler;
                 if (0 == (zs_ret = VzLPRClient_SetPlateInfoCallBack(handler, plate_callback, &zc, false)))

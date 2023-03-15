@@ -11,17 +11,19 @@ class ssm_empty : public abs_state_machine_state
     virtual void proc_event_gate_is_close(abs_state_machine &_sm, ssm_device_type _device_type, bool _is_close);
     virtual void after_enter(abs_state_machine &_sm);
     virtual void before_exit(abs_state_machine &_sm);
-    virtual void proc_event_timeout(abs_state_machine &_sm);
     std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm);
+    virtual std::string get_cur_status() { return "空闲"; };
 };
 class ssm_wait_vehicle_come : public abs_state_machine_state
 {
     bool need_next = false;
+    int cast_count_down = 5;
     virtual void proc_event_gate_is_close(abs_state_machine &_sm, ssm_device_type _device_type, bool _is_close);
     virtual void after_enter(abs_state_machine &_sm);
     virtual void before_exit(abs_state_machine &_sm);
+    virtual void proc_manual_confirm(abs_state_machine &_sm);
     std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm);
-    virtual void proc_event_timeout(abs_state_machine &_sm);
+    virtual std::string get_cur_status() { return "等待上磅"; };
 };
 class ssm_scale : public abs_state_machine_state
 {
@@ -32,8 +34,8 @@ class ssm_scale : public abs_state_machine_state
     virtual void proc_event_cur_weight(abs_state_machine &_sm, ssm_device_type _device_type, double _weight);
     virtual void after_enter(abs_state_machine &_sm);
     virtual void before_exit(abs_state_machine &_sm);
-    virtual void proc_event_timeout(abs_state_machine &_sm);
     std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm);
+    virtual std::string get_cur_status() { return "正在称重"; };
 };
 class ssm_confirm : public abs_state_machine_state
 {
@@ -42,6 +44,7 @@ class ssm_confirm : public abs_state_machine_state
     virtual void before_exit(abs_state_machine &_sm);
     std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm);
     virtual void proc_manual_confirm(abs_state_machine &_sm);
+    virtual std::string get_cur_status() { return "等待确认"; };
 };
 class ssm_wait_vehicle_leave : public abs_state_machine_state
 {
@@ -50,9 +53,9 @@ class ssm_wait_vehicle_leave : public abs_state_machine_state
     virtual void proc_event_gate_is_close(abs_state_machine &_sm, ssm_device_type _device_type, bool _is_close);
     virtual void after_enter(abs_state_machine &_sm);
     virtual void before_exit(abs_state_machine &_sm);
-    virtual void proc_event_timeout(abs_state_machine &_sm);
     virtual void proc_event_cur_weight(abs_state_machine &_sm, ssm_device_type _device_type, double _weight);
     std::unique_ptr<abs_state_machine_state> get_next(abs_state_machine &_sm);
+    virtual std::string get_cur_status() { return "等待离开"; };
 };
 
 #endif // _SCALE_SM1_H_

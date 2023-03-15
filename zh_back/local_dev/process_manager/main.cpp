@@ -3,7 +3,7 @@
 static neb::CJsonObject get_core_config()
 {
     neb::CJsonObject ret;
-    std::string cmd = "cat /conf/core_config.yaml | yaml2json";
+    std::string cmd = "cat /database/core_config.yaml | yaml2json";
     auto filep = popen(cmd.c_str(), "r");
     if (filep)
     {
@@ -140,7 +140,7 @@ void process_meta_t::start_process()
             auto add_res = g_epoll_sch.add_node(*pip_out_node);
             add_res += g_epoll_sch.add_node(*pip_err_node);
             add_res += g_epoll_sch.add_node(*pid_node);
-            log.reset(new tdf_log(program_name + "]<" + std::to_string(pid) +  ">[" + cmd_args[0]));
+            log.reset(new tdf_log(program_name + "]<" + std::to_string(pid) +  ">[" + cmd_args[0], "/dev/null", ""));
             log->log("begin to run, add epoll ret:%d", add_res);
         }
     }
@@ -165,11 +165,20 @@ void process_meta_t::end_process()
 static void make_global_proc_map()
 {
     auto core_config = get_core_config();
+    neb::CJsonObject cur_sm_set;
     for (auto i = 0; i < core_config["components"].GetArraySize(); i++)
     {
         auto process_meta = core_config["components"][i];
         auto program_name = process_meta("program_name");
         auto device_name = process_meta("name");
+        auto sm_type = process_meta("sm_type");
+        if (sm_type.length() > 0)
+        {
+            neb::CJsonObject tmp;
+            tmp.Add("name", device_name);
+            tmp.Add("sm_type", sm_type);
+            cur_sm_set.Add(tmp);
+        }
         std::vector<std::string> real_cmd_args;
         real_cmd_args.push_back(device_name);
         if (process_meta.KeyExist("msg_center"))
@@ -184,6 +193,8 @@ static void make_global_proc_map()
         g_proc_map[device_name].cmd_args = real_cmd_args;
         g_proc_map[device_name].program_name = program_name;
     }
+    auto wri_fil_cmd = "echo '" + cur_sm_set.ToString() + "' > /conf/cur_sm.json";
+    system(wri_fil_cmd.c_str());
 }
 
 static void start_process()
@@ -192,6 +203,7 @@ static void start_process()
     for (; itr != g_proc_map.end(); ++itr)
     {
         std::string mq_name = "/" + itr->first;
+        mq_unlink(mq_name.c_str());
         auto fd = mq_open(mq_name.c_str(), O_RDWR | O_CREAT, 0666, nullptr);
         if (fd >= 0)
         {

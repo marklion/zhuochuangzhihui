@@ -1,7 +1,10 @@
+
+#if !defined(_PLUGIN_MANGEMENT_IMP_H_)
+#define _PLUGIN_MANGEMENT_IMP_H_
+
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/plugin_management.h"
 #include "../zh_tdf/tdf_include.h"
-
 struct plugin_event_info{
     std::string order_number;
     enum event_type {
@@ -146,3 +149,4 @@ public:
     virtual void get_que_by_name(std::vector<std::string> &_return, const std::string &ssid, const std::string &plugin_name);
     virtual void pop_event_from_que(const std::string &ssid, const std::string &plugin_name);
 };
+#endif

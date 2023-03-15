@@ -1,414 +1,8 @@
 <template>
 <div class="system_management_show">
     <el-tabs v-model="activeName">
-        <el-tab-pane label="设备配置" name="device_config">
-            <div class="device_config_show" v-for="(single_gate, index) in device_config.gate" :key="'gate' + index">
-                <el-descriptions :column="4" border>
-                    <template #title>
-                        <span>{{single_gate.name}}</span>
-                        <el-tag v-if="!single_gate.is_online" type="danger">停用</el-tag>
-                    </template>
-                    <el-descriptions-item label="入口抓拍机IP">{{single_gate.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口LEDIP">{{single_gate.entry_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR IP">{{single_gate.entry_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 通道">{{single_gate.entry_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR 用户名">{{single_gate.entry_login.username}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR 密码">{{single_gate.entry_login.password}}</el-descriptions-item>
-                    <el-descriptions-item label="出口抓拍机IP">{{single_gate.exit_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口LEDIP">{{single_gate.exit_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR IP">{{single_gate.exit_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 通道">{{single_gate.exit_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR 用户名">{{single_gate.exit_login.username}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR 密码">{{single_gate.exit_login.password}}</el-descriptions-item>
-                    <el-descriptions-item>
-                        {{single_gate.entry_qr_ip}}
-                        <template slot="label">
-                            <span>入口二维码IP</span>
-                            <span>
-                                <el-tag v-if="single_gate.entry_need_qr" type="success">必选验证</el-tag>
-                                <el-tag v-else>可选验证</el-tag>
-                            </span>
-                        </template>
-                    </el-descriptions-item>
-                    <el-descriptions-item>
-                        {{single_gate.exit_qr_ip}}
-                        <template slot="label">
-                            <span>出口二维码IP</span>
-                            <span>
-                                <el-tag v-if="single_gate.exit_need_qr" type="success">必选验证</el-tag>
-                                <el-tag v-else>可选验证</el-tag>
-                            </span>
-                        </template>
-
-                    </el-descriptions-item>
-                    <el-descriptions-item>
-                        {{single_gate.entry_id_reader_ip}}
-                        <template slot="label">
-                            <span>入口身份识别IP</span>
-                            <span>
-                                <el-tag v-if="single_gate.entry_need_id" type="success">必选验证</el-tag>
-                                <el-tag v-else>可选验证</el-tag>
-                            </span>
-                        </template>
-                    </el-descriptions-item>
-                    <el-descriptions-item>
-                        <template slot="label">
-                            <span>出口身份识别IP</span>
-                            <span>
-                                <el-tag v-if="single_gate.exit_need_id" type="success">必选验证</el-tag>
-                                <el-tag v-else>可选验证</el-tag>
-                            </span>
-                        </template>
-                        {{single_gate.exit_id_reader_ip}}
-                    </el-descriptions-item>
-
-                    <template slot="extra">
-                        <el-button type="warning" size="small" @click="change_state(single_gate.name)">
-                            {{single_gate.is_online?'停用':'启用'}}
-                        </el-button>
-                        <el-button type="success" size="small" @click="open_gate_operate(single_gate)">操作</el-button>
-                        <el-button type="primary" size="small" @click="open_gate_edit(single_gate)">编辑</el-button>
-                    </template>
-                </el-descriptions>
-            </div>
-            <div class="device_config_show" v-for="(single_scale, index) in device_config.scale" :key="'scale' + index">
-                <el-descriptions border :column="4">
-                    <template #title>
-                        <span>{{single_scale.name}}</span>
-                        <el-tag v-if="!single_scale.is_online" type="danger">停用</el-tag>
-                    </template>
-                    <el-descriptions-item label="入口抓拍机IP">{{single_scale.entry_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR IP">{{single_scale.entry_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 通道">{{single_scale.entry_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR 用户名">{{single_scale.entry_login.username}}</el-descriptions-item>
-                    <el-descriptions-item label="入口 NVR 密码">{{single_scale.entry_login.password}}</el-descriptions-item>
-                    <el-descriptions-item label="入口LEDIP">{{single_scale.entry_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口抓拍机IP">{{single_scale.exit_config.cam_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR IP">{{single_scale.exit_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 通道">{{single_scale.exit_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR 用户名">{{single_scale.exit_login.username}}</el-descriptions-item>
-                    <el-descriptions-item label="出口 NVR 密码">{{single_scale.exit_login.password}}</el-descriptions-item>
-                    <el-descriptions-item label="出口LEDIP">{{single_scale.exit_config.led_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口打印机IP">{{single_scale.entry_printer_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口打印机IP">{{single_scale.exit_printer_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口身份识别IP">{{single_scale.entry_id_reader_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口身份识别IP">{{single_scale.exit_id_reader_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="入口二维码IP">{{single_scale.entry_qr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="出口二维码IP">{{single_scale.exit_qr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="衡器IP">{{single_scale.scale_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="衡器品牌">{{single_scale.scale_brand}}</el-descriptions-item>
-                    <el-descriptions-item label="读数系数">{{single_scale.coefficient}}</el-descriptions-item>
-                    <el-descriptions-item label="最低重量">{{single_scale.min_weight}}</el-descriptions-item>
-                    <el-descriptions-item label="光栅IP-1">{{single_scale.raster_ip[0]}}</el-descriptions-item>
-                    <el-descriptions-item label="光栅IP-2">{{single_scale.raster_ip[1]}}</el-descriptions-item>
-                    <el-descriptions-item label="检查关闸称重">
-                        <el-tag v-if="single_scale.check_close" type="success">开启</el-tag>
-                        <el-tag v-else>关闭</el-tag>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="磅体1 NVR 用户名">{{single_scale.scale1.username}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体1 NVR 密码">{{single_scale.scale1.password}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体1 NVR IP">{{single_scale.scale1_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体1 通道">{{single_scale.scale1_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体2 NVR 用户名">{{single_scale.scale2.username}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体2 NVR 密码">{{single_scale.scale2.password}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体2 NVR IP">{{single_scale.scale2_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体2 通道">{{single_scale.scale2_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体3 NVR 用户名">{{single_scale.scale3.username}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体3 NVR 密码">{{single_scale.scale3.password}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体3 NVR IP">{{single_scale.scale3_nvr_ip}}</el-descriptions-item>
-                    <el-descriptions-item label="磅体3 通道">{{single_scale.scale3_channel}}</el-descriptions-item>
-                    <el-descriptions-item label="红绿灯IP1">{{single_scale.traffic_light_ip1}}</el-descriptions-item>
-                    <el-descriptions-item label="红绿灯IP2">{{single_scale.traffic_light_ip2}}</el-descriptions-item>
-                    <el-descriptions-item label="身份证验证">
-                        <el-tag v-if="single_scale.need_id" type="success">必选验证</el-tag>
-                        <el-tag v-else>可选验证</el-tag>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="二维码验证">
-                        <el-tag v-if="single_scale.need_qr" type="success">必选验证</el-tag>
-                        <el-tag v-else>可选验证</el-tag>
-                    </el-descriptions-item>
-                    <template slot="extra">
-                        <el-button type="warning" size="small" @click="change_state(single_scale.name)">
-                            {{single_scale.is_online?'停用':'启用'}}
-                        </el-button>
-                        <el-button type="success" size="small" @click="open_scale_operate(single_scale)">操作</el-button>
-                        <el-button type="primary" size="small" @click="open_scale_edit(single_scale)">编辑</el-button>
-                    </template>
-                </el-descriptions>
-            </div>
-            <el-dialog @close="init_device_info" title="修改配置" :visible.sync="show_edit_gate_config" width="60%" @keyup.enter.native="edit_gate">
-                <el-form :model="gate_for_edit" ref="edit_gate_form" :rules="rules" label-width="150px">
-                    <el-form-item label="名称" prop="name">
-                        <el-input v-model="gate_for_edit.name" placeholder="请输入名称"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
-                        <el-input v-model="gate_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVRIP" prop="entry_nvr_ip">
-                        <el-input v-model="gate_for_edit.entry_nvr_ip" placeholder="请输入入口NVRIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口通道" prop="entry_channel">
-                        <el-input v-model="gate_for_edit.entry_channel" type="number" placeholder="请输入入口通道"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVR用户名" prop="entry_nvr_username">
-                        <el-input v-model="gate_for_edit.entry_login.username" placeholder="请输入入口NVR用户名"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVR密码" prop="entry_nvr_password">
-                        <el-input v-model="gate_for_edit.entry_login.password" placeholder="请输入入口NVR密码"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
-                        <el-input v-model="gate_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVRIP" prop="entry_nvr_ip">
-                        <el-input v-model="gate_for_edit.exit_nvr_ip" placeholder="请输入出口NVRIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口通道" prop="exit_channel">
-                        <el-input v-model="gate_for_edit.exit_channel" type="number" placeholder="请输入出口通道"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口LEDIP" prop="entry_led_ip">
-                        <el-input v-model="gate_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口LEDIP" prop="exit_led_ip">
-                        <el-input v-model="gate_for_edit.exit_config.led_ip" placeholder="请输入出口LEDIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVR用户名" prop="exit_nvr_username">
-                        <el-input v-model="gate_for_edit.exit_login.username" placeholder="请输入出口NVR用户名"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVR密码" prop="exit_nvr_password">
-                        <el-input v-model="gate_for_edit.exit_login.password" placeholder="请输入出口NVR密码"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
-                        <el-input v-model="gate_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口必选身份证验证" prop="entry_need_id">
-                        <el-switch v-model="gate_for_edit.entry_need_id"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
-                        <el-input v-model="gate_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口必选身份证验证" prop="exit_need_id">
-                        <el-switch v-model="gate_for_edit.exit_need_id"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="入口二维码IP" prop="entry_qr_ip">
-                        <el-input v-model="gate_for_edit.entry_qr_ip" placeholder="请输入入口二维码IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口必选二维码验证" prop="entry_need_qr">
-                        <el-switch v-model="gate_for_edit.entry_need_qr"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="出口二维码IP" prop="exit_qr_ip">
-                        <el-input v-model="gate_for_edit.exit_qr_ip" placeholder="请输出入口二维码IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口必选二维码验证" prop="exit_need_qr">
-                        <el-switch v-model="gate_for_edit.exit_need_qr"></el-switch>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" @click="edit_gate">确认</el-button>
-                    </el-form-item>
-                </el-form>
-            </el-dialog>
-            <el-dialog @close="init_device_info" title="修改配置" :visible.sync="show_edit_scale_config" width="60%" @keyup.enter.native="edit_scale">
-                <el-form :model="scale_for_edit" ref="edit_scale_form" :rules="rules" label-width="120px">
-                    <el-form-item label="名称" prop="name">
-                        <el-input v-model="scale_for_edit.name" placeholder="请输入名称"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口抓拍机IP" prop="entry_cam_ip">
-                        <el-input v-model="scale_for_edit.entry_config.cam_ip" placeholder="请输入入口抓拍机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVRIP" prop="entry_nvr_ip">
-                        <el-input v-model="scale_for_edit.entry_nvr_ip" placeholder="请输入入口NVRIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口通道" prop="entry_channel">
-                        <el-input v-model="scale_for_edit.entry_channel" placeholder="请输入入口通道"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVR用户名" prop="entry_nvr_login_username">
-                        <el-input v-model="scale_for_edit.entry_login.username"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口NVR密码" prop="entry_nvr_login_password">
-                        <el-input v-model="scale_for_edit.entry_login.password"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口抓拍机IP" prop="exit_cam_ip">
-                        <el-input v-model="scale_for_edit.exit_config.cam_ip" placeholder="请输入出口抓拍机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVRIP" prop="entry_nvr_ip">
-                        <el-input v-model="scale_for_edit.exit_nvr_ip" placeholder="请输入出口NVRIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口通道" prop="exit_channel">
-                        <el-input v-model="scale_for_edit.exit_channel" placeholder="请输入出口通道"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVR用户名" prop="exit_nvr_login_username">
-                        <el-input v-model="scale_for_edit.exit_login.username"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口NVR密码" prop="exit_nvr_login_password">
-                        <el-input v-model="scale_for_edit.exit_login.password"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口LEDIP" prop="entry_led_ip">
-                        <el-input v-model="scale_for_edit.entry_config.led_ip" placeholder="请输入入口LEDIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口LEDIP" prop="exit_led_ip">
-                        <el-input v-model="scale_for_edit.exit_config.led_ip" placeholder="请输入出口LEDIP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="衡器IP" prop="scale_ip">
-                        <el-input v-model="scale_for_edit.scale_ip" placeholder="请输入衡器IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="衡器品牌" prop="scale_brand">
-                        <item-for-select v-model="scale_for_edit.scale_brand" search_key="scale_brand"></item-for-select>
-                    </el-form-item>
-                    <el-form-item label="衡器读数系数" prop="coefficient">
-                        <el-input v-model="scale_for_edit.coefficient" type="number" placeholder="请输入衡器系数"></el-input>
-                    </el-form-item>
-                    <el-form-item label="最低重量" prop="min_weight">
-                        <el-input v-model="scale_for_edit.min_weight" type="number" placeholder="请输入最低重量"></el-input>
-                    </el-form-item>
-                    <el-form-item label="光栅IP-1" prop="raster_ip">
-                        <el-input v-model="scale_for_edit.raster_ip[0]" placeholder="请输入光栅IP-1"></el-input>
-                    </el-form-item>
-                    <el-form-item label="光栅IP-2" prop="raster_ip">
-                        <el-input v-model="scale_for_edit.raster_ip[1]" placeholder="请输入光栅IP-2"></el-input>
-                    </el-form-item>
-                    <el-form-item label="检查关闸称重" prop="check_close">
-                        <el-switch v-model="scale_for_edit.check_close"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="入口打印机IP" prop="entry_printer_ip">
-                        <el-input v-model="scale_for_edit.entry_printer_ip" placeholder="请输入入口打印机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口打印机IP" prop="exit_printer_ip">
-                        <el-input v-model="scale_for_edit.exit_printer_ip" placeholder="请输入出口打印机IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口身份识别IP" prop="entry_id_reader_ip">
-                        <el-input v-model="scale_for_edit.entry_id_reader_ip" placeholder="请输入入口身份识别IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口身份识别IP" prop="exit_id_reader_ip">
-                        <el-input v-model="scale_for_edit.exit_id_reader_ip" placeholder="请输入出口身份识别IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="入口二维码IP" prop="entry_qr_ip">
-                        <el-input v-model="scale_for_edit.entry_qr_ip" placeholder="请输入入口二维码IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="出口二维码IP" prop="exit_qr_ip">
-                        <el-input v-model="scale_for_edit.exit_qr_ip" placeholder="请输出入口二维码IP"></el-input>
-                    </el-form-item>
-                    <el-form-item label="必选身份证验证" prop="need_id">
-                        <el-switch v-model="scale_for_edit.need_id"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="必选二维码验证" prop="need_qr">
-                        <el-switch v-model="scale_for_edit.need_qr"></el-switch>
-                    </el-form-item>
-                    <el-form-item label="磅体1NVR用户名" prop="scale1_nvr_login_username">
-                        <el-input v-model="scale_for_edit.scale1.username"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体1NVR密码" prop="scale1_nvr_login_password">
-                        <el-input v-model="scale_for_edit.scale1.password"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体1NVRIP" prop="scale1_nvr_ip">
-                        <el-input v-model="scale_for_edit.scale1_nvr_ip"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体1通道" prop="scale1_channel">
-                        <el-input v-model="scale_for_edit.scale1_channel"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体2NVR用户名" prop="scale2_nvr_login_username">
-                        <el-input v-model="scale_for_edit.scale2.username"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体2NVR密码" prop="scale2_nvr_login_password">
-                        <el-input v-model="scale_for_edit.scale2.password"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体2NVRIP" prop="scale2_nvr_ip">
-                        <el-input v-model="scale_for_edit.scale2_nvr_ip"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体2通道" prop="scale2_channel">
-                        <el-input v-model="scale_for_edit.scale2_channel"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体3NVR用户名" prop="scale3_nvr_login_username">
-                        <el-input v-model="scale_for_edit.scale3.username"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体3NVR密码" prop="scale3_nvr_login_password">
-                        <el-input v-model="scale_for_edit.scale3.password"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体3NVRIP" prop="scale3_nvr_ip">
-                        <el-input v-model="scale_for_edit.scale3_nvr_ip"></el-input>
-                    </el-form-item>
-                    <el-form-item label="磅体3通道" prop="scale3_channel">
-                        <el-input v-model="scale_for_edit.scale3_channel"></el-input>
-                    </el-form-item>
-                    <el-form-item label="红绿灯IP1" prop="traffic_light_ip1">
-                        <el-input v-model="scale_for_edit.traffic_light_ip1"></el-input>
-                    </el-form-item>
-                    <el-form-item label="红绿灯IP2" prop="traffic_light_ip2">
-                        <el-input v-model="scale_for_edit.traffic_light_ip2"></el-input>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" @click="edit_scale">确认</el-button>
-                    </el-form-item>
-                </el-form>
-            </el-dialog>
-            <el-dialog :title="cur_opt_gate.name + '设备操作'" :visible.sync="show_gate_operate" width="60%">
-                <vue-grid align="stretch" justify="start">
-                    <vue-cell width="6of12">
-                        <id-qr-read device_name="入口设备" :id_reader_ip="cur_opt_gate.entry_id_reader_ip" :qr_reader_ip="cur_opt_gate.entry_qr_iq"></id-qr-read>
-                        <id-qr-read device_name="出口设备" :id_reader_ip="cur_opt_gate.exit_id_reader_ip" :qr_reader_ip="cur_opt_gate.exit_qr_iq"></id-qr-read>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <gate-device-ctrl :entry="cur_opt_gate.entry_config.cam_ip" :exit="cur_opt_gate.exit_config.cam_ip" :entry_led="cur_opt_gate.entry_config.led_ip" :exit_led="cur_opt_gate.exit_config.led_ip"></gate-device-ctrl>
-                    </vue-cell>
-                </vue-grid>
-            </el-dialog>
-            <el-dialog :title="cur_opt_scale.name + '设备操作'" :visible.sync="show_scale_operate" width="60%">
-                <vue-grid align="stretch" justify="start">
-                    <vue-cell width="6of12">
-                        <el-card>
-                            <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">光栅1</el-col>
-                                <el-col :span="14">{{cur_opt_scale.raster1_block?'阻挡':'未阻挡'}}</el-col>
-                            </el-row>
-                            <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">光栅2</el-col>
-                                <el-col :span="14">{{cur_opt_scale.raster2_block?'阻挡':'未阻挡'}}</el-col>
-                            </el-row>
-                            <el-row type="flex" :gutter="10" align="center">
-                                <el-col :span="10">当前称重</el-col>
-                                <el-col :span="14">{{cur_opt_scale.current_weight}}</el-col>
-                            </el-row>
-                            <div slot="header">
-                                <span>光栅和衡器</span>
-                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="get_raster_status">获取</el-button>
-                            </div>
-                        </el-card>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <gate-device-ctrl :entry="cur_opt_scale.entry_config.cam_ip" :exit="cur_opt_scale.exit_config.cam_ip" :entry_led="cur_opt_scale.entry_config.led_ip" :exit_led="cur_opt_scale.exit_config.led_ip"></gate-device-ctrl>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <el-card>
-                            <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print1">
-                            </el-input>
-                            <div slot="header">
-                                <span>入口打印机</span>
-                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content1">打印</el-button>
-                            </div>
-                        </el-card>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <el-card>
-                            <el-input type="textarea" :rows="5" placeholder="待打印内容" v-model="content_need_print2">
-                            </el-input>
-                            <div slot="header">
-                                <span>出口打印机</span>
-                                <el-button style="float: right; padding: 3px 3px" type="warning" @click="print_content2">打印</el-button>
-                            </div>
-                        </el-card>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <id-qr-read device_name="入口设备" :id_reader_ip="cur_opt_scale.entry_id_reader_ip" :qr_reader_ip="cur_opt_gate.entry_qr_iq"></id-qr-read>
-                    </vue-cell>
-                    <vue-cell width="6of12">
-                        <id-qr-read device_name="出口设备" :id_reader_ip="cur_opt_scale.exit_id_reader_ip" :qr_reader_ip="cur_opt_gate.exit_qr_iq"></id-qr-read>
-                    </vue-cell>
-                </vue-grid>
-            </el-dialog>
-        </el-tab-pane>
         <el-tab-pane label="规则和维护" name="system_info">
             <el-divider>派车规则</el-divider>
-            <el-switch v-model="device_config.auto_order" @change="change_auto_order" active-text="自由过车" inactive-text="严格过车">
-            </el-switch>
-            <el-divider direction="vertical"></el-divider>
             <el-switch v-model="auto_confirm" @change="change_auto_confirm" active-text="自动确认" inactive-text="手动确认">
             </el-switch>
             <el-divider direction="vertical"></el-divider>
@@ -516,13 +110,16 @@
             </el-row>
             <div v-for="(single_item, index) in plugin_que" :key="index">{{single_item}}</div>
         </el-tab-pane>
+        <el-tab-pane label="设备配置" name="device_config">
+            <el-input type="textarea" :rows="200" v-model="core_config_content">
+            </el-input>
+            <el-button type="success" @click="set_core_config">保存</el-button>
+        </el-tab-pane>
     </el-tabs>
 </div>
 </template>
 
 <script>
-import GateDeviceCtrl from '../components/GateDeviceCtrl.vue'
-import IdQrRead from '../components/IdQrRead.vue'
 import ItemForSelect from "../components/ItemForSelect.vue"
 import {
     VueGrid,
@@ -532,15 +129,14 @@ import PluginQue from '../components/PluginQue.vue'
 export default {
     name: 'SystemManagement',
     components: {
-        "gate-device-ctrl": GateDeviceCtrl,
         "item-for-select": ItemForSelect,
-        "id-qr-read": IdQrRead,
         "plugin-que": PluginQue,
         VueGrid,
         VueCell
     },
     data: function () {
         return {
+            core_config_content: '',
             plugin_que: [],
             address_info: {
                 x: 0,
@@ -561,110 +157,11 @@ export default {
             },
             all_prompt_img: [],
             installed_plugins: [],
-            content_need_print1: '',
-            content_need_print2: '',
-            cur_opt_scale: {
-                entry_config: {},
-                exit_config: {}
-            },
-            cur_opt_gate: {
-                entry_config: {},
-                exit_config: {}
-            },
-            show_scale_operate: false,
-            show_gate_operate: false,
-            activeName: 'device_config',
+            activeName: 'system_info',
             current_version: '',
-            device_config: {},
-            gate_for_edit: {
-                entry_config: {},
-                exit_config: {},
-                entry_login: {},
-                exit_login: {},
-            },
-            scale_for_edit: {
-                raster_ip: ['', ''],
-                entry_config: {},
-                exit_config: {},
-                entry_login: {},
-                exit_login: {},
-                scale1: {},
-                scale2: {},
-                scale3: {},
-                traffic_light_ip1: '',
-                traffic_light_ip2: '',
-            },
-            rules: {
-                name: [{
-                    required: true,
-                    message: "请输入名称"
-                }],
-                entry_cam_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                exit_cam_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                entry_led_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                exit_led_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                entry_id_reader_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                exit_id_reader_ip: [{
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                scale_ip: [{
-                    required: true,
-                    message: "请输入衡器IP"
-                }, {
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                raster_ip: [{
-                    required: true,
-                    message: "请输入光栅IP"
-                }, {
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                entry_printer_ip: [{
-                    required: true,
-                    message: "请输入打印机IP"
-                }, {
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-                exit_printer_ip: [{
-                    required: true,
-                    message: "请输入打印机IP"
-                }, {
-                    pattern: /([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}/g,
-                    message: '请输入正确的IP'
-                }],
-            },
-            show_edit_gate_config: false,
-            show_edit_scale_config: false,
         };
     },
     methods: {
-        change_state: function (_name) {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "switch_device_state", [vue_this.$cookies.get('zh_ssid'), _name]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_device_info();
-                }
-            });
-        },
         pop_event_from_que: function (_plugin_name) {
             var vue_this = this;
             vue_this.$dialog.confirm({
@@ -799,131 +296,6 @@ export default {
                 });
             });
         },
-        open_gate_operate: function (_gate) {
-            this.cur_opt_gate = {
-                ..._gate
-            };
-            this.show_gate_operate = true;
-        },
-        get_id_no: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_gate.entry_id_reader_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_gate, "entry_id_no", resp);
-            });
-            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_gate.exit_id_reader_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_gate, "entry_id_no", resp);
-            });
-            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_scale.entry_id_reader_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_scale, "entry_id_no", resp);
-            });
-            vue_this.$call_remote_process("system_management", "read_id_no", [vue_this.cur_opt_scale.exit_id_reader_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_scale, "exit_id_no", resp);
-            });
-        },
-        print_content1: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "print_content", [vue_this.cur_opt_scale.entry_printer_ip, vue_this.content_need_print1]).then(function (resp) {
-                if (resp) {
-                    vue_this.$message({
-                        message: "打印成功",
-                        type: 'success',
-                    });
-                } else {
-                    vue_this.$message({
-                        message: "打印失败",
-                        type: 'error',
-                    });
-                }
-            });
-        },
-        print_content2: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "print_content", [vue_this.cur_opt_scale.exit_printer_ip, vue_this.content_need_print2]).then(function (resp) {
-                if (resp) {
-                    vue_this.$message({
-                        message: "打印成功",
-                        type: 'success',
-                    });
-                } else {
-                    vue_this.$message({
-                        message: "打印失败",
-                        type: 'error',
-                    });
-                }
-            });
-        },
-        get_raster_status: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[0]]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_scale, 'raster1_block', resp);
-            });
-            vue_this.$call_remote_process("system_management", "raster_is_block", [vue_this.cur_opt_scale.raster_ip[1]]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_scale, 'raster2_block', resp);
-            });
-            vue_this.$call_remote_process("system_management", "read_scale", [vue_this.cur_opt_scale.scale_ip]).then(function (resp) {
-                vue_this.$set(vue_this.cur_opt_scale, 'current_weight', resp);
-            });
-        },
-        open_scale_operate: function (_scale) {
-            this.show_scale_operate = true;
-            this.cur_opt_scale = {
-                ..._scale
-            };
-        },
-        change_auto_order: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_device_info();
-                }
-            });
-        },
-        edit_gate: function () {
-            var vue_this = this;
-            vue_this.gate_for_edit.entry_channel = parseInt(vue_this.gate_for_edit.entry_channel);
-            vue_this.gate_for_edit.exit_channel = parseInt(vue_this.gate_for_edit.exit_channel);
-            this.$refs.edit_gate_form.validate((valid) => {
-                if (valid) {
-                    vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
-                        if (resp) {
-                            vue_this.show_edit_gate_config = false;
-                        }
-                    });
-                }
-            });
-        },
-        edit_scale: function () {
-            var vue_this = this;
-            vue_this.scale_for_edit.entry_channel = parseInt(vue_this.scale_for_edit.entry_channel);
-            vue_this.scale_for_edit.exit_channel = parseInt(vue_this.scale_for_edit.exit_channel);
-            vue_this.scale_for_edit.coefficient = parseFloat(vue_this.scale_for_edit.coefficient);
-            vue_this.scale_for_edit.scale1_channel = parseInt(vue_this.scale_for_edit.scale1_channel);
-            vue_this.scale_for_edit.scale2_channel = parseInt(vue_this.scale_for_edit.scale2_channel);
-            vue_this.scale_for_edit.scale3_channel = parseInt(vue_this.scale_for_edit.scale3_channel);
-            vue_this.$refs.edit_scale_form.validate((valid) => {
-                if (valid) {
-                    vue_this.$call_remote_process("system_management", "edit_device_config", [vue_this.$cookies.get("zh_ssid"), vue_this.device_config]).then(function (resp) {
-                        if (resp) {
-                            vue_this.show_edit_scale_config = false;
-                        }
-                    });
-                }
-            });
-        },
-        open_gate_edit: function (_gate) {
-            this.gate_for_edit = _gate;
-            this.show_edit_gate_config = true;
-        },
-        open_scale_edit: function (_scale) {
-            this.scale_for_edit = _scale;
-            this.show_edit_scale_config = true;
-        },
-        init_device_info: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", 'get_device_config', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
-                vue_this.device_config = resp;
-            });
-        },
         init_plugins: function () {
             var vue_this = this;
             vue_this.$call_remote_process("plugin_management", "get_installed_plugins", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
@@ -965,13 +337,24 @@ export default {
                 });
             });
         },
+        init_core_config: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_core_config", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
+                vue_this.core_config_content = resp;
+            });
+        },
+        set_core_config: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "set_core_config", [vue_this.$cookies.get("zh_ssid"), vue_this.core_config_content]).then(function () {
+                vue_this.init_core_config();
+            });
+        },
     },
     beforeMount: function () {
         var vue_this = this;
         vue_this.$call_remote_process("system_management", 'current_version', []).then(function (resp) {
             vue_this.current_version = resp;
         });
-        this.init_device_info();
         this.init_plugins();
         vue_this.$call_remote_process("system_management", "is_auto_confirm", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
             vue_this.auto_confirm = resp;
@@ -981,7 +364,7 @@ export default {
         this.get_register_info();
         this.init_plugin_que();
         this.init_need_seal_no();
-
+        this.init_core_config();
     },
 }
 </script>

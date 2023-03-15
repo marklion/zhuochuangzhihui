@@ -1,4 +1,3 @@
-.SILENT:
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build

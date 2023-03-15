@@ -37,8 +37,17 @@ kl_scale: &kl_scale_ref
     - "ip"
     - "port"
 
+hk_monitor: &hk_monitor_ref
+  program_name: "/bin/hk_monitor"
+  cmd_args:
+    - "ip"
+    - "channel"
+    - "username"
+    - "password"
+
 state_machine1_define: &smd1_ref
   program_name: "/bin/scale_sm1"
+  sm_type: scale
   cmd_args:
     - enter_cam
     - exit_cam
@@ -85,6 +94,13 @@ components:
     port: 45419
     msg_center: "sm0"
     <<: *fake_cam_ref
+  - name: hk_recorder0
+    ip: 172.16.1.168
+    channel: 1
+    username: admin
+    password: "P@ssw0rd"
+    msg_center: "门"
+    <<: *hk_monitor_ref
   # - name: "reader0"
   #   ip: 127.0.0.1
   #   port: 30203

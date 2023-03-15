@@ -155,8 +155,14 @@ public:
     tdf_log() {}
     tdf_log(const std::string _module, const std::string &_out_file_name, const std::string &_err_file_name)
     {
-        m_log_stdout = open(_out_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
-        m_log_stderr = open(_err_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
+        if (_out_file_name.length() > 0)
+        {
+            m_log_stdout = open(_out_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
+        }
+        if (_err_file_name.length() > 0)
+        {
+            m_log_stderr = open(_err_file_name.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0664);
+        }
         if (m_log_stderr * m_log_stdout < 0)
         {
             std::cout << "open log file error" << std::endl;

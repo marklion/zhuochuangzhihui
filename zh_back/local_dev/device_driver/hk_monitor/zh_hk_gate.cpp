@@ -1,9 +1,7 @@
 #include "zh_hk_gate.h"
-#include "../../zh_database/zh_db_config.h"
 #include <vector>
 #include <iconv.h>
 
-static tdf_log g_log("hk_gate");
 
 int code_convert(char *from_charset, char *to_charset, char *inbuf, size_t inlen, char *outbuf, size_t outlen)
 {
@@ -30,45 +28,6 @@ int u2g(char *inbuf, int inlen, char *outbuf, int outlen)
 int g2u(char *inbuf, size_t inlen, char *outbuf, size_t outlen)
 {
     return code_convert("gb2312", "utf-8", inbuf, inlen, outbuf, outlen);
-}
-
-static neb::CJsonObject call_hk_post(const std::string &_url, neb::CJsonObject req)
-{
-    int ret_len = 0;
-    neb::CJsonObject ret;
-    g_log.log("call api:%s param:%s", _url.c_str(), req.ToString().c_str());
-    std::string url = "https://192.168.2.110/artemis" + _url;
-    auto hk_ret = httpUtil::HTTPUTIL_Post(url.c_str(), req.ToString().c_str(), getenv("HK_KEY"), getenv("HK_SEC"), 10, &ret_len);
-    auto http_ret = httpUtil::HTTPUTIL_GetLastStatus();
-    if (httpUtil::HTTPUTIL_ERR_SUCCESS == http_ret)
-    {
-        if (hk_ret)
-        {
-            neb::CJsonObject gate_ctrl_ret(std::string(hk_ret, ret_len));
-            if (gate_ctrl_ret("code") == "0")
-            {
-                ret = gate_ctrl_ret;
-            }
-            else
-            {
-                g_log.err("control gate err, code:%s, msg:%s, data:%s", gate_ctrl_ret("code").c_str(), gate_ctrl_ret("msg").c_str(), gate_ctrl_ret("data").c_str());
-            }
-        }
-        else
-        {
-            g_log.err("no json resp get");
-        }
-    }
-    else
-    {
-        g_log.err("http util failed:%ld", http_ret);
-    }
-    if (nullptr != hk_ret)
-    {
-        httpUtil::HTTPUTIL_Free(hk_ret);
-    }
-
-    return ret;
 }
 
 std::string gbk2utf(const std::string &_gbk)
@@ -123,12 +82,10 @@ void MessageCallback(LONG lCommand, NET_DVR_ALARMER *pAlarmer, char *pAlarmInfo,
             if (struAlarmInfo.uStatusParam.struTrigIO.byTriggerIOIndex[1] == 1)
             {
                 hk_duh.callback_cfg.is_close = true;
-                g_log.log("door is close");
             }
             if (struAlarmInfo.uStatusParam.struTrigIO.byTriggerIOIndex[2] == 1)
             {
                 hk_duh.callback_cfg.is_close = false;
-                g_log.log("door is open");
             }
             break;
         }
@@ -155,7 +112,6 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
             io_cfg.dwSize = sizeof(io_cfg);
             if (!NET_DVR_SetDVRConfig(user_id, NET_DVR_SET_IOINCFG, 2, &io_cfg, sizeof(io_cfg)))
             {
-                g_log.err("failed to set io cfg:%d", NET_DVR_GetLastError());
             }
             NET_DVR_SetDVRMessageCallBack_V31(
                 [](LONG lCommand, NET_DVR_ALARMER *pAlarmer, char *pAlarmInfo, DWORD dwBufLen, void *pUser) -> BOOL
@@ -174,12 +130,10 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         if (al_info.byExternalDevStatus == DEVICES_STATUS_CLOSED)
                         {
                             is_close = true;
-                            g_log.log("door (%s) is close", cam_ip.c_str());
                         }
                         if (al_info.byExternalDevStatus == DEVICES_STATUS_OPENED)
                         {
                             is_close = false;
-                            g_log.log("door (%s) is open", cam_ip.c_str());
                         }
                         break;
                     }
@@ -188,7 +142,6 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         ev_type = 2;
                         NET_DVR_PLATE_RESULT struPlateResult = {0};
                         memcpy(&struPlateResult, pAlarmInfo, sizeof(struPlateResult));
-                        g_log.log("车牌号: %s\n", struPlateResult.struPlateInfo.sLicense); //车牌号
                         plate_no = std::string(struPlateResult.struPlateInfo.sLicense);
                         break;
                     }
@@ -197,7 +150,6 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         ev_type = 2;
                         NET_ITS_PLATE_RESULT struITSPlateResult = {0};
                         memcpy(&struITSPlateResult, pAlarmInfo, sizeof(struITSPlateResult));
-                        g_log.log("车牌号: %s\n", struITSPlateResult.struPlateInfo.sLicense); //车牌号
                         plate_no = std::string(struITSPlateResult.struPlateInfo.sLicense);
                         break;
                     }
@@ -219,7 +171,6 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         plate_no = gbk2utf(plate_no);
                         if (plate_no == "车牌")
                         {
-                            g_log.log("cap no plate no");
                             return TRUE;
                         }
                         if (hk_duh.callback_cfg.callback)
@@ -237,40 +188,20 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
             auto al_handler = NET_DVR_SetupAlarmChan_V41(user_id, &struSetupParam);
             if (al_handler != -1)
             {
-                g_log.log("布防成功");
                 hk_device_user_handler tmp;
                 tmp.user_id = user_id;
                 tmp.al_handler = al_handler;
                 tmp.callback_cfg = _callback_cfg;
                 g_device_user_map[_road_ip] = tmp;
                 ret = true;
-                zh_runtime_get_device_health()[_road_ip] = 1;
             }
             else
             {
-                g_log.err("NET_DVR_SetupAlarmChan_V41 failed, error code: %d\n", NET_DVR_GetLastError());
             }
         }
         else
         {
-            g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
         }
-    }
-    if (!ret)
-    {
-        zh_runtime_get_device_health()[_road_ip] = 2;
-        auto timer_param = new hk_device_timer_param();
-        timer_param->road_ip = _road_ip;
-        timer_param->callback_cfg = _callback_cfg;
-        tdf_main::get_inst().start_timer(
-            5,
-            [](void *_private)
-            {
-                auto timer_param = (hk_device_timer_param *)(_private);
-                zh_hk_subcribe_event(timer_param->road_ip, timer_param->callback_cfg);
-                delete timer_param;
-            },
-            timer_param, true);
     }
     return ret;
 }
@@ -326,36 +257,23 @@ bool zh_hk_get_cam_IO(const std::string &_nvr_ip)
 }
 bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd)
 {
-    auto gate_cp = new hk_gate_ctrl_param();
-    gate_cp->road_ip = _road_ip;
-    gate_cp->cmd = _cmd;
-    tdf_main::get_inst().Async_to_workthread(
-        [](void *_private, const std::string &chrct)
+    auto hk_duh = g_device_user_map[_road_ip];
+    if (hk_duh.user_id != -1)
+    {
+        NET_DVR_BARRIERGATE_CFG tmp = {0};
+        tmp.dwSize = sizeof(tmp);
+        tmp.dwChannel = 1;
+        tmp.byLaneNo = 1;
+        tmp.byBarrierGateCtrl = _cmd;
+        auto ret = NET_DVR_RemoteControl(hk_duh.user_id, NET_DVR_BARRIERGATE_CTRL, &tmp, sizeof(tmp));
+        if (ret)
         {
-            auto gate_cp = (hk_gate_ctrl_param *)(_private);
-            auto hk_duh = g_device_user_map[gate_cp->road_ip];
-            if (hk_duh.user_id != -1)
-            {
-                NET_DVR_BARRIERGATE_CFG tmp = {0};
-                tmp.dwSize = sizeof(tmp);
-                tmp.dwChannel = 1;
-                tmp.byLaneNo = 1;
-                tmp.byBarrierGateCtrl = gate_cp->cmd;
-                auto ret = NET_DVR_RemoteControl(hk_duh.user_id, NET_DVR_BARRIERGATE_CTRL, &tmp, sizeof(tmp));
-                if (ret)
-                {
-                    g_log.log("open door %s", gate_cp->road_ip.c_str());
-                    zh_runtime_get_device_health()[gate_cp->road_ip] = 1;
-                }
-                else
-                {
-                    g_log.err("open door %s, error_code:%d", gate_cp->road_ip.c_str(), NET_DVR_GetLastError());
-                    zh_runtime_get_device_health()[gate_cp->road_ip] = 2;
-                }
-            }
-            delete gate_cp;
-        },
-        gate_cp, "");
+        }
+        else
+        {
+        }
+    }
+
     return true;
 }
 
@@ -378,13 +296,11 @@ struct hk_led_connector
             }
             else
             {
-                g_log.err("failed to connect:%s", strerror(errno));
                 close(fd);
             }
         }
         else
         {
-            g_log.err("failed to socket:%s", strerror(errno));
         }
     }
     bool send_cmd(const std::string &_cmd)
@@ -392,8 +308,6 @@ struct hk_led_connector
         bool ret = false;
         if (socket_fd >= 0)
         {
-            g_log.log("send to led:");
-            g_log.log_package(_cmd.data(), _cmd.size());
             if (_cmd.size() == send(socket_fd, _cmd.data(), _cmd.size(), 0))
             {
                 char buff[1024];
@@ -401,19 +315,15 @@ struct hk_led_connector
                 auto recv_len = recv(socket_fd, buff, sizeof(buff), MSG_DONTWAIT);
                 if (recv_len > 0)
                 {
-                    g_log.log("recv from led:");
-                    g_log.log_package(buff, recv_len);
                 }
                 ret = true;
             }
         }
         if (ret)
         {
-            zh_runtime_get_device_health()[m_ip] = 1;
         }
         else
         {
-            zh_runtime_get_device_health()[m_ip] = 2;
         }
 
         return ret;
@@ -440,7 +350,6 @@ void __attribute__((constructor)) zh_hk_init(void)
         !NET_DVR_SetReconnect(10000, true) ||
         !NET_DVR_SetRecvTimeOut(1000))
     {
-        g_log.err("failed to init hk_lib:%d", NET_DVR_GetLastError());
     }
 }
 void __attribute__((destructor)) zh_hk_fini(void)
@@ -449,7 +358,6 @@ void __attribute__((destructor)) zh_hk_fini(void)
 }
 void zh_hk_manual_trigger(const std::string &_road_ip)
 {
-    g_log.log("manual trigger %s", _road_ip.c_str());
     auto hk_duh = g_device_user_map[_road_ip];
     if (hk_duh.user_id != -1)
     {
@@ -462,13 +370,9 @@ void zh_hk_manual_trigger(const std::string &_road_ip)
         tmp.byRelatedDriveWay = 0;
         if (NET_DVR_ContinuousShoot(hk_duh.user_id, &tmp))
         {
-            zh_runtime_get_device_health()[_road_ip] = 1;
-            g_log.log("trigger cap:%s", _road_ip.c_str());
         }
         else
         {
-            zh_runtime_get_device_health()[_road_ip] = 2;
-            g_log.err("failed to trigger cap:%s, error_code:%d", _road_ip.c_str(), NET_DVR_GetLastError());
         }
     }
 }
@@ -526,8 +430,6 @@ std::string hk_led_make_text_block(const std::string &_msg, char _pos, char _col
     ret.append((char *)&string_len, sizeof(string_len));
     ret.append(text_string);
 
-    g_log.log("make oem_block");
-    g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 std::string hk_led_make_program_oem_data()
@@ -538,10 +440,8 @@ std::string hk_led_make_program_oem_data()
 std::string hk_led_make_program_time_data()
 {
     std::string ret;
-    auto time_string = zh_rpc_util_get_timestring();
+    auto time_string = "";
     ret = hk_led_make_text_block(time_string, 1, 1, 0x20);
-    g_log.log("make time_block");
-    g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 std::string hk_led_make_program_msg_data(const std::string &_msg)
@@ -575,8 +475,6 @@ std::string hk_led_make_program_voice_data(const std::string &_voice)
     ret.append((char *)&string_len, sizeof(string_len));
     ret.append(voice_string);
 
-    g_log.log("make voice_block");
-    g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 
@@ -621,8 +519,6 @@ std::string hk_led_make_frame_data(const std::string &_msg, const std::string &_
     ZH_HK_ORIGINAL_FRAME(ret, reserve);
     ret.append(program_blocks);
 
-    g_log.log("make frame");
-    g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 
@@ -649,8 +545,6 @@ std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_n
         ret.append(frame_data);
         ZH_HK_ORIGINAL_FRAME(ret, frame_tail);
     }
-    g_log.log("make cmd");
-    g_log.log_package(ret.data(), ret.length());
     return ret;
 }
 
@@ -660,20 +554,10 @@ struct hk_led_param
     std::string cmd;
 };
 
-static void async_led_post(const std::string &_led_ip, const std::string &_cmd)
+void async_led_post(const std::string &_led_ip, const std::string &_cmd)
 {
-    auto led_param = new hk_led_param();
-    led_param->led_ip = _led_ip;
-    led_param->cmd = _cmd;
-    tdf_main::get_inst().Async_to_workthread(
-        [](void *_private, const std::string &chrct)
-        {
-            auto led_param = (hk_led_param *)(_private);
-            hk_led_connector hkc(led_param->led_ip);
-            hkc.send_cmd(led_param->cmd);
-            delete led_param;
-        },
-        led_param, "");
+    hk_led_connector hkc(_led_ip);
+    hkc.send_cmd(_cmd);
 }
 
 bool zh_hk_cast_empty(const std::string &_led_ip)
@@ -684,15 +568,7 @@ bool zh_hk_cast_empty(const std::string &_led_ip)
 
 void zh_hk_cast_auto_empty(int _second, const std::string &_led_ip)
 {
-    tdf_main::get_inst().start_timer(
-        _second,
-        [](void *_private)
-        {
-            auto led_ip = (std::string *)_private;
-            zh_hk_cast_empty(*led_ip);
-            free(_private);
-        },
-        new std::string(_led_ip), true);
+
 }
 
 bool zh_hk_cast_enter_scale(const std::string &_led_ip, const std::string &_plate_no)
@@ -806,7 +682,6 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
                 int nPos = 0;
                 for (nPos = 0; nPos < 100 && nPos >= 0; nPos = NET_DVR_GetDownloadPos(find_video_ret))
                 {
-                    g_log.log("Be downloading... %d %%\n", nPos);
                     usleep(5000); // millisecond
                 }
                 if (NET_DVR_StopGetFile(find_video_ret) && nPos == 100)
@@ -820,19 +695,16 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
             }
             else
             {
-                g_log.err("Play back control failed [%d]", NET_DVR_GetLastError());
             }
         }
         else
         {
-            g_log.err("NET_DVR_GetFileByTime_V40 fail,last error %d", NET_DVR_GetLastError());
         }
 
         NET_DVR_Logout_V30(user_id);
     }
     else
     {
-        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
     }
     if (ret.length() > 0)
     {
@@ -841,13 +713,12 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
     }
 
     auto end_point = time(NULL);
-    g_log.log("convert takes %d second", end_point - begin_point);
     if (ret.length() > store_prefix.length())
     {
         ret = ret.substr(store_prefix.length(), ret.length() - store_prefix.length());
     }
 
-    return "https://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + web_prefix + ret;
+    return web_prefix + ret;
 }
 
 std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name, const std::string &_password)
@@ -865,24 +736,20 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
         ret = "/logo_res/pic_" + std::to_string(time(NULL)) + "_" + _nvr_ip + "_" + std::to_string(_channel_id) + ".jpeg";
         if (TRUE == NET_DVR_CaptureJPEGPicture(user_id, _channel_id + (tmp_info.byStartDChan - 1), &cap_param, (char *)((store_prefix + ret).c_str())))
         {
-            g_log.log("success cap picture:%s", ret.c_str());
             auto chmod_opt = "chmod +r " + store_prefix + ret;
             system(chmod_opt.c_str());
         }
         else
         {
-            g_log.err("failed to cap picture [%d]", NET_DVR_GetLastError());
         }
         NET_DVR_Logout_V30(user_id);
     }
     else
     {
-        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
     }
     auto end_point = time(NULL);
-    g_log.log("cap pic spend %d second", end_point - begin_point);
 
-    return "https://" + std::string(getenv("BASE_URL")) + std::string(getenv("URL_REMOTE")) + ret;
+    return  ret;
 }
 
 void zh_hk_reboot_cam(const std::string &_ip)
@@ -895,6 +762,5 @@ void zh_hk_reboot_cam(const std::string &_ip)
     }
     else
     {
-        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
     }
 }

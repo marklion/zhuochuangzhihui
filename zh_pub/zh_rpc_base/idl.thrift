@@ -2,104 +2,6 @@ exception gen_exp {
     1:string msg,
 }
 
-struct hk_gate_device_ipconfig {
-    1:string cam_ip;
-    2:string led_ip;
-}
-
-struct nvr_login_info{
-    1:string username,
-    2:string password,
-}
-
-struct device_gate_config {
-    1:string name,
-    2:string entry_id_reader_ip,
-    3:string exit_id_reader_ip,
-    4:hk_gate_device_ipconfig entry_config,
-    5:hk_gate_device_ipconfig exit_config,
-    6:string entry_qr_ip,
-    7:string exit_qr_ip,
-    8:bool entry_need_id,
-    9:bool entry_need_qr,
-    10:bool exit_need_id,
-    11:bool exit_need_qr,
-    12:string entry_nvr_ip,
-    13:string exit_nvr_ip,
-    14:i64 entry_channel,
-    15:i64 exit_channel,
-    16:nvr_login_info entry_login,
-    17:nvr_login_info exit_login,
-    18:bool is_online,
-}
-
-
-
-struct device_scale_config {
-    1:string name,
-    2:list<string> raster_ip,
-    3:string scale_ip,
-    4:string entry_printer_ip,
-    5:string exit_printer_ip,
-    6:string entry_id_reader_ip,
-    7:string exit_id_reader_ip,
-    8:hk_gate_device_ipconfig entry_config,
-    9:hk_gate_device_ipconfig exit_config,
-    10:string entry_qr_ip,
-    11:string exit_qr_ip,
-    12:bool need_id,
-    13:bool need_qr,
-    14:string scale_brand,
-    15:string entry_nvr_ip,
-    16:string exit_nvr_ip,
-    17:i64 entry_channel,
-    18:i64 exit_channel,
-    19:double coefficient = 1,
-    20:nvr_login_info entry_login,
-    21:nvr_login_info exit_login,
-    22:nvr_login_info scale1,
-    23:nvr_login_info scale2,
-    24:nvr_login_info scale3,
-    25:string scale1_nvr_ip,
-    26:i64 scale1_channel,
-    27:string scale2_nvr_ip,
-    28:i64 scale2_channel,
-    29:string scale3_nvr_ip,
-    30:i64 scale3_channel,
-    31:double min_weight = 11,
-    32:bool check_close,
-    33:string traffic_light_ip1,
-    34:string traffic_light_ip2,
-    35:bool is_online,
-}
-
-struct device_config {
-    1:list<device_gate_config> gate,
-    2:list<device_scale_config> scale,
-    3:bool auto_order,
-}
-
-struct road_status {
-    1:string coming_vehicle,
-}
-
-struct device_health {
-    1:string name,
-    2:i64 entry_cam = -1,
-    3:i64 exit_cam = -1,
-    4:i64 entry_led = -1,
-    5:i64 exit_led = -1,
-    6:i64 entry_id = -1,
-    7:i64 exit_id = -1,
-    8:i64 entry_qr = -1,
-    9:i64 exit_qr = -1,
-    10:i64 raster1 = -1,
-    11:i64 raster2 = -1,
-    12:i64 entry_printer = -1,
-    13:i64 exit_printer = -1,
-    14:i64 scale = -1,
-}
-
 struct prompt_image_info{
     1:i64 id,
     2:string attachment_path,
@@ -118,35 +20,23 @@ struct register_config_info {
     4:i64 leave_limit,
 }
 
-struct scale_state_info {
+struct device_status {
     1:string name,
-    2:string cur_status,
-    3:string weight_pip,
-    4:bool is_pause,
+    2:bool enter_gate_is_close,
+    3:bool exit_gate_is_close,
+    4:string cur_status,
+    5:double cur_weight,
+    6:bool is_scale,
 }
 
 service system_management {
     bool reboot_system(1:string ssid) throws (1:gen_exp e),
     string current_version() throws (1:gen_exp e),
-    device_config get_device_config(1:string ssid) throws (1:gen_exp e),
-    bool edit_device_config(1:string ssid, 2:device_config config) throws (1:gen_exp e),
-    bool raster_is_block(1:string raster_ip) throws (1:gen_exp e),
-    bool print_content(1:string printer_ip, 2:string content, 3:string qr_code) throws (1:gen_exp e),
-    string read_id_no(1:string id_reader_ip) throws (1:gen_exp e),
-    string read_qr(1:string id_reader_ip) throws (1:gen_exp e),
-    bool ctrl_gate(1:string road_ip, 2:i64 cmd) throws (1:gen_exp e),
-    bool led_cast_welcome(1:string led_ip) throws (1:gen_exp e),
-    road_status get_road_status(1:string gate_code) throws (1:gen_exp e),
-    double read_scale(1:string scale_ip) throws (1:gen_exp e),
     void run_update(1:string ssid, 2:string pack_path) throws (1:gen_exp e),
     string get_domain_name() throws (1:gen_exp e),
     string get_oem_name() throws (1:gen_exp e),
-    list<string> get_all_scale_brand() throws (1:gen_exp e),
-    list<device_health> get_device_health(1:string ssid) throws (1:gen_exp e),
-    void trigger_cap(1:string ssid, 2:string cam_ip) throws (1:gen_exp e),
     bool is_auto_confirm(1:string ssid) throws (1:gen_exp e),
     void set_auto_confirm(1:string ssid, 2:bool auto_set) throws (1:gen_exp e),
-    void manual_confirm_scale(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
     bool upload_prompt_image(1:string ssid, 2:string attachment) throws (1:gen_exp e),
     list<prompt_image_info> get_all_prompt_image() throws (1:gen_exp e),
     bool delete_prompt_image(1:string ssid, 2:i64 id) throws (1:gen_exp e),
@@ -154,14 +44,20 @@ service system_management {
     bool set_company_address_info(1:string ssid, 2:company_address_info address_info) throws (1:gen_exp e),
     register_config_info get_register_info() throws (1:gen_exp e),
     bool set_register_info(1:string ssid, 2:register_config_info register_config) throws (1:gen_exp e),
-    list<scale_state_info> get_scale_state(1:string ssid) throws (1:gen_exp e),
-    void reset_scale_state(1:string ssid, 2:string scale_name) throws (1:gen_exp e),
-    bool read_cam_io(1:string cam_ip) throws (1:gen_exp e),
-    bool switch_device_state(1:string ssid, 2:string device_name) throws (1:gen_exp e),
     bool need_seal_no() throws (1:gen_exp e),
     bool set_need_seal_no(1:string ssid, 2:bool need_sn) throws (1:gen_exp e),
-    void trigger_cam_vehicle_number(1:string ssid, 2:string vehicle_number, 3:string device_ip, 4:string device_name) throws (1:gen_exp e),
-    string get_cam_pic(1:string ssid, 2:string device_ip) throws (1:gen_exp e),
+    list<device_status> get_all_device() throws (1:gen_exp e),
+    void gate_control(1:string name, 2:bool is_enter, 3:bool is_close, 4:string ssid) throws (1:gen_exp e),
+    string take_picture(1:string name, 2:bool is_enter, 3:string ssid) throws (1:gen_exp e),
+    string get_video(1:string name, 2:bool is_enter, 3:string begin_date, 4:string end_date, 5:string ssid) throws (1:gen_exp e),
+    void manual_trigger(1:string name, 2:bool is_enter, 3:string plate, 4:string ssid) throws (1:gen_exp e),
+    void reset_sm(1:string name, 2:string ssid) throws(1:gen_exp e),
+    void confirm_weight(1:string name, 2:string ssid) throws(1:gen_exp e),
+    void led_cast(1:string name, 2:bool is_enter, 3:string content, 4:string ssid) throws (1:gen_exp e),
+    void printer_print(1:string name, 2:bool is_enter, 3:string content, 4:string qr_content, 5:string ssid) throws (1:gen_exp e),
+    void set_traffic_light(1:string name, 2:bool is_enter, 3:bool is_green, 4:string ssid) throws (1:gen_exp e),
+    string get_core_config(1:string ssid) throws (1:gen_exp e),
+    void set_core_config(1:string ssid, 2:string config_content) throws (1:gen_exp e),
 }
 
 struct user_info {
@@ -406,6 +302,14 @@ struct vehicle_order_detail {
     17:string err_string,
     18:string call_user_name,
     19:i64 wait_count,
+    20:string enter_picture,
+    21:string exit_picture,
+    22:string p_picture,
+    23:string m_picture,
+    24:string p_gate_name,
+    25:string m_gate_name,
+    26:string p_scale_name,
+    27:string m_scale_name,
 }
 
 struct vehicle_order_statistics {

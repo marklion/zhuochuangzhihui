@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-SUB_DIR=zh_rpc_server zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_device_mock zh_hk_gate zh_rest_server zh_scale zh_manual_tool zh_qr zh_printer zh_traffic_light local_dev
+SUB_DIR=zh_rpc_server zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_device_mock zh_rest_server zh_manual_tool zh_printer zh_traffic_light local_dev
 
 all:$(DELIVER_PATH)/bin/zh_daemon
 	cp -a $(SRC_DIR)/zh_rest_server/build/zh_rest_node $(DELIVER_PATH)/
@@ -12,9 +12,9 @@ $(DELIVER_PATH):
 	[ -d $(DELIVER_PATH)/lib ] || mkdir $(DELIVER_PATH)/lib
 
 $(DELIVER_PATH)/bin/zh_daemon:$(SUB_DIR) main.cpp $(DELIVER_PATH)
-	g++ -std=gnu++11 -g -o $@ main.cpp -lpthread -lthrift -lssl -lcrypto -L $(DELIVER_PATH)/lib -l zh_rpc_server -lsqlite_orm -lzh_id_reader -lzh_hk_gate -lzh_traffic_light -Wl,-rpath=../lib -ltcp_framework
+	g++ -std=gnu++11 -g -o $@ main.cpp -lpthread -lthrift -lssl -lcrypto -L $(DELIVER_PATH)/lib -l zh_rpc_server -lsqlite_orm -lzh_id_reader -lzh_traffic_light -lsm_control -Wl,-rpath=../lib -ltcp_framework
 
-zh_rpc_server:$(DELIVER_PATH) zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_hk_gate zh_scale zh_qr zh_printer
+zh_rpc_server:$(DELIVER_PATH) zh_database zh_tdf zh_vcom zh_id_reader zh_raster zh_printer
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
@@ -38,19 +38,7 @@ zh_raster:$(DELIVER_PATH) zh_vcom zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-zh_scale:$(DELIVER_PATH) zh_vcom zh_database
-	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
-	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
-
 zh_device_mock:$(DELIVER_PATH) zh_tdf zh_database
-	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
-	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
-
-zh_hk_gate:$(DELIVER_PATH) zh_tdf zh_database
-	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
-	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
-
-zh_qr:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
@@ -62,8 +50,9 @@ zh_traffic_light:$(DELIVER_PATH) zh_tdf zh_database
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 
-local_dev:$(DELIVER_PATH) zh_tdf zh_database zh_vcom
+local_dev:$(DELIVER_PATH) zh_tdf zh_database zh_vcom zh_rpc_server
 	[ -d $(SRC_DIR)/$(@)/build ] || mkdir $(SRC_DIR)/$@/build
+	cp $(SRC_DIR)/$@/device_driver/zs_cam/libVzLPRSDK.so $(DELIVER_PATH)/lib/
 	pushd $(SRC_DIR)/$@/build;[ -f Makefile ] || cmake -D PRJ_INTERNAL_BUILD=$(DELIVER_PATH) ../; $(MAKE)
 	cp $(SRC_DIR)/$@/yaml2json $(DELIVER_PATH)/bin/
 	chmod +x $(DELIVER_PATH)/bin/yaml2json

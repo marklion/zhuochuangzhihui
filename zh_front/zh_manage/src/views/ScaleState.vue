@@ -1,28 +1,10 @@
 <template>
 <div class="scale_state_show">
-
-    <van-nav-bar title="设备状态" @click-right="init_scale_state" right-text="刷新" />
-
-    <van-tabs v-model="active">
-        <van-tab title="称重状态">
-            <van-cell v-for="(single_scale, index) in scale_state" :key="index" :title="single_scale.name" :label="single_scale.cur_status" :value="single_scale.weight_pip">
-                <template #right-icon>
-                    <van-button type="danger" size="small" @click="reset_scale(single_scale.name)">重置</van-button>
-                </template>
-            </van-cell>
-            <van-field v-model="push_order_number" center clearable label="单号">
-                <template #button>
-                    <van-button size="small" type="primary" @click="push_hnnc">补推</van-button>
-                </template>
-            </van-field>
-        </van-tab>
-        <van-tab title="监控">
-            <van-dropdown-menu>
-                <van-dropdown-item :options="all_video_param" @change="set_video_path" />
-            </van-dropdown-menu>
-            <vue-flv-player :autoplay="true" :controls="true" ref="myPlayer" source="/live?app=live&stream=home" />
-        </van-tab>
-    </van-tabs>
+    <van-nav-bar title="设备状态" @click-right="init_all_device" right-text="刷新" />
+    <div v-for="(single_device, index) in all_device" :key="index">
+        <van-divider />
+        <device-opt :device_status="single_device" @refresh="init_all_device"></device-opt>
+    </div>
 </div>
 </template>
 
@@ -30,28 +12,22 @@
 import Vue from 'vue'
 
 import vueFlvPlayer from 'vue-flv-player'
+import DeviceOpt from "../components/DeviceOpt.vue"
 Vue.use(vueFlvPlayer)
 export default {
     name: 'ScaleState',
     data: function () {
         return {
             active: 0,
-            scale_state: [],
             all_video_param: [],
-            push_order_number: ''
+            push_order_number: '',
+            all_device: [],
         };
     },
+    components: {
+        'device-opt': DeviceOpt,
+    },
     methods: {
-        push_hnnc:function() {
-            var vue_this = this;
-            var order_number = this.push_order_number.slice(1);
-            var push_p = false;
-            if (this.push_order_number.slice(0,1) == 'p')
-            {
-                push_p = true;
-            }
-            vue_this.$call_remote_process("vehicle_order_center", "manual_push_nc", [order_number, push_p]);
-        },
         set_video_path: function (_path) {
             var vue_this = this;
             vue_this.$call_remote_process("open_api", "set_video_path", [vue_this.$cookies.get("zh_ssid"), _path]);
@@ -68,30 +44,19 @@ export default {
                 });
             });
         },
-        init_scale_state: function () {
+        init_all_device: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("system_management", "get_scale_state", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
-                vue_this.scale_state = [];
-                resp.forEach((element, index) => {
-                    vue_this.$set(vue_this.scale_state, index, element);
-                });
-            });
-        },
-        reset_scale: function (_scale_name) {
-            var vue_this = this;
-            vue_this.$dialog.confirm({
-                message: '确定要重置' + _scale_name + '的状态吗？',
-                title: '提示'
-            }).then(() => {
-                vue_this.$call_remote_process("system_management", "reset_scale_state", [vue_this.$cookies.get("zh_ssid"), _scale_name]).then(function () {
-                    vue_this.init_scale_state();
+            vue_this.$call_remote_process("system_management", "get_all_device", []).then(function (resp) {
+                vue_this.all_device = [];
+                resp.forEach((item, index) => {
+                    vue_this.$set(vue_this.all_device, index, item);
                 });
             });
         },
     },
     beforeMount: function () {
-        this.init_scale_state();
         this.init_video_path();
+        this.init_all_device();
     },
 }
 </script>

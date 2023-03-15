@@ -1,14 +1,12 @@
 #if !defined(_ZH_HK_GATE_H_)
 #define _ZH_HK_GATE_H_
 
-#include "HttpUtil.h"
-#include "../../zh_tdf/tdf_include.h"
 // #include "DataType.h"
 // #include "DecodeCardSdk.h"
 #include "HCNetSDK.h"
 // #include "plaympeg4.h"
 #include <functional>
-#include "../../zh_rpc_server/zh_rpc_util.h"
+#include "../../../zh_rpc_server/zh_rpc_util.h"
 
 enum zh_hk_gate_control_cmd {
     zh_hk_gate_close = 0,
@@ -25,7 +23,9 @@ enum zh_hk_led_type {
     zh_hk_led_exit_scale,
 };
 
+void async_led_post(const std::string &_led_ip, const std::string &_cmd);
 bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _callback);
+std::string hk_led_make_cmd(const std::string &_msg, const std::string &_plate_no);
 void zh_hk_unsubcribe_event(const std::string &_road_ip);
 void zh_hk_manual_trigger(const std::string &_road_ip);
 void zh_hk_clear_event();
