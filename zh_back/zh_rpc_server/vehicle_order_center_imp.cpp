@@ -408,6 +408,10 @@ bool vehicle_order_center_handler::confirm_order_deliver(const std::string& ssid
     }
     vo->m_permit = confirmed;
     vo->bound_inv_name = inv_name;
+    if (0 == vo->m_permit)
+    {
+        vo->seal_no = "";
+    }
     ret = vo->update_record();
     return ret;
 }
@@ -540,7 +544,7 @@ static bool pri_calcu_balanc(zh_sql_contract &_company, zh_sql_stuff &_stuff, in
     return ret;
 }
 
-bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel, const std::string &driver_id, const std::string& max_load)
+bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const bool is_cancel, const std::string &driver_id, const std::string &max_load)
 {
     bool ret = false;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>(order_id);
@@ -563,6 +567,11 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (!is_cancel && !vehicle_leave_enough(vo->main_vehicle_number))
     {
         ZH_RETURN_MSG("离场时间过短，无法排号，请稍后排号");
+    }
+    auto same_driver_vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' OR (driver_id != '' AND driver_id == '%s')) AND PRI_ID != %ld AND status != 100 AND m_registered == 1", vo->driver_phone.c_str(), vo->driver_id.c_str(), vo->get_pri_id());
+    if (same_driver_vo && !is_cancel)
+    {
+        ZH_RETURN_MSG(same_driver_vo->main_vehicle_number + "已排号，相同司机请完成该车后再排号");
     }
     vo->m_registered = is_cancel ? 0 : 1;
     vo->max_load = max_load;
@@ -661,6 +670,10 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     if (driver_id.length() > 0)
     {
         vo->driver_id = driver_id;
+        if (driver_id[driver_id.length() - 1] == 'X')
+        {
+            vo->driver_id[driver_id.length() - 1] = 'x';
+        }
     }
     ret = vo->update_record();
     execute_auto_call(vo->stuff_name);
@@ -668,9 +681,12 @@ bool vehicle_order_center_handler::driver_check_in(const int64_t order_id, const
     return ret;
 }
 
-void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number)
+void vehicle_order_center_handler::driver_get_order(vehicle_order_detail &_return, const std::string &order_number, const std::string &plate)
 {
-    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("driver_phone == '%s' AND status != 100 AND status != 0", order_number.c_str());
+    std::string pure_plate;
+    Base64::Decode(plate, &pure_plate);
+    std::cout << pure_plate << std::endl;
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("(driver_phone == '%s' AND main_vehicle_number == '%s') AND status != 100 AND status != 0", order_number.c_str(), pure_plate.c_str());
     if (!vo)
     {
         ZH_RETURN_NO_ORDER();
@@ -1739,6 +1755,38 @@ bool vehicle_order_center_handler::manual_push_nc(const std::string &order_numbe
         vo->status = orig_status;
         vo->update_record();
         ret = true;
+    }
+
+    return ret;
+}
+void vehicle_order_center_handler::get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return)
+{
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'", zh_rpc_util_get_datestring().c_str());
+    for (auto &itr:vos)
+    {
+        vehicle_order_detail tmp;
+        make_vehicle_detail_from_sql(tmp, itr);
+        _return.push_back(tmp);
+    }
+}
+bool vehicle_order_center_handler::clear_vehicle_xy(const std::string &order_number)
+{
+    bool ret = false;
+
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (vo)
+    {
+        if (vo->seal_no != "泄压完成" && vo->seal_no != "正在泄压")
+        {
+            auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'",
+            vo->main_vehicle_number.c_str(), zh_rpc_util_get_datestring().c_str());
+            for (auto &itr:vos)
+            {
+                itr.seal_no = "泄压完成";
+                itr.update_record();
+                ret = true;
+            }
+        }
     }
 
     return ret;

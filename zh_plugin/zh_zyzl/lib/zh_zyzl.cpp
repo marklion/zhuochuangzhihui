@@ -232,6 +232,7 @@ static bool create_plan_to_remote(const zy_sync_plan_data &_plan)
     req.Add("arriveDate", _plan.arriveDate);
     req.Add("customerName", _plan.customerName);
     req.Add("stuffName", _plan.stuffName);
+    req.Add("trans_company_name", _plan.trans_company_name);
     send_to_zyzl("/create_plan", req, [&](const neb::CJsonObject &_resp) -> bool
                  {
         ret = true;
@@ -262,6 +263,7 @@ zy_sync_plan_data json_to_struct_plan(const neb::CJsonObject &_json)
     tmp.stuffName = _json("stuffName");
     tmp.useFor = "气站";
     tmp.order_number = _json("orderNo");
+    tmp.trans_company_name = _json("transCompanyName");
 
     return tmp;
 }
@@ -269,21 +271,24 @@ zy_sync_plan_data json_to_struct_plan(const neb::CJsonObject &_json)
 void ZH_ZYZL_sync_plans(const std::list<zy_sync_plan_data> &_plan_data)
 {
     std::list<zy_sync_plan_data> orig_remote_plans;
-    send_to_zyzl(
-        "/all_vehicle_info",
-        neb::CJsonObject(),
-        [&](const neb::CJsonObject &_resp) -> bool
-        {
-            auto remote_json = _resp;
-            for (auto i = 0; i < remote_json.GetArraySize(); i++)
-            {
-                auto single_plan = remote_json[i];
-                orig_remote_plans.push_back(json_to_struct_plan(single_plan));
-            }
+    if (false == send_to_zyzl(
+                     "/all_vehicle_info",
+                     neb::CJsonObject(),
+                     [&](const neb::CJsonObject &_resp) -> bool
+                     {
+                         auto remote_json = _resp;
+                         for (auto i = 0; i < remote_json.GetArraySize(); i++)
+                         {
+                             auto single_plan = remote_json[i];
+                             orig_remote_plans.push_back(json_to_struct_plan(single_plan));
+                         }
 
-            return true;
-        },
-        true);
+                         return true;
+                     },
+                     true))
+    {
+        return;
+    }
 
     for (auto &itr : _plan_data)
     {
@@ -319,19 +324,6 @@ std::string ZH_ZYZL_pull_ticket(const std::string &_plate)
     if (0 == access(file_name.c_str(), R_OK))
     {
         ret = file_name;
-    }
-    else
-    {
-        auto bl_id = get_id_from_plate(_plate);
-
-        if (bl_id.length() > 0)
-        {
-            std::string pull_cmd = "/root/store_file.sh " + bl_id + " " + file_name;
-            if (0 == system(pull_cmd.c_str()))
-            {
-                ret = file_name;
-            }
-        }
     }
 
     return ret;

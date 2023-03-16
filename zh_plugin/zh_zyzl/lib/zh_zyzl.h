@@ -16,11 +16,12 @@ struct zy_sync_plan_data{
     std::string customerName;
     std::string stuffName;
     std::string order_number;
+    std::string trans_company_name;
     bool operator==(const zy_sync_plan_data &_other) const
     {
         bool ret = false;
 
-        if (planNo == _other.planNo || behindPlateNo == _other.behindPlateNo)
+        if (planNo == _other.planNo && behindPlateNo == _other.behindPlateNo && driverPhone == _other.driverPhone && trans_company_name == _other.trans_company_name)
         {
             ret = true;
         }

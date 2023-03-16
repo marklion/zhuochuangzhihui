@@ -290,6 +290,7 @@ export default {
                 p_weight: 0.0,
                 m_weight: 0.0,
             },
+            need_seal_no: false,
             has_video_rec: function (_ip_channel) {
                 var ret = false;
                 if (_ip_channel) {
@@ -390,7 +391,16 @@ export default {
                 });
             }
         },
-        confirm_deliver: function (_confirm) {
+        set_seal_no: function (_seal_no) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "set_seal_no", [vue_this.$cookies.get("zh_ssid"), this.cur_vehicle.basic_info.order_number, _seal_no]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_cur_vehicle();
+                    vue_this.confirm_func(true);
+                }
+            });
+        },
+        confirm_func: function (_confirm) {
             var vue_this = this;
             vue_this.ask_user_first("确定取消吗?", !_confirm).then(function () {
                 vue_this.$call_remote_process("vehicle_order_center", "confirm_order_deliver", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, _confirm]).then(function (resp) {
@@ -398,7 +408,23 @@ export default {
                         vue_this.init_cur_vehicle();
                     }
                 });
-            });
+            })
+        },
+        confirm_deliver: function (ss_confirm) {
+            var vue_this = this;
+            if (vue_this.cur_vehicle.basic_info.seal_no.length == 0 && vue_this.need_seal_no) {
+                vue_this.$prompt('请输入铅封号', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                }).then(({
+                    value
+                }) => {
+                    vue_this.set_seal_no(value);
+                })
+            } else {
+                vue_this.confirm_func(ss_confirm);
+            }
+
         },
         call_vehicle: function (_is_cancel) {
             var vue_this = this;
@@ -443,9 +469,17 @@ export default {
                 vue_this.init_cur_vehicle();
             });
         },
+        init_need_seal_no: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "need_seal_no", []).then(function (resp) {
+                vue_this.need_seal_no = resp;
+            });
+        },
     },
+
     beforeMount: function () {
         this.init_cur_vehicle();
+        this.init_need_seal_no();
     },
 }
 </script>

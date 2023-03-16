@@ -351,7 +351,7 @@ service vehicle_order_center {
     bool confirm_order_deliver(1:string ssid, 2:string order_number, 3:bool confirmed, 4:string inv_name) throws (1:gen_exp e),
     bool update_vehicle_order(1:string ssid, 2:vehicle_order_info order) throws (1:gen_exp e),
     bool driver_check_in(1:i64 order_id, 2:bool is_cancel, 3:string driver_id, 4:string max_load) throws (1:gen_exp e),
-    vehicle_order_detail driver_get_order(1:string order_number) throws (1:gen_exp e),
+    vehicle_order_detail driver_get_order(1:string order_number, 2:string plate) throws (1:gen_exp e),
     bool call_vehicle(1:string ssid, 2:i64 order_id, 3:bool is_cancel) throws (1:gen_exp e),
     list<vehicle_order_detail> get_registered_vehicle(1:string ssid) throws (1:gen_exp e),
     bool manual_set_p_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
@@ -377,12 +377,40 @@ service vehicle_order_center {
     string get_white_vehicle_stuff(1:string vehicle_number) throws (1:gen_exp e),
     bool set_seal_no(1:string ssid, 2:string order_number, 3:string seal_no) throws (1:gen_exp e),
     bool manual_push_nc(1:string order_number, 2:bool is_p) throws (1:gen_exp e),
+    list<vehicle_order_detail> get_today_xy_vehicle() throws (1:gen_exp e),
+    bool clear_vehicle_xy(1:string order_number) throws (1:gen_exp e),
 }
 
 struct video_param{
     1:string name,
     2:string path,
     3:i64 id,
+}
+
+struct device_status {
+    1:string name,
+    2:bool enter_gate_is_close,
+    3:bool exit_gate_is_close,
+    4:i64 type_id,
+    5:string scale_status,
+    6:string cur_weight,
+}
+
+struct field_queue_node {
+    1:i64 id,
+    2:string plate,
+    3:string back_plate,
+    4:string stuff_name,
+    5:i64 status_code,
+    6:string driver_name,
+    7:string driver_phone,
+    8:string p_weight,
+    9:string m_weight,
+    10:string seal_no,
+    11:bool need_confirm,
+    12:bool has_called,
+    13:string check_in_time,
+    14:string call_time,
 }
 
 service open_api {
@@ -400,6 +428,17 @@ service open_api {
     void del_video_path(1:string ssid, 2:i64 id) throws (1:gen_exp e),
     bool set_video_path(1:string ssid, 2:string video_path) throws (1:gen_exp e),
     void stop_video(1:string ssid) throws (1:gen_exp e),
+    list<device_status> get_device_status(1:string phone) throws (1:gen_exp e),
+    void do_device_opt_gate_control(1:string phone, 2:string name, 3:bool is_enter, 4:bool is_open) throws (1:gen_exp e),
+    void do_device_opt_confirm_scale(1:string phone, 2:string name) throws (1:gen_exp e),
+    void do_device_opt_reset_scale(1:string phone, 2:string name) throws (1:gen_exp e),
+    void do_device_opt_trigger_cap(1:string phone, 2:string name, 3:bool is_enter, 4:string vehicle_number) throws (1:gen_exp e),
+    string do_device_opt_take_pic(1:string phone, 2:string name, 3:bool is_enter) throws (1:gen_exp e),
+    list<field_queue_node> get_queue_node(1:string phone) throws (1:gen_exp e),
+    bool field_queue_call(1:string phone, 2:i64 id,  3:bool is_call) throws (1:gen_exp e),
+    bool field_queue_pass(1:string phone, 2:i64 id) throws (1:gen_exp e),
+    bool field_queue_confirm(1:string phone, 2:i64 id, 3:bool is_confirm) throws (1:gen_exp e),
+    bool field_queue_set_seal(1:string phone, 2:i64 id, 3:string seal_no) throws (1:gen_exp e),
 }
 
 service plugin_management {
