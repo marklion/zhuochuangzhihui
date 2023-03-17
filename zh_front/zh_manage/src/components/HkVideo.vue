@@ -16,9 +16,11 @@
 export default {
     name: 'HkVideo',
     props: {
-        nvr_ip: String,
-        time_center: Date,
-        title:String,
+        device_name: String,
+        begin_time: String,
+        end_time: String,
+        title: String,
+        is_enter: Boolean,
     },
     data: function () {
         return {
@@ -29,13 +31,14 @@ export default {
 
         get_video: function () {
             var vue_this = this;
-            var begin_time = new Date(vue_this.time_center);
-            var end_time = new Date(vue_this.time_center);
-            begin_time.setSeconds(begin_time.getSeconds() - 8);
-            end_time.setSeconds(end_time.getSeconds() + 7);
-            var nvr_ip = vue_this.nvr_ip.split(":")[0];
-            var nvr_channel = vue_this.nvr_ip.split(":")[1];
-            vue_this.$call_remote_process("open_api", "get_video", [nvr_ip, parseInt(nvr_channel), vue_this.$make_time_string(begin_time, '-'), vue_this.$make_time_string(end_time, '-')]).then(function (resp) {
+            var end_time = vue_this.end_time;
+            if (!vue_this.end_time)
+            {
+                var end_time_va = new Date(vue_this.begin_time);
+                end_time_va.setSeconds(end_time_va.getSeconds() + 10);
+                end_time = vue_this.$make_time_string(end_time_va, '-');
+            }
+            vue_this.$call_remote_process("system_management", "get_video", [vue_this.device_name, vue_this.is_enter, vue_this.begin_time, end_time, vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
                 vue_this.video_path = resp;
             });
         },

@@ -354,10 +354,18 @@ public:
     std::string max_load;
     long is_scaling = 0;
     std::string bound_inv_name;
+    std::string p_scale_name;
+    std::string m_scale_name;
+    std::string p_gate_name;
+    std::string m_gate_name;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
         add_parent_type<zh_sql_file>("enter_weight_attachment");
+        add_parent_type<zh_sql_file>("enter_picture");
+        add_parent_type<zh_sql_file>("exit_picture");
+        add_parent_type<zh_sql_file>("p_picture");
+        add_parent_type<zh_sql_file>("m_picture");
     }
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
@@ -405,6 +413,10 @@ public:
         ret.push_back(sqlite_orm_column("max_load", sqlite_orm_column::STRING, &max_load));
         ret.push_back(sqlite_orm_column("is_scaling", sqlite_orm_column::INTEGER, &is_scaling));
         ret.push_back(sqlite_orm_column("bound_inv_name", sqlite_orm_column::STRING, &bound_inv_name));
+        ret.push_back(sqlite_orm_column("p_scale_name", sqlite_orm_column::STRING, &p_scale_name));
+        ret.push_back(sqlite_orm_column("m_scale_name", sqlite_orm_column::STRING, &m_scale_name));
+        ret.push_back(sqlite_orm_column("p_gate_name", sqlite_orm_column::STRING, &p_gate_name));
+        ret.push_back(sqlite_orm_column("m_gate_name", sqlite_orm_column::STRING, &m_gate_name));
 
         return ret;
     }

@@ -1,6 +1,6 @@
 #include "abs_device_driver.h"
 
-abs_device_driver::abs_device_driver(int argc, const char *const *argv)
+abs_device_driver::abs_device_driver(int argc, const char *const *argv, const std::vector<std::string> &_device_arg_param)
 {
     self_name = argv[0];
     std::string tmp_center_name(argv[1]);
@@ -11,8 +11,31 @@ abs_device_driver::abs_device_driver(int argc, const char *const *argv)
         fd = tmp_fd;
         center_name = "/" + tmp_center_name;
     }
+    int i = 2;
+    for (auto &itr:_device_arg_param)
+    {
+        if (i < argc)
+        {
+            device_args[itr] = argv[i];
+        }
+        else
+        {
+            break;
+        }
+        i++;
+    }
 }
 
+std::string abs_device_driver::get_device_arg(const std::string &_arg_key) const
+{
+    std::string ret;
+    if (device_args.find(_arg_key) != device_args.end())
+    {
+        ret = device_args.find(_arg_key)->second;
+    }
+
+    return ret;
+}
 abs_device_driver::~abs_device_driver()
 {
     if (fd >= 0)
@@ -26,7 +49,7 @@ void abs_device_driver::send_event(const std::string &_event)
     auto tmp_fd = mq_open(center_name.c_str(), O_WRONLY);
     if (tmp_fd >= 0)
     {
-        PRINT_LOG("send event:%s\n", _event.c_str());
+        PRINT_LOG("send event:%s", _event.c_str());
         neb::CJsonObject tmp(_event);
         tmp.Add("device_name", self_name);
         mq_send(tmp_fd, tmp.ToString().c_str(), tmp.ToString().length(), 0);
@@ -56,7 +79,14 @@ void abs_device_driver::pub_qr_scan(const std::string &_qr_code)
     send_event(event_content.ToString());
 }
 
-int abs_device_driver::get_fd()
+void abs_device_driver::pub_device_status(bool _is_healthy)
+{
+    neb::CJsonObject event_content;
+    event_content.Add("msg_type", LOCAL_DEV_EVENT_DEVICE_STATUS);
+    event_content.Add(LOCAL_DEV_EVENT_DEVICE_STATUS_KEY, _is_healthy, _is_healthy);
+    send_event(event_content.ToString());
+}
+int abs_device_driver::get_fd() const
 {
     return fd;
 }
@@ -68,7 +98,7 @@ void abs_device_driver::proc_msg()
     auto recv_len = mq_receive(fd, buff, sizeof(buff), &prio);
     if (recv_len > 0)
     {
-        PRINT_LOG("recv msg:%s\n", buff);
+        PRINT_LOG("recv msg:%s", buff);
         // 解析报文获取消息对象
         neb::CJsonObject msg(std::string(buff, recv_len));
         auto msg_type = msg("msg_type");

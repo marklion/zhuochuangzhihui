@@ -1,13 +1,17 @@
+
+#if !defined(_PLUGIN_MANGEMENT_IMP_H_)
+#define _PLUGIN_MANGEMENT_IMP_H_
+
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/plugin_management.h"
 #include "../zh_tdf/tdf_include.h"
-
 struct plugin_event_info{
     std::string order_number;
     enum event_type {
         create_order,confirm_order,vehicle_come_in,vehicle_p_weight,vehicle_m_weight,vehicle_leave,order_close,driver_register,call_driver,driver_unregister,cancel_call_driver
     } type;
     std::string plugin_name;
+    long prio_key = 0;
     std::string get_cmd() const {
         std::string ret;
         switch (type) {
@@ -76,7 +80,7 @@ private:
                     timeval now;
                     timespec outtime;
                     gettimeofday(&now, NULL);
-                    outtime.tv_sec = now.tv_sec + 120;
+                    outtime.tv_sec = now.tv_sec + 4;
                     outtime.tv_nsec = now.tv_usec * 1000;
                     pthread_cond_timedwait(&que_cond, &m_que_lock, &outtime);
                     std::list<plugin_event_info> wait_do;
@@ -90,33 +94,18 @@ private:
                         }
                     }
                     pthread_mutex_unlock(&m_que_lock);
+                    wait_do.sort(
+                        [](const plugin_event_info &_fr, const plugin_event_info &_se)
+                        { return _fr.prio_key < _se.prio_key; });
                     for (auto &itr : wait_do)
                     {
-                        struct tmp_aw_param
+                        std::string std_out;
+                        std::string std_err;
+                        zh_plugin_run_plugin("proc_event -c " + itr.get_cmd() + " " + itr.order_number, itr.plugin_name, std_out, std_err);
+                        if (std_err.empty())
                         {
-                            plugin_management_handler *self_this = nullptr;
-                            std::string cmd;
-                            std::string order_number;
-                            std::string plugin_name;
-                        } *p_tmp_aw = new tmp_aw_param();
-                        p_tmp_aw->cmd = itr.get_cmd();
-                        p_tmp_aw->self_this = this;
-                        p_tmp_aw->order_number = itr.order_number;
-                        p_tmp_aw->plugin_name = itr.plugin_name;
-                        tdf_main::get_inst().Async_to_workthread(
-                            [](void *_private, const std::string &_chrct)
-                            {
-                                auto self_this = (tmp_aw_param *)(_private);
-                                std::string std_out;
-                                std::string std_err;
-                                self_this->self_this->zh_plugin_run_plugin("proc_event -c " + self_this->cmd + " " + self_this->order_number, self_this->plugin_name, std_out, std_err);
-                                if (std_err.empty())
-                                {
-                                    self_this->self_this->finish_event(self_this->plugin_name, true);
-                                }
-                                delete self_this;
-                            },
-                            p_tmp_aw, "");
+                            finish_event(itr.plugin_name, true);
+                        }
                     }
                 }
             })
@@ -145,4 +134,6 @@ public:
     void finish_event(const std::string &_plugin_name, bool runing_only = false);
     virtual void get_que_by_name(std::vector<std::string> &_return, const std::string &ssid, const std::string &plugin_name);
     virtual void pop_event_from_que(const std::string &ssid, const std::string &plugin_name);
+    virtual void ext_deliver_event(const std::string &order_number, const int64_t ev_type);
 };
+#endif

@@ -162,41 +162,35 @@ static std::list<std::string> _get_cur_plans()
 
 bool zh_led_plan_call_show()
 {
-    if (fork() == 0)
+    auto mtx = modbus_new_tcp(zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("led_ip").c_str(), MODBUS_TCP_DEFAULT_PORT);
+    if (mtx)
     {
-        sleep(20);
-        auto mtx = modbus_new_tcp(zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("led_ip").c_str(), MODBUS_TCP_DEFAULT_PORT);
-        if (mtx)
+        if (0 == modbus_connect(mtx))
         {
-            if (0 == modbus_connect(mtx))
-            {
-                auto cur_plans = _get_cur_plans();
+            auto cur_plans = _get_cur_plans();
 
-                int zone_id = 1;
-                for (auto &itr : cur_plans)
-                {
-                    _zone_write_string(mtx, zone_id++, itr);
-                }
-                auto cur_calls = _get_cur_calls();
-                for (auto &itr : cur_calls)
-                {
-                    _zone_write_string(mtx, zone_id++, itr);
-                }
-
-                modbus_close(mtx);
-                auto new_cmd = "/plugin/zh_led_plan_call/bin/zh_led_plan_call_plugin show";
-                system(new_cmd);
-            }
-            else
+            int zone_id = 1;
+            for (auto &itr : cur_plans)
             {
-                g_log.err("failed to connect modbus:%s", modbus_strerror(errno));
+                _zone_write_string(mtx, zone_id++, itr);
             }
-            modbus_free(mtx);
+            auto cur_calls = _get_cur_calls();
+            for (auto &itr : cur_calls)
+            {
+                _zone_write_string(mtx, zone_id++, itr);
+            }
+
+            modbus_close(mtx);
         }
         else
         {
-            g_log.err("failed to open tcp modbus:%s", modbus_strerror(errno));
+            g_log.err("failed to connect modbus:%s", modbus_strerror(errno));
         }
+        modbus_free(mtx);
+    }
+    else
+    {
+        g_log.err("failed to open tcp modbus:%s", modbus_strerror(errno));
     }
 
     return true;

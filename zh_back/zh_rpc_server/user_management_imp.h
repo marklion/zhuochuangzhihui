@@ -3,6 +3,7 @@
 
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/user_management.h"
+#include "../zh_database/zh_db_config.h"
 
 class user_management_handler : virtual public user_managementIf
 {
@@ -31,7 +32,7 @@ public:
     virtual void del_user_permission_target(const std::string &ssid, const int64_t user_id, const int64_t target_info_id);
     virtual void get_all_permission_item(std::vector<permission_target_info> &_return);
     bool pri_add_user_permission_target(const int64_t user_id, const permission_target_info &target_info);
-
+    std::string pri_user_login(zh_sql_user_info &user_info);
 };
 
 #endif // _USER_MANAGEMENT_H_

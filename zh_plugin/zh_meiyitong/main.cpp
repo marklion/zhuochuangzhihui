@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <iostream>
-#include "clipp.h"
 #include "../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include "lib/zh_meiyitong.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_meiyitong/conf/plugin.json"

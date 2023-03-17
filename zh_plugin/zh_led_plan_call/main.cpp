@@ -1,7 +1,6 @@
 #include "lib/zh_led_plan_call.h"
 #include <unistd.h>
 #include <iostream>
-#include "clipp.h"
 #include "../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
 #include "../../zh_pub/zh_rpc_base/gen_code/cpp/vehicle_order_center.h"
@@ -58,6 +57,7 @@ int main(int argc, char **argv)
                 command("init").set(cmd) |
                 command("enabled").set(cmd) |
                 command("show").set(cmd) |
+                command("refresh").set(cmd) |
                 (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test)) |
                 (command("push_call").set(cmd) & value("vehicle_number", vehicle_number)) |
                 (command("del_call").set(cmd) & value("vehicle_number", vehicle_number)) |
@@ -104,14 +104,18 @@ int main(int argc, char **argv)
             iret = 0;
         }
     }
+    else if (cmd == "refresh")
+    {
+        if (zh_plugin_conf_get_config(PLUGIN_CONF_FILE)("enabled") == "true")
+        {
+            zh_led_plan_call_show();
+            iret = 0;
+        }
+    }
     else if (cmd == "init")
     {
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "cur_plan_page", "0");
-        if (zh_led_plan_call_show())
-        {
-            iret = 0;
-        }
     }
     else if (cmd == "show")
     {

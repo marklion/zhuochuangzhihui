@@ -101,7 +101,8 @@ std::string zh_vcom_link::get_pts()
                                             close(ptm_fd);
                                             ptm_fd = -1;
                                             return;
-                                        }else
+                                        }
+                                        else
                                         {
                                             write(ptm_fd, tmp, read_len);
                                         }
@@ -143,11 +144,13 @@ std::string zh_vcom_link::get_pts()
                 else
                 {
                     g_log.err("connect failed: %s", strerror(errno));
+                    close(ptm_fd);
                 }
             }
             else
             {
                 g_log.err("open socket failed: %s", strerror(errno));
+                close(ptm_fd);
             }
         }
     }

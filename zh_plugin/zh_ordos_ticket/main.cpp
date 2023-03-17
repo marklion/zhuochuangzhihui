@@ -2,7 +2,6 @@
 #include "../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include <unistd.h>
 #include <iostream>
-#include "clipp.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_ordos_ticket/conf/plugin.json"
 
 int main(int argc, char **argv)

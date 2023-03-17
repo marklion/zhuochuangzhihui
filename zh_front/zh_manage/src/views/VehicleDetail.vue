@@ -158,23 +158,53 @@
         </el-row>
 
         <vue-grid align="stretch" justify="start">
+            <vue-cell width="3of12" v-if="cur_vehicle.enter_picture">
+                <div>
+                    <el-image fit="scale-down" style="width: 100%; flex-grow:1; height:250px;" :src="$remote_file_url + cur_vehicle.enter_picture" :preview-src-list="[$remote_file_url + cur_vehicle.enter_picture]">
+                    </el-image>
+                </div>
+                <div>入场照片</div>
+            </vue-cell>
+            <vue-cell width="3of12" v-if="cur_vehicle.exit_picture">
+                <div>
+                    <el-image fit="scale-down" style="width: 100%; flex-grow:1; height:250px;" :src="$remote_file_url + cur_vehicle.exit_picture" :preview-src-list="[$remote_file_url + cur_vehicle.exit_picture]">
+                    </el-image>
+                </div>
+                <div>出场照片</div>
+            </vue-cell>
+            <vue-cell width="3of12" v-if="cur_vehicle.p_picture">
+                <div>
+                    <el-image fit="scale-down" style="width: 100%; flex-grow:1; height:250px;" :src="$remote_file_url + cur_vehicle.p_picture" :preview-src-list="[$remote_file_url + cur_vehicle.p_picture]">
+                    </el-image>
+                </div>
+                <div>一次称重照片</div>
+            </vue-cell>
+            <vue-cell width="3of12" v-if="cur_vehicle.m_picture">
+                <div>
+                    <el-image fit="scale-down" style="width: 100%; flex-grow:1; height:250px;" :src="$remote_file_url + cur_vehicle.m_picture" :preview-src-list="[$remote_file_url + cur_vehicle.m_picture]">
+                    </el-image>
+                </div>
+                <div>二次称重照片</div>
+            </vue-cell>
+        </vue-grid>
+        <vue-grid align="stretch" justify="start">
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.enter_nvr_ip)" title="进厂录像" :nvr_ip="cur_vehicle.enter_nvr_ip" :time_center="new Date(cur_vehicle.enter_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.p_gate_name)" title="进厂录像" :is_enter="true" :begin_time="cur_vehicle.enter_time" :device_name="cur_vehicle.p_gate_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.exit_nvr_ip)" title="出厂录像" :nvr_ip="cur_vehicle.exit_nvr_ip" :time_center="new Date(cur_vehicle.exit_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.m_gate_name)" title="出厂录像" :begin_time="cur_vehicle.exit_time" :device_name="cur_vehicle.m_gate_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.p_nvr_ip1)" title="一次称重录像1" :nvr_ip="cur_vehicle.p_nvr_ip1" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像1" :is_enter="true" :begin_time="cur_vehicle.p_time" :device_name="cur_vehicle.p_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.p_nvr_ip2)" title="一次称重录像2" :nvr_ip="cur_vehicle.p_nvr_ip2" :time_center="new Date(cur_vehicle.p_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像2" :begin_time="cur_vehicle.p_time" :device_name="cur_vehicle.p_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.m_nvr_ip1)" title="二次称重录像1" :nvr_ip="cur_vehicle.m_nvr_ip1" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.m_scale_name)" title="二次称重录像1" :is_enter="true" :begin_time="cur_vehicle.m_time" :device_name="cur_vehicle.m_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.m_nvr_ip2)" title="二次称重录像2" :nvr_ip="cur_vehicle.m_nvr_ip2" :time_center="new Date(cur_vehicle.m_time)"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.m_scale_name)" title="二次称重录像2" :begin_time="cur_vehicle.m_time" :device_name="cur_vehicle.m_scale_name"></hk-video>
             </vue-cell>
         </vue-grid>
     </div>
@@ -186,13 +216,39 @@
             <van-cell v-if="cur_vehicle.call_user_name" title="叫号人" :value="cur_vehicle.call_user_name" />
         </van-cell-group>
         <van-cell-group inset title="拉运信息">
-            <van-cell title="派车公司" :value="cur_vehicle.basic_info.company_name"  />
-            <van-cell title="物料" :value="cur_vehicle.basic_info.stuff_name"   />
+            <van-cell title="派车公司" :value="cur_vehicle.basic_info.company_name" />
+            <van-cell title="物料" :value="cur_vehicle.basic_info.stuff_name" />
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />
             <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" :label="'入场前净重' + cur_vehicle.basic_info.enter_weight.toFixed(2)" />
             <van-cell v-if="cur_vehicle.err_string" title="错误信息" :value="cur_vehicle.err_string" />
         </van-cell-group>
+        <vue-grid align="stretch" justify="start">
+            <vue-cell width="6of12" v-if="cur_vehicle.enter_picture">
+                <div>
+                    <van-image @click="preview_picture(cur_vehicle.enter_picture)" width="10rem" height="10rem" fit="contain" :src="$remote_file_url + cur_vehicle.enter_picture" />
+                </div>
+                <div>入场照片</div>
+            </vue-cell>
+            <vue-cell width="6of12" v-if="cur_vehicle.exit_picture">
+                <div>
+                    <van-image @click="preview_picture(cur_vehicle.exit_picture)" width="10rem" height="10rem" fit="contain" :src="$remote_file_url + cur_vehicle.exit_picture" />
+                </div>
+                <div>出场照片</div>
+            </vue-cell>
+            <vue-cell width="6of12" v-if="cur_vehicle.p_picture">
+                <div>
+                    <van-image @click="preview_picture(cur_vehicle.p_picture)" width="10rem" height="10rem" fit="contain" :src="$remote_file_url + cur_vehicle.p_picture" />
+                </div>
+                <div>一次称重照片</div>
+            </vue-cell>
+            <vue-cell width="6of12" v-if="cur_vehicle.m_picture">
+                <div>
+                    <van-image @click="preview_picture(cur_vehicle.m_picture)" width="10rem" height="10rem" fit="contain" :src="$remote_file_url + cur_vehicle.m_picture" />
+                </div>
+                <div>二次称重照片</div>
+            </vue-cell>
+        </vue-grid>
     </div>
 </div>
 </template>
@@ -203,41 +259,57 @@ import {
     VueCell
 } from 'vue-grd';
 import HkVideo from "../components/HkVideo.vue"
+import {
+    ImagePreview
+} from 'vant';
 export default {
     name: "VehicleDetail",
     data: function () {
         return {
-            device_config: {},
             show_enter_weight: false,
             cur_vehicle: {
                 basic_info: {},
                 confirmed: false,
                 registered: false,
                 has_called: false,
+                enter_picture: '',
+                exit_picture: '',
+                p_picture: '',
+                m_picture: '',
+                p_gate_name: '',
+                m_gate_name: '',
+                p_scale_name: '',
+                m_scale_name: '',
+                enter_time: '',
+                exit_time: '',
+                p_time: '',
+                m_time: '',
             },
             manual_weight_show: false,
             manual_weight_data: {
                 p_weight: 0.0,
                 m_weight: 0.0,
             },
+            need_seal_no: false,
             has_video_rec: function (_ip_channel) {
                 var ret = false;
-                if (_ip_channel.split(":")[0]) {
+                if (_ip_channel) {
                     ret = true;
                 }
 
                 return ret;
             },
+            all_device: [],
         };
     },
     computed: {
         scale_names: function () {
             var ret = [];
-            if (this.device_config.scale) {
-                this.device_config.scale.forEach(element => {
-                    ret.push(element.name);
-                });
-            }
+            this.all_device.forEach(element => {
+                if (element.is_scale) {
+                    ret.push(element.name)
+                }
+            });
             return ret;
         },
     },
@@ -248,6 +320,12 @@ export default {
         VueCell
     },
     methods: {
+        preview_picture: function (_path) {
+            ImagePreview({
+                images: [this.$remote_file_url + _path],
+                closeable: true
+            });
+        },
         print_weight_ticket: function (_name) {
             var vue_this = this;
             vue_this.$call_remote_process("vehicle_order_center", "print_weight_ticket", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, _name]).then(function (resp) {
@@ -319,7 +397,16 @@ export default {
                 });
             }
         },
-        confirm_deliver: function (_confirm) {
+        set_seal_no: function (_seal_no) {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "set_seal_no", [vue_this.$cookies.get("zh_ssid"), this.cur_vehicle.basic_info.order_number, _seal_no]).then(function (resp) {
+                if (resp) {
+                    vue_this.init_cur_vehicle();
+                    vue_this.confirm_func(true);
+                }
+            });
+        },
+        confirm_func: function (_confirm) {
             var vue_this = this;
             vue_this.ask_user_first("确定取消吗?", !_confirm).then(function () {
                 vue_this.$call_remote_process("vehicle_order_center", "confirm_order_deliver", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, _confirm]).then(function (resp) {
@@ -327,7 +414,23 @@ export default {
                         vue_this.init_cur_vehicle();
                     }
                 });
-            });
+            })
+        },
+        confirm_deliver: function (ss_confirm) {
+            var vue_this = this;
+            if (vue_this.cur_vehicle.basic_info.seal_no.length == 0 && vue_this.need_seal_no) {
+                vue_this.$prompt('请输入铅封号', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                }).then(({
+                    value
+                }) => {
+                    vue_this.set_seal_no(value);
+                })
+            } else {
+                vue_this.confirm_func(ss_confirm);
+            }
+
         },
         call_vehicle: function (_is_cancel) {
             var vue_this = this;
@@ -372,16 +475,27 @@ export default {
                 vue_this.init_cur_vehicle();
             });
         },
-        init_device_info: function () {
+        init_need_seal_no: function () {
             var vue_this = this;
-            vue_this.$call_remote_process_no_toast("system_management", 'get_device_config', [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
-                vue_this.device_config = resp;
+            vue_this.$call_remote_process("system_management", "need_seal_no", []).then(function (resp) {
+                vue_this.need_seal_no = resp;
+            });
+        },
+        init_all_device: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_all_device", []).then(function (resp) {
+                vue_this.all_device = [];
+                resp.forEach((item, index) => {
+                    vue_this.$set(vue_this.all_device, index, item);
+                });
             });
         },
     },
+
     beforeMount: function () {
         this.init_cur_vehicle();
-        this.init_device_info();
+        this.init_need_seal_no();
+        this.init_all_device();
     },
 }
 </script>

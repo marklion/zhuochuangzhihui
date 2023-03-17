@@ -183,19 +183,29 @@ int main(int argc, char const *argv[])
     threadManager->start();
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
     tdf_main::get_inst().start_timer(
-        120, [](void *_private)
+        120,
+        [](void *_private)
         {
-            auto single_this = (plugin_management_handler *)(_private);
-            auto all_plugins = single_this->internel_get_installed_plugins();
-            for (auto &itr : all_plugins)
-            {
-                std::string std_out_tmp;
-                std::string std_err_tmp;
-                single_this->zh_plugin_run_plugin("refresh", itr, std_out_tmp, std_err_tmp);
-            } },
+            tdf_main::get_inst().Async_to_workthread(
+                [](void *_pri, const std::string &_cr)
+                {
+                    auto single_this = (plugin_management_handler *)(_pri);
+                    auto all_plugins = single_this->internel_get_installed_plugins();
+                    for (auto &itr : all_plugins)
+                    {
+                        std::string std_out_tmp;
+                        std::string std_err_tmp;
+                        single_this->zh_plugin_run_plugin("refresh", itr, std_out_tmp, std_err_tmp);
+                    }
+                },
+                _private, "");
+        },
         plugin_management_handler::get_inst());
     start_checkin_check_timer();
-
+    tdf_main::get_inst().start_timer(
+        60, [](void *)
+        { system("for pl_itr in `ls /plugin -l | grep ^d | awk '{print $NF}'`; do /plugin/${pl_itr}/bin/${pl_itr}_plugin init; done"); },
+        nullptr, true);
     tp_server.serve();
 
     return 0;

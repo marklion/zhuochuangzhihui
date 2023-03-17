@@ -1,6 +1,6 @@
 <template>
 <div class="all_came_vehicle_show">
-    <van-nav-bar class="nav_bar_show" title="现场车辆管理" @click-left="show_opt_cell = true" left-text="现场" @click-right="init_all_vehicle" right-text="刷新" />
+    <van-nav-bar class="nav_bar_show" title="现场车辆管理" @click-right="init_all_vehicle" right-text="刷新" />
     <van-tabs v-model="act_page">
         <van-tab title="已排车辆">
             <van-dropdown-menu>
@@ -48,27 +48,6 @@
             </van-cell>
         </van-tab>
     </van-tabs>
-    <van-popup v-model="show_opt_cell" position="bottom">
-        <van-collapse v-model="device_opt_show" accordion>
-            <van-collapse-item v-for="(single_cam, index) in all_cam_ips" :key="index" :title="single_cam.name" :name="index">
-                <van-button type="info" size="small" @click="trigger_cap(single_cam.ip)">触发识别</van-button>
-                <van-button type="primary" v-if="single_cam.is_scale" size="small" @click="manual_confirm_scale(single_cam.ip)">手动确认称重</van-button>
-                <van-button type="warning" size="small" @click="trigger_gate_opt(single_cam.ip, 1)">开闸</van-button>
-                <van-button type="danger" size="small" @click="trigger_gate_opt(single_cam.ip, 0)">关闸</van-button>
-                <van-button type="info" size="small" @click="open_trigger_vehicle_diag(single_cam)">手动输入车号触发</van-button>
-                <van-button type="primary" size="small" @click="get_cam_pic(single_cam.ip)">拍照</van-button>
-            </van-collapse-item>
-        </van-collapse>
-    </van-popup>
-
-    <van-dialog v-model="show_trigger_vehicle_number" title="输入车号触发" :showConfirmButton="false" closeOnClickOverlay>
-        <van-field v-model="trigger_vehicle" center clearable label="车牌号" placeholder="请输入车牌">
-            <template #button>
-                <van-button size="small" type="primary" @click="trigger_vehicle_number(trigger_device_ip, trigger_device_name)">触发</van-button>
-            </template>
-        </van-field>
-    </van-dialog>
-
 </div>
 </template>
 
@@ -91,8 +70,6 @@ export default {
             show_trigger_vehicle_number: false,
             all_stuff_info: [],
             act_page: 0,
-            show_opt_cell: false,
-            device_opt_show: '',
             search_key: '',
             all_vehicle: [],
             company_filter: '全部',
@@ -105,43 +82,9 @@ export default {
                 text: '全部物料',
                 value: '全部'
             }],
-            device_config: {
-                gate: [],
-                scale: [],
-            },
         };
     },
     computed: {
-        all_cam_ips: function () {
-            var ret = [];
-
-            this.device_config.gate.forEach((element) => {
-                ret.push({
-                    name: element.name + ' 入口',
-                    ip: element.entry_config.cam_ip,
-                    is_scale: false,
-                });
-                ret.push({
-                    name: element.name + ' 出口',
-                    ip: element.exit_config.cam_ip,
-                    is_scale: false,
-                });
-            });
-            this.device_config.scale.forEach((element) => {
-                ret.push({
-                    name: element.name + ' 入口',
-                    ip: element.entry_config.cam_ip,
-                    is_scale: true,
-                });
-                ret.push({
-                    name: element.name + ' 出口',
-                    ip: element.exit_config.cam_ip,
-                    is_scale: true,
-                });
-            });
-
-            return ret;
-        },
         vehicle_need_show: function () {
             var ret = [];
             var vue_this = this;
@@ -173,24 +116,6 @@ export default {
         },
     },
     methods: {
-        get_cam_pic: function (_ip) {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "get_cam_pic", [vue_this.$cookies.get("zh_ssid"), _ip]).then(function (resp) {
-                ImagePreview([resp]);
-            });
-        },
-        open_trigger_vehicle_diag: function (_device) {
-            this.trigger_device_ip = _device.ip;
-            this.trigger_device_name = _device.name.split(' ').slice(0, -1).join('');
-            this.show_trigger_vehicle_number = true;
-        },
-        trigger_vehicle_number: function (_ip, _name) {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", 'trigger_cam_vehicle_number', [vue_this.$cookies.get("zh_ssid"), vue_this.trigger_vehicle, _ip, _name]).then(function () {
-                vue_this.show_trigger_vehicle_number = false;
-                vue_this.trigger_vehicle = '';
-            });
-        },
         change_auto_call_count: function (_value, _detail) {
             console.log(_value);
             console.log(_detail);
@@ -231,47 +156,6 @@ export default {
                 if (resp) {
                     vue_this.init_all_vehicle();
                 }
-            });
-        },
-        trigger_gate_opt: function (gate_code, _cmd) {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", 'ctrl_gate', [gate_code, _cmd]).then(function (resp) {
-                if (resp) {
-                    vue_this.$message({
-                        message: '操作成功',
-                        type: 'success',
-                    });
-                } else {
-                    vue_this.$message({
-                        message: '操作失败',
-                        type: 'error',
-                    });
-                }
-            });
-        },
-        manual_confirm_scale: function (_scale_cam_ip) {
-            var vue_this = this;
-            var scale_name = "";
-            vue_this.device_config.scale.forEach(element => {
-                if (element.entry_config.cam_ip == _scale_cam_ip || _scale_cam_ip == element.exit_config.cam_ip) {
-                    scale_name = element.name;
-                }
-            });
-            vue_this.$call_remote_process("system_management", "manual_confirm_scale", [vue_this.$cookies.get("zh_ssid"), scale_name]).finally(function () {
-                vue_this.$toast("已确认称重");
-                vue_this.show_opt_cell = false;
-            });
-        },
-        trigger_cap: function (_cam_ip) {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "trigger_cap", [vue_this.$cookies.get("zh_ssid"), _cam_ip]).then(function () {
-                vue_this.show_opt_cell = false;
-            });
-        },
-        get_device_config: function () {
-            var vue_this = this;
-            vue_this.$call_remote_process("system_management", "get_device_config", [vue_this.$cookies.get("zh_ssid")]).then(function (resp) {
-                vue_this.device_config = resp;
             });
         },
         preview_attachment: function (_attachment) {
@@ -329,7 +213,6 @@ export default {
     },
     beforeMount: function () {
         this.init_all_vehicle();
-        this.get_device_config();
         this.init_all_stuff();
     },
 }

@@ -17,8 +17,14 @@
 #include <memory>
 #include <sys/syscall.h>
 #include <sys/prctl.h>
+#include <iconv.h>
 #include "../../zh_tdf/tdf_include.h"
 #include "../../../zh_pub/zh_cpp_pub/CJsonObject.hpp"
+#include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
+#include "../../../zh_pub/zh_cpp_pub/Base64.h"
+#include "../../../zh_pub/zh_cpp_pub/clipp.h"
+#include "../../zh_vcom/zh_vcom_link.h"
+#include "../../zh_database/zh_db_config.h"
 
 #define LOCAL_DEV_MSG_TAKE_PICTURE "take_picture"
 #define LOCAL_DEV_MSG_MANUAL_TRIIGER "manual_trigger"
@@ -55,8 +61,41 @@
 #define LOCAL_DEV_EVENT_GATE_IS_CLOSE_KEY "gate_is_close_resp_key"
 #define LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT "scale_cur_weight_resp"
 #define LOCAL_DEV_EVENT_SCALE_CUR_WEIGHT_KEY "scale_cur_weight_resp_key"
+#define LOCAL_DEV_EVENT_DEVICE_STATUS "device_status"
+#define LOCAL_DEV_EVENT_DEVICE_STATUS_KEY "device_status_key"
+#define LOCAL_DEV_EVENT_DEVICE_CUR_SATUS "device_cur_status"
+#define LOCAL_DEV_EVENT_DEVICE_CUR_SATUS_KEY "device_cur_status_key"
+#define LOCAL_DEV_REQ_TAKE_PICTURE "req_take_picture"
+#define LOCAL_DEV_REQ_TAKE_PICTURE_KEY "req_take_picture_key"
+#define LOCAL_DEV_REQ_TAKE_VIDEO "req_take_video"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY1 "req_take_video_key1"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY2 "req_take_video_key2"
+#define LOCAL_DEV_REQ_TAKE_VIDEO_KEY3 "req_take_video_key3"
+#define LOCAL_DEV_REQ_GATE_IS_CLOSE "req_gate_is_close"
+#define LOCAL_DEV_REQ_GATE_IS_CLOSE_KEY "req_gate_is_close_key"
+#define LOCAL_DEV_REQ_CUR_STATUS "req_cur_status"
+#define LOCAL_DEV_REQ_CUR_WEIGHT "req_cur_weight"
+#define LOCAL_DEV_REQ_OPEN_GATE "req_open_gate"
+#define LOCAL_DEV_REQ_OPEN_GATE_KEY1 "req_open_gate_key1"
+#define LOCAL_DEV_REQ_OPEN_GATE_KEY2 "req_open_gate_key2"
+#define LOCAL_DEV_REQ_MANUAL_TIGGER "req_manual_trigger"
+#define LOCAL_DEV_REQ_MANUAL_TIGGER_KEY1 "req_manual_trigger_key1"
+#define LOCAL_DEV_REQ_MANUAL_TIGGER_KEY2 "req_manual_trigger_key2"
+#define LOCAL_DEV_REQ_RESET "req_reset"
+#define LOCAL_DEV_REQ_CONFIRM_WEIGHT "req_confirm_weight"
+#define LOCAL_DEV_REQ_LED_CAST "req_led_cast"
+#define LOCAL_DEV_REQ_LED_CAST_KEY1 "req_led_cast_key1"
+#define LOCAL_DEV_REQ_LED_CAST_KEY2 "req_led_cast_key2"
+#define LOCAL_DEV_REQ_PRINT "req_print"
+#define LOCAL_DEV_REQ_PRINT_KEY1 "req_print_key1"
+#define LOCAL_DEV_REQ_PRINT_KEY2 "req_print_key2"
+#define LOCAL_DEV_REQ_PRINT_KEY3 "req_print_key3"
+#define LOCAL_DEV_REQ_TRFC_SET "req_traffic_light"
+#define LOCAL_DEV_REQ_TRFC_SET_KEY1 "req_traffic_light_key1"
+#define LOCAL_DEV_REQ_TRFC_SET_KEY2 "req_traffic_light_key2"
 
-#define PRINT_LOG(format, ...) do {printf(format, ##__VA_ARGS__);fflush(stdout);fflush(stderr);} while(0)
+#define PRINT_LOG(format, ...) do {printf(format"\n", ##__VA_ARGS__);fflush(stdout);} while(0)
+#define PRINT_ERR(format, ...) do {fprintf(stderr, format"\n", ##__VA_ARGS__);fflush(stderr);} while(0)
 
 
 class epoll_node_t{
@@ -84,7 +123,7 @@ public:
         };
         if (0 == epoll_ctl(epfd, EPOLL_CTL_ADD, _node.get_fd(), &tmp_event))
         {
-            m_epoll_log.log("add %d to epoll", _node.get_fd());
+            // m_epoll_log.log("add %d to epoll", _node.get_fd());
             ret = true;
         }
         else
@@ -104,7 +143,7 @@ public:
             if (0 < epoll_wait(epfd, &tmp, 1, -1))
             {
                 auto p_node = (epoll_node_t *)(tmp.data.ptr);
-                m_epoll_log.log("node fd:%d came event", p_node->get_fd());
+                // m_epoll_log.log("node fd:%d came event", p_node->get_fd());
                 if (!p_node->proc_in())
                 {
                     break;
@@ -116,6 +155,12 @@ public:
 
 
 
+std::vector<std::string> split_string(const std::string &s, const std::string &seperator);
+std::string utf2gbk(const std::string &_gbk);
+std::string gbk2utf(const std::string &_utf);
+int connect_to_device_tcp_server(const std::string &_ip, unsigned short _port);
+std::string local_dev_get_datestring(time_t _time = time(nullptr));
+std::string local_dev_get_timestring(time_t _time = time(nullptr));
 
 
 #endif // _LOCAL_UTILS_H_

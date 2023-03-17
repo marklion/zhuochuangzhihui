@@ -5,9 +5,10 @@
 
 class abs_device_driver {
 public:
-    abs_device_driver(int argc, const char *const* argv);
+    abs_device_driver(int argc, const char *const* argv, const std::vector<std::string> &_device_arg_param);
     virtual ~abs_device_driver();
-    int get_fd();
+    int get_fd() const;
+    std::string get_device_arg(const std::string &_arg_key) const;
     void proc_msg();
     void send_event(const std::string &_event);
     // 车牌识别事件
@@ -19,6 +20,7 @@ public:
     // 二维码事件
     void pub_qr_scan(const std::string &_qr_code);
 
+    void pub_device_status(bool _is_healthy);
 protected:
     // 车牌相机能力
     virtual std::string take_picture()
@@ -61,6 +63,7 @@ protected:
     int fd = -1;
     std::string center_name;
     std::string self_name;
+    std::map<std::string, std::string> device_args;
 };
 
 #endif // _ABS_DEVICE_DRIVER_H_

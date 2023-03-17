@@ -7,7 +7,7 @@
             </el-col>
             <el-col>
                 <div align="right" style="margin-right:10px;">
-                    <el-button size="mini" type="info" icon="el-icon-notebook-2" v-if="order_selected.length > 0" @click="export_xlsx">导出所选{{order_selected.length}}项</el-button>
+                    <el-button size="mini" type="info" icon="el-icon-notebook-2" v-if="order_selected.length > 0" @click="export_xlsx()">导出所选{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="primary" icon="el-icon-check" v-if="order_selected.length > 0" @click="confirm_multi">批量确认{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="danger" icon="el-icon-s-release" v-if="order_selected.length > 0" @click="cancle_multi">批量取消{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_order_diag = true">新增</el-button>
@@ -492,7 +492,7 @@ export default {
                     }
                 }]
             },
-            enter_date_filter: '',
+            enter_date_filter: this.$make_time_string(new Date(), '-').substr(0, 10),
             calc_status_date: function (_row, _status) {
                 var ret = "";
 
@@ -871,7 +871,11 @@ export default {
         },
         get_order: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length, vue_this.activeName, vue_this.enter_date_filter]).then(function (resp) {
+            var focus_date = '';
+            if ('all' == this.activeName || 'end' == this.activeName) {
+                focus_date = this.enter_date_filter;
+            }
+            vue_this.$call_remote_process("vehicle_order_center", "get_order_by_anchor", [vue_this.$cookies.get("zh_ssid"), vue_this.all_order.length, vue_this.activeName, focus_date]).then(function (resp) {
                 resp.forEach(element => {
                     vue_this.all_order.push(element);
                 });
