@@ -377,3 +377,11 @@ void plugin_management_handler::pop_event_from_que(const std::string &ssid, cons
         pthread_mutex_unlock(&m_que_lock);
     }
 }
+
+void plugin_management_handler::ext_deliver_event(const std::string &order_number, const int64_t ev_type)
+{
+    plugin_event_info tmp;
+    tmp.order_number = order_number;
+    tmp.type = (plugin_event_info::event_type)ev_type;
+    deliver_event(tmp);
+}

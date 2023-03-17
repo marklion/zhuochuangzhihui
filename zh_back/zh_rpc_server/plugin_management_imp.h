@@ -134,5 +134,6 @@ public:
     void finish_event(const std::string &_plugin_name, bool runing_only = false);
     virtual void get_que_by_name(std::vector<std::string> &_return, const std::string &ssid, const std::string &plugin_name);
     virtual void pop_event_from_que(const std::string &ssid, const std::string &plugin_name);
+    virtual void ext_deliver_event(const std::string &order_number, const int64_t ev_type);
 };
 #endif

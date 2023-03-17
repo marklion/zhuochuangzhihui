@@ -60,6 +60,8 @@ static std::unique_ptr<focus_face_set> get_cur_face(ssm_device_type &_device_typ
             ret->cur_exit_cam = exit_cam;
             ret->cur_exit_gate = exit_gate;
             ret->cur_exit_led = exit_led;
+            ret->cur_enter_printer = enter_printer;
+            ret->cur_exit_printer = exit_printer;
         }
         else
         {
@@ -69,6 +71,8 @@ static std::unique_ptr<focus_face_set> get_cur_face(ssm_device_type &_device_typ
             ret->cur_exit_cam = enter_cam;
             ret->cur_exit_gate = enter_gate;
             ret->cur_exit_led = enter_led;
+            ret->cur_enter_printer = exit_printer;
+            ret->cur_exit_printer = enter_printer;
         }
     }
 
@@ -132,6 +136,26 @@ void ssm_empty::proc_event_vehicle_id_come(abs_state_machine &_sm, ssm_device_ty
 }
 void ssm_empty::proc_event_vehicle_qr_scan(abs_state_machine &_sm, ssm_device_type _device_type, const std::string &_qr_code)
 {
+    auto printer = enter_printer;
+    if (_device_type == exit_qr)
+    {
+        printer = exit_printer;
+    }
+    auto &sm = dynamic_cast<scale_sm1 &>(_sm);
+    std::string orig_order_number = _qr_code.substr(_qr_code.find_last_of('/') + 1);
+    std::string order_number;
+    for (auto &itr:orig_order_number)
+    {
+        if (itr >= '0' && itr <= '9')
+        {
+            order_number.push_back(itr);
+        }
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (vo)
+    {
+        sm.send_printer_print_msg(printer, order_ticket_content(*vo), "");
+    }
 }
 void ssm_empty::proc_event_gate_is_close(abs_state_machine &_sm, ssm_device_type _device_type, bool _is_close)
 {

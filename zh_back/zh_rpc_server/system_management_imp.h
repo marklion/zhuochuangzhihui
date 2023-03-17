@@ -40,7 +40,7 @@ public:
     virtual bool need_seal_no();
     virtual bool set_need_seal_no(const std::string &ssid, const bool need_sn);
     bool check_in_enabled();
-    virtual void get_all_device(std::vector<device_status> &_return);
+    virtual void get_all_device(std::vector<device_status_internel> &_return);
     virtual void gate_control(const std::string &name, const bool is_enter, const bool is_close, const std::string& ssid);
     virtual void take_picture(std::string &_return, const std::string &name, const bool is_enter, const std::string& ssid);
     virtual void get_video(std::string &_return, const std::string &name, const bool is_enter, const std::string &begin_date, const std::string &end_date, const std::string& ssid);

@@ -661,6 +661,8 @@ struct focus_face_set
     ssm_device_type cur_exit_gate;
     ssm_device_type cur_exit_cam;
     ssm_device_type cur_exit_led;
+    ssm_device_type cur_enter_printer;
+    ssm_device_type cur_exit_printer;
 };
 
 class abs_scale_state_machine : public abs_state_machine
@@ -700,7 +702,7 @@ public:
             if (vo && vo->status == 3)
             {
                 auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
-                if (stuff->need_manual_scale && (_weight < stuff->min_limit || _weight > stuff->max_limit))
+                if (stuff && stuff->need_manual_scale && (_weight < stuff->min_limit || _weight > stuff->max_limit))
                 {
                     ret = true;
                 }
@@ -723,8 +725,10 @@ public:
     {
         cur_scale_weight = _weight;
     };
+
     virtual void record_vehicle_action()
     {
+        std::string content;
         if (enter_type_vehicle_order == scale_type)
         {
             auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", scale_vehicle.c_str());
@@ -757,7 +761,33 @@ public:
                             change_order_status(*vo, end_status, save_hook_1);
                         }
                     }
+                    if (m_face)
+                    {
+                        send_printer_print_msg(m_face->cur_exit_printer, order_ticket_content(*vo), "");
+                    }
                 }
+            }
+        }
+        else if (enter_type_white_record == scale_type)
+        {
+            content += "称重车辆：" + scale_vehicle + "\n";
+            content += "称重：" + zh_double2string_reserve2(cur_scale_weight) + "吨\n";
+            content += "称重时间：" + zh_rpc_util_get_timestring() + "\n";
+            zh_sql_white_record tmp;
+            tmp.date = zh_rpc_util_get_timestring();
+            tmp.vehicle_number = scale_vehicle;
+            tmp.weight = cur_scale_weight;
+            auto white_vehicle = sqlite_orm::search_record<zh_sql_vehicle>("main_vehicle_number == '%s' AND in_white_list != 0", scale_vehicle.c_str());
+            if (white_vehicle)
+            {
+                tmp.use_stuff = white_vehicle->use_stuff;
+                white_vehicle->use_stuff = "";
+                white_vehicle->update_record();
+            }
+            tmp.insert_record();
+            if (m_face)
+            {
+                send_printer_print_msg(m_face->cur_exit_printer, content, "");
             }
         }
     };
@@ -778,7 +808,7 @@ public:
         if (vo)
         {
             zh_sql_file enter_file;
-            enter_file.save_file("/manage_dist"+ _picture_path, pass_vehicle + zh_rpc_util_get_timestring() + ".jpg");
+            enter_file.save_file("/manage_dist" + _picture_path, pass_vehicle + zh_rpc_util_get_timestring() + ".jpg");
             enter_file.insert_record();
             if (vo->status == 1)
             {

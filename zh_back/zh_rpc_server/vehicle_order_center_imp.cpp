@@ -921,6 +921,9 @@ bool vehicle_order_center_handler::print_weight_ticket(const std::string &ssid, 
     {
         ZH_RETURN_NO_ORDER();
     }
+    sm_control_print(scale_name, true, order_ticket_content(*vo), "");
+    sm_control_print(scale_name, false, order_ticket_content(*vo), "");
+    ret = true;
     return ret;
 }
 

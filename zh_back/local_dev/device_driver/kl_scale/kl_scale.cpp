@@ -6,7 +6,7 @@ public:
     using abs_device_driver::abs_device_driver;
     virtual double scale_cur_weight()
     {
-        return g_cur_weight;
+        return g_cur_weight * std::stod(get_device_arg("rate"));
     }
     virtual bool proc_in()
     {
@@ -22,6 +22,7 @@ class scale_conn : public epoll_node_t
 {
     int fd = -1;
 public:
+    bool need_revert = false;
     bool connect_to_scale(const std::string &_ip, unsigned short _port)
     {
         bool ret = false;
@@ -62,7 +63,19 @@ public:
                     one_frame.assign(p_head, 12);
                     double weight = 0;
                     auto sign_flag = one_frame[1];
-
+                    if (need_revert)
+                    {
+                        auto begin = 2;
+                        auto end = 7;
+                        while (end > begin)
+                        {
+                            auto tmp = one_frame[begin];
+                            one_frame[begin] = one_frame[end];
+                            one_frame[end] = tmp;
+                            begin++;
+                            end--;
+                        }
+                    }
                     for (auto i = 0; i < 6; i++)
                     {
                         auto dig = one_frame[2 + i];
@@ -97,8 +110,12 @@ public:
 
 int main(int argc, char const *argv[])
 {
-    g_p_ks = new kl_scale(argc, argv, {"ip", "port"});
+    g_p_ks = new kl_scale(argc, argv, {"ip", "port", "rate", "revert"});
     scale_conn sc;
+    if (g_p_ks->get_device_arg("revert") == "true")
+    {
+        sc.need_revert = true;
+    }
     if (sc.connect_to_scale(g_p_ks->get_device_arg("ip"), (unsigned short)(atoi(g_p_ks->get_device_arg("port").c_str()))))
     {
         epoll_sch_center sch;

@@ -1,5 +1,11 @@
 #include "state_machine_control.h"
-
+#include "../../../../zh_pub/zh_rpc_base/gen_code/cpp/idl_types.h"
+#include "../../../../zh_pub/zh_rpc_base/gen_code/cpp/plugin_management.h"
+#include <functional>
+#include <thrift/transport/THttpClient.h>
+#include <thrift/protocol/TJSONProtocol.h>
+#include <thrift/processor/TMultiplexedProcessor.h>
+#include <thrift/protocol/TMultiplexedProtocol.h>
 static neb::CJsonObject send_and_recv(const neb::CJsonObject &_req, const std::string &_sm_name, bool no_need_resp = false)
 {
     neb::CJsonObject ret;
@@ -159,16 +165,18 @@ void sm_control_set_traffic_light(const std::string &_name, bool _is_enter, bool
     send_and_recv(req, _name, true);
 }
 
+#define THR_DEF_CIENT(x) x##Client *client = nullptr
+#define THR_CONNECT(x) std::shared_ptr<TTransport> transport(new THttpClient("localhost", 8123, "/zh_rpc"));std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport)); transport->open();  std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); client = new x##Client(mp)
+#define TRH_CLOSE() transport->close()
 static void generate_order_event(zh_sql_vehicle_order &_order)
 {
-    plugin_event_info pei;
-    pei.order_number = _order.order_number;
-    pei.type = (plugin_event_info::event_type)(_order.status);
-    auto pmh = plugin_management_handler::get_inst();
-    if (pmh)
-    {
-        pmh->deliver_event(pei);
-    }
+    using namespace ::apache::thrift;
+    using namespace ::apache::thrift::protocol;
+    using namespace ::apache::thrift::transport;
+    THR_DEF_CIENT(plugin_management);
+    THR_CONNECT(plugin_management);
+    client->ext_deliver_event(_order.order_number, _order.status);
+    TRH_CLOSE();
 }
 bool change_order_status(zh_sql_vehicle_order &_order, zh_sql_order_status &_status, const zh_order_save_hook &_hook)
 {
@@ -453,3 +461,51 @@ bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool from_a
 
     return ret;
 }
+std::string order_ticket_content(zh_sql_vehicle_order &_order)
+    {
+        std::string content;
+        if (_order.bl_number.length() > 0)
+        {
+            content += "磅单号：" + _order.bl_number + "\n";
+        }
+        content += "称重车辆：" + _order.main_vehicle_number + "\n";
+        std::string m_weight_string = "未称重";
+        std::string j_weight_string = "未知";
+        std::string p_weight_string = m_weight_string;
+        std::string p_time;
+        std::string m_time;
+        std::string p_type = "（毛重）：";
+        std::string m_type = "（皮重）：";
+        auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", _order.company_name.c_str());
+        if (company && company->is_sale)
+        {
+            auto tmp_type = p_type;
+            p_type = m_type;
+            m_type = tmp_type;
+        }
+        p_time = _order.p_cam_time;
+        m_time = _order.m_cam_time;
+        std::string max_load = _order.max_load;
+        if (_order.p_weight != 0)
+        {
+            p_weight_string = zh_double2string_reserve2(_order.p_weight) + "吨";
+        }
+        if (_order.m_weight != 0)
+        {
+            m_weight_string = zh_double2string_reserve2(_order.m_weight) + "吨";
+            j_weight_string = zh_double2string_reserve2(abs(_order.p_weight - _order.m_weight));
+            max_load = "";
+        }
+        content += "一次称重" + p_type + p_weight_string + "\n";
+        content += "称重时间：" + p_time + "\n";
+        content += "二次称重" + m_type + m_weight_string + "\n";
+        content += "称重时间：" + m_time + "\n";
+        content += "净重：" + j_weight_string + "吨\n";
+        content += "运送货物：" + _order.stuff_name + "\n";
+        content += "派车公司：" + _order.company_name + "\n";
+        if (max_load.length() > 0)
+        {
+            content += "最大装车量：" + max_load + "\n吨";
+        }
+        return content;
+    }

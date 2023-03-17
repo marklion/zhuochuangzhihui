@@ -29,5 +29,5 @@ void sm_control_confirm_weight(const std::string &_name);
 void sm_control_led_cast(const std::string &_name, bool _is_enter, const std::string &_content);
 void sm_control_print(const std::string &_name, bool _is_enter, const std::string &_content, const std::string &_qr_content);
 void sm_control_set_traffic_light(const std::string &name, bool _is_enter, bool _is_green);
-
+std::string order_ticket_content(zh_sql_vehicle_order &_order);
 #endif // _STATE_MACHINE_CONTROL_H_

@@ -22,11 +22,12 @@ aux_source_directory(./state_machine/gate_sm1 GATE_SM1)
 aux_source_directory(./state_machine/lib SM_LIB_SRC)
 aux_source_directory(./state_machine SM_CLI_SRC)
 aux_source_directory(../../zh_pub/zh_cpp_pub PUB_SRC)
+aux_source_directory(../../zh_pub/zh_rpc_base/gen_code/cpp GEN_SRC)
 
 
 add_library(local_dev_util SHARED ${UTILS_SRC} ${PUB_SRC})
 add_library(abs_device_driver SHARED ${ABS_DD_SRC})
-add_library(sm_control SHARED ${SM_LIB_SRC})
+add_library(sm_control SHARED ${SM_LIB_SRC} ${GEN_SRC})
 add_executable(process_manager ${PM_SRC})
 add_executable(fake_cam ${FAKE_CAM_SRC})
 add_executable(zs_cam ${ZS_CAM_SRC})

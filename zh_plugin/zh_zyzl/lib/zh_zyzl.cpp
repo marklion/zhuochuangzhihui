@@ -207,7 +207,7 @@ bool ZH_ZYZL_push_weight(const std::string &_plate, const std::string &_p_time, 
 
         if (zyzl_id.length() > 0)
         {
-            std::string pull_cmd = "/root/store_file.sh " + zyzl_id+ " " + file_name;
+            std::string pull_cmd = "[ -f /root/store_file.sh ] && /root/store_file.sh " + zyzl_id+ " " + file_name + " || echo 123";
             if (0 == system(pull_cmd.c_str()))
             {
                 ret = true;

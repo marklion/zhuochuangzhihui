@@ -195,16 +195,16 @@
                 <hk-video v-if="has_video_rec(cur_vehicle.m_gate_name)" title="出厂录像" :begin_time="cur_vehicle.exit_time" :device_name="cur_vehicle.m_gate_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像1" :is_enter="true" :begin_time="cur_vehicle.p_time"  :device_name="cur_vehicle.p_scale_name"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像1" :is_enter="true" :begin_time="cur_vehicle.p_time" :device_name="cur_vehicle.p_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像2"  :begin_time="cur_vehicle.p_time" :device_name="cur_vehicle.p_scale_name"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.p_scale_name)" title="一次称重录像2" :begin_time="cur_vehicle.p_time" :device_name="cur_vehicle.p_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
                 <hk-video v-if="has_video_rec(cur_vehicle.m_scale_name)" title="二次称重录像1" :is_enter="true" :begin_time="cur_vehicle.m_time" :device_name="cur_vehicle.m_scale_name"></hk-video>
             </vue-cell>
             <vue-cell width="4of12">
-                <hk-video v-if="has_video_rec(cur_vehicle.m_scale_name)" title="二次称重录像2"  :begin_time="cur_vehicle.m_time" :device_name="cur_vehicle.m_scale_name"></hk-video>
+                <hk-video v-if="has_video_rec(cur_vehicle.m_scale_name)" title="二次称重录像2" :begin_time="cur_vehicle.m_time" :device_name="cur_vehicle.m_scale_name"></hk-video>
             </vue-cell>
         </vue-grid>
     </div>
@@ -276,14 +276,14 @@ export default {
                 exit_picture: '',
                 p_picture: '',
                 m_picture: '',
-                p_gate_name:'',
-                m_gate_name:'',
-                p_scale_name:'',
-                m_scale_name:'',
-                enter_time:'',
-                exit_time:'',
-                p_time:'',
-                m_time:'',
+                p_gate_name: '',
+                m_gate_name: '',
+                p_scale_name: '',
+                m_scale_name: '',
+                enter_time: '',
+                exit_time: '',
+                p_time: '',
+                m_time: '',
             },
             manual_weight_show: false,
             manual_weight_data: {
@@ -299,11 +299,17 @@ export default {
 
                 return ret;
             },
+            all_device: [],
         };
     },
     computed: {
         scale_names: function () {
             var ret = [];
+            this.all_device.forEach(element => {
+                if (element.is_scale) {
+                    ret.push(element.name)
+                }
+            });
             return ret;
         },
     },
@@ -475,11 +481,21 @@ export default {
                 vue_this.need_seal_no = resp;
             });
         },
+        init_all_device: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("system_management", "get_all_device", []).then(function (resp) {
+                vue_this.all_device = [];
+                resp.forEach((item, index) => {
+                    vue_this.$set(vue_this.all_device, index, item);
+                });
+            });
+        },
     },
 
     beforeMount: function () {
         this.init_cur_vehicle();
         this.init_need_seal_no();
+        this.init_all_device();
     },
 }
 </script>

@@ -7,7 +7,6 @@
 #include "../zh_raster/lib/zh_raster.h"
 #include "../zh_id_reader/lib/zh_id_reader.h"
 #include "../zh_scale/lib/zh_scale.h"
-#include "../zh_printer/lib/zh_printer.h"
 #include "vehicle_order_center_imp.h"
 #include <fstream>
 #include "../local_dev/state_machine/lib/state_machine_control.h"
@@ -333,12 +332,12 @@ bool system_management_handler::check_in_enabled()
 
     return ret;
 }
-void system_management_handler::get_all_device(std::vector<device_status> &_return)
+void system_management_handler::get_all_device(std::vector<device_status_internel> &_return)
 {
     auto all_device = sm_control_get_all_sm();
     for (auto &itr:all_device)
     {
-        device_status tmp;
+        device_status_internel tmp;
         tmp.cur_status = itr.status_string;
         tmp.cur_weight = itr.cur_weight;
         tmp.enter_gate_is_close = itr.enter_gate_is_close;

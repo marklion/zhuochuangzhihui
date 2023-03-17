@@ -20,7 +20,7 @@ struct register_config_info {
     4:i64 leave_limit,
 }
 
-struct device_status {
+struct device_status_internel {
     1:string name,
     2:bool enter_gate_is_close,
     3:bool exit_gate_is_close,
@@ -46,7 +46,7 @@ service system_management {
     bool set_register_info(1:string ssid, 2:register_config_info register_config) throws (1:gen_exp e),
     bool need_seal_no() throws (1:gen_exp e),
     bool set_need_seal_no(1:string ssid, 2:bool need_sn) throws (1:gen_exp e),
-    list<device_status> get_all_device() throws (1:gen_exp e),
+    list<device_status_internel> get_all_device() throws (1:gen_exp e),
     void gate_control(1:string name, 2:bool is_enter, 3:bool is_close, 4:string ssid) throws (1:gen_exp e),
     string take_picture(1:string name, 2:bool is_enter, 3:string ssid) throws (1:gen_exp e),
     string get_video(1:string name, 2:bool is_enter, 3:string begin_date, 4:string end_date, 5:string ssid) throws (1:gen_exp e),
@@ -448,4 +448,5 @@ service plugin_management {
     list<string> get_installed_plugins(1:string ssid) throws (1:gen_exp e),
     list<string> get_que_by_name(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
     void pop_event_from_que(1:string ssid, 2:string plugin_name) throws (1:gen_exp e),
+    void ext_deliver_event(1:string order_number, 2:i64 ev_type) throws (1:gen_exp e),
 }

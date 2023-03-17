@@ -221,89 +221,19 @@ void open_api_handler::get_device_status(std::vector<device_status> &_return, co
     }
 
     auto smh = system_management_handler::get_inst();
-    device_config dc;
-    std::vector<scale_state_info> ssi_vec;
-    smh->get_device_config(dc, ssid);
-    smh->get_scale_state(ssi_vec, ssid);
-
-    for (auto &itr:dc.gate)
+    std::vector<device_status_internel> tmp;
+    smh->get_all_device(tmp);
+    for (auto &itr : tmp)
     {
-        device_status tmp;
-        tmp.enter_gate_is_close = smh->read_cam_io(itr.entry_config.cam_ip);
-        tmp.exit_gate_is_close = smh->read_cam_io(itr.exit_config.cam_ip);
-        tmp.name = itr.name;
-        tmp.type_id = 1;
-        _return.push_back(tmp);
+        device_status t_ds;
+        t_ds.cur_weight = zh_double2string_reserve2(itr.cur_weight);
+        t_ds.enter_gate_is_close = itr.enter_gate_is_close;
+        t_ds.exit_gate_is_close = itr.exit_gate_is_close;
+        t_ds.name = itr.name;
+        t_ds.scale_status = itr.cur_status;
+        t_ds.type_id = itr.is_scale ? 2 : 1;
+        _return.push_back(t_ds);
     }
-    for (auto &itr : dc.scale)
-    {
-        device_status tmp;
-        bool need_real_weight = true;
-        tmp.enter_gate_is_close = smh->read_cam_io(itr.entry_config.cam_ip);
-        tmp.exit_gate_is_close = smh->read_cam_io(itr.exit_config.cam_ip);
-        if (tmp.enter_gate_is_close && tmp.exit_gate_is_close)
-        {
-            need_real_weight = false;
-        }
-        tmp.name = itr.name;
-        for (auto &single_ssi : ssi_vec)
-        {
-            if (single_ssi.name == tmp.name)
-            {
-                tmp.scale_status = single_ssi.cur_status;
-                if (need_real_weight)
-                {
-                    tmp.cur_weight = zh_double2string_reserve2(smh->read_scale(itr.scale_ip));
-                }
-                else
-                {
-
-                    tmp.cur_weight = single_ssi.weight_pip.back();
-                }
-                break;
-            }
-        }
-        tmp.type_id = 2;
-        _return.push_back(tmp);
-    }
-}
-
-static std::string pri_get_gate_ip(const device_config &_dc, const std::string &_name, bool _is_enter)
-{
-    std::string ret;
-
-    for (auto &itr : _dc.scale)
-    {
-        if (_name == itr.name)
-        {
-            if (_is_enter)
-            {
-                ret = itr.entry_config.cam_ip;
-            }
-            else
-            {
-                ret = itr.exit_config.cam_ip;
-            }
-            break;
-        }
-    }
-    for (auto &itr : _dc.gate)
-    {
-        if (_name == itr.name)
-        {
-            if (_is_enter)
-            {
-                ret = itr.entry_config.cam_ip;
-            }
-            else
-            {
-                ret = itr.exit_config.cam_ip;
-            }
-            break;
-        }
-    }
-
-    return ret;
 }
 
 void open_api_handler::do_device_opt_gate_control(const std::string &phone, const std::string &name, const bool is_enter, const bool is_open)
@@ -314,17 +244,7 @@ void open_api_handler::do_device_opt_gate_control(const std::string &phone, cons
         ZH_RETURN_DUP_USER_MSG();
     }
     auto smh = system_management_handler::get_inst();
-    device_config dc;
-    smh->get_device_config(dc, ssid);
-    auto gate_ip = pri_get_gate_ip(dc, name, is_enter);
-    if (is_open)
-    {
-        smh->ctrl_gate(gate_ip, zh_hk_gate_open);
-    }
-    else
-    {
-        smh->ctrl_gate(gate_ip, zh_hk_gate_close);
-    }
+    smh->gate_control(name, is_enter, !is_open, ssid);
 }
 void open_api_handler::do_device_opt_confirm_scale(const std::string &phone, const std::string &name)
 {
@@ -334,7 +254,7 @@ void open_api_handler::do_device_opt_confirm_scale(const std::string &phone, con
         ZH_RETURN_DUP_USER_MSG();
     }
     auto smh = system_management_handler::get_inst();
-    smh->manual_confirm_scale(ssid, name);
+    smh->confirm_weight(name, ssid);
 }
 void open_api_handler::do_device_opt_reset_scale(const std::string &phone, const std::string &name)
 {
@@ -344,7 +264,7 @@ void open_api_handler::do_device_opt_reset_scale(const std::string &phone, const
         ZH_RETURN_DUP_USER_MSG();
     }
     auto smh = system_management_handler::get_inst();
-    smh->reset_scale_state(ssid, name);
+    smh->reset_sm(name, ssid);
 }
 void open_api_handler::do_device_opt_trigger_cap(const std::string &phone, const std::string &name, const bool is_enter, const std::string &vehicle_number)
 {
@@ -354,17 +274,7 @@ void open_api_handler::do_device_opt_trigger_cap(const std::string &phone, const
         ZH_RETURN_DUP_USER_MSG();
     }
     auto smh = system_management_handler::get_inst();
-    device_config dc;
-    smh->get_device_config(dc, ssid);
-    auto gate_ip = pri_get_gate_ip(dc, name, is_enter);
-    if (vehicle_number.length() <= 0)
-    {
-        smh->trigger_cap(ssid, gate_ip);
-    }
-    else
-    {
-        smh->trigger_cam_vehicle_number(ssid, vehicle_number, gate_ip, name);
-    }
+    smh->manual_trigger(name, is_enter, vehicle_number, ssid);
 }
 void open_api_handler::do_device_opt_take_pic(std::string &_return, const std::string &phone, const std::string &name, const bool is_enter)
 {
@@ -374,10 +284,7 @@ void open_api_handler::do_device_opt_take_pic(std::string &_return, const std::s
         ZH_RETURN_DUP_USER_MSG();
     }
     auto smh = system_management_handler::get_inst();
-    device_config dc;
-    smh->get_device_config(dc, ssid);
-    auto gate_ip = pri_get_gate_ip(dc, name, is_enter);
-    smh->get_cam_pic(_return, ssid, gate_ip);
+    smh->take_picture(_return, name, is_enter, ssid);
 }
 void open_api_handler::get_queue_node(std::vector<field_queue_node> &_return, const std::string &phone)
 {
