@@ -12,11 +12,8 @@ find_library(SQLITE_ORM_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(TDF_LIB libtcp_framework.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(RASTER_LIB libzh_raster.so ${PRJ_INTERNAL_BUILD}/lib)
 find_library(ID_READER libzh_id_reader.so ${PRJ_INTERNAL_BUILD}/lib)
-find_library(SCALE libzh_scale.so ${PRJ_INTERNAL_BUILD}/lib)
-find_library(ZH_QR libzh_qr.so ${PRJ_INTERNAL_BUILD}/lib)
-find_library(ZH_PRINTER libzh_printer.so ${PRJ_INTERNAL_BUILD}/lib)
-find_library(SM_CONTROL libsm_control.so ${PRJ_INTERNAL_BUILD}/lib)
+# find_library(SM_CONTROL libsm_control.so ${PRJ_INTERNAL_BUILD}/lib)
 
 add_library(zh_rpc_server SHARED ${RPC_SRC} ${RPC_IMP_SRC})
 
-target_link_libraries(zh_rpc_server pthread rt thrift uuid ${SQLITE_ORM_LIB} ${TDF_LIB} ${RASTER_LIB} ${ID_READER} ${SCALE} ${ZH_QR} ${ZH_PRINTER} ${SM_CONTROL})
+target_link_libraries(zh_rpc_server pthread rt thrift uuid ${SQLITE_ORM_LIB} ${TDF_LIB} ${RASTER_LIB} ${ID_READER} ${ZH_PRINTER})
