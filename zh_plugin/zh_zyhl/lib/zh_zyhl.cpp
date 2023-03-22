@@ -2,6 +2,7 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 #include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
+#include <thread>
 
 #define PLUGIN_CONF_FILE "/plugin/zh_zyhl/conf/plugin.json"
 static tdf_log g_log("zyhl", "/plugin/audit.log", "/plugin/audit.log");
@@ -440,4 +441,93 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
     }
 
     return ret;
+}
+time_t util_get_time_by_string(const std::string &_time_string)
+{
+    const char *cha = _time_string.data();                                    // 将string转换成char*。
+    tm tm_ = {0};                                                             // 定义tm结构体。
+    int year, month, day;                                     // 定义时间的各个int临时变量。
+    sscanf(cha, "%d-%d-%d", &year, &month, &day); // 将string存储的日期时间，转换为int临时变量。
+    tm_.tm_year = year - 1900;                                                // 年，由于tm结构体存储的是从1900年开始的时间，所以tm_year为int临时变量减去1900。
+    tm_.tm_mon = month - 1;                                                   // 月，由于tm结构体的月份存储范围为0-11，所以tm_mon为int临时变量减去1。
+    tm_.tm_mday = day;                                                        // 日。
+    tm_.tm_isdst = 0;                                                         // 非夏令时。
+    time_t t_ = mktime(&tm_);                                                 // 将tm结构体转换成time_t格式。
+    return t_;                                                                // 返回值。
+}
+void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date, const std::string &_trans_comapny_name)
+{
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "download_status", "正在下载");
+    auto begin_date_time = util_get_time_by_string(_begin_date);
+    auto end_date_time = util_get_time_by_string(_end_date);
+    struct ticket_meta{
+        std::string date;
+        std::string vehicle_number;
+        std::string trans_company;
+        std::vector<std::string> ticket_path;
+    };
+    std::list<ticket_meta> all_ticket;
+    for (auto tmp_time = begin_date_time; tmp_time <= end_date_time; tmp_time += 3600 * 24)
+    {
+        neb::CJsonObject get_plan_req;
+        get_plan_req.ReplaceAdd("date", util_get_datestring(tmp_time));
+        send_req_to_zyhl(
+            "/thirdparty/list_plan",
+            get_plan_req,
+            [&](const neb::CJsonObject &_resp) -> bool
+            {
+                auto resp = _resp;
+                for (auto i = 0; i < resp.GetArraySize(); i++)
+                {
+                    if (resp[i]["transport_company"]("name") == _trans_comapny_name)
+                    {
+                        ticket_meta tmp_meta;
+                        tmp_meta.date = util_get_datestring(tmp_time);
+                        tmp_meta.vehicle_number = resp[i]("driver_no");
+                        tmp_meta.trans_company = resp[i]["transport_company"]("name");
+                        auto ticket_attach = resp[i]["attachment"];
+                        for (auto j = 0; j < ticket_attach.GetArraySize(); j++)
+                        {
+                            auto url = ticket_attach[j]("attach");
+                            if (url.find_first_of("http") != 0)
+                            {
+                                url.insert(0, "https://lng.hy3416.com");
+                            }
+                            tmp_meta.ticket_path.push_back(url);
+                        }
+                        all_ticket.push_back(tmp_meta);
+                    }
+                }
+
+                return true;
+            });
+    }
+    std::string req_serial = std::to_string(time(nullptr));
+    std::string dir_fetch = "rm -rf /tmp/" + req_serial + "; mkdir /tmp/" + req_serial;
+    system(dir_fetch.c_str());
+    std::list<std::thread *> thread_pool;
+    for (auto &itr : all_ticket)
+    {
+        auto tmp_t = new std::thread(
+            [](ticket_meta _meta, const std::string &_req_se)
+            {
+                std::string dl_cmd = "wget -q -O /tmp/" + _req_se + "/" + _meta.trans_company + "_" + _meta.date + "_" + _meta.vehicle_number;
+                int i = 1;
+                for (auto &path_itr : _meta.ticket_path)
+                {
+                    dl_cmd += "_" + std::to_string(i++) + ".jpg " + path_itr;
+                    system(dl_cmd.c_str());
+                }
+            },
+            itr, req_serial);
+        thread_pool.push_back(tmp_t);
+    }
+    for (auto &itr:thread_pool)
+    {
+        itr->join();
+        delete itr;
+    }
+    std::string zip_cmd = "zip -q /manage_dist/logo_res/" + req_serial + ".zip -r /tmp/" + req_serial;
+    system(zip_cmd.c_str());
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "download_status", "/logo_res/" + req_serial + ".zip");
 }

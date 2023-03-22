@@ -65,6 +65,9 @@ int main(int argc, char **argv)
     std::string event_name;
     std::string plan_date;
     std::string file_name;
+    std::string begin_date;
+    std::string end_date;
+    std::string trans_company;
     bool cmd_test = false;
     using namespace clipp;
     auto cli = ((command("get").set(cmd) & required("-k") & value("json key", key)) |
@@ -73,6 +76,7 @@ int main(int argc, char **argv)
                 command("refresh").set(cmd) |
                 command("pull").set(cmd) |
                 command("enabled").set(cmd) |
+                (command("download_ticket").set(cmd) & value("begin_date", begin_date) & value("end_date", end_date) & value("trans_company", trans_company)) |
                 (command("upload_file").set(cmd) & value("file", file_name)) |
                 (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test)));
     if (!parse(argc, argv, cli))
@@ -137,6 +141,11 @@ int main(int argc, char **argv)
     else if (cmd == "upload_file")
     {
         std::cout << send_file_to_zyhl("", file_name) << std::endl;
+        iret = 0;
+    }
+    else if (cmd == "download_ticket")
+    {
+        get_zip_ticket(begin_date, end_date, trans_company);
         iret = 0;
     }
     else if (cmd == "proc_event")
