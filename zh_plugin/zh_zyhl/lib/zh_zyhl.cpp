@@ -479,7 +479,7 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
                 auto resp = _resp;
                 for (auto i = 0; i < resp.GetArraySize(); i++)
                 {
-                    if (resp[i]["transport_company"]("name") == _trans_comapny_name)
+                    if (resp[i]["transport_company"]("name") == _trans_comapny_name || _trans_comapny_name.empty())
                     {
                         ticket_meta tmp_meta;
                         tmp_meta.date = util_get_datestring(tmp_time);

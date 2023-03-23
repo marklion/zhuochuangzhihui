@@ -40,9 +40,27 @@ static bool set_modbus_light(const std::string &_ip, bool _close)
 
 bool ZH_TRLI_set_red(const std::string &_ip)
 {
-    return set_modbus_light(_ip, false);
+    bool ret = false;
+    if (_ip.empty())
+    {
+        ret = true;
+    }
+    else
+    {
+        ret = set_modbus_light(_ip, false);
+    }
+    return ret;
 }
 bool ZH_TRLI_set_green(const std::string &_ip)
 {
-    return set_modbus_light(_ip, true);
+    bool ret = false;
+    if (_ip.empty())
+    {
+        ret = true;
+    }
+    else
+    {
+        ret = set_modbus_light(_ip, true);
+    }
+    return ret;
 }

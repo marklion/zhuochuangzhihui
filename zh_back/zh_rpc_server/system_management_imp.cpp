@@ -260,13 +260,30 @@ bool system_management_handler::print_content(const std::string &printer_ip, con
 {
     tdf_log tmp_log("printer " + printer_ip);
     tmp_log.log("print:content:%s, qr_code:%s", content.c_str(), qr_code.c_str());
-    zh_printer_dev tmp(printer_ip);
-    tmp.print_string(content);
-    if (qr_code.length() > 0)
+    struct print_msg
     {
-        tmp.print_qr(qr_code);
-    }
-    tmp.cut_paper();
+        std::string printer_ip;
+        std::string content;
+        std::string qr_code;
+    };
+    print_msg *pm = new print_msg();
+    pm->printer_ip = printer_ip;
+    pm->content = content;
+    pm->qr_code = qr_code;
+    tdf_main::get_inst().Async_to_workthread(
+        [](void *_private, const std::string &_c)
+        {
+            auto p_pm = (print_msg *)_private;
+            zh_printer_dev tmp(p_pm->printer_ip);
+            tmp.print_string(p_pm->content);
+            if (p_pm->qr_code.length() > 0)
+            {
+                tmp.print_qr(p_pm->qr_code);
+            }
+            tmp.cut_paper();
+            delete p_pm;
+        },
+        pm, "");
 
     return true;
 }
@@ -320,7 +337,7 @@ double system_management_handler::read_scale(const std::string &scale_ip)
     double ret = 0;
     device_config tmp;
     internal_get_device_config(tmp);
-    for (auto &itr:tmp.scale)
+    for (auto &itr : tmp.scale)
     {
         if (itr.scale_ip == scale_ip)
         {
@@ -377,7 +394,7 @@ void system_management_handler::get_all_scale_brand(std::vector<std::string> &_r
     _return = zh_scale_if::get_all_brand();
 }
 
-#define ZH_GET_DEVICE_HEALTH(_X) (_X.length() == 0?-1:m_get_device_health_map()[_X])
+#define ZH_GET_DEVICE_HEALTH(_X) (_X.length() == 0 ? -1 : m_get_device_health_map()[_X])
 
 void system_management_handler::get_device_health(std::vector<device_health> &_return, const std::string &ssid)
 {
@@ -446,7 +463,6 @@ void system_management_handler::trigger_cap(const std::string &ssid, const std::
     }
     zh_hk_manual_trigger(cam_ip);
 }
-
 
 static neb::CJsonObject get_cur_config_json()
 {
@@ -525,7 +541,7 @@ bool system_management_handler::upload_prompt_image(const std::string &ssid, con
 void system_management_handler::get_all_prompt_image(std::vector<prompt_image_info> &_return)
 {
     auto all_img = sqlite_orm::search_record_all<zh_sql_prompt_image>();
-    for (auto &itr:all_img)
+    for (auto &itr : all_img)
     {
         auto att_file = itr.get_parent<zh_sql_file>("attachment");
         if (att_file)
@@ -563,7 +579,6 @@ void system_management_handler::get_company_address_info(company_address_info &_
         cai.Get("lag", _return.y);
         cai.Get("distance", _return.distance);
     }
-
 }
 bool system_management_handler::set_company_address_info(const std::string &ssid, const company_address_info &address_info)
 {
@@ -639,13 +654,13 @@ void system_management_handler::get_scale_state(std::vector<scale_state_info> &_
     auto user = zh_rpc_util_get_online_user(ssid);
     if (vch && user)
     {
-        for ( auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++ )
+        for (auto itr = vehicle_order_center_handler::ssm_map.begin(); itr != vehicle_order_center_handler::ssm_map.end(); itr++)
         {
             tdf_state_machine_lock a(*(itr->second));
             scale_state_info tmp;
             tmp.name = itr->first;
             tmp.cur_status = itr->second->m_cur_state->state_name() + " 车辆:" + itr->second->bound_vehicle_number;
-            for (auto &single_weight:itr->second->continue_weight)
+            for (auto &single_weight : itr->second->continue_weight)
             {
                 tmp.weight_pip.append(zh_double2string_reserve2(single_weight) + " ");
             }
@@ -809,7 +824,6 @@ bool system_management_handler::switch_device_state(const std::string &ssid, con
                     {
                         vehicle_order_center_handler::gsm_map.erase(gate_config_itr->exit_config.cam_ip);
                     }
-
                 }
             }
         },
@@ -867,7 +881,7 @@ void system_management_handler::trigger_cam_vehicle_number(const std::string &ss
 
     system(cmd.c_str());
 }
-void system_management_handler::get_cam_pic(std::string& _return, const std::string& ssid, const std::string& device_ip)
+void system_management_handler::get_cam_pic(std::string &_return, const std::string &ssid, const std::string &device_ip)
 {
     auto opt_user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD);
 

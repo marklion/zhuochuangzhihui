@@ -2227,19 +2227,47 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
 }
 
+static void async_trli_set_all(bool _is_green, const std::string &_ip1, const std::string &_ip2) {
+    auto set_func = ZH_TRLI_set_red;
+    if (_is_green)
+    {
+        set_func = ZH_TRLI_set_green;
+    }
+    tdf_main::get_inst().Async_to_workthread(
+        [](void *_private, const std::string &_ip){
+            auto async_set_func = (bool (*)(const std::string &))_private;
+            for (auto i = 0; i < 10; i++)
+            {
+                if (true == async_set_func(_ip))
+                {
+                    break;
+                }
+            }
+        }, (void *)set_func, _ip1);
+    tdf_main::get_inst().Async_to_workthread(
+        [](void *_private, const std::string &_ip){
+            auto async_set_func = (bool (*)(const std::string &))_private;
+            for (auto i = 0; i < 10; i++)
+            {
+                if (true == async_set_func(_ip))
+                {
+                    break;
+                }
+            }
+        }, (void *)set_func, _ip2);
+}
+
 void scale_state_machine::set_traffic_lights_red()
 {
     auto ip1 = bound_scale.traffic_light_ip1;
     auto ip2 = bound_scale.traffic_light_ip2;
-    ZH_TRLI_set_red(ip1);
-    ZH_TRLI_set_red(ip2);
+    async_trli_set_all(false, ip1, ip2);
 }
 void scale_state_machine::set_traffic_lights_green()
 {
     auto ip1 = bound_scale.traffic_light_ip1;
     auto ip2 = bound_scale.traffic_light_ip2;
-    ZH_TRLI_set_green(ip1);
-    ZH_TRLI_set_green(ip2);
+    async_trli_set_all(true, ip1, ip2);
 }
 void scale_state_machine::open_trigger_switch()
 {
