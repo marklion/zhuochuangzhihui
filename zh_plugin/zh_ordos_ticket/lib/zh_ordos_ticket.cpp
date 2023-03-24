@@ -234,7 +234,7 @@ bool zh_ordos_ticket_init()
 {
     auto config = zh_plugin_conf_get_config(PLUGIN_CONF_FILE);
     config.Delete("remote_url");
-    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "http://10.90.60.110");
+    zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "http://58.18.38.116:8811");
     return true;
 }
 
