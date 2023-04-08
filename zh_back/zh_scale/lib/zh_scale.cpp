@@ -245,14 +245,17 @@ static void destroy_scale_buff(const std::string &_ip)
 }
 static void replace_data_in_buff(const std::string &_ip, const std::string &_data)
 {
-    pthread_mutex_lock(&g_buff_map_lock);
-    if (g_buff_map.find(_ip) != g_buff_map.end())
+    if (_data.length() > 0)
     {
-        auto &tmp = g_buff_map[_ip];
-        tmp.buff.clear();
-        tmp.buff.append(_data);
+        pthread_mutex_lock(&g_buff_map_lock);
+        if (g_buff_map.find(_ip) != g_buff_map.end())
+        {
+            auto &tmp = g_buff_map[_ip];
+            tmp.buff.clear();
+            tmp.buff.append(_data);
+        }
+        pthread_mutex_unlock(&g_buff_map_lock);
     }
-    pthread_mutex_unlock(&g_buff_map_lock);
 }
 
 static std::string peek_data_from_buff(const std::string &_ip)

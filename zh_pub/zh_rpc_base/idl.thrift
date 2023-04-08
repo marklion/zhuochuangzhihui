@@ -262,6 +262,7 @@ struct stuff_info {
     14:string code,
     15:bool use_for_white_list,
     16:i64 auto_call_count,
+    17:bool auto_confirm_deliver,
 }
 
 struct stuff_change_point {
@@ -406,6 +407,7 @@ struct vehicle_order_detail {
     17:string err_string,
     18:string call_user_name,
     19:i64 wait_count,
+    20:string p_m_comment,
 }
 
 struct vehicle_order_statistics {
@@ -450,8 +452,8 @@ service vehicle_order_center {
     vehicle_order_detail driver_get_order(1:string order_number, 2:string plate) throws (1:gen_exp e),
     bool call_vehicle(1:string ssid, 2:i64 order_id, 3:bool is_cancel) throws (1:gen_exp e),
     list<vehicle_order_detail> get_registered_vehicle(1:string ssid) throws (1:gen_exp e),
-    bool manual_set_p_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
-    bool manual_set_m_weight(1:string ssid, 2:i64 order_id, 3:double weight) throws (1:gen_exp e),
+    bool manual_set_p_weight(1:string ssid, 2:i64 order_id, 3:double weight, 4:string p_comment) throws (1:gen_exp e),
+    bool manual_set_m_weight(1:string ssid, 2:i64 order_id, 3:double weight, 4:string m_comment) throws (1:gen_exp e),
     bool manual_close(1:string ssid, 2:i64 order_id) throws (1:gen_exp e),
     vehicle_order_statistics get_order_statistics(1:string ssid) throws (1:gen_exp e),
     bool upload_enter_weight_attachment(1:i64 order_id, 2:string attachment, 3:double enter_weight) throws (1:gen_exp e),

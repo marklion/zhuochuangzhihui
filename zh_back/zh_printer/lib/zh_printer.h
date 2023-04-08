@@ -13,7 +13,7 @@ public:
     zh_vcom_link vl;
     std::string m_ip;
     zh_printer_dev(const std::string &_ip);
-    bool print_string(const std::string &_content);
+    bool print_string(const std::string &_content, const std::string &_qr_code = "");
     bool print_qr(const std::string &_qr_code);
     void cut_paper();
 };

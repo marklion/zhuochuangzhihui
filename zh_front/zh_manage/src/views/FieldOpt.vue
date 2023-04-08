@@ -8,9 +8,9 @@
     <van-divider>装卸货确认</van-divider>
     <van-cell :title="cur_order.basic_info.main_vehicle_number" :value="cur_order.basic_info.stuff_name" :label="cur_order.basic_info.source_dest_name"></van-cell>
     <van-cell :title="cur_order.basic_info.driver_name" :value="cur_order.basic_info.driver_phone" :label="cur_order.basic_info.company_name"></van-cell>
-    <van-cell title="一次称重" :value="cur_order.basic_info.p_weight"></van-cell>
+    <van-cell title="一次称重" :value="cur_order.basic_info.p_weight.toFixed(2)"></van-cell>
     <div v-if="cur_order.basic_info.status >= 4">
-        <van-cell title="二次称重" :value="cur_order.basic_info.m_weight"></van-cell>
+        <van-cell title="二次称重" :value="cur_order.basic_info.m_weight.toFixed(2)"></van-cell>
         <van-cell v-if="stuff_change > 0" title="净重（卸货）" :value="j_weight"></van-cell>
         <van-cell v-if="stuff_change < 0" title="净重（拉货）" :value="j_weight"></van-cell>
     </div>
@@ -70,7 +70,7 @@ export default {
             var ret = 0;
             ret = Math.abs(this.cur_order.basic_info.p_weight - this.cur_order.basic_info.m_weight);
 
-            return ret;
+            return ret.toFixed(2);
         },
         stuff_change: function () {
             return this.cur_order.basic_info.p_weight - this.cur_order.basic_info.m_weight;

@@ -14,7 +14,7 @@
 vehicle_order_center_handler *vehicle_order_center_handler::m_inst = nullptr;
 std::map<std::string, std::shared_ptr<scale_state_machine>> vehicle_order_center_handler::ssm_map;
 std::map<std::string, std::shared_ptr<gate_state_machine>> vehicle_order_center_handler::gsm_map;
-
+static void async_trli_set_all(bool _is_green, const std::string &_ip1, const std::string &_ip2);
 static std::unique_ptr<zh_sql_contract> get_real_contract(const std::string &_name, const std::string &_stuff_name)
 {
     auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", _stuff_name.c_str());
@@ -222,6 +222,14 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
         _return.basic_info.is_sale = false;
     }
     _return.basic_info.seal_no = vo->seal_no;
+    if (vo->p_comment.length() > 0)
+    {
+        _return.p_m_comment += "手动一次称重:" + vo->p_comment + "\n";
+    }
+    if (vo->m_comment.length() > 0)
+    {
+        _return.p_m_comment += "手动二次称重:" + vo->m_comment;
+    }
 }
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
@@ -425,9 +433,16 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool
         tmp.max_count = order.max_count;
         tmp.end_time = order.end_time;
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
-        if (stuff && stuff->need_enter_weight)
+        if (stuff)
         {
-            tmp.need_enter_weight = 1;
+            if (stuff->need_enter_weight)
+            {
+                tmp.need_enter_weight = 1;
+            }
+            if (stuff->auto_confirm_deliver)
+            {
+                tmp.m_permit = true;
+            }
         }
 
         bool op_permit = true;
@@ -477,9 +492,9 @@ static void dup_one_order(zh_sql_vehicle_order &vo)
 {
     if (vo.status == 100 && vo.end_time.length() > 0)
     {
-        auto now_date = zh_rpc_util_get_datestring().substr(0, 10);
-        auto end_date = vo.end_time.substr(0, 10);
-        if (now_date == end_date)
+        auto now_date = time(nullptr);
+        auto end_date = zh_rpc_util_get_time_by_string(vo.end_time.substr(0, 10) + " 23:59:59");
+        if (now_date <= end_date)
         {
             vehicle_order_info tmp_order;
             tmp_order.behind_vehicle_number = vo.behind_vehicle_number;
@@ -602,7 +617,7 @@ void vehicle_order_center_handler::get_order_detail(vehicle_order_detail &_retur
     }
     make_vehicle_detail_from_sql(_return, *vo);
 }
-bool vehicle_order_center_handler::confirm_order_deliver(const std::string& ssid, const std::string& order_number, const bool confirmed, const std::string& inv_name)
+bool vehicle_order_center_handler::confirm_order_deliver(const std::string &ssid, const std::string &order_number, const bool confirmed, const std::string &inv_name)
 {
     bool ret = false;
     auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_FIELD, false);
@@ -1001,7 +1016,7 @@ void vehicle_order_center_handler::get_registered_vehicle(std::vector<vehicle_or
     }
 }
 
-bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight)
+bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight, const std::string &p_comment)
 {
     bool ret = false;
     auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
@@ -1018,11 +1033,12 @@ bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, 
     auto status = zh_sql_order_status::make_p_status(ssid);
     change_order_status(*vo, status);
     vo->p_weight = weight;
+    vo->p_comment = user->name +"(" + zh_rpc_util_get_timestring() + "):" + p_comment;
     ret = vo->update_record();
 
     return ret;
 }
-bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight)
+bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight, const std::string &m_comment)
 {
     bool ret = false;
     auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_USER, false);
@@ -1039,6 +1055,7 @@ bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, 
     auto status = zh_sql_order_status::make_m_status(ssid);
     change_order_status(*vo, status);
     vo->m_weight = weight;
+    vo->m_comment = user->name + "(" + zh_rpc_util_get_timestring() + "):" + m_comment;
     ret = vo->update_record();
 
     return ret;
@@ -1292,6 +1309,7 @@ scale_state_machine::scale_state_machine(const device_scale_config &_config)
     m_cur_state.reset(new scale_sm_vehicle_come());
     zh_hk_cast_empty(_config.entry_config.led_ip);
     zh_hk_cast_empty(_config.exit_config.led_ip);
+    async_trli_set_all(true, _config.traffic_light_ip1, _config.traffic_light_ip2);
 }
 scale_state_machine::~scale_state_machine()
 {
@@ -2151,7 +2169,7 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         std::string p_type = "（毛重）：";
         std::string m_type = "（皮重）：";
         auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", vo->company_name.c_str());
-        if (company && company->is_sale)
+        if ((company && company->is_sale) || (vo->p_weight <= vo->m_weight))
         {
             auto tmp_type = p_type;
             p_type = m_type;
@@ -2232,14 +2250,16 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
     system_management_handler::get_inst()->print_content(printer_ip, content, qr_code);
 }
 
-static void async_trli_set_all(bool _is_green, const std::string &_ip1, const std::string &_ip2) {
+void async_trli_set_all(bool _is_green, const std::string &_ip1, const std::string &_ip2)
+{
     auto set_func = ZH_TRLI_set_red;
     if (_is_green)
     {
         set_func = ZH_TRLI_set_green;
     }
     tdf_main::get_inst().Async_to_workthread(
-        [](void *_private, const std::string &_ip){
+        [](void *_private, const std::string &_ip)
+        {
             auto async_set_func = (bool (*)(const std::string &))_private;
             for (auto i = 0; i < 10; i++)
             {
@@ -2248,9 +2268,11 @@ static void async_trli_set_all(bool _is_green, const std::string &_ip1, const st
                     break;
                 }
             }
-        }, (void *)set_func, _ip1);
+        },
+        (void *)set_func, _ip1);
     tdf_main::get_inst().Async_to_workthread(
-        [](void *_private, const std::string &_ip){
+        [](void *_private, const std::string &_ip)
+        {
             auto async_set_func = (bool (*)(const std::string &))_private;
             for (auto i = 0; i < 10; i++)
             {
@@ -2259,7 +2281,8 @@ static void async_trli_set_all(bool _is_green, const std::string &_ip1, const st
                     break;
                 }
             }
-        }, (void *)set_func, _ip2);
+        },
+        (void *)set_func, _ip2);
 }
 
 void scale_state_machine::set_traffic_lights_red()
@@ -3224,7 +3247,7 @@ void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle
     {
         detail_query += " AND stuff_name == '" + stuff_name + "'";
     }
-    detail_query += " AND datetime(m_cam_time) >= datetime('" + begin_date + "') AND datetime(m_cam_time) <= datetime('" + end_date + "')";
+    detail_query += " AND datetime(p_cam_time) >= datetime('" + begin_date + "') AND datetime(p_cam_time) <= datetime('" + end_date + "')";
     auto all_order = sqlite_orm::search_record_all<zh_sql_vehicle_order>("(%s) ORDER BY datetime(m_cam_time) DESC", detail_query.c_str());
     for (auto &itr : all_order)
     {
@@ -3349,7 +3372,7 @@ bool vehicle_order_center_handler::manual_push_nc(const std::string &order_numbe
 void vehicle_order_center_handler::get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return)
 {
     auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'", zh_rpc_util_get_datestring().c_str());
-    for (auto &itr:vos)
+    for (auto &itr : vos)
     {
         vehicle_order_detail tmp;
         make_vehicle_detail_from_sql(tmp, itr);
@@ -3366,8 +3389,8 @@ bool vehicle_order_center_handler::clear_vehicle_xy(const std::string &order_num
         if (vo->seal_no != "泄压完成" && vo->seal_no != "正在泄压")
         {
             auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'",
-            vo->main_vehicle_number.c_str(), zh_rpc_util_get_datestring().c_str());
-            for (auto &itr:vos)
+                                                                           vo->main_vehicle_number.c_str(), zh_rpc_util_get_datestring().c_str());
+            for (auto &itr : vos)
             {
                 itr.seal_no = "泄压完成";
                 itr.update_record();

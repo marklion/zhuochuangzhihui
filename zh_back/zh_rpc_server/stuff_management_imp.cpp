@@ -42,6 +42,7 @@ bool stuff_management_handler::add_stuff(const std::string &ssid, const stuff_in
     tmp.max_limit = stuff.max_limit;
     tmp.code = stuff.code;
     tmp.use_for_white_list = stuff.use_for_white_list;
+    tmp.auto_confirm_deliver = stuff.auto_confirm_deliver;
 
     ret = tmp.insert_record(ssid);
     if (ret)
@@ -79,6 +80,7 @@ bool stuff_management_handler::update_stuff(const std::string &ssid, const stuff
     exist_record->min_limit = stuff.min_limit;
     exist_record->code = stuff.code;
     exist_record->use_for_white_list = stuff.use_for_white_list;
+    exist_record->auto_confirm_deliver = stuff.auto_confirm_deliver;
 
     ret = exist_record->update_record(ssid);
     if (ret)
@@ -166,6 +168,7 @@ void stuff_management_handler::get_all_stuff(std::vector<stuff_info> &_return, c
         tmp.code = itr.code;
         tmp.use_for_white_list = itr.use_for_white_list;
         tmp.auto_call_count = itr.auto_call_count;
+        tmp.auto_confirm_deliver = itr.auto_confirm_deliver;
 
         _return.push_back(tmp);
     }

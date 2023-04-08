@@ -209,8 +209,12 @@
                         <el-form-item label="运输货物" prop="stuff_name">
                             <item-for-select v-model="focus_order.stuff_name" search_key="stuff_name"></item-for-select>
                         </el-form-item>
-                        <el-form-item label="今天连续派车">
+                        <el-form-item label="连续派车">
                             <el-switch v-model="form_continue_switch"></el-switch>
+                        </el-form-item>
+                        <el-form-item v-if="form_continue_switch" label="截止日期">
+                            <el-date-picker v-model="cont_end_date" type="date" placeholder="选择日期">
+                            </el-date-picker>
                         </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="edit_order">确认</el-button>
@@ -307,6 +311,12 @@
                             <van-switch v-model="form_continue_switch" size="20" />
                         </template>
                     </van-field>
+                    <div v-if="form_continue_switch">
+                        <van-field readonly clickable name="datetimePicker" :value="$make_time_string(cont_end_date, '-').substr(0, 10)" label="截止日期" placeholder="点击选择日期" @click="showPicker = true" />
+                        <van-popup v-model="showPicker" position="bottom">
+                            <van-datetime-picker :min-date="new Date()" type="date" @confirm="onConfirm" @cancel="showPicker = false" />
+                        </van-popup>
+                    </div>
                     <van-field readonly clickable name="picker" label="选择车辆" placeholder="点击选择车辆" @click="show_vehicle_select = true">
                     </van-field>
                     <van-tag v-for="(single_vehicle,index) in vehicle_selected" :key="index" closeable size="mini" type="primary" @close="remove_single_vehicle(index)">
@@ -322,9 +332,10 @@
     <el-drawer @closed="clean_select" :visible.sync="show_vehicle_select" direction="rtl" size="70%">
         <div slot="title">
             <div>请选择车辆</div>
+            <el-input v-model="vehicle_group_filter" placeholder="分组名\车牌号\拼音\首字母过滤" prefix-icon="el-icon-search"></el-input>
             <el-button size="small" type="primary" @click="push_ready_to_select">确认</el-button>
         </div>
-        <el-table :data="vehicle_for_select" style="width: 100%" ref="vehicle_select_table" stripe @selection-change="proc_select">
+        <el-table :data="vehicle_select_after_filt" style="width: 100%" ref="vehicle_select_table" stripe @selection-change="proc_select">
             <el-table-column type="selection" width="55" :selectable="verify_selectable">
             </el-table-column>
             <el-table-column sortable property="main_vehicle_number" label="主车牌" width="120"></el-table-column>
@@ -374,6 +385,20 @@ export default {
         }
     },
     computed: {
+        vehicle_select_after_filt: function () {
+            var ret = [];
+            if (this.vehicle_group_filter) {
+                this.vehicle_for_select.forEach(item => {
+                    if (PinyinMatch.match(item.main_vehicle_number, this.vehicle_group_filter) || PinyinMatch.match(item.behind_vehicle_number, this.vehicle_group_filter) || PinyinMatch.match(item.group_name, this.vehicle_group_filter)) {
+                        ret.push(item);
+                    }
+                });
+            } else {
+                ret = this.vehicle_for_select;
+            }
+
+            return ret;
+        },
         date_range: {
             get: function () {
                 var ret = [];
@@ -400,6 +425,7 @@ export default {
                 var element = item.basic_info;
                 element.registered = item.registered;
                 element.checkin_time = item.checkin_time;
+                element.p_m_comment = item.p_m_comment;
                 switch (this.activeName) {
                     case 'all':
                         ret.push(element);
@@ -453,12 +479,15 @@ export default {
     },
     data: function () {
         return {
+            showPicker: false,
+            vehicle_group_filter: '',
             focus_comapny: '',
             focus_stuff: '',
             begin_date: '',
             end_date: '',
             advance_export_show: false,
             form_continue_switch: false,
+            cont_end_date: new Date(),
             create_mobile_vehicle_diag: false,
             isLoading: false,
             deliver_cost_time: function (_start_time) {
@@ -552,6 +581,10 @@ export default {
         };
     },
     methods: {
+        onConfirm: function (_date) {
+            this.cont_end_date = _date;
+            this.showPicker = false;
+        },
         advance_export_record: function () {
             var vue_this = this;
             vue_this.$call_remote_process("vehicle_order_center", "export_order_by_condition", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.focus_comapny, vue_this.focus_stuff]).then(function (resp) {
@@ -601,7 +634,7 @@ export default {
                 single_req.company_address = vue_this.focus_order.company_address;
                 single_req.use_for = vue_this.focus_order.use_for;
                 if (vue_this.form_continue_switch) {
-                    single_req.end_time = vue_this.$make_time_string(new Date(), '-').substr(0, 10);
+                    single_req.end_time = vue_this.$make_time_string(vue_this.cont_end_date, '-').substr(0, 10);
                 }
                 req_body.push(single_req);
             });
@@ -834,7 +867,7 @@ export default {
                     single_req.company_address = vue_this.focus_order.company_address;
                     single_req.use_for = vue_this.focus_order.use_for;
                     if (vue_this.form_continue_switch) {
-                        single_req.end_time = vue_this.$make_time_string(new Date(), '-').substr(0, 10);
+                        single_req.end_time = vue_this.$make_time_string(vue_this.cont_end_date, '-').substr(0, 10);
                     }
                     req_body.push(single_req);
                 });
@@ -1039,12 +1072,16 @@ export default {
             }, {
                 title: "身份证",
                 key: 'driver_id',
-            }, ];
+            }, {
+                title:'手动修改备注',
+                key:'p_m_comment'
+            }];
             var content = [];
             var record_need_export = this.order_selected;
             if (_advance_record) {
                 record_need_export = _advance_record;
             }
+            var total_j_weight = 0;
             record_need_export.forEach(element => {
                 var tmp = {
                     ...element
@@ -1077,10 +1114,15 @@ export default {
                     }
                 });
                 tmp.j_weight = Math.abs(tmp.m_weight - tmp.p_weight).toFixed(2);
+                total_j_weight += Math.abs(tmp.m_weight - tmp.p_weight);
                 tmp.p_weight = tmp.p_weight.toFixed(2);
                 tmp.m_weight = tmp.m_weight.toFixed(2);
                 tmp.total_cost = (parseFloat(tmp.j_weight) * tmp.price).toFixed(2);
                 content.push(tmp);
+            });
+            content.push({
+                order_number: '总计净重',
+                company_name: total_j_weight.toFixed(2)
             });
             this.exportExcel(init_colm, content);
         },

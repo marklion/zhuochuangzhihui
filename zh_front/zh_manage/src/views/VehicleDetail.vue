@@ -46,6 +46,9 @@
                     <el-descriptions-item label="铅封号" v-if="cur_vehicle.basic_info.seal_no">
                         {{cur_vehicle.basic_info.seal_no}}
                     </el-descriptions-item>
+                    <el-descriptions-item label="手动修改备注" v-if="cur_vehicle.p_m_comment">
+                        {{cur_vehicle.p_m_comment}}
+                    </el-descriptions-item>
                     <template slot="extra">
                         <div style="padding:5px;" v-if="$store.state.user_info.permission != 3">
                             <el-button size="mini" type="danger" @click="manual_close">手动结束运输</el-button>
@@ -286,21 +289,36 @@ export default {
         },
         manual_p_weight_edit: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "manual_set_p_weight", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, vue_this.manual_weight_data.p_weight]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_cur_vehicle();
-                    vue_this.manual_weight_show = false;
-                }
-            });
+            vue_this.$prompt('请输入原因', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "manual_set_p_weight", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, vue_this.manual_weight_data.p_weight, value]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                        vue_this.manual_weight_show = false;
+                    }
+                });
+            })
         },
         manual_m_weight_edit: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "manual_set_m_weight", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, vue_this.manual_weight_data.m_weight]).then(function (resp) {
-                if (resp) {
-                    vue_this.init_cur_vehicle();
-                    vue_this.manual_weight_show = false;
-                }
+            vue_this.$prompt('请输入原因', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "manual_set_m_weight", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, vue_this.manual_weight_data.m_weight, value]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                        vue_this.manual_weight_show = false;
+                    }
+                });
             });
+
         },
         ask_user_first(_msg, _is_cancel) {
             var vue_this = this;

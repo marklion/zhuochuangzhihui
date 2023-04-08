@@ -7,13 +7,18 @@
                 <div class="block_title_show">所有车辆</div>
             </el-col>
             <el-col>
+                <div align="right" style="margin-right:10px;">
+                    <el-input v-model="search_key" placeholder="输入部分车号过滤" prefix-icon="el-icon-search"></el-input>
+                </div>
+            </el-col>
+            <el-col>
                 <div style="margin-right:10px; text-align:right">
                     <table-import-export @proc_table="proc_upload_vehicle" :sample_table="sample_table()" export_name="车辆导出表.xlsx" :export_table="all_vehicle" :item_name_map="col_map()"></table-import-export>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_vehicle_diag = true">新增</el-button>
                 </div>
             </el-col>
         </el-row>
-        <el-table :data="all_vehicle" style="width: 100%" stripe>
+        <el-table :data="vehicle_need_show" style="width: 100%" stripe>
             <el-table-column type="index" label="编号" width="50px">
             </el-table-column>
             <el-table-column prop="main_vehicle_number" label="主车" width="100px">
@@ -88,7 +93,8 @@
     <div v-else>
         <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
             <van-nav-bar title="车辆管理" right-text="新增" @click-right="current_opt_add=true;show_edit_vehicle_diag = true" />
-            <van-cell v-for="(single_vehicle, index) in all_vehicle" :key="index" center :title="single_vehicle.main_vehicle_number + '-' + single_vehicle.behind_vehicle_number" :label="single_vehicle.company_name">
+            <van-search v-model="search_key" placeholder="车牌号过滤" />
+            <van-cell v-for="(single_vehicle, index) in vehicle_need_show" :key="index" center :title="single_vehicle.main_vehicle_number + '-' + single_vehicle.behind_vehicle_number" :label="single_vehicle.company_name">
                 <template #right-icon>
                     <van-button size="mini" type="info" @click="trigger_update_vehicle(single_vehicle)">修改</van-button>
                     <van-button size="mini" type="danger" @click="del_vehicle(single_vehicle)">删除</van-button>
@@ -126,6 +132,7 @@
 
 <script>
 import TableImportExport from '../components/TableImportExport.vue'
+import PinyinMatch from "pinyin-match"
 export default {
     name: 'Vehicle_management',
     components: {
@@ -133,6 +140,7 @@ export default {
     },
     data: function () {
         return {
+            search_key: '',
             isLoading: false,
             company_for_select: [{
                 value: '',
@@ -273,6 +281,22 @@ export default {
                 return ret;
             },
         };
+    },
+    computed: {
+        vehicle_need_show: function () {
+            var ret = [];
+            if (this.search_key) {
+                this.all_vehicle.forEach(element => {
+                    if (PinyinMatch.match(element.main_vehicle_number, this.search_key) || PinyinMatch.match(element.behind_vehicle_number, this.search_key)) {
+                        ret.push(element);
+                    }
+                });
+            } else {
+                ret = this.all_vehicle;
+            }
+
+            return ret;
+        },
     },
     methods: {
         onRefresh: function () {

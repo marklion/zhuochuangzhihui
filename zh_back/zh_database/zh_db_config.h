@@ -215,6 +215,7 @@ public:
     std::string code;
     long use_for_white_list = 0;
     long auto_call_count = 0;
+    long auto_confirm_deliver = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -230,6 +231,7 @@ public:
         ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
         ret.push_back(sqlite_orm_column("use_for_white_list", sqlite_orm_column::INTEGER, &use_for_white_list));
         ret.push_back(sqlite_orm_column("auto_call_count", sqlite_orm_column::INTEGER, &auto_call_count));
+        ret.push_back(sqlite_orm_column("auto_confirm_deliver", sqlite_orm_column::INTEGER, &auto_confirm_deliver));
 
         return ret;
     }
@@ -354,6 +356,8 @@ public:
     std::string max_load;
     long is_scaling = 0;
     std::string bound_inv_name;
+    std::string p_comment;
+    std::string m_comment;
     zh_sql_vehicle_order()
     {
         add_parent_type<zh_sql_file>("attachment");
@@ -405,6 +409,8 @@ public:
         ret.push_back(sqlite_orm_column("max_load", sqlite_orm_column::STRING, &max_load));
         ret.push_back(sqlite_orm_column("is_scaling", sqlite_orm_column::INTEGER, &is_scaling));
         ret.push_back(sqlite_orm_column("bound_inv_name", sqlite_orm_column::STRING, &bound_inv_name));
+        ret.push_back(sqlite_orm_column("p_comment", sqlite_orm_column::STRING, &p_comment));
+        ret.push_back(sqlite_orm_column("m_comment", sqlite_orm_column::STRING, &m_comment));
 
         return ret;
     }

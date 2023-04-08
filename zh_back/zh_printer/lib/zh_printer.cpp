@@ -6,7 +6,33 @@
 #include <iconv.h>
 static int g_ser_fd = -1;
 static std::string g_focus_printer_ip;
-
+int connect_to_device_tcp_server(const std::string &_ip, unsigned short _port)
+{
+    int ret = -1;
+    sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(_port),
+        .sin_addr = {.s_addr = inet_addr(_ip.c_str())},
+    };
+    auto socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd >= 0)
+    {
+        if (0 == connect(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr)))
+        {
+            ret = socket_fd;
+        }
+        else
+        {
+            perror("failed to connect server");
+            close(socket_fd);
+        }
+    }
+    else
+    {
+        perror("failed to open socket fd");
+    }
+    return ret;
+}
 static pthread_mutex_t g_plock = PTHREAD_MUTEX_INITIALIZER;
 int code_convert(char *from_charset, char *to_charset, char *inbuf, size_t inlen, char *outbuf, size_t outlen)
 {
@@ -41,7 +67,7 @@ void UART_SendByte(unsigned char Send_Dat)
 {
     bool write_ret = false;
     if (-1 != g_ser_fd) {
-        if (1 == write(g_ser_fd, &Send_Dat, 1))
+        if (1 == send(g_ser_fd, &Send_Dat, 1, 0))
         {
             write_ret = true;
         }
@@ -57,80 +83,50 @@ void UART_SendByte(unsigned char Send_Dat)
 }
 unsigned char UART_RecByte(void)
 {
-    unsigned char ret = 0;
-    if (-1 != g_ser_fd)
-    {
-        read(g_ser_fd, &ret, 1);
-    }
-    return ret;
+    return '0';
 }
 
 zh_printer_dev::zh_printer_dev(const std::string &_ip) :m_ip(_ip), vl(_ip, ZH_PRINTER_PORT)
 {
 }
-bool zh_printer_dev::print_string(const std::string &_content)
+bool zh_printer_dev::print_string(const std::string &_content, const std::string &_qr_code)
 {
     pthread_mutex_lock(&g_plock);
-    g_ser_fd = open(vl.get_pts().c_str(), O_RDWR);
+    g_ser_fd = connect_to_device_tcp_server(m_ip, ZH_PRINTER_PORT);
     g_focus_printer_ip = m_ip;
     InitializePrint();
     SelChineseChar();
-    Set_ChineseCode(3);
     char buff[2048];
-    SetCharacterSize(1, 1);
+    SetCharacterSize(0, 0);
     Set_LeftSpaceNum(12, 0);
     Sel_Align_Way(0);
     strcpy((char *)buff, getenv("OEM_NAME"));
-    strcat((char *)buff, "\n称重单");
+    strcat((char *)buff, "称重单\n");
     Print_ASCII(utf2gbk(buff).c_str());
-    Sel_Align_Way(0);
-    SetCharacterSize(0, 0);
     print_And_Line();
     strcpy((char *)buff, _content.c_str());
     Print_ASCII(utf2gbk(buff).c_str());
+    if (_qr_code.length() > 0)
+    {
+        Set_QRcodeMode(8);
+        Set_QRCodeAdjuLevel(0x31); /* 设置二维码的纠错水平 */
+        Sel_Align_Way(1);
+        Set_QRCodeBuffer(_qr_code.length(), (unsigned char *)(_qr_code.c_str())); /* 传输数据至编码缓存 */
+        PrintQRCode();
+    }
     print_And_Line();
-    print_And_Line();
-    strcpy((char *)buff,"卓创智汇\n自动称重系统\n");
+    Sel_Align_Way(0);
+    strcpy((char *)buff, "卓创智汇\n自动称重系统\n");
     Print_ASCII(utf2gbk(buff).c_str());
+    print_And_Line();
 
+    UART_SendByte(0x1D);
+    UART_SendByte(0x56);
+    UART_SendByte(66);
+    UART_SendByte(15);
     close(g_ser_fd);
     g_focus_printer_ip = "";
     g_ser_fd = -1;
     pthread_mutex_unlock(&g_plock);
     return true;
-}
-bool zh_printer_dev::print_qr(const std::string &_qr_code)
-{
-    pthread_mutex_lock(&g_plock);
-    g_ser_fd = open(vl.get_pts().c_str(), O_RDWR);
-    g_focus_printer_ip = m_ip;
-    InitializePrint();
-    Set_QRcodeMode(8);
-    Set_QRCodeAdjuLevel(0x49);								/* 设置二维码的纠错水平 */
-	Set_QRCodeBuffer(_qr_code.length(), (unsigned char *)(_qr_code.c_str()));	/* 传输数据至编码缓存 */
-	Sel_Align_Way(0x01);									/* 居中对齐 */
-	PrintQRCode();
-    print_And_Line();
-    print_And_Line();
-    print_And_Line();
-    close(g_ser_fd);
-    g_ser_fd = -1;
-    g_focus_printer_ip = "";
-    pthread_mutex_unlock(&g_plock);
-    return true;
-}
-void zh_printer_dev::cut_paper()
-{
-    pthread_mutex_lock(&g_plock);
-    g_ser_fd = open(vl.get_pts().c_str(), O_RDWR);
-    g_focus_printer_ip = m_ip;
-    InitializePrint();
-	UART_SendByte(0x1D);
-	UART_SendByte(0x56);
-	UART_SendByte(66);
-	UART_SendByte(10);
-    close(g_ser_fd);
-    g_ser_fd = -1;
-    g_focus_printer_ip = "";
-    pthread_mutex_unlock(&g_plock);
 }

@@ -37,7 +37,7 @@
                         </el-tooltip>
                     </template>
                 </el-table-column>
-                <el-table-column label="需要矿(厂)发净重" width="180px">
+                <el-table-column label="需要矿(厂)发净重" width="80px">
                     <template slot-scope="scope">
                         {{scope.row.need_enter_weight?'是':'否'}}
                     </template>
@@ -50,9 +50,14 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column label="用于白名单" width="180px">
+                <el-table-column label="用于白名单" width="80px">
                     <template slot-scope="scope">
                         {{scope.row.use_for_white_list?'是':'否'}}
+                    </template>
+                </el-table-column>
+                <el-table-column label="自动确认装卸货" width="80px">
+                    <template slot-scope="scope">
+                        {{scope.row.auto_confirm_deliver?'是':'否'}}
                     </template>
                 </el-table-column>
                 <el-table-column prop="min_limit" label="最小装车量" width="120px">
@@ -209,6 +214,10 @@
             <el-form-item label="最大装车量" prop="max_limit">
                 <el-input-number v-model="focus_stuff.max_limit" :min="0.001" label="请输入最大装车量"></el-input-number>
             </el-form-item>
+            <el-form-item label="自动装卸货确认" prop="auto_confirm_deliver">
+                <el-switch v-model="focus_stuff.auto_confirm_deliver" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="edit_stuff">确认</el-button>
             </el-form-item>
@@ -311,6 +320,7 @@ export default {
                 max_limit: 49.5,
                 min_limit: 48.5,
                 code: "",
+                auto_confirm_deliver:false,
             },
             all_stuff: [],
             rules: {

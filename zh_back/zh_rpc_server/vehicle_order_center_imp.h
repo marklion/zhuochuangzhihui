@@ -203,8 +203,8 @@ public:
     virtual void driver_get_order(vehicle_order_detail &_return, const std::string &order_number, const std::string &plate);
     virtual bool call_vehicle(const std::string &ssid, const int64_t order_id, const bool is_cancel);
     virtual void get_registered_vehicle(std::vector<vehicle_order_detail> &_return, const std::string &ssid);
-    virtual bool manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight);
-    virtual bool manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight);
+    virtual bool manual_set_p_weight(const std::string &ssid, const int64_t order_id, const double weight, const std::string &p_comment);
+    virtual bool manual_set_m_weight(const std::string &ssid, const int64_t order_id, const double weight, const std::string &m_comment);
     virtual bool manual_close(const std::string &ssid, const int64_t order_id);
     virtual void get_order_statistics(vehicle_order_statistics &_return, const std::string &ssid);
     virtual bool upload_enter_weight_attachment(const int64_t order_id, const std::string &attachment, const double enter_weight);

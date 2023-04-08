@@ -275,12 +275,7 @@ bool system_management_handler::print_content(const std::string &printer_ip, con
         {
             auto p_pm = (print_msg *)_private;
             zh_printer_dev tmp(p_pm->printer_ip);
-            tmp.print_string(p_pm->content);
-            if (p_pm->qr_code.length() > 0)
-            {
-                tmp.print_qr(p_pm->qr_code);
-            }
-            tmp.cut_paper();
+            tmp.print_string(p_pm->content, p_pm->qr_code);
             delete p_pm;
         },
         pm, "");

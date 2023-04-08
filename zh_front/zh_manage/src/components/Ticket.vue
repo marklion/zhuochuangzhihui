@@ -7,8 +7,8 @@
     <ticket-item item_name="供应商" :item_value="cur_vehicle.basic_info.company_name" v-else></ticket-item>
     <ticket-item item_name="车牌号" :item_value="cur_vehicle.basic_info.main_vehicle_number"></ticket-item>
     <ticket-item item_name="产品名称" :item_value="cur_vehicle.basic_info.stuff_name"></ticket-item>
-    <ticket-item item_name="皮重" :item_value="cur_vehicle.basic_info.p_weight.toFixed(2)"></ticket-item>
-    <ticket-item item_name="毛重" :item_value="cur_vehicle.basic_info.m_weight.toFixed(2)"></ticket-item>
+    <ticket-item item_name="皮重" :item_value="cur_vehicle.basic_info.p_weight <= cur_vehicle.basic_info.m_weight? cur_vehicle.basic_info.p_weight.toFixed(2):cur_vehicle.basic_info.m_weight"></ticket-item>
+    <ticket-item item_name="毛重" :item_value="cur_vehicle.basic_info.p_weight <= cur_vehicle.basic_info.m_weight? cur_vehicle.basic_info.m_weight.toFixed(2):cur_vehicle.basic_info.p_weight"></ticket-item>
     <ticket-item item_name="净重" :item_value="Math.abs(cur_vehicle.basic_info.p_weight - cur_vehicle.basic_info.m_weight).toFixed(2)"></ticket-item>
     <ticket-item item_name="过皮时间" :item_value="cur_vehicle.p_time"></ticket-item>
     <ticket-item item_name="过毛时间" :item_value="cur_vehicle.m_time"></ticket-item>
