@@ -60,6 +60,11 @@
                         {{scope.row.auto_confirm_deliver?'是':'否'}}
                     </template>
                 </el-table-column>
+                <el-table-column label="需要一次称重磅单" width="80px">
+                    <template slot-scope="scope">
+                        {{scope.row.need_p_ticket?'是':'否'}}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="min_limit" label="最小装车量" width="120px">
                 </el-table-column>
                 <el-table-column prop="max_limit" label="最大装车量" width="120px">
@@ -218,6 +223,10 @@
                 <el-switch v-model="focus_stuff.auto_confirm_deliver" active-color="#13ce66" inactive-color="#ff4949">
                 </el-switch>
             </el-form-item>
+            <el-form-item label="需要一次称重磅单" prop="need_p_ticket">
+                <el-switch v-model="focus_stuff.need_p_ticket" active-color="#13ce66" inactive-color="#ff4949">
+                </el-switch>
+            </el-form-item>
             <el-form-item>
                 <el-button type="primary" @click="edit_stuff">确认</el-button>
             </el-form-item>
@@ -321,6 +330,7 @@ export default {
                 min_limit: 48.5,
                 code: "",
                 auto_confirm_deliver:false,
+                need_p_ticket:false,
             },
             all_stuff: [],
             rules: {

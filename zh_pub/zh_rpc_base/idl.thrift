@@ -263,6 +263,7 @@ struct stuff_info {
     15:bool use_for_white_list,
     16:i64 auto_call_count,
     17:bool auto_confirm_deliver,
+    18:bool need_p_ticket,
 }
 
 struct stuff_change_point {
@@ -373,6 +374,7 @@ struct vehicle_order_info {
     25:string bl_number,
     26:double price,
     27:string seal_no,
+    28:string trans_company,
 }
 
 struct gate_relate_info {
@@ -477,6 +479,8 @@ service vehicle_order_center {
     bool manual_push_nc(1:string order_number, 2:bool is_p) throws (1:gen_exp e),
     list<vehicle_order_detail> get_today_xy_vehicle() throws (1:gen_exp e),
     bool clear_vehicle_xy(1:string order_number) throws (1:gen_exp e),
+    string ticket_export_result(1:string ssid) throws (1:gen_exp e),
+    string ticket_export(1:string ssid, 2:string begin_date, 3:string end_date, 4:string trans_company ) throws (1:gen_exp e),
 }
 
 struct video_param{

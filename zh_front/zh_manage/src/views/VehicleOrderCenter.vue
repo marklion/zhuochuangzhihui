@@ -12,6 +12,7 @@
                     <el-button size="mini" type="danger" icon="el-icon-s-release" v-if="order_selected.length > 0" @click="cancle_multi">批量取消{{order_selected.length}}项</el-button>
                     <el-button size="mini" type="success" icon="el-icon-plus" @click="current_opt_add=true;show_edit_order_diag = true">新增</el-button>
                     <el-button size="mini" type="info" icon="el-icon-notebook-2" @click="advance_export_show = true">高级导出</el-button>
+                    <el-button v-if="has_zyhl_plugin" size="mini" type="warning" icon="el-icon-notebook-2" @click="show_export_ticket_diag = true">磅单导出</el-button>
                 </div>
             </el-col>
         </el-row>
@@ -142,12 +143,12 @@
                         </div>
                     </template>
                 </el-table-column>
-                <el-table-column label="进厂时间" width="180px">
+                <el-table-column label="进厂时间" width="180px" sortable :sort-method="date_sort_func_enter">
                     <template slot-scope="scope">
                         {{calc_status_date(scope.row, 2)?calc_status_date(scope.row,2):calc_status_date(scope.row,3)}}
                     </template>
                 </el-table-column>
-                <el-table-column label="出厂时间" width="180px">
+                <el-table-column label="出厂时间" width="180px" sortable :sort-method="date_sort_func_exit">
                     <template slot-scope="scope">
                         {{calc_status_date(scope.row, 100)}}
                     </template>
@@ -351,6 +352,19 @@
             <el-button type="primary" @click="push_ready_to_select">确认</el-button>
         </div>
     </el-drawer>
+
+    <el-dialog @open="get_ticket_resutl" title="导出磅单" :visible.sync="show_export_ticket_diag" width="60%" @keyup.enter.native="export_ticket">
+        <div>
+            <span>日期范围</span>
+            <el-date-picker v-model="date_range" type="daterange" align="right" unlink-panels range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" :picker-options="pickerOptions">
+            </el-date-picker>
+        </div>
+        <span>承运公司</span>
+        <el-input v-model="trans_company"></el-input>
+        <el-button type="primary" @click="export_ticket" size="small">导出</el-button>
+        <span v-if="'正在下载' == ticket_result">{{ticket_result}}</span>
+        <a v-else :href="ticket_result">已完成，点击下载</a>
+    </el-dialog>
 </div>
 </template>
 
@@ -426,6 +440,9 @@ export default {
                 element.registered = item.registered;
                 element.checkin_time = item.checkin_time;
                 element.p_m_comment = item.p_m_comment;
+                element.seal_no = item.basic_info.seal_no;
+                element.trans_company = item.basic_info.trans_company;
+                element.behind_vehicle_number = item.basic_info.behind_vehicle_number;
                 switch (this.activeName) {
                     case 'all':
                         ret.push(element);
@@ -479,7 +496,37 @@ export default {
     },
     data: function () {
         return {
+            trans_company: "",
+            pickerOptions: {
+                shortcuts: [{
+                    text: '最近一周',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近一个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近三个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }]
+            },
+            has_zyhl_plugin: false,
             showPicker: false,
+            show_export_ticket_diag: false,
             vehicle_group_filter: '',
             focus_comapny: '',
             focus_stuff: '',
@@ -578,9 +625,38 @@ export default {
             curObj2: '',
             visible1: false,
             visible2: false,
+            ticket_result: '',
         };
     },
     methods: {
+        get_ticket_resutl: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process_no_toast("vehicle_order_center", "ticket_export_result", [vue_this.$cookies.get('zh_ssid')]).then(function (resp) {
+                vue_this.has_zyhl_plugin = true;
+                vue_this.ticket_result = resp;
+            }).catch(function () {
+                vue_this.has_zyhl_plugin = false;
+            });
+        },
+        export_ticket: function () {
+            var vue_this = this;
+            vue_this.$call_remote_process("vehicle_order_center", "ticket_export", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-').substr(0, 10), vue_this.$make_time_string(vue_this.end_date, '-').substr(0, 10), vue_this.trans_company]);
+            setTimeout(() => {
+                vue_this.get_ticket_resutl();
+            }, 1);
+        },
+        date_sort_func_enter: function (a, b) {
+            var fir = new Date(this.calc_status_date(a, 2) ? this.calc_status_date(a, 2) : this.calc_status_date(a, 3));
+            var sec = new Date(this.calc_status_date(b, 2) ? this.calc_status_date(b, 2) : this.calc_status_date(b, 3));
+
+            return fir.getTime() - sec.getTime();
+        },
+        date_sort_func_exit: function (a, b) {
+            var fir = new Date(this.calc_status_date(a, 100));
+            var sec = new Date(this.calc_status_date(b, 100));
+
+            return fir.getTime() - sec.getTime();
+        },
         onConfirm: function (_date) {
             this.cont_end_date = _date;
             this.showPicker = false;
@@ -1025,6 +1101,9 @@ export default {
                 title: '车号',
                 key: 'main_vehicle_number',
             }, {
+                title: '挂车号',
+                key: 'behind_vehicle_number',
+            }, {
                 title: "创建时间",
                 key: 'create_time',
             }, {
@@ -1073,9 +1152,11 @@ export default {
                 title: "身份证",
                 key: 'driver_id',
             }, {
-                title:'手动修改备注',
-                key:'p_m_comment'
+                title: '手动修改备注',
+                key: 'p_m_comment'
             }];
+            var has_seal_no = false;
+            var has_trans_company = false;
             var content = [];
             var record_need_export = this.order_selected;
             if (_advance_record) {
@@ -1118,12 +1199,30 @@ export default {
                 tmp.p_weight = tmp.p_weight.toFixed(2);
                 tmp.m_weight = tmp.m_weight.toFixed(2);
                 tmp.total_cost = (parseFloat(tmp.j_weight) * tmp.price).toFixed(2);
+                if (tmp.seal_no) {
+                    has_seal_no = true;
+                }
+                if (tmp.trans_company) {
+                    has_trans_company = true;
+                }
                 content.push(tmp);
             });
             content.push({
                 order_number: '总计净重',
                 company_name: total_j_weight.toFixed(2)
             });
+            if (has_seal_no) {
+                init_colm.push({
+                    title: '铅封号',
+                    key: "seal_no"
+                })
+            }
+            if (has_trans_company) {
+                init_colm.push({
+                    title: '承运公司',
+                    key: "trans_company"
+                })
+            }
             this.exportExcel(init_colm, content);
         },
     },
@@ -1138,6 +1237,7 @@ export default {
         vue_this.$call_remote_process("system_management", "get_domain_name", []).then(function (resp) {
             vue_this.domain_name = resp;
         });
+        vue_this.get_ticket_resutl();
     },
 }
 </script>

@@ -38,7 +38,7 @@ bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate
 bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_need_manual(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_need_drop(const std::string &_led_ip, const std::string &_plate_no);
-bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no);
+bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no, bool need_ticket_cast);
 bool zh_hk_cast_exit_busy(const std::string &_led_ip);
 bool zh_hk_cast_welcome(const std::string &_led_ip, const std::string &_plate_no);
 bool zh_hk_cast_cannot_leave(const std::string &_led_ip, const std::string &_plate_no);

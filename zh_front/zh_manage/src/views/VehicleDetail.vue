@@ -188,13 +188,23 @@
             <van-cell :title="cur_vehicle.basic_info.driver_name" :value="cur_vehicle.basic_info.driver_phone" :label="cur_vehicle.basic_info.driver_id" />
             <van-cell v-if="cur_vehicle.call_user_name" title="叫号人" :value="cur_vehicle.call_user_name" />
         </van-cell-group>
-        <van-cell-group inset title="拉运信息">
+        <van-cell-group inset>
             <van-cell title="派车公司" :value="cur_vehicle.basic_info.company_name" />
             <van-cell title="物料" :value="cur_vehicle.basic_info.stuff_name" />
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />
             <van-cell title="净重" :value="Math.abs(cur_vehicle.basic_info.m_weight - cur_vehicle.basic_info.p_weight).toFixed(2)" :label="'入场前净重' + cur_vehicle.basic_info.enter_weight.toFixed(2)" />
             <van-cell v-if="cur_vehicle.err_string" title="错误信息" :value="cur_vehicle.err_string" />
+            <template #title>
+                <van-row type="flex" justify="space-between" align="center">
+                    <van-col>
+                        拉运信息
+                    </van-col>
+                    <van-col v-if="$store.state.user_info.permission != 3 && cur_vehicle.basic_info.status != 100">
+                        <van-button type="danger" size="small" @click="manual_close">手动结束运输</van-button>
+                    </van-col>
+                </van-row>
+            </template>
         </van-cell-group>
     </div>
 </div>
@@ -274,18 +284,31 @@ export default {
         },
         manual_close() {
             var vue_this = this;
-            vue_this.$confirm("确定要结束派车单吗？结束后会结算物料库存", "结束确认", {
-                confirmButtonText: '确定',
-                cancelButtonText: '取消',
-                type: 'warning'
-            }).then(() => {
+            var mc_func = function () {
                 vue_this.$call_remote_process("vehicle_order_center", "manual_close", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id]).then(function (resp) {
                     if (resp) {
                         vue_this.init_cur_vehicle();
                         vue_this.manual_weight_show = false;
                     }
                 });
-            });
+            };
+            if (vue_this.$route.meta.mobile) {
+                vue_this.$dialog.confirm({
+                    title: "结束确认",
+                    message: "确定要结束派车单吗？结束后会结算物料库存"
+                }).then(() => {
+                    mc_func();
+                });
+            } else {
+                vue_this.$confirm("确定要结束派车单吗？结束后会结算物料库存", "结束确认", {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    mc_func();
+                });
+            }
+
         },
         manual_p_weight_edit: function () {
             var vue_this = this;

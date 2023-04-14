@@ -155,6 +155,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
             if (should_be_sync)
             {
                 neb::CJsonObject tmp;
+                std::string company_name =single_item["customer_company"]("name") ;
                 tmp.Add("plateNo", single_item("driver_no"));
                 tmp.Add("backPlateNo", single_item("driver_no2"));
                 tmp.Add("driverName", single_item("driver_name"));
@@ -163,7 +164,7 @@ void fetch_plan_from_zyhl(const std::string &_date)
                 tmp.Add("useFor", "气站");
                 tmp.Add("sale_address", single_item["product"]("area"));
                 tmp.Add("createTime", single_item("delivery_date"));
-                tmp.Add("companyName", single_item["customer_company"]("name"));
+                tmp.Add("companyName", company_name.substr(company_name.find_first_not_of("贸易-")));
                 tmp.Add("stuffName", single_item["product"]("type"));
                 tmp.Add("transCompanyName", single_item["transport_company"]("name"));
                 req_list.push_back(tmp);
@@ -511,11 +512,11 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
         auto tmp_t = new std::thread(
             [](ticket_meta _meta, const std::string &_req_se)
             {
-                std::string dl_cmd = "wget -q -O /tmp/" + _req_se + "/" + _meta.trans_company + "_" + _meta.date + "_" + _meta.vehicle_number;
+                std::string dl_cmd = "wget -q -O '/tmp/" + _req_se + "/" + _meta.trans_company + "_" + _meta.date + "_" + _meta.vehicle_number;
                 int i = 1;
                 for (auto &path_itr : _meta.ticket_path)
                 {
-                    dl_cmd += "_" + std::to_string(i++) + ".jpg " + path_itr;
+                    dl_cmd += "_" + std::to_string(i++) + ".jpg' " + path_itr;
                     system(dl_cmd.c_str());
                 }
             },

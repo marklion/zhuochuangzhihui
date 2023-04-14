@@ -727,12 +727,17 @@ bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate
 }
 bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no)
 {
-    async_led_post(_led_ip, hk_led_make_cmd("请保持静止，等待提示", _plate_no));
+    async_led_post(_led_ip, hk_led_make_cmd("请保持静止，等待提示", ""));
     return true;
 }
-bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no)
+bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no, bool need_ticket_cast)
 {
-    async_led_post(_led_ip, hk_led_make_cmd("请取称重小票后下榜" + _weight + "吨", _plate_no));
+    std::string cast_content = "请下榜";
+    if (need_ticket_cast)
+    {
+        cast_content = "请取称重小票后下榜";
+    }
+    async_led_post(_led_ip, hk_led_make_cmd(cast_content + _weight + "吨", _plate_no));
     return true;
 }
 bool zh_hk_cast_exit_busy(const std::string &_led_ip)

@@ -230,6 +230,8 @@ public:
     virtual bool manual_push_nc(const std::string &order_number, const bool is_p);
     virtual void get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return);
     virtual bool clear_vehicle_xy(const std::string &order_number);
+    virtual void ticket_export_result(std::string &_return, const std::string &ssid);
+    virtual void ticket_export(std::string &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &trans_company);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

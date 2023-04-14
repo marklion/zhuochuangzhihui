@@ -230,6 +230,7 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     {
         _return.p_m_comment += "手动二次称重:" + vo->m_comment;
     }
+    _return.basic_info.trans_company = vo->trans_company;
 }
 void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order_detail> &_return, const std::string &ssid, const int64_t anchor, const std::string &status_name, const std::string &enter_date)
 {
@@ -306,6 +307,8 @@ bool vehicle_order_is_dup(const vehicle_order_info &order)
     auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND main_vehicle_number == '%s'", order.id, order.main_vehicle_number.c_str());
     if (exist_record)
     {
+        exist_record->trans_company = order.trans_company;
+        exist_record->update_record();
         ret = true;
     }
 
@@ -432,6 +435,7 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool
         tmp.use_for = order.use_for;
         tmp.max_count = order.max_count;
         tmp.end_time = order.end_time;
+        tmp.trans_company = order.trans_company;
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", order.stuff_name.c_str());
         if (stuff)
         {
@@ -2175,6 +2179,14 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
             p_type = m_type;
             m_type = tmp_type;
         }
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
+        if (stuff)
+        {
+            if (!stuff->need_p_ticket && vo->m_weight == 0)
+            {
+                return;
+            }
+        }
         auto p_status = vo->get_children<zh_sql_order_status>("belong_order", "step == 3");
         if (p_status)
         {
@@ -2206,6 +2218,10 @@ void scale_state_machine::print_weight_ticket(const std::unique_ptr<zh_sql_vehic
         content += "---------------\n";
         content += "运送货物：" + vo->stuff_name + "\n";
         content += "派车公司：" + vo->company_name + "\n";
+        if (vo->trans_company.length() > 0)
+        {
+            content += "运输公司：" + vo->trans_company + "\n";
+        }
         if (vo->seal_no.length() > 0)
         {
             content += "铅封号：" + vo->seal_no + "\n";
@@ -2478,28 +2494,21 @@ void scale_state_machine::broadcast_enter_scale()
 }
 void scale_state_machine::broadcast_leave_scale()
 {
-    bool permit_m_weight = false;
+    bool need_ticket_cast = true;
     auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("main_vehicle_number == '%s' AND status != 100", bound_vehicle_number.c_str());
-    if (vo && vo->status == 3)
+    if (vo)
     {
         auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", vo->stuff_name.c_str());
-        if (stuff && stuff->need_manual_scale)
+        if (stuff)
         {
-            if ((stuff->max_limit >= fin_weight && stuff->min_limit <= fin_weight) || manual_confirm_scale)
+            if (!stuff->need_p_ticket && vo->m_weight == 0)
             {
-                permit_m_weight = true;
+                need_ticket_cast = false;
             }
         }
     }
-    else
-    {
-        permit_m_weight = true;
-    }
-    if (permit_m_weight)
-    {
-        zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
-        zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number);
-    }
+    zh_hk_cast_exit_scale(bound_scale.entry_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number, need_ticket_cast);
+    zh_hk_cast_exit_scale(bound_scale.exit_config.led_ip, zh_double2string_reserve2(fin_weight), bound_vehicle_number, need_ticket_cast);
 }
 
 std::unique_ptr<tdf_state_machine_state> scale_sm_vehicle_come::change_state(tdf_state_machine &_sm)
@@ -3400,4 +3409,40 @@ bool vehicle_order_center_handler::clear_vehicle_xy(const std::string &order_num
     }
 
     return ret;
+}
+
+void vehicle_order_center_handler::ticket_export_result(std::string &_return, const std::string &ssid)
+{
+    auto ppmh = plugin_management_handler::get_inst();
+    if (ppmh)
+    {
+        std::string std_out;
+        std::string std_err;
+        ppmh->zh_plugin_run_plugin("get -k download_status", "zh_zyhl", std_out, std_err);
+        if (std_err.length() > 0)
+        {
+            ZH_RETURN_MSG(std_err);
+        }
+        _return = std_out;
+    }
+}
+void vehicle_order_center_handler::ticket_export(std::string &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &trans_company)
+{
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER, true);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
+    }
+    auto ppmh = plugin_management_handler::get_inst();
+    if (ppmh)
+    {
+        std::string std_out;
+        std::string std_err;
+        ppmh->zh_plugin_run_plugin("download_ticket " + begin_date + ' ' + end_date + ' ' + trans_company, "zh_zyhl", std_out, std_err);
+        if (std_err.length() > 0)
+        {
+            ZH_RETURN_MSG(std_err);
+        }
+        _return = std_out;
+    }
 }
