@@ -443,6 +443,7 @@ export default {
                 element.seal_no = item.basic_info.seal_no;
                 element.trans_company = item.basic_info.trans_company;
                 element.behind_vehicle_number = item.basic_info.behind_vehicle_number;
+                element.source_dest_name = item.basic_info.source_dest_name;
                 switch (this.activeName) {
                     case 'all':
                         ret.push(element);
@@ -1157,6 +1158,7 @@ export default {
             }];
             var has_seal_no = false;
             var has_trans_company = false;
+            var has_source_dest_name = false;
             var content = [];
             var record_need_export = this.order_selected;
             if (_advance_record) {
@@ -1205,6 +1207,9 @@ export default {
                 if (tmp.trans_company) {
                     has_trans_company = true;
                 }
+                if (tmp.source_dest_name) {
+                    has_source_dest_name = true;
+                }
                 content.push(tmp);
             });
             content.push({
@@ -1222,6 +1227,12 @@ export default {
                     title: '承运公司',
                     key: "trans_company"
                 })
+            }
+            if (has_source_dest_name) {
+                init_colm.push({
+                    title: '物料来源/流向',
+                    key: "source_dest_name"
+                });
             }
             this.exportExcel(init_colm, content);
         },

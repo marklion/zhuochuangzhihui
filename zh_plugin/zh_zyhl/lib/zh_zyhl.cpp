@@ -516,8 +516,8 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
                 int i = 1;
                 for (auto &path_itr : _meta.ticket_path)
                 {
-                    dl_cmd += "_" + std::to_string(i++) + ".jpg' " + path_itr;
-                    system(dl_cmd.c_str());
+                    auto whole_dl_cmd = dl_cmd + "_" + std::to_string(i++) + ".jpg' " + path_itr;
+                    system(whole_dl_cmd.c_str());
                 }
             },
             itr, req_serial);

@@ -716,7 +716,7 @@ bool zh_hk_cast_no_call(const std::string &_led_ip, const std::string &_plate_no
 }
 bool zh_hk_cast_raster_block(const std::string &_led_ip)
 {
-    async_led_post(_led_ip, hk_led_make_cmd("车辆未完全上磅", ""));
+    async_led_post(_led_ip, hk_led_make_cmd("请注意，不要撞杆", ""));
     return true;
 }
 bool zh_hk_cast_no_confirm(const std::string &_led_ip, const std::string &_plate_no)
@@ -732,12 +732,12 @@ bool zh_hk_cast_holding(const std::string &_led_ip, const std::string &_plate_no
 }
 bool zh_hk_cast_exit_scale(const std::string &_led_ip, const std::string &_weight, const std::string &_plate_no, bool need_ticket_cast)
 {
-    std::string cast_content = "请下榜";
+    std::string cast_content = "请下磅,";
     if (need_ticket_cast)
     {
-        cast_content = "请取称重小票后下榜";
+        cast_content = "请取称重小票后下磅,";
     }
-    async_led_post(_led_ip, hk_led_make_cmd(cast_content + _weight + "吨", _plate_no));
+    async_led_post(_led_ip, hk_led_make_cmd(_plate_no, _weight + "吨," + cast_content));
     return true;
 }
 bool zh_hk_cast_exit_busy(const std::string &_led_ip)

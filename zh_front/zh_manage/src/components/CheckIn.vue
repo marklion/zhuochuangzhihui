@@ -22,7 +22,7 @@
     </van-cell>
     <vue-qr :text="cur_url" :size="200"></vue-qr>
     <div v-if="cur_vehicle.basic_info.need_enter_weight">
-        <van-cell title="矿(厂)发净重" clickable is-link @click="show_upload_diag = true" :value="cur_vehicle.basic_info.enter_weight" center>
+        <van-cell title="矿(厂)发净重" clickable is-link @click="open_upload_diag" :value="cur_vehicle.basic_info.enter_weight" center>
         </van-cell>
         <van-cell title="矿(厂)发磅单" clickable is-link @click="show_attachment([$remote_file_url + cur_vehicle.basic_info.enter_weight_attachment]);" center>
         </van-cell>
@@ -109,7 +109,7 @@ export default {
                 confirmed: false,
                 registered: false,
                 has_called: false,
-                wait_count:0,
+                wait_count: 0,
             },
 
             show_upload_diag: false,
@@ -158,6 +158,16 @@ export default {
         },
     },
     methods: {
+        open_upload_diag: function () {
+            var vue_this = this;
+            if (vue_this.cur_vehicle.basic_info.source_dest_name) {
+                vue_this.show_upload_diag = true;
+            } else {
+                vue_this.$dialog.alert({
+                    message: "请先选择物料源"
+                });
+            }
+        },
         driver_cancel_order: function () {
             var vue_this = this;
             vue_this.$dialog.confirm({

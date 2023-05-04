@@ -3,7 +3,7 @@
     <h3 style="text-align: center;">{{oem_name}}</h3>
     <h3 style="text-align: center;">称重单</h3>
     <ticket-item item_name="磅单号" :item_value="cur_vehicle.basic_info.bl_number"></ticket-item>
-    <ticket-item item_name="客户" :item_value="cur_vehicle.basic_info.company_name" v-if="cur_vehicle.is_sale"></ticket-item>
+    <ticket-item item_name="客户" :item_value="cur_vehicle.basic_info.company_name" v-if="cur_vehicle.basic_info.is_sale"></ticket-item>
     <ticket-item item_name="供应商" :item_value="cur_vehicle.basic_info.company_name" v-else></ticket-item>
     <ticket-item item_name="车牌号" :item_value="cur_vehicle.basic_info.main_vehicle_number"></ticket-item>
     <ticket-item item_name="产品名称" :item_value="cur_vehicle.basic_info.stuff_name"></ticket-item>

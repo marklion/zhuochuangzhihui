@@ -77,7 +77,7 @@
                     <el-switch v-model="focus_vehicle.in_white_list" active-color="#13ce66" inactive-color="#ff4949">
                     </el-switch>
                 </el-form-item>
-                <el-form-item v-if="$store.state.user_info.permission != 3 && focus_vehicle.company_name == ''" label="添加黑名单" prop="in_black_list">
+                <el-form-item v-if="$store.state.user_info.permission != 3" label="添加黑名单" prop="in_black_list">
                     <el-switch v-model="focus_vehicle.in_black_list" active-color="#13ce66" inactive-color="#ff4949">
                     </el-switch>
                 </el-form-item>
