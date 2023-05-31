@@ -16,6 +16,7 @@
                                 <el-col>
                                     <div class="user_info_show">
                                         <div>当前用户：{{$store.state.user_info.name}}</div>
+                                        <el-link href="https://work.weixin.qq.com/kfid/kfcbf1f19e283d8bb7e" type="primary">在线客服</el-link>
                                     </div>
                                 </el-col>
                                 <el-col :span="6">

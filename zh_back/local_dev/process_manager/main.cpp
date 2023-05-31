@@ -96,6 +96,11 @@ bool pipfd_epoll_node::proc_in()
             m_meta->log->log(std::string(buff, readlen));
         }
     }
+    else
+    {
+        m_meta->end_process();
+        m_meta->start_process();
+    }
 
     return true;
 }
@@ -133,6 +138,7 @@ void process_meta_t::start_process()
             std_err_fd = pipfd_err[0];
             std_out_fd = pipfd[0];
             pid_fd = syscall(SYS_pidfd_open, pid, 0);
+            log->err("pid_fd == %d, error:'%s'", pid_fd, strerror(errno));
             m_pid = pid;
             pip_out_node = std::make_shared<pipfd_epoll_node>(std_out_fd, this, false);
             pip_err_node = std::make_shared<pipfd_epoll_node>(std_err_fd, this, true);
