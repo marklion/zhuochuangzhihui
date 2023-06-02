@@ -6,7 +6,7 @@
             <el-col :span="12">
                 <el-descriptions title="基本信息" :column="2" border>
                     <el-descriptions-item label="派车单号">{{cur_vehicle.basic_info.order_number}}</el-descriptions-item>
-                    <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}({{cur_vehicle.basic_info.source_dest_name}})</el-descriptions-item>
+                    <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}({{cur_vehicle.basic_info.trans_company?cur_vehicle.basic_info.trans_company:cur_vehicle.basic_info.source_dest_name}})</el-descriptions-item>
                     <el-descriptions-item v-if="cur_vehicle.basic_info.company_address" label="运往地点">{{cur_vehicle.basic_info.company_address}}</el-descriptions-item>
                     <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
                     <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
@@ -189,7 +189,7 @@
             <van-cell v-if="cur_vehicle.call_user_name" title="叫号人" :value="cur_vehicle.call_user_name" />
         </van-cell-group>
         <van-cell-group inset>
-            <van-cell title="派车公司" :value="cur_vehicle.basic_info.company_name" />
+            <van-cell title="派车公司" :value="cur_vehicle.basic_info.trans_company?cur_vehicle.basic_info.trans_company : cur_vehicle.basic_info.company_name" />
             <van-cell title="物料" :value="cur_vehicle.basic_info.stuff_name" />
             <van-cell title="一次称重" :value="cur_vehicle.basic_info.p_weight" :label="cur_vehicle.p_time" />
             <van-cell title="二次称重" :value="cur_vehicle.basic_info.m_weight" :label="cur_vehicle.m_time" />

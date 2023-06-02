@@ -91,7 +91,9 @@
                 </el-table-column>
                 <el-table-column label="公司" width="250px">
                     <template slot-scope="scope">
-                        <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.company_name)" @mouseleave="visible1 = false">{{scope.row.company_name}}</div>
+                        <div slot="reference" @mouseenter="e=> show_pop_info1(e, scope.row.trans_company?scope.row.trans_company:scope.row.company_name)" @mouseleave="visible1 = false">
+                            {{scope.row.trans_company?scope.row.trans_company:scope.row.company_name}}
+                        </div>
                     </template>
                 </el-table-column>
                 <el-table-column label="运输货物" width="110px">
@@ -278,7 +280,7 @@
             </van-tabs>
             <el-input @input="recheck_list" v-model="search_condition" placeholder="输入公司名拼音首字母/车牌号过滤" prefix-icon="el-icon-search"></el-input>
             <van-list ref="lazy_load" :offset="2000" v-model="is_loading" :finished="lazy_finish" finished-text="没有更多了" @load="get_order">
-                <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :to="{name:'MobileVehicleDetail', params:{order_no:single_vehicle.order_number}}" :value="single_vehicle.stuff_name" :label="single_vehicle.company_name">
+                <van-cell v-for="(single_vehicle, index) in order_need_show" :key="index" center :to="{name:'MobileVehicleDetail', params:{order_no:single_vehicle.order_number}}" :value="single_vehicle.stuff_name" :label="single_vehicle.trans_company?single_vehicle.trans_company:single_vehicle.company_name">
                     <template #right-icon>
                         <div style="margin-left:10px;" v-if="single_vehicle.status != 100">
                             <van-button v-if="$store.state.user_info.permission <= 1 && single_vehicle.status == 0" type="primary" size="mini" @click="confirm_order([single_vehicle])">确认</van-button>
@@ -1196,8 +1198,13 @@ export default {
                             break;
                     }
                 });
-                tmp.j_weight = Math.abs(tmp.m_weight - tmp.p_weight).toFixed(2);
-                total_j_weight += Math.abs(tmp.m_weight - tmp.p_weight);
+                if (element.is_sale) {
+                    tmp.j_weight = (tmp.m_weight - tmp.p_weight).toFixed(2);
+                    total_j_weight += tmp.m_weight - tmp.p_weight;
+                } else {
+                    tmp.j_weight = Math.abs(tmp.m_weight - tmp.p_weight).toFixed(2);
+                    total_j_weight += Math.abs(tmp.m_weight - tmp.p_weight);
+                }
                 tmp.p_weight = tmp.p_weight.toFixed(2);
                 tmp.m_weight = tmp.m_weight.toFixed(2);
                 tmp.total_cost = (parseFloat(tmp.j_weight) * tmp.price).toFixed(2);

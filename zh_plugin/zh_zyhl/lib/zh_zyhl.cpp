@@ -485,7 +485,7 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
                         ticket_meta tmp_meta;
                         tmp_meta.date = util_get_datestring(tmp_time);
                         tmp_meta.vehicle_number = resp[i]("driver_no");
-                        tmp_meta.trans_company = resp[i]["transport_company"]("name");
+                        tmp_meta.trans_company = std::to_string(i) + "_" + resp[i]["transport_company"]("name");
                         auto ticket_attach = resp[i]["attachment"];
                         for (auto j = 0; j < ticket_attach.GetArraySize(); j++)
                         {

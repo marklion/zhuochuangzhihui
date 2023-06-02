@@ -5,7 +5,9 @@
     <ticket-item item_name="磅单号" :item_value="cur_vehicle.basic_info.bl_number"></ticket-item>
     <ticket-item item_name="客户" :item_value="cur_vehicle.basic_info.company_name" v-if="cur_vehicle.basic_info.is_sale"></ticket-item>
     <ticket-item item_name="供应商" :item_value="cur_vehicle.basic_info.company_name" v-else></ticket-item>
+    <ticket-item v-if="cur_vehicle.basic_info.trans_company" item_name="承运商" :item_value="cur_vehicle.basic_info.trans_company" ></ticket-item>
     <ticket-item item_name="车牌号" :item_value="cur_vehicle.basic_info.main_vehicle_number"></ticket-item>
+    <ticket-item item_name="挂车号" :item_value="cur_vehicle.basic_info.behind_vehicle_number"></ticket-item>
     <ticket-item item_name="产品名称" :item_value="cur_vehicle.basic_info.stuff_name"></ticket-item>
     <ticket-item item_name="皮重" :item_value="cur_vehicle.basic_info.p_weight <= cur_vehicle.basic_info.m_weight? cur_vehicle.basic_info.p_weight.toFixed(2):cur_vehicle.basic_info.m_weight"></ticket-item>
     <ticket-item item_name="毛重" :item_value="cur_vehicle.basic_info.p_weight <= cur_vehicle.basic_info.m_weight? cur_vehicle.basic_info.m_weight.toFixed(2):cur_vehicle.basic_info.p_weight"></ticket-item>
