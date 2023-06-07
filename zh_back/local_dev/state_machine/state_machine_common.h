@@ -246,7 +246,7 @@ public:
     void send_msg(ssm_device_type _device, const std::string &_msg)
     {
         auto recv_device = "/" + type_name_map[_device];
-        auto tmp_fd = mq_open(recv_device.c_str(), O_WRONLY);
+        auto tmp_fd = mq_open(recv_device.c_str(), O_WRONLY|O_NONBLOCK);
         if (tmp_fd >= 0)
         {
             PRINT_LOG("send msg:%s", _msg.c_str());
@@ -256,7 +256,7 @@ public:
     }
     void trans_msg_to(const std::string &_reciever, const std::string &_msg)
     {
-        auto tmp_fd = mq_open(("/" + _reciever).c_str(), O_WRONLY);
+        auto tmp_fd = mq_open(("/" + _reciever).c_str(), O_WRONLY|O_NONBLOCK);
         if (tmp_fd >= 0)
         {
             PRINT_LOG("send msg:%s", _msg.c_str());

@@ -1,6 +1,7 @@
 #include "zh_hk_gate.h"
 #include <vector>
 #include <iconv.h>
+#include "../abs_device_driver.h"
 
 
 int code_convert(char *from_charset, char *to_charset, char *inbuf, size_t inlen, char *outbuf, size_t outlen)
@@ -346,9 +347,9 @@ void __attribute__((constructor)) zh_hk_init(void)
     // req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
     // call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
     NET_DVR_Init();
-    if (!NET_DVR_SetConnectTime(1000, 1) ||
-        !NET_DVR_SetReconnect(10000, true) ||
-        !NET_DVR_SetRecvTimeOut(1000))
+    if (!NET_DVR_SetConnectTime(9000, 1) ||
+        !NET_DVR_SetReconnect(9000, true) ||
+        !NET_DVR_SetRecvTimeOut(9000))
     {
     }
 }
@@ -741,6 +742,7 @@ std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_i
         }
         else
         {
+            PRINT_ERR("take picture failure:%d", NET_DVR_GetLastError());
         }
         NET_DVR_Logout_V30(user_id);
     }
