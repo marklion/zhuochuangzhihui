@@ -347,9 +347,9 @@ void __attribute__((constructor)) zh_hk_init(void)
     // req.Add("eventDest", "http://192.168.2.105/zh_rest/vehicle_event");
     // call_hk_post("/api/eventService/v1/eventSubscriptionByEventTypes", req);
     NET_DVR_Init();
-    if (!NET_DVR_SetConnectTime(9000, 1) ||
-        !NET_DVR_SetReconnect(9000, true) ||
-        !NET_DVR_SetRecvTimeOut(9000))
+    if (!NET_DVR_SetConnectTime(1000, 1) ||
+        !NET_DVR_SetReconnect(2000, true) ||
+        !NET_DVR_SetRecvTimeOut(5000))
     {
     }
 }
