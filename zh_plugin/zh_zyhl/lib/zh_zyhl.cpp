@@ -282,7 +282,6 @@ bool push_vehicle_enter(const std::string &_vehicle_number, double _xxx)
             }
         }
     }
-    ret = true;
 
     return ret;
 }
