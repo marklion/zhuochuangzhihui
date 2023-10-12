@@ -140,7 +140,7 @@ static bool balance_enough(zh_sql_contract &_company, zh_sql_stuff &_stuff, int 
 
     return ret;
 }
-static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_order &_order)
+static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_vehicle_order &_order, bool _use_for_export = false)
 {
     auto vo = &_order;
     vehicle_order_info tmp;
@@ -154,43 +154,63 @@ static void make_vehicle_detail_from_sql(vehicle_order_detail &_return, zh_sql_v
     tmp.status = vo->status;
     tmp.stuff_name = vo->stuff_name;
     tmp.company_name = vo->company_name;
-    auto all_status = vo->get_all_children<zh_sql_order_status>("belong_order");
-    for (auto &single_status : all_status)
+    if (!_use_for_export)
     {
-        order_status_info status_detail;
-        status_detail.name = single_status.name;
-        status_detail.step = single_status.step;
-        status_detail.timestamp = single_status.timestamp;
-        status_detail.user_name = single_status.user_name;
-        tmp.status_details.push_back(status_detail);
+        auto all_status = vo->get_all_children<zh_sql_order_status>("belong_order");
+        for (auto &single_status : all_status)
+        {
+            order_status_info status_detail;
+            status_detail.name = single_status.name;
+            status_detail.step = single_status.step;
+            status_detail.timestamp = single_status.timestamp;
+            status_detail.user_name = single_status.user_name;
+            tmp.status_details.push_back(status_detail);
+        }
     }
+
     tmp.p_weight = vo->p_weight;
     tmp.m_weight = vo->m_weight;
-    auto attachment = vo->get_parent<zh_sql_file>("attachment");
-    if (attachment)
+    if (!_use_for_export)
     {
-        tmp.attachment = attachment->name;
+        auto attachment = vo->get_parent<zh_sql_file>("attachment");
+        if (attachment)
+        {
+            tmp.attachment = attachment->name;
+        }
     }
-    auto enter_weight_attachment = vo->get_parent<zh_sql_file>("enter_weight_attachment");
-    if (enter_weight_attachment)
+
+    if (!_use_for_export)
     {
-        tmp.enter_weight_attachment = enter_weight_attachment->name;
+        auto enter_weight_attachment = vo->get_parent<zh_sql_file>("enter_weight_attachment");
+        if (enter_weight_attachment)
+        {
+            tmp.enter_weight_attachment = enter_weight_attachment->name;
+        }
     }
+
     tmp.enter_weight = vo->enter_weight;
     tmp.need_enter_weight = vo->need_enter_weight;
     tmp.company_address = vo->company_address;
     tmp.use_for = vo->use_for;
     tmp.max_count = vo->max_count;
-    auto company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", tmp.company_name.c_str());
-    auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", tmp.stuff_name.c_str());
-    if (company && stuff && company->is_sale && tmp.status == 0)
+    std::unique_ptr<zh_sql_contract> company;
+    if (!_use_for_export)
     {
-        double already_cost = 0;
-        if (!balance_enough(*company, *stuff, 1, &already_cost, true))
+        company = sqlite_orm::search_record<zh_sql_contract>("name == '%s'", tmp.company_name.c_str());
+    }
+    if (!_use_for_export)
+    {
+        auto stuff = sqlite_orm::search_record<zh_sql_stuff>("name == '%s'", tmp.stuff_name.c_str());
+        if (company && stuff && company->is_sale && tmp.status == 0)
         {
-            tmp.balance_warn = "余额不足，还差" + zh_double2string_reserve2(already_cost + stuff->expect_weight * stuff->price - company->balance - company->credit) + "元";
+            double already_cost = 0;
+            if (!balance_enough(*company, *stuff, 1, &already_cost, true))
+            {
+                tmp.balance_warn = "余额不足，还差" + zh_double2string_reserve2(already_cost + stuff->expect_weight * stuff->price - company->balance - company->credit) + "元";
+            }
         }
     }
+
     _return.basic_info = tmp;
     _return.confirmed = vo->m_permit;
     _return.has_called = vo->m_called;
@@ -272,14 +292,14 @@ void vehicle_order_center_handler::get_order_by_anchor(std::vector<vehicle_order
 
     if (enter_date.length() > 0)
     {
-        detail_query += " AND (PRI_ID == 0";
+        detail_query += " AND PRI_ID IN (0";
         auto date_status = sqlite_orm::search_record_all<zh_sql_order_status>("(step == 2 OR step == 3) AND timestamp LIKE '%s%%'", enter_date.c_str());
         for (auto &singel_date : date_status)
         {
             auto order = singel_date.get_parent<zh_sql_vehicle_order>("belong_order");
             if (order)
             {
-                detail_query += " OR PRI_ID == " + std::to_string(order->get_pri_id());
+                detail_query += "," + std::to_string(order->get_pri_id());
             }
         }
         detail_query += ")";
@@ -321,7 +341,7 @@ static std::string _is_in_black_list(const vehicle_order_info &_order)
     std::string tail_string = "在黑名单";
 
     auto all_black_info = sqlite_orm::search_record_all<zh_sql_vehicle>("in_black_list == 1");
-    for (auto &itr:all_black_info)
+    for (auto &itr : all_black_info)
     {
         if (_order.main_vehicle_number == itr.main_vehicle_number)
         {
@@ -404,6 +424,17 @@ static bool pri_create_order(const std::vector<vehicle_order_info> &orders, bool
     {
         if (vehicle_order_is_dup(order))
         {
+            if (from_api)
+            {
+                auto exist_record = sqlite_orm::search_record<zh_sql_vehicle_order>("PRI_ID != %ld AND status != 100 AND main_vehicle_number == '%s'", order.id, order.main_vehicle_number.c_str());
+                if (exist_record)
+                {
+                    exist_record->company_name = order.company_name;
+                    exist_record->driver_phone = order.driver_phone;
+                    exist_record->behind_vehicle_number = order.behind_vehicle_number;
+                    exist_record->update_record();
+                }
+            }
             ZH_RETURN_DUP_ORDER();
         }
     }
@@ -1037,7 +1068,8 @@ bool vehicle_order_center_handler::manual_set_p_weight(const std::string &ssid, 
     auto status = zh_sql_order_status::make_p_status(ssid);
     change_order_status(*vo, status);
     vo->p_weight = weight;
-    vo->p_comment = user->name +"(" + zh_rpc_util_get_timestring() + "):" + p_comment;
+    vo->p_comment = user->name + "(" + zh_rpc_util_get_timestring() + "):" + p_comment;
+    vo->p_cam_time = zh_rpc_util_get_timestring();
     ret = vo->update_record();
 
     return ret;
@@ -1060,6 +1092,7 @@ bool vehicle_order_center_handler::manual_set_m_weight(const std::string &ssid, 
     change_order_status(*vo, status);
     vo->m_weight = weight;
     vo->m_comment = user->name + "(" + zh_rpc_util_get_timestring() + "):" + m_comment;
+    vo->m_cam_time = zh_rpc_util_get_timestring();
     ret = vo->update_record();
 
     return ret;
@@ -3226,7 +3259,7 @@ void vehicle_order_center_handler::get_white_record_info(std::vector<white_recor
 
 void vehicle_order_center_handler::driver_get_last_30_order_number(std::vector<vehicle_order_detail> &_return, const std::string &driver_phone)
 {
-    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("driver_phone == '%s' AND status == 100 ORDER BY PRI_ID DESC LIMIT 30", driver_phone.c_str());
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("driver_phone == '%s' AND status == 100 ORDER BY PRI_ID DESC LIMIT 64", driver_phone.c_str());
     for (auto &itr : vos)
     {
         vehicle_order_detail tmp;
@@ -3261,7 +3294,7 @@ void vehicle_order_center_handler::export_order_by_condition(std::vector<vehicle
     for (auto &itr : all_order)
     {
         vehicle_order_detail tmp;
-        make_vehicle_detail_from_sql(tmp, itr);
+        make_vehicle_detail_from_sql(tmp, itr, true);
         _return.push_back(tmp);
     }
 }
@@ -3445,4 +3478,28 @@ void vehicle_order_center_handler::ticket_export(std::string &_return, const std
         }
         _return = std_out;
     }
+}
+
+bool vehicle_order_center_handler::change_enter_weight_address(const std::string &ssid, const std::string &order_number, const double enter_weight, const std::string &sd_address, const std::string &com_name, const std::string &stuff_name)
+{
+    bool ret = false;
+
+    auto user = zh_rpc_util_get_online_user(ssid, ZH_PERMISSON_TARGET_ORDER);
+    if (!user)
+    {
+        ZH_RETURN_NEED_PRAVILIGE(ZH_PERMISSON_TARGET_ORDER);
+    }
+    auto vo = sqlite_orm::search_record<zh_sql_vehicle_order>("order_number == '%s'", order_number.c_str());
+    if (!vo)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+
+    vo->enter_weight = enter_weight;
+    vo->source_dest_name = sd_address;
+    vo->company_name = com_name;
+    vo->stuff_name = stuff_name;
+
+    ret = vo->update_record();
+    return ret;
 }

@@ -128,6 +128,17 @@ static bool hl_vehicle_is_xy(const neb::CJsonObject &_hl_v, const std::vector<ve
 
     return ret;
 }
+static std::string trim(const std::string &str)
+{
+    std::string result;
+    size_t start = str.find_first_not_of(" ");
+    size_t end = str.find_last_not_of(" ");
+    if (start != std::string::npos && end != std::string::npos)
+    {
+        result = str.substr(start, end - start + 1);
+    }
+    return result;
+}
 
 void fetch_plan_from_zyhl(const std::string &_date)
 {
@@ -155,16 +166,21 @@ void fetch_plan_from_zyhl(const std::string &_date)
             if (should_be_sync)
             {
                 neb::CJsonObject tmp;
-                std::string company_name =single_item["customer_company"]("name") ;
+                std::string company_name = single_item["customer_company"]("name");
+                auto company_name_prefix = company_name.substr(0, company_name.find_first_of('-'));
+                if (company_name_prefix == "贸易")
+                {
+                    company_name = company_name.substr(company_name.find_first_of('-') + 1);
+                }
                 tmp.Add("plateNo", single_item("driver_no"));
                 tmp.Add("backPlateNo", single_item("driver_no2"));
                 tmp.Add("driverName", single_item("driver_name"));
-                tmp.Add("driverPhone", single_item("driver_tel"));
+                tmp.Add("driverPhone", trim(single_item("driver_tel")));
                 tmp.Add("driverId", single_item(""));
                 tmp.Add("useFor", "气站");
                 tmp.Add("sale_address", single_item["product"]("area"));
                 tmp.Add("createTime", single_item("delivery_date"));
-                tmp.Add("companyName", company_name.substr(company_name.find_first_not_of("贸易-")));
+                tmp.Add("companyName", company_name);
                 tmp.Add("stuffName", single_item["product"]("type"));
                 tmp.Add("transCompanyName", single_item["transport_company"]("name"));
                 req_list.push_back(tmp);
@@ -444,23 +460,24 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
 }
 time_t util_get_time_by_string(const std::string &_time_string)
 {
-    const char *cha = _time_string.data();                                    // 将string转换成char*。
-    tm tm_ = {0};                                                             // 定义tm结构体。
-    int year, month, day;                                     // 定义时间的各个int临时变量。
+    const char *cha = _time_string.data();        // 将string转换成char*。
+    tm tm_ = {0};                                 // 定义tm结构体。
+    int year, month, day;                         // 定义时间的各个int临时变量。
     sscanf(cha, "%d-%d-%d", &year, &month, &day); // 将string存储的日期时间，转换为int临时变量。
-    tm_.tm_year = year - 1900;                                                // 年，由于tm结构体存储的是从1900年开始的时间，所以tm_year为int临时变量减去1900。
-    tm_.tm_mon = month - 1;                                                   // 月，由于tm结构体的月份存储范围为0-11，所以tm_mon为int临时变量减去1。
-    tm_.tm_mday = day;                                                        // 日。
-    tm_.tm_isdst = 0;                                                         // 非夏令时。
-    time_t t_ = mktime(&tm_);                                                 // 将tm结构体转换成time_t格式。
-    return t_;                                                                // 返回值。
+    tm_.tm_year = year - 1900;                    // 年，由于tm结构体存储的是从1900年开始的时间，所以tm_year为int临时变量减去1900。
+    tm_.tm_mon = month - 1;                       // 月，由于tm结构体的月份存储范围为0-11，所以tm_mon为int临时变量减去1。
+    tm_.tm_mday = day;                            // 日。
+    tm_.tm_isdst = 0;                             // 非夏令时。
+    time_t t_ = mktime(&tm_);                     // 将tm结构体转换成time_t格式。
+    return t_;                                    // 返回值。
 }
 void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date, const std::string &_trans_comapny_name)
 {
     zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "download_status", "正在下载");
     auto begin_date_time = util_get_time_by_string(_begin_date);
     auto end_date_time = util_get_time_by_string(_end_date);
-    struct ticket_meta{
+    struct ticket_meta
+    {
         std::string date;
         std::string vehicle_number;
         std::string trans_company;
@@ -522,7 +539,7 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
             itr, req_serial);
         thread_pool.push_back(tmp_t);
     }
-    for (auto &itr:thread_pool)
+    for (auto &itr : thread_pool)
     {
         itr->join();
         delete itr;

@@ -342,6 +342,8 @@ bool zh_hk_ctrl_gate(const std::string &_road_ip, zh_hk_gate_control_cmd _cmd)
                 tmp.byLaneNo = 1;
                 tmp.byBarrierGateCtrl = gate_cp->cmd;
                 auto ret = NET_DVR_RemoteControl(hk_duh.user_id, NET_DVR_BARRIERGATE_CTRL, &tmp, sizeof(tmp));
+                usleep(500000);
+                ret = NET_DVR_RemoteControl(hk_duh.user_id, NET_DVR_BARRIERGATE_CTRL, &tmp, sizeof(tmp));
                 if (ret)
                 {
                     g_log.log("open door %s", gate_cp->road_ip.c_str());
@@ -902,4 +904,44 @@ void zh_hk_reboot_cam(const std::string &_ip)
     {
         g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
     }
+}
+NET_DVR_IO_OUTCFG zh_hk_get_IO_out(const std::string &_nvr_ip)
+{
+    NET_DVR_IO_OUTCFG ret;
+    NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
+    if (user_id >= 0)
+    {
+        unsigned int ret_len = 0;
+        NET_DVR_GetDVRConfig(user_id, NET_DVR_GET_IOOUTCFG, 1, &ret, sizeof(ret), &ret_len);
+        NET_DVR_Logout_V30(user_id);
+    }
+    else
+    {
+        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
+    }
+
+    return ret;
+}
+bool zh_hk_set_IO_out(const std::string &_nvr_ip)
+{
+    bool ret = false;
+    NET_DVR_IO_OUTCFG tmp;
+    NET_DVR_DEVICEINFO_V30 tmp_info = {0};
+    auto user_id = NET_DVR_Login_V30(_nvr_ip.c_str(), 8000, "admin", "P@ssw0rd", &tmp_info);
+    if (user_id >= 0)
+    {
+        unsigned int ret_len = 0;
+        NET_DVR_GetDVRConfig(user_id, NET_DVR_GET_IOOUTCFG, 1, &tmp, sizeof(tmp), &ret_len);
+        tmp.dwTimeDelay *= 10;
+        NET_DVR_SetDVRConfig(user_id, NET_DVR_SET_IOOUTCFG, 1, &tmp, sizeof(tmp));
+        NET_DVR_SetDVRConfig(user_id, NET_DVR_SET_IOOUTCFG, 2, &tmp, sizeof(tmp));
+        NET_DVR_Logout_V30(user_id);
+    }
+    else
+    {
+        g_log.err("failed to LOGIN device:%d", NET_DVR_GetLastError());
+    }
+
+    return ret;
 }

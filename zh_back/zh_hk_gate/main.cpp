@@ -56,6 +56,14 @@ int main(int argc, char const *argv[])
     {
         zh_hk_reboot_cam(nvr_ip);
     }
+    else if (cmd == "get")
+    {
+        zh_hk_get_IO_out(nvr_ip);
+    }
+    else if (cmd == "set")
+    {
+        zh_hk_set_IO_out(nvr_ip);
+    }
 
     std::cout << path_name << std::endl;
 

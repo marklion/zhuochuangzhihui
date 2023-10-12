@@ -481,6 +481,7 @@ service vehicle_order_center {
     bool clear_vehicle_xy(1:string order_number) throws (1:gen_exp e),
     string ticket_export_result(1:string ssid) throws (1:gen_exp e),
     string ticket_export(1:string ssid, 2:string begin_date, 3:string end_date, 4:string trans_company ) throws (1:gen_exp e),
+    bool change_enter_weight_address(1:string ssid, 2:string order_number, 3:double enter_weight, 4:string sd_address, 5:string com_name, 6:string stuff_name) throws (1:gen_exp e),
 }
 
 struct video_param{

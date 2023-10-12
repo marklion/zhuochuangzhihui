@@ -21,7 +21,7 @@ struct zy_sync_plan_data{
     {
         bool ret = false;
 
-        if (planNo == _other.planNo && behindPlateNo == _other.behindPlateNo && driverPhone == _other.driverPhone && trans_company_name == _other.trans_company_name)
+        if (planNo == _other.planNo && behindPlateNo == _other.behindPlateNo && driverPhone == _other.driverPhone && trans_company_name == _other.trans_company_name && customerName == _other.customerName)
         {
             ret = true;
         }

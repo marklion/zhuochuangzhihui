@@ -50,6 +50,8 @@ std::string zh_hk_get_channel_video(const std::string &_nvr_ip, int _channel_id,
 std::string zh_hk_get_capture_picture(const std::string &_nvr_ip, int _channel_id, const std::string _user_name = "admin", const std::string &_password = "P@ssw0rd");
 bool zh_hk_get_cam_IO(const std::string &_nvr_ip);
 void zh_hk_reboot_cam(const std::string &_ip);
+NET_DVR_IO_OUTCFG zh_hk_get_IO_out(const std::string &_nvr_ip);
+bool zh_hk_set_IO_out(const std::string &_nvr_ip);
 
 
 

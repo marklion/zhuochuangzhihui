@@ -666,13 +666,7 @@ export default {
         },
         advance_export_record: function () {
             var vue_this = this;
-            vue_this.$call_remote_process("vehicle_order_center", "export_order_by_condition", [vue_this.$cookies.get("zh_ssid"), vue_this.$make_time_string(vue_this.begin_date, '-'), vue_this.$make_time_string(vue_this.end_date, '-'), vue_this.focus_comapny, vue_this.focus_stuff]).then(function (resp) {
-                var tmp = [];
-                resp.forEach(element => {
-                    tmp.push(element.basic_info);
-                });
-                vue_this.export_xlsx(tmp);
-            });
+            window.open('/zh_rest/advance_export?zh_ssid=' + vue_this.$cookies.get('zh_ssid') + '&begin_date=' + vue_this.$make_time_string(vue_this.begin_date, '-') + '&end_date=' + vue_this.$make_time_string(vue_this.end_date, '-') + '&company=' + vue_this.focus_comapny + '&stuff_name=' + vue_this.focus_stuff);
         },
         user_logoff: function () {
             var vue_this = this;

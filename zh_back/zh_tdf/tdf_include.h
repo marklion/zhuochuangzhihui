@@ -33,6 +33,7 @@
 #include <thread>
 #include <mqueue.h>
 #include <set>
+#include <vector>
 
 static int is_leap_year(time_t year)
 {

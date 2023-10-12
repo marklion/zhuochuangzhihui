@@ -6,9 +6,30 @@
             <el-col :span="12">
                 <el-descriptions title="基本信息" :column="2" border>
                     <el-descriptions-item label="派车单号">{{cur_vehicle.basic_info.order_number}}</el-descriptions-item>
-                    <el-descriptions-item label="派车公司">{{cur_vehicle.basic_info.company_name}}({{cur_vehicle.basic_info.trans_company?cur_vehicle.basic_info.trans_company:cur_vehicle.basic_info.source_dest_name}})</el-descriptions-item>
+                    <el-descriptions-item label="派车公司">
+                        <span>
+                            {{cur_vehicle.basic_info.company_name}}
+                            <span v-if="$store.state.user_info.permission != 3">
+                                <el-button type="text" style="color: orange;" @click="change_com">修改</el-button>
+                            </span>
+                        </span>
+                        <span v-if="cur_vehicle.basic_info.trans_company?cur_vehicle.basic_info.trans_company:cur_vehicle.basic_info.source_dest_name">
+                            ({{cur_vehicle.basic_info.trans_company?cur_vehicle.basic_info.trans_company:cur_vehicle.basic_info.source_dest_name}}
+                            <span v-if="$store.state.user_info.permission != 3">
+                                <el-button type="text" style="color: orange;" @click="change_sd_address">修改</el-button>
+                            </span>
+                            )
+                        </span>
+                    </el-descriptions-item>
                     <el-descriptions-item v-if="cur_vehicle.basic_info.company_address" label="运往地点">{{cur_vehicle.basic_info.company_address}}</el-descriptions-item>
-                    <el-descriptions-item label="拉运货物">{{cur_vehicle.basic_info.stuff_name}}</el-descriptions-item>
+                    <el-descriptions-item label="拉运货物">
+                        <span>
+                            {{cur_vehicle.basic_info.stuff_name}}
+                        </span>
+                        <span v-if="$store.state.user_info.permission != 3">
+                            <el-button type="text" style="color: orange;" @click="change_stuff_name">修改</el-button>
+                        </span>
+                    </el-descriptions-item>
                     <el-descriptions-item label="主车">{{cur_vehicle.basic_info.main_vehicle_number}}</el-descriptions-item>
                     <el-descriptions-item label="挂车">{{cur_vehicle.basic_info.behind_vehicle_number}}</el-descriptions-item>
                     <el-descriptions-item label="最大净重">{{cur_vehicle.basic_info.max_count}}</el-descriptions-item>
@@ -18,6 +39,9 @@
                         </span>
                         <span>
                             <el-button type="text" @click="show_enter_weight = true">预览磅单</el-button>
+                        </span>
+                        <span v-if="$store.state.user_info.permission != 3">
+                            <el-button type="text" style="color: orange;" @click="change_enter_weight">修改</el-button>
                         </span>
                     </el-descriptions-item>
                     <el-descriptions-item v-if="cur_vehicle.basic_info.use_for" label="用途">{{cur_vehicle.basic_info.use_for}}</el-descriptions-item>
@@ -262,6 +286,70 @@ export default {
         VueCell
     },
     methods: {
+        change_com: function () {
+            var vue_this = this;
+            vue_this.$prompt('请输入派车公司', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputValue: vue_this.cur_vehicle.basic_info.company_name,
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "change_enter_weight_address", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, vue_this.cur_vehicle.basic_info.enter_weight, vue_this.cur_vehicle.basic_info.source_dest_name, value, vue_this.cur_vehicle.basic_info.stuff_name]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                    }
+                });
+            });
+        },
+        change_sd_address: function () {
+            var vue_this = this;
+            vue_this.$prompt('请输入物料源或目的地', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputValue: vue_this.cur_vehicle.basic_info.source_dest_name,
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "change_enter_weight_address", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, vue_this.cur_vehicle.basic_info.enter_weight, value, vue_this.cur_vehicle.basic_info.company_name, vue_this.cur_vehicle.basic_info.stuff_name]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                    }
+                });
+            });
+        },
+        change_stuff_name: function () {
+            var vue_this = this;
+            vue_this.$prompt('请输入物料名称', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputValue: vue_this.cur_vehicle.basic_info.stuff_name,
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "change_enter_weight_address", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, vue_this.cur_vehicle.basic_info.enter_weight,vue_this.cur_vehicle.basic_info.source_dest_name, vue_this.cur_vehicle.basic_info.company_name, value]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                    }
+                });
+            });
+        },
+        change_enter_weight: function () {
+            var vue_this = this;
+            vue_this.$prompt('请输入重量', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                inputValue: vue_this.cur_vehicle.basic_info.enter_weight,
+            }).then(({
+                value
+            }) => {
+                vue_this.$call_remote_process("vehicle_order_center", "change_enter_weight_address", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.order_number, parseFloat(value), vue_this.cur_vehicle.basic_info.source_dest_name, vue_this.cur_vehicle.basic_info.company_name, vue_this.cur_vehicle.basic_info.stuff_name]).then(function (resp) {
+                    if (resp) {
+                        vue_this.init_cur_vehicle();
+                    }
+                });
+            });
+        },
         print_weight_ticket: function (_name) {
             var vue_this = this;
             vue_this.$call_remote_process("vehicle_order_center", "print_weight_ticket", [vue_this.$cookies.get("zh_ssid"), vue_this.cur_vehicle.basic_info.id, _name]).then(function (resp) {

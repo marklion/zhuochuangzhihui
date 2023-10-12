@@ -158,7 +158,8 @@ class vehicle_order_center_handler : public vehicle_order_centerIf
 {
 private:
     static vehicle_order_center_handler *m_inst;
-    vehicle_order_center_handler()
+    tdf_log m_log;
+    vehicle_order_center_handler():m_log("vehicle_order_center_handler")
     {
     }
 
@@ -232,6 +233,7 @@ public:
     virtual bool clear_vehicle_xy(const std::string &order_number);
     virtual void ticket_export_result(std::string &_return, const std::string &ssid);
     virtual void ticket_export(std::string &_return, const std::string &ssid, const std::string &begin_date, const std::string &end_date, const std::string &trans_company);
+    virtual bool change_enter_weight_address(const std::string &ssid, const std::string &order_number, const double enter_weight, const std::string &sd_address, const std::string &com_name, const std::string &stuff_name);
 };
 
 #endif // _VEHICLE_ORDER_CENTER_IMP_H_

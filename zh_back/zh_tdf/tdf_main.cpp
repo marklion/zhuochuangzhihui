@@ -71,11 +71,11 @@ static void work_thread_main_loop()
 
 class tdf_data;
 class tdf_listen;
-struct tdf_timer_node;
+struct common_timer_node;
 
 static std::map<std::string, tdf_data *> g_data_map;
 static std::map<unsigned short, tdf_listen *> g_listen_map;
-static std::map<int, tdf_timer_node *> g_timer_map;
+static std::map<int, common_timer_node *> g_timer_map;
 
 static int g_epoll_fd;
 
@@ -183,7 +183,7 @@ struct tdf_timer_lock
         pthread_mutex_unlock(&g_timer_lock);
     }
 };
-struct tdf_timer_node : public Itdf_io_channel
+struct common_timer_node : public Itdf_io_channel
 {
     tdf_timer_proc m_proc = nullptr;
     void *m_private = nullptr;
@@ -194,7 +194,7 @@ struct tdf_timer_node : public Itdf_io_channel
     {
         return "timer fd : " + std::to_string(m_handle);
     }
-    virtual ~tdf_timer_node()
+    virtual ~common_timer_node()
     {
     }
     void proc_in()
@@ -695,7 +695,7 @@ int tdf_main::start_timer(int _sec, tdf_timer_proc _proc, void *_private, bool _
                 [](void *_private, const std::string &_chrct)
                 {
                     auto pasync_param = (timer_async_param *)(_private);
-                    auto pnode = new tdf_timer_node();
+                    auto pnode = new common_timer_node();
                     pnode->m_private = pasync_param->m_private;
                     pnode->m_proc = pasync_param->proc;
                     pnode->m_handle = pasync_param->fd;
