@@ -1,13 +1,13 @@
 SHELL=/bin/bash
 SRC_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DELIVER_PATH=$(SRC_DIR)/build
-SUB_DIR=zh_pub zh_back zh_external zh_front zh_plugin
+SUB_DIR=base service api conf
 BUILD_MODE=build
 export BUILD_MODE
 
 pack:all
 	date '+%Y-%m-%d %H:%M:%S' > $(DELIVER_PATH)/conf/version.txt
-	tar zcf zh_deliver.tar.gz -C $(DELIVER_PATH) bin lib conf manage_dist zh_rest_node script
+	tar zcf zh_deliver.tar.gz -C $(DELIVER_PATH) bin lib conf api
 	cat $(SRC_DIR)/deploy.sh zh_deliver.tar.gz > $(DELIVER_PATH)/install.sh
 	chmod +x $(DELIVER_PATH)/install.sh
 	rm zh_deliver.tar.gz
@@ -24,6 +24,9 @@ $(SUB_DIR):
 zh_back:zh_pub zh_external
 
 zh_front:zh_pub zh_external
+
+service:base
+api:base
 
 clean:
 	rm -rf $(DELIVER_PATH)

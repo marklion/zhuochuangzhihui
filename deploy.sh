@@ -44,7 +44,7 @@ start_all_server() {
     cp /conf/ngx_http_flv_live_module.so /lib/nginx/modules/
     nginx -c /conf/nginx.conf
     service cups start
-    pushd /zh_rest_node
+    pushd /api
     pm2 start index.js
     popd
     wetty &
@@ -52,8 +52,8 @@ start_all_server() {
     sysctl -w kernel.core_pattern=/database/core.%e.%p.%s.%E
     ulimit -c
     ulimit -q 819200000
-    process_manager &
-    zh_daemon
+    # process_manager &
+    core_service
 }
 
 start_docker_con() {
