@@ -81,11 +81,31 @@ bool rbac_center_handler::add_role(const rbac_role &new_one)
 {
     bool ret = false;
 
+    auto er = sqlite_orm::search_record<sql_role>("name == '%s'", new_one.role_name.c_str());
+    if (er)
+    {
+        ZH_RETURN_MSG("已存在");
+    }
+    sql_role tmp;
+    tmp.name = new_one.role_name;
+    tmp.read_only = new_one.read_only;
+
+    ret = tmp.insert_record();
+
     return ret;
 }
 bool rbac_center_handler::del_role(const int64_t role_id)
 {
     bool ret = false;
+
+    auto er = sqlite_orm::search_record<sql_role>(role_id);
+    if (!er)
+    {
+        ZH_RETURN_MSG("角色不存在");
+    }
+
+    er->remove_record();
+    ret = true;
 
     return ret;
 }
@@ -103,10 +123,7 @@ void rbac_center_handler::get_all_roles(std::vector<rbac_role> &_return)
             if (user)
             {
                 rbac_user t_user;
-                t_user.id = user->get_pri_id();
-                t_user.md5_password = user->md5_password;
-                t_user.name = user->name;
-                t_user.phone = user->phone;
+                db_2_rpc(*user, t_user);
                 tmp.all_user.push_back(t_user);
             }
         }
@@ -117,11 +134,15 @@ void rbac_center_handler::get_all_roles(std::vector<rbac_role> &_return)
             {
                 if (perm->is_module)
                 {
-                    tmp.author_modules.push_back(perm->text_name);
+                    rbac_permission t_perm;
+                    db_2_rpc(*perm, t_perm);
+                    tmp.author_modules.push_back(t_perm);
                 }
                 else
                 {
-                    tmp.author_resouces.push_back(perm->text_name);
+                    rbac_permission t_perm;
+                    db_2_rpc(*perm, t_perm);
+                    tmp.author_resouces.push_back(t_perm);
                 }
             }
         }
@@ -184,30 +205,6 @@ bool rbac_center_handler::del_user_from_role(const int64_t role_id, const int64_
 
     return ret;
 }
-bool rbac_center_handler::add_role_module_permission(const int64_t role_id, const std::string &target_module)
-{
-    bool ret = false;
-
-    return ret;
-}
-bool rbac_center_handler::del_role_module_permission(const int64_t role_id, const std::string &target_module)
-{
-    bool ret = false;
-
-    return ret;
-}
-bool rbac_center_handler::add_role_resource_permission(const int64_t role_id, const std::string &target_resouce)
-{
-    bool ret = false;
-
-    return ret;
-}
-bool rbac_center_handler::del_role_resource_permission(const int64_t role_id, const std::string &target_resouce)
-{
-    bool ret = false;
-
-    return ret;
-}
 bool rbac_center_handler::add_user(const rbac_user &new_one)
 {
     bool ret = false;
@@ -235,38 +232,104 @@ void rbac_center_handler::get_all_user(std::vector<rbac_user> &_return)
     for (auto &itr : users)
     {
         rbac_user tmp;
-        tmp.id = itr.get_pri_id();
-        tmp.md5_password = itr.md5_password;
-        tmp.name = itr.name;
-        tmp.phone = itr.phone;
-        auto roles = sqlite_orm::search_record_all<sql_role>();
-        for (auto &single_role : roles)
-        {
-            auto contain_users = util_split_string(single_role.has_user_id);
-            if (util_vector_has(contain_users, std::to_string(itr.get_pri_id())))
-            {
-                tmp.role_name.push_back(single_role.name);
-            }
-        }
+        db_2_rpc(itr, tmp);
         _return.push_back(tmp);
     }
 }
 
-void rbac_center_handler::get_all_permission(std::vector<std::string> &_return)
+void rbac_center_handler::get_all_permission(std::vector<rbac_permission> &_return)
 {
     auto aps = sqlite_orm::search_record_all<sql_permission>();
     for (auto &itr : aps)
     {
-        std::string tmp;
-        if (itr.is_module)
-        {
-            tmp += "模块:";
-        }
-        else
-        {
-            tmp += "资源:";
-        }
-        tmp += itr.text_name;
+        rbac_permission tmp;
+        db_2_rpc(itr, tmp);
         _return.push_back(tmp);
+    }
+}
+
+bool rbac_center_handler::add_role_permission(const int64_t role_id, const int64_t perm_id)
+{
+    bool ret = false;
+    auto role = sqlite_orm::search_record<sql_role>(role_id);
+    if (!role)
+    {
+        ZH_RETURN_MSG("角色不存在");
+    }
+    if (!sqlite_orm::search_record<sql_permission>(perm_id))
+    {
+        ZH_RETURN_MSG("权限不存在");
+    }
+    auto cur_perm = util_split_string(role->has_permission_id);
+    if (!util_vector_has(cur_perm, std::to_string(perm_id)))
+    {
+        cur_perm.push_back(std::to_string(perm_id));
+    }
+
+    role->has_permission_id= util_join_string(cur_perm);
+    ret = role->update_record();
+
+    return ret;
+}
+
+bool rbac_center_handler::del_role_permission(const int64_t role_id, const int64_t perm_id)
+{
+    bool ret = false;
+    auto role = sqlite_orm::search_record<sql_role>(role_id);
+    if (!role)
+    {
+        ZH_RETURN_MSG("角色不存在");
+    }
+    if (!sqlite_orm::search_record<sql_permission>(perm_id))
+    {
+        ZH_RETURN_MSG("权限不存在");
+    }
+    auto cur_perm = util_split_string(role->has_permission_id);
+    std::vector<std::string> new_perm;
+    for (auto &itr:cur_perm)
+    {
+        if (itr != std::to_string(perm_id))
+        {
+            new_perm.push_back(itr);
+        }
+    }
+
+    role->has_permission_id= util_join_string(new_perm);
+    ret = role->update_record();
+
+    return ret;
+}
+
+void rbac_center_handler::db_2_rpc(sql_permission &_db, rbac_permission &_rpc)
+{
+    _rpc.name = _db.permission_name;
+    _rpc.text_name = _db.text_name;
+    _rpc.id = _db.get_pri_id();
+    _rpc.is_module = _db.is_module;
+    auto roles = sqlite_orm::search_record_all<sql_role>();
+    for (auto &single_role : roles)
+    {
+        auto contain_perms = util_split_string(single_role.has_permission_id);
+        if (util_vector_has(contain_perms, std::to_string(_db.get_pri_id())))
+        {
+            _rpc.role_name.push_back(single_role.name);
+        }
+    }
+}
+
+void rbac_center_handler::db_2_rpc(sql_user &_db, rbac_user &_rpc)
+{
+    _rpc.id = _db.get_pri_id();
+    _rpc.md5_password = _db.md5_password;
+    _rpc.name = _db.name;
+    _rpc.phone = _db.phone;
+    auto roles = sqlite_orm::search_record_all<sql_role>();
+    for (auto &single_role : roles)
+    {
+        auto contain_users = util_split_string(single_role.has_user_id);
+        if (util_vector_has(contain_users, std::to_string(_db.get_pri_id())))
+        {
+            _rpc.role_name.push_back(single_role.name);
+        }
     }
 }
