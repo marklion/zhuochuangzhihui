@@ -18,6 +18,7 @@
 #include <thrift/protocol/TMultiplexedProtocol.h>
 #include "config_management_imp.h"
 #include "rbac_center_imp.h"
+#include "device_management_imp.h"
 
 
 #define ZH_RETURN_MSG(_msg)  do {gen_exp e;e.msg = _msg; throw e;} while (0)
@@ -42,6 +43,12 @@ using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
 
 #define THR_DEF_CIENT(x) x##Client *client = nullptr
-#define THR_CONNECT(x) std::shared_ptr<TTransport> transport(new THttpClient("localhost", 8123, "/zh_rpc"));std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport)); transport->open();  std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); client = new x##Client(mp)
+#define THR_CONNECT_DEV(x, y) std::shared_ptr<TTransport> transport(new THttpClient("localhost", y, "/zh_rpc"));std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport)); transport->open();  std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); client = new x##Client(mp)
+#define THR_CONNECT(x) THR_CONNECT_DEV(x, 8123);
+#define THR_CONNECT_DM(x) THR_CONNECT_DEV(x, 8124)
 #define TRH_CLOSE() transport->close()
+
+
+
+#define CLI_MENU_ITEM(x) #x, [](std::ostream &out, std::vector<std::string> _params) { x(out, _params); }
 #endif // _RPC_INCLUDE_H_

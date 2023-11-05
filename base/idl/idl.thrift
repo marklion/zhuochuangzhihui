@@ -7,12 +7,6 @@ struct stuff_config {
     2:string stuff_name,
 }
 
-service config_management{
-    list<stuff_config> get_stuff_config() throws (1:gen_exp e),
-    bool add_stuff_config(1:stuff_config new_one) throws (1:gen_exp e),
-    bool del_stuff_config(1:i64 id) throws (1:gen_exp e),
-}
-
 struct rbac_user {
     1:string name,
     2:i64 id,
@@ -52,4 +46,74 @@ service rbac_center{
     void del_user(1:i64 user_id) throws (1:gen_exp e),
     list<rbac_user> get_all_user() throws (1:gen_exp e),
     list<rbac_permission> get_all_permission() throws (1:gen_exp e),
+}
+
+struct device_driver {
+    1:string name,
+    2:i64 id,
+    3:string path,
+}
+
+struct device_meta{
+    1:string name,
+    2:i64 id,
+    3:string driver_args,
+    4:device_driver driver,
+}
+
+struct device_couple {
+    1:device_meta front,
+    2:device_meta back;
+}
+
+struct device_scale_set {
+    1:string name,
+    2:i64 id,
+    3:device_couple plate_cam,
+    4:device_couple video_cam,
+    5:device_couple led,
+    6:device_couple speaker,
+    7:device_couple id_reader,
+    8:device_couple qr_reader,
+    9:device_couple gate,
+    10:device_couple printer,
+    11:device_meta scale,
+}
+
+struct device_gate_set{
+    1:string name,
+    2:i64 id,
+    3:device_couple plate_cam,
+    4:device_couple video_cam,
+    5:device_couple led,
+    6:device_couple speaker,
+    7:device_couple id_reader,
+    8:device_couple qr_reader,
+    9:device_couple gate,
+}
+service config_management{
+    list<stuff_config> get_stuff_config() throws (1:gen_exp e),
+    bool add_stuff_config(1:stuff_config new_one) throws (1:gen_exp e),
+    bool del_stuff_config(1:i64 id) throws (1:gen_exp e),
+    list<device_scale_set> get_scale_config() throws (1:gen_exp e),
+    list<device_gate_set> get_gate_config() throws (1:gen_exp e),
+    list<device_driver> get_all_driver() throws (1:gen_exp e),
+    bool add_device_set(1:string name, 2:bool is_scale) throws(1:gen_exp e),
+    bool del_device_set(1:i64 set_id) throws (1:gen_exp e),
+    bool add_device_to_set(1:string name, 2:string driver_args, 3:i64 driver_id, 4:i64 set_id, 5:string use_for) throws (1:gen_exp e),
+    bool del_device_from_set(1:i64 device_id) throws (1:gen_exp e),
+}
+
+service device_management {
+    bool device_ctrl(1:i64 device_id, 2:bool start) throws (1:gen_exp e),
+    bool device_is_started(1:i64 device_id) throws (1:gen_exp e),
+    oneway void gate_ctrl(1:i64 gate_id, 2:bool is_open),
+    oneway void led_display(1:i64 led_id, 2:list<string> content),
+    oneway void speaker_cast(1:i64 speaker_id, 2:string content),
+    double last_scale_read(1:i64 scale_id) throws (1:gen_exp e),
+    string last_id_read(1:i64 id_reader_id) throws (1:gen_exp e),
+    string last_qr_read(1:i64 qr_reader_id) throws (1:gen_exp e),
+    string last_plate_read(1:i64 plate_cam_id) throws (1:gen_exp e),
+    string cap_picture_slow(1:i64 cam_id) throws (1:gen_exp e),
+    string video_record_slow(1:i64 cam_id, 2:string begin_date, 3:string end_date) throws (1:gen_exp e),
 }

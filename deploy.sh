@@ -52,7 +52,7 @@ start_all_server() {
     sysctl -w kernel.core_pattern=/database/core.%e.%p.%s.%E
     ulimit -c
     ulimit -q 819200000
-    # process_manager &
+    device_center &
     core_service
 }
 

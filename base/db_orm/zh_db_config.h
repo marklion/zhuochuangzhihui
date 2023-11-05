@@ -115,6 +115,91 @@ public:
     }
 };
 
+class sql_device_driver : public sql_tree_base
+{
+public:
+    std::string name;
+    std::string path;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("path", sqlite_orm_column::STRING, &path));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "device_driver_table";
+    }
+};
+class sql_device_meta;
+class sql_device_set : public sql_tree_base
+{
+public:
+    std::string name;
+    long is_scale = 0;
+    sql_device_set(){
+        add_parent_type<sql_device_meta>("front_plate_cam");
+        add_parent_type<sql_device_meta>("back_plate_cam");
+        add_parent_type<sql_device_meta>("front_video_cam");
+        add_parent_type<sql_device_meta>("back_video_cam");
+        add_parent_type<sql_device_meta>("front_led");
+        add_parent_type<sql_device_meta>("back_led");
+        add_parent_type<sql_device_meta>("front_speaker");
+        add_parent_type<sql_device_meta>("back_speaker");
+        add_parent_type<sql_device_meta>("front_gate");
+        add_parent_type<sql_device_meta>("back_gate");
+        add_parent_type<sql_device_meta>("front_id_reader");
+        add_parent_type<sql_device_meta>("back_id_reader");
+        add_parent_type<sql_device_meta>("front_qr_reader");
+        add_parent_type<sql_device_meta>("back_qr_reader");
+        add_parent_type<sql_device_meta>("front_printer");
+        add_parent_type<sql_device_meta>("back_printer");
+        add_parent_type<sql_device_meta>("scale");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("is_scale", sqlite_orm_column::INTEGER, &is_scale));
+
+        return ret;
+    }
+    bool is_empty_set();
+    virtual std::string table_name()
+    {
+        return "device_set_table";
+    }
+};
+class sql_device_meta : public sql_tree_base
+{
+public:
+    std::string name;
+    std::string args;
+
+    sql_device_meta()
+    {
+        add_parent_type<sql_device_driver>("driver");
+    }
+
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("args", sqlite_orm_column::STRING, &args));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "device_meta_table";
+    }
+};
+
 std::unique_ptr<sql_user> db_get_online_user(const std::string &_token);
 
 #endif

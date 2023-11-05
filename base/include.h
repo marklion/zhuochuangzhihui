@@ -9,6 +9,7 @@
 #include "idl/gen_code/cpp/config_management.h"
 #include "idl/gen_code/cpp/idl_types.h"
 #include "idl/gen_code/cpp/rbac_center.h"
+#include "idl/gen_code/cpp/device_management.h"
 #include "utils/utils.h"
 #include "log_driver/cli.h"
 #include "log_driver/clifilesession.h"
