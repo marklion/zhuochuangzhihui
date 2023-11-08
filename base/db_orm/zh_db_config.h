@@ -200,6 +200,68 @@ public:
     }
 };
 
+class sql_contract : public sql_tree_base
+{
+public:
+    std::string name;
+    long is_sale = 0;
+    std::string attachment;
+    std::string code;
+    std::string admin_name_phone;
+    double balance = 0;
+    double credit = 0;
+    std::string follow_stuff_id;
+
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("name", sqlite_orm_column::STRING, &name));
+        ret.push_back(sqlite_orm_column("is_sale", sqlite_orm_column::INTEGER, &is_sale));
+        ret.push_back(sqlite_orm_column("attachment", sqlite_orm_column::STRING, &attachment));
+        ret.push_back(sqlite_orm_column("code", sqlite_orm_column::STRING, &code));
+        ret.push_back(sqlite_orm_column("admin_name_phone", sqlite_orm_column::STRING, &admin_name_phone));
+        ret.push_back(sqlite_orm_column("follow_stuff_id", sqlite_orm_column::STRING, &follow_stuff_id));
+        ret.push_back(sqlite_orm_column("balance", sqlite_orm_column::REAL, &balance));
+        ret.push_back(sqlite_orm_column("credit", sqlite_orm_column::REAL, &credit));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "contract_table";
+    }
+};
+class sql_vehicle: public sql_tree_base
+{
+public:
+    std::string plate_no;
+    std::string back_plate_no;
+    std::string driver_name;
+    std::string driver_phone;
+    std::string driver_id;
+    long in_black_list = 0;
+    long in_white_list = 0;
+
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("plate_no", sqlite_orm_column::STRING, &plate_no));
+        ret.push_back(sqlite_orm_column("back_plate_no", sqlite_orm_column::STRING, &back_plate_no));
+        ret.push_back(sqlite_orm_column("driver_name", sqlite_orm_column::STRING, &driver_name));
+        ret.push_back(sqlite_orm_column("driver_phone", sqlite_orm_column::STRING, &driver_phone));
+        ret.push_back(sqlite_orm_column("driver_id", sqlite_orm_column::STRING, &driver_id));
+        ret.push_back(sqlite_orm_column("in_black_list", sqlite_orm_column::INTEGER, &in_black_list));
+        ret.push_back(sqlite_orm_column("in_white_list", sqlite_orm_column::INTEGER, &in_white_list));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "vehicle_table";
+    }
+};
 std::unique_ptr<sql_user> db_get_online_user(const std::string &_token);
 
 #endif

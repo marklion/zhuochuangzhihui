@@ -29,8 +29,7 @@ void config_management_handler::get_stuff_config(std::vector<stuff_config> &_ret
     for (auto &itr : all_record)
     {
         stuff_config tmp;
-        tmp.id = itr.get_pri_id();
-        tmp.stuff_name = itr.name;
+        db_2_rpc(itr, tmp);
 
         _return.push_back(tmp);
     }
@@ -178,6 +177,181 @@ bool config_management_handler::del_device_set(const int64_t set_id)
     ret = true;
 
     return ret;
+}
+
+void config_management_handler::get_contract_config(std::vector<contract_config> &_return)
+{
+    auto ccs = sqlite_orm::search_record_all<sql_contract>();
+    for (auto &itr:ccs)
+    {
+        contract_config tmp;
+        db_2_rpc(itr, tmp);
+        _return.push_back(tmp);
+    }
+}
+
+void config_management_handler::get_vehicle_config(std::vector<vehicle_config> &_return)
+{
+    auto ccs = sqlite_orm::search_record_all<sql_vehicle>();
+    for (auto &itr : ccs)
+    {
+        vehicle_config tmp;
+        db_2_rpc(itr, tmp);
+        _return.push_back(tmp);
+    }
+}
+
+bool config_management_handler::add_contract(const contract_config &new_one)
+{
+    bool ret = false;
+
+    auto er = sqlite_orm::search_record<sql_contract>("name == '%s'", new_one.name.c_str());
+    if (er)
+    {
+        ZH_RETURN_MSG("合同已存在");
+    }
+    sql_contract tmp;
+    tmp.admin_name_phone = new_one.admin_name_phone;
+    tmp.code = new_one.code;
+    tmp.is_sale = new_one.is_sale;
+    tmp.name = new_one.name;
+
+    ret = tmp.insert_record();
+
+    return ret;
+}
+
+void config_management_handler::del_contract(const int64_t contract_id)
+{
+    auto er = sqlite_orm::search_record<sql_contract>(contract_id);
+    if (!er)
+    {
+        ZH_RETURN_MSG("合同不存在");
+    }
+    er->remove_record();
+}
+
+bool config_management_handler::update_contract(const contract_config &input)
+{
+    bool ret = false;
+
+    auto er = sqlite_orm::search_record<sql_contract>(input.id);
+    if (!er)
+    {
+        ZH_RETURN_MSG("合同不存在");
+    }
+    er->admin_name_phone = input.admin_name_phone;
+    er->code = input.code;
+    er->is_sale = input.is_sale;
+    er->name = input.name;
+
+    ret = er->update_record();
+
+    return ret;
+}
+
+bool config_management_handler::add_vehicle(const vehicle_config &new_one)
+{
+    bool ret = false;
+
+    auto er = sqlite_orm::search_record<sql_vehicle>(
+        "plate_no == '%s' OR back_plate_no == '%s' OR driver_id == '%s' OR driver_phone == '%s'",
+        new_one.plate_no.c_str(), new_one.back_plate_no.c_str(), new_one.driver_id.c_str(), new_one.driver_phone.c_str());
+    if (er)
+    {
+        ZH_RETURN_DUP_VEHICLE();
+    }
+    sql_vehicle tmp;
+    tmp.back_plate_no = new_one.back_plate_no;
+    tmp.driver_id = new_one.driver_id;
+    tmp.driver_name = new_one.driver_name;
+    tmp.driver_phone = new_one.driver_phone;
+    tmp.in_black_list = new_one.in_black_list;
+    tmp.in_white_list = new_one.in_white_list;
+    tmp.plate_no = new_one.plate_no;
+
+    ret = tmp.insert_record();
+
+    return ret;
+}
+
+void config_management_handler::del_vehicle(const int64_t vehicle_id)
+{
+    auto er = sqlite_orm::search_record<sql_vehicle>(vehicle_id);
+    if (!er)
+    {
+        ZH_RETURN_NO_VEHICLE();
+    }
+    er->remove_record();
+}
+
+bool config_management_handler::update_vehicle(const vehicle_config &input)
+{
+    auto er = sqlite_orm::search_record<sql_vehicle>(input.id);
+    if (!er)
+    {
+        ZH_RETURN_NO_VEHICLE();
+    }
+    er->back_plate_no = input.back_plate_no;
+    er->driver_id = input.driver_id;
+    er->driver_name = input.driver_name;
+    er->driver_phone = input.driver_phone;
+    er->in_black_list = input.in_black_list;
+    er->in_white_list = input.in_white_list;
+    er->plate_no = input.plate_no;
+
+    return er->update_record();
+}
+
+void config_management_handler::db_2_rpc(sql_stuff &_db, stuff_config &_rpc)
+{
+    _rpc.auto_call_count = _db.auto_call_count;
+    _rpc.code = _db.code;
+    _rpc.expect_weight = _db.expect_weight;
+    _rpc.id = _db.get_pri_id();
+    _rpc.inventory = _db.inventory;
+    _rpc.max_limit = _db.max_limit;
+    _rpc.min_limit = _db.min_limit;
+    _rpc.need_enter_weight = _db.need_enter_weight;
+    _rpc.need_manual_scale = _db.need_manual_scale;
+    _rpc.price = _db.price;
+    _rpc.stuff_name = _db.name;
+    _rpc.use_for_white_list = _db.use_for_white_list;
+}
+
+void config_management_handler::db_2_rpc(sql_contract &_db, contract_config &_rpc)
+{
+    _rpc.admin_name_phone = _db.admin_name_phone;
+    _rpc.attachment = _db.attachment;
+    _rpc.balance = _db.balance;
+    _rpc.code = _db.code;
+    _rpc.credit = _db.credit;
+    auto fsids = util_split_string(_db.follow_stuff_id);
+    for (auto &itr : fsids)
+    {
+        auto stfp = sqlite_orm::search_record<sql_stuff>(atoi(itr.c_str()));
+        if (stfp)
+        {
+            stuff_config tmp;
+            db_2_rpc(*stfp, tmp);
+            _rpc.follow_stuffs.push_back(tmp);
+        }
+    }
+    _rpc.id = _db.get_pri_id();
+    _rpc.is_sale = _db.is_sale;
+    _rpc.name = _db.name;
+}
+
+void config_management_handler::db_2_rpc(sql_vehicle &_db, vehicle_config &_rpc)
+{
+    _rpc.back_plate_no = _db.back_plate_no;
+    _rpc.driver_id = _db.driver_id;
+    _rpc.driver_name = _db.driver_name;
+    _rpc.driver_phone = _db.driver_phone;
+    _rpc.id = _db.get_pri_id();
+    _rpc.in_black_list = _db.in_black_list;
+    _rpc.in_white_list = _db.in_white_list;
+    _rpc.plate_no = _db.plate_no;
 }
 
 void config_management_handler::db_2_rpc(sql_device_driver &_db, device_driver &_rpc)

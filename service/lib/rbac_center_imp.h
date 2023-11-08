@@ -18,6 +18,7 @@ public:
     virtual void get_all_permission(std::vector<rbac_permission> &_return);
     virtual bool add_role_permission(const int64_t role_id, const int64_t perm_id);
     virtual bool del_role_permission(const int64_t role_id, const int64_t perm_id);
+    virtual void login(std::string &_return, const std::string &phone, const std::string &pwd);
     void db_2_rpc(sql_permission &_db, rbac_permission &_rpc);
     void db_2_rpc(sql_user &_db, rbac_user &_user);
 };

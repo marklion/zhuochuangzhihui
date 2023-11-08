@@ -10,6 +10,8 @@ rbac_center_handler::rbac_center_handler()
     } init_conf[] = {
         {true, "config", "配置管理"},
         {false, "stuff", "物料"},
+        {false, "contract", "合同"},
+        {false, "vehicle", "车辆"},
     };
 
     for (auto &itr : init_conf)
@@ -298,6 +300,18 @@ bool rbac_center_handler::del_role_permission(const int64_t role_id, const int64
     ret = role->update_record();
 
     return ret;
+}
+
+void rbac_center_handler::login(std::string &_return, const std::string &phone, const std::string &pwd)
+{
+    auto user = sqlite_orm::search_record<sql_user>("phone == '%s' AND md5_password == '%s'", phone.c_str(), pwd.c_str());
+    if (!user)
+    {
+        ZH_RETURN_MSG("用户名或密码错误");
+    }
+    user->online_token = util_gen_ssid();
+    user->update_record();
+    _return = user->online_token;
 }
 
 void rbac_center_handler::db_2_rpc(sql_permission &_db, rbac_permission &_rpc)

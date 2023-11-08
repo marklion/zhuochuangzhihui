@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <uuid/uuid.h>
 #include <openssl/md5.h>
 
 std::vector<std::string> util_split_string(const std::string &s, const std::string &seperator)
@@ -84,6 +85,16 @@ std::string util_data_hex(const unsigned char *_data, int _length)
         ret += buf;
         i++;
     }
+
+    return ret;
+}
+std::string util_gen_ssid()
+{
+    uuid_t out;
+    std::string ret;
+
+    uuid_generate(out);
+    ret = util_data_hex(out, sizeof(out));
 
     return ret;
 }

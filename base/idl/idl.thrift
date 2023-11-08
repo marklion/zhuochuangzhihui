@@ -5,6 +5,16 @@ exception gen_exp {
 struct stuff_config {
     1:i64 id,
     2:string stuff_name,
+    3:double inventory,
+    4:bool need_enter_weight,
+    5:double price,
+    6:double expect_weight,
+    7:bool need_manual_scale,
+    8:double min_limit,
+    9:double max_limit,
+    10:string code,
+    11:bool use_for_white_list,
+    12:bool auto_call_count,
 }
 
 struct rbac_user {
@@ -46,6 +56,7 @@ service rbac_center{
     void del_user(1:i64 user_id) throws (1:gen_exp e),
     list<rbac_user> get_all_user() throws (1:gen_exp e),
     list<rbac_permission> get_all_permission() throws (1:gen_exp e),
+    string login(1:string phone, 2:string pwd) throws (1:gen_exp e),
 }
 
 struct device_driver {
@@ -91,6 +102,30 @@ struct device_gate_set{
     8:device_couple qr_reader,
     9:device_couple gate,
 }
+
+struct contract_config {
+    1:string name,
+    2:bool is_sale,
+    3:string attachment,
+    4:i64 id,
+    5:string code,
+    6:string admin_name_phone,
+    8:double balance,
+    9:double credit,
+    10:list<stuff_config> follow_stuffs,
+}
+
+struct vehicle_config {
+    1:string plate_no,
+    2:i64 id,
+    3:string back_plate_no,
+    4:string driver_name,
+    5:string driver_phone,
+    6:string driver_id,
+    7:bool in_black_list,
+    8:bool in_white_list,
+}
+
 service config_management{
     list<stuff_config> get_stuff_config() throws (1:gen_exp e),
     bool add_stuff_config(1:stuff_config new_one) throws (1:gen_exp e),
@@ -102,6 +137,18 @@ service config_management{
     bool del_device_set(1:i64 set_id) throws (1:gen_exp e),
     bool add_device_to_set(1:string name, 2:string driver_args, 3:i64 driver_id, 4:i64 set_id, 5:string use_for) throws (1:gen_exp e),
     bool del_device_from_set(1:i64 device_id) throws (1:gen_exp e),
+    list<contract_config> get_contract_config() throws(1:gen_exp e),
+    list<vehicle_config> get_vehicle_config() throws (1:gen_exp e),
+    bool add_contract(1:contract_config new_one) throws (1:gen_exp e),
+    void del_contract(1:i64 contract_id) throws (1:gen_exp e),
+    bool update_contract(1:contract_config input) throws(1:gen_exp e),
+    bool add_vehicle(1:vehicle_config new_one) throws(1:gen_exp e),
+    void del_vehicle(1:i64 vehicle_id) throws(1:gen_exp e),
+    bool update_vehicle(1:vehicle_config input) throws(1:gen_exp e),
+}
+
+service order_center {
+
 }
 
 service device_management {

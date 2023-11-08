@@ -17,6 +17,18 @@ public:
     virtual bool del_device_from_set(const int64_t device_id);
     virtual bool add_device_set(const std::string &name, const bool is_scale);
     virtual bool del_device_set(const int64_t set_id);
+    virtual void get_contract_config(std::vector<contract_config> &_return);
+    virtual void get_vehicle_config(std::vector<vehicle_config> &_return);
+    virtual bool add_contract(const contract_config &new_one);
+    virtual void del_contract(const int64_t contract_id);
+    virtual bool update_contract(const contract_config &input);
+    virtual bool add_vehicle(const vehicle_config &new_one);
+    virtual void del_vehicle(const int64_t vehicle_id);
+    virtual bool update_vehicle(const vehicle_config &input);
+
+    void db_2_rpc(sql_stuff &_db, stuff_config &_rpc);
+    void db_2_rpc(sql_contract &_db, contract_config &_rpc);
+    void db_2_rpc(sql_vehicle &_db, vehicle_config &_rpc);
     void db_2_rpc(sql_device_driver &_db, device_driver &_rpc);
     void db_2_rpc(sql_device_meta &_db, device_meta &_rpc);
     void db_2_rpc(sql_device_set &_db, device_scale_set &_rpc);

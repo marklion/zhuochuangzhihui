@@ -9,4 +9,4 @@ aux_source_directory(. API_SRC)
 
 add_library(zh_utils SHARED ${API_SRC})
 
-target_link_libraries(zh_utils rt ssl)
+target_link_libraries(zh_utils rt ssl uuid)

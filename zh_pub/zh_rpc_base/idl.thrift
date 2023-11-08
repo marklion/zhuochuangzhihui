@@ -102,17 +102,16 @@ service user_management {
 
 struct contract_info {
     1:string name,
-    2:string date,
-    3:bool is_sale,
-    4:string attachment,
-    5:i64 id,
-    6:string code,
-    7:string admin_phone,
-    8:string admin_password,
-    9:string company_address,
-    10:double balance,
-    11:double credit,
-    12:list<string> follow_stuffs,
+    2:bool is_sale,
+    3:string attachment,
+    4:i64 id,
+    5:string code,
+    6:string admin_phone,
+    7:string admin_password,
+    8:string company_address,
+    9:double balance,
+    10:double credit,
+    11:list<string> follow_stuffs,
 }
 
 struct number_change_point{

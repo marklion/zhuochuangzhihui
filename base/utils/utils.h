@@ -14,6 +14,6 @@ bool util_vector_has(const std::vector<ele> &_vec, const ele &_el)
 
 std::string util_calcu_md5(const std::string &_input);
 std::string util_data_hex(const unsigned char *_data, int _length);
-
+std::string util_gen_ssid();
 
 #endif // _UTILS_H_
