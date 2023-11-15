@@ -8,7 +8,9 @@ config_management_handler::config_management_handler()
         std::string name;
         std::string path;
     } dmt_array[] = {
-        {"stub_driver", "/bin/ls"}};
+        {"mock_driver", "/bin/mock_driver"},
+        {"zs_plate_cam", "/bin/zs_plate_cam"},
+        };
 
     for (auto &itr : dmt_array)
     {
@@ -301,6 +303,36 @@ bool config_management_handler::update_vehicle(const vehicle_config &input)
     er->plate_no = input.plate_no;
 
     return er->update_record();
+}
+
+bool config_management_handler::set_rule(const running_rule &rule)
+{
+    bool ret = false;
+    auto er = sqlite_orm::search_record<sql_rule_config>(1);
+    if (er)
+    {
+        er->auto_call_count = rule.auto_call_count;
+        er->call_time_out = rule.call_time_out;
+        ret = er->update_record();
+    }
+    else
+    {
+        sql_rule_config tmp;
+        tmp.auto_call_count = rule.auto_call_count;
+        tmp.call_time_out = rule.call_time_out;
+        ret = tmp.insert_record();
+    }
+    return ret;
+}
+
+void config_management_handler::get_rule(running_rule &_return)
+{
+    auto er = sqlite_orm::search_record<sql_rule_config>(1);
+    if (er)
+    {
+        _return.auto_call_count = er->auto_call_count;
+        _return.call_time_out = er->call_time_out;
+    }
 }
 
 void config_management_handler::db_2_rpc(sql_stuff &_db, stuff_config &_rpc)

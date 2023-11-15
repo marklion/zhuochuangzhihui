@@ -4,7 +4,8 @@
 int main(int argc, char const *argv[])
 {
     std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
-    multi_processor->registerProcessor("device_management", std::shared_ptr<TProcessor>(new device_managementProcessor(std::shared_ptr<device_management_handler>(new device_management_handler()))));
+    auto hdl = std::shared_ptr<device_management_handler>(new device_management_handler());
+    multi_processor->registerProcessor("device_management", std::shared_ptr<TProcessor>(new device_managementProcessor(hdl)));
 
     ::std::shared_ptr<TServerTransport> serverTransport(new TServerSocket(8124));
     ::std::shared_ptr<TTransportFactory> transportFactory(new THttpServerTransportFactory());
@@ -14,6 +15,7 @@ int main(int argc, char const *argv[])
     threadManager->threadFactory(threadFactory);
     threadManager->start();
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
+
     tp_server.serve();
 
     return 0;

@@ -42,3 +42,46 @@ bool sql_device_set::is_empty_set()
 
     return ret;
 }
+
+std::string sql_device_set::should_handle_income_plate(const std::string &_plate_no, std::string &_order_number)
+{
+    std::string ret = "无车辆信息";
+
+    if (_plate_no.length() > 0)
+    {
+        auto vo = sqlite_orm::search_record<sql_order>("plate_number == '%s' AND status != 100", _plate_no.c_str());
+        if (vo)
+        {
+            _order_number = vo->order_number;
+            if (vo->call_info_time.length() > 0)
+            {
+                if (is_scale)
+                {
+                    ret = "";
+                }
+                else if (vo->confirm_info_time.length() > 0)
+                {
+                    ret = "";
+                }
+                else if (!vo->get_children<sql_order_history>("belong_order", "node_name == '%s'", node_name_enter.c_str()))
+                {
+                    ret = "";
+                }
+                else
+                {
+                    ret = "未确认不能出厂";
+                }
+            }
+            else
+            {
+                ret = "车辆未叫号";
+            }
+        }
+        else
+        {
+            ret = "未找到车辆信息";
+        }
+    }
+
+    return ret;
+}

@@ -9,9 +9,15 @@ rbac_center_handler::rbac_center_handler()
         std::string text_name;
     } init_conf[] = {
         {true, "config", "配置管理"},
+        {true, "device", "设备管理"},
+        {true, "order", "派车订单"},
+        {false, "all_device", "所有设备"},
         {false, "stuff", "物料"},
         {false, "contract", "合同"},
         {false, "vehicle", "车辆"},
+        {false, "vehicle_order_info", "车辆信息"},
+        {false, "vehicle_check_in", "排号叫号"},
+        {false, "vehicle_scale", "出入称重"},
     };
 
     for (auto &itr : init_conf)

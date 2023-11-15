@@ -126,6 +126,11 @@ struct vehicle_config {
     8:bool in_white_list,
 }
 
+struct running_rule {
+    1:i64 auto_call_count,
+    2:i64 call_time_out,
+}
+
 service config_management{
     list<stuff_config> get_stuff_config() throws (1:gen_exp e),
     bool add_stuff_config(1:stuff_config new_one) throws (1:gen_exp e),
@@ -145,13 +150,85 @@ service config_management{
     bool add_vehicle(1:vehicle_config new_one) throws(1:gen_exp e),
     void del_vehicle(1:i64 vehicle_id) throws(1:gen_exp e),
     bool update_vehicle(1:vehicle_config input) throws(1:gen_exp e),
+    running_rule get_rule() throws(1:gen_exp e),
+    bool set_rule(1:running_rule rule) throws (1:gen_exp e),
+}
+
+struct vehicle_order_opt_info {
+    1:string operator_name,
+    2:string operator_time,
+}
+
+struct vehicle_order_history_node {
+    1:string node_name,
+    2:string node_caller,
+    3:string occour_time,
+    4:i64 id,
+}
+
+struct vehicle_order_attachment {
+    1:string att_name,
+    2:string att_path,
+    3:i64 id,
+}
+
+struct vehicle_order_info {
+    1:i64 id,
+    2:string order_number,
+    3:string plate_number,
+    4:string back_plate_number,
+    5:string driver_name,
+    6:string driver_id,
+    7:string driver_phone,
+    8:string stuff_name,
+    9:double p_weight,
+    10:double m_weight,
+    11:double enter_weight,
+    12:vehicle_order_opt_info reg_info,
+    13:vehicle_order_opt_info call_info,
+    14:vehicle_order_opt_info confirm_info,
+    15:string seal_no,
+    16:list<vehicle_order_history_node> history_records,
+    17:list<vehicle_order_attachment> order_attachs,
+    18:string p_time,
+    19:string m_time,
+    20:bool is_sale,
+    21:i64 status,
+    22:string company_name,
+    23:string stuff_from,
+}
+
+struct order_search_cond {
+    1:string plate_number,
+    2:string driver_phone,
+    3:string company_name,
+    4:string stuff_name,
+    5:i64 status,
+    6:string begin_time,
+    7:string end_time,
+    8:i64 page_no,
+    9:string driver_id,
+    10:i64 exp_status,
 }
 
 service order_center {
-
+    bool add_order(1:vehicle_order_info order) throws (1:gen_exp e),
+    bool del_order(1:string order_number) throws (1:gen_exp e),
+    bool update_order(1:vehicle_order_info order) throws (1:gen_exp e),
+    list<vehicle_order_info> search_order(1:order_search_cond cond) throws (1:gen_exp e),
+    vehicle_order_info get_order(1:string order_number) throws (1:gen_exp e),
+    bool order_check_in(1:string order_number, 2:bool is_check_in, 3:string opt_name) throws (1:gen_exp e),
+    bool order_call(1:string order_number, 2:bool is_call, 3:string opt_name) throws (1:gen_exp e),
+    bool order_confirm(1:string order_number, 2:bool is_confirm, 3:string opt_name) throws(1:gen_exp e),
+    bool order_set_seal_no(1:string order_number, 2:string seal_no) throws(1:gen_exp e),
+    bool order_push_weight(1:string order_number, 2:double weight, 3:string opt_name) throws(1:gen_exp e),
+    bool order_rollback_weight(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
+    bool order_push_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
+    bool order_rollback_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
 }
 
 service device_management {
+    oneway void init_all_set(),
     bool device_ctrl(1:i64 device_id, 2:bool start) throws (1:gen_exp e),
     bool device_is_started(1:i64 device_id) throws (1:gen_exp e),
     oneway void gate_ctrl(1:i64 gate_id, 2:bool is_open),
@@ -161,6 +238,10 @@ service device_management {
     string last_id_read(1:i64 id_reader_id) throws (1:gen_exp e),
     string last_qr_read(1:i64 qr_reader_id) throws (1:gen_exp e),
     string last_plate_read(1:i64 plate_cam_id) throws (1:gen_exp e),
+    oneway void push_scale_read(1:i64 scale_id, 2:double weight),
+    oneway void push_id_read(1:i64 id_id, 2:string id_number),
+    oneway void push_qr_read(1:i64 qr_id, 2:string qr_content),
+    oneway void push_plate_read(1:i64 plate_cam_id, 2:string plate_no),
     string cap_picture_slow(1:i64 cam_id) throws (1:gen_exp e),
     string video_record_slow(1:i64 cam_id, 2:string begin_date, 3:string end_date) throws (1:gen_exp e),
 }

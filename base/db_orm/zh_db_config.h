@@ -7,6 +7,10 @@
 #include "../utils/clipp.h"
 #include <functional>
 
+const std::string node_name_enter = "进厂";
+const std::string node_name_exit = "出厂";
+const std::string node_name_p_weight = "一次称重";
+const std::string node_name_m_weight = "二次称重";
 class sql_stuff : public sql_tree_base
 {
 public:
@@ -140,7 +144,8 @@ class sql_device_set : public sql_tree_base
 public:
     std::string name;
     long is_scale = 0;
-    sql_device_set(){
+    sql_device_set()
+    {
         add_parent_type<sql_device_meta>("front_plate_cam");
         add_parent_type<sql_device_meta>("back_plate_cam");
         add_parent_type<sql_device_meta>("front_video_cam");
@@ -169,6 +174,7 @@ public:
         return ret;
     }
     bool is_empty_set();
+    std::string should_handle_income_plate(const std::string &_plate_no, std::string &_order_number);
     virtual std::string table_name()
     {
         return "device_set_table";
@@ -232,7 +238,7 @@ public:
         return "contract_table";
     }
 };
-class sql_vehicle: public sql_tree_base
+class sql_vehicle : public sql_tree_base
 {
 public:
     std::string plate_no;
@@ -262,6 +268,139 @@ public:
         return "vehicle_table";
     }
 };
+
+class sql_order : public sql_tree_base
+{
+public:
+    std::string order_number;
+    std::string plate_number;
+    std::string back_plate_number;
+    std::string driver_name;
+    std::string driver_id;
+    std::string driver_phone;
+    std::string stuff_name;
+    double p_weight = 0;
+    double m_weight = 0;
+    double enter_weight = 0;
+    std::string reg_info_name;
+    std::string reg_info_time;
+    std::string call_info_name;
+    std::string call_info_time;
+    std::string confirm_info_name;
+    std::string confirm_info_time;
+    std::string seal_no;
+    std::string p_time;
+    std::string m_time;
+    long is_sale = 0;
+    // 无效->0, 未入场->1,正在执行->2, 已完成->100
+    long status = 0;
+    std::string company_name;
+    std::string stuff_from;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("order_number", sqlite_orm_column::STRING, &order_number));
+        ret.push_back(sqlite_orm_column("plate_number", sqlite_orm_column::STRING, &plate_number));
+        ret.push_back(sqlite_orm_column("back_plate_number", sqlite_orm_column::STRING, &back_plate_number));
+        ret.push_back(sqlite_orm_column("driver_name", sqlite_orm_column::STRING, &driver_name));
+        ret.push_back(sqlite_orm_column("driver_phone", sqlite_orm_column::STRING, &driver_phone));
+        ret.push_back(sqlite_orm_column("driver_id", sqlite_orm_column::STRING, &driver_id));
+        ret.push_back(sqlite_orm_column("stuff_name", sqlite_orm_column::STRING, &stuff_name));
+        ret.push_back(sqlite_orm_column("p_weight", sqlite_orm_column::REAL, &p_weight));
+        ret.push_back(sqlite_orm_column("m_weight", sqlite_orm_column::REAL, &m_weight));
+        ret.push_back(sqlite_orm_column("enter_weight", sqlite_orm_column::REAL, &enter_weight));
+        ret.push_back(sqlite_orm_column("reg_info_name", sqlite_orm_column::STRING, &reg_info_name));
+        ret.push_back(sqlite_orm_column("reg_info_time", sqlite_orm_column::STRING, &reg_info_time));
+        ret.push_back(sqlite_orm_column("call_info_name", sqlite_orm_column::STRING, &call_info_name));
+        ret.push_back(sqlite_orm_column("call_info_time", sqlite_orm_column::STRING, &call_info_time));
+        ret.push_back(sqlite_orm_column("confirm_info_name", sqlite_orm_column::STRING, &confirm_info_name));
+        ret.push_back(sqlite_orm_column("confirm_info_time", sqlite_orm_column::STRING, &confirm_info_time));
+        ret.push_back(sqlite_orm_column("seal_no", sqlite_orm_column::STRING, &seal_no));
+        ret.push_back(sqlite_orm_column("p_time", sqlite_orm_column::STRING, &p_time));
+        ret.push_back(sqlite_orm_column("m_time", sqlite_orm_column::STRING, &m_time));
+        ret.push_back(sqlite_orm_column("is_sale", sqlite_orm_column::INTEGER, &is_sale));
+        ret.push_back(sqlite_orm_column("status", sqlite_orm_column::INTEGER, &status));
+        ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
+        ret.push_back(sqlite_orm_column("stuff_from", sqlite_orm_column::STRING, &stuff_from));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "order_table";
+    }
+};
+class sql_order_history : public sql_tree_base
+{
+public:
+    std::string node_name;
+    std::string node_caller;
+    std::string occour_time;
+    sql_order_history()
+    {
+        add_parent_type<sql_order>("belong_order");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("node_name", sqlite_orm_column::STRING, &node_name));
+        ret.push_back(sqlite_orm_column("node_caller", sqlite_orm_column::STRING, &node_caller));
+        ret.push_back(sqlite_orm_column("occour_time", sqlite_orm_column::STRING, &occour_time));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "vehicle_history_table";
+    }
+};
+
+class sql_order_attach : public sql_tree_base
+{
+public:
+    std::string att_name;
+    std::string att_path;
+    sql_order_attach()
+    {
+        add_parent_type<sql_order>("belong_order");
+    }
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("att_name", sqlite_orm_column::STRING, &att_name));
+        ret.push_back(sqlite_orm_column("att_path", sqlite_orm_column::STRING, &att_path));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "vehicle_attach_table";
+    }
+};
+
+class sql_rule_config : public sql_tree_base
+{
+public:
+    long auto_call_count = 0;
+    long call_time_out = 0;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("auto_call_count", sqlite_orm_column::INTEGER, &auto_call_count));
+        ret.push_back(sqlite_orm_column("call_time_out", sqlite_orm_column::INTEGER, &call_time_out));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "rule_table";
+    }
+};
+
 std::unique_ptr<sql_user> db_get_online_user(const std::string &_token);
 
 #endif

@@ -25,6 +25,8 @@ public:
     virtual bool add_vehicle(const vehicle_config &new_one);
     virtual void del_vehicle(const int64_t vehicle_id);
     virtual bool update_vehicle(const vehicle_config &input);
+    virtual void get_rule(running_rule &_return);
+    virtual bool set_rule(const running_rule &rule);
 
     void db_2_rpc(sql_stuff &_db, stuff_config &_rpc);
     void db_2_rpc(sql_contract &_db, contract_config &_rpc);

@@ -6,6 +6,7 @@ int main(int argc, char const *argv[])
     std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
     multi_processor->registerProcessor("config_management", std::shared_ptr<TProcessor>(new config_managementProcessor(std::shared_ptr<config_management_handler>(new config_management_handler()))));
     multi_processor->registerProcessor("rbac_center", std::shared_ptr<TProcessor>(new rbac_centerProcessor(std::shared_ptr<rbac_center_handler>(new rbac_center_handler()))));
+    multi_processor->registerProcessor("order_center", std::shared_ptr<TProcessor>(new order_centerProcessor(std::shared_ptr<order_center_handler>(new order_center_handler()))));
 
     ::std::shared_ptr<TServerTransport> serverTransport(new TServerSocket(8123));
     ::std::shared_ptr<TTransportFactory> transportFactory(new THttpServerTransportFactory());

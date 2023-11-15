@@ -19,6 +19,7 @@
 #include "config_management_imp.h"
 #include "rbac_center_imp.h"
 #include "device_management_imp.h"
+#include "order_center_imp.h"
 
 
 #define ZH_RETURN_MSG(_msg)  do {gen_exp e;e.msg = _msg; throw e;} while (0)
@@ -46,8 +47,13 @@ using namespace ::apache::thrift::server;
 #define THR_CONNECT_DEV(x, y) std::shared_ptr<TTransport> transport(new THttpClient("localhost", y, "/zh_rpc"));std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport)); transport->open();  std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); client = new x##Client(mp)
 #define THR_CONNECT(x) THR_CONNECT_DEV(x, 8123);
 #define THR_CONNECT_DM(x) THR_CONNECT_DEV(x, 8124)
-#define TRH_CLOSE() transport->close()
+#define TRH_CLOSE() transport->close(); delete client
 
+#define THR_CALL_DM_BEGIN() do { try {THR_DEF_CIENT(device_management);THR_CONNECT_DM(device_management)
+#define THR_CALL_DM_END() TRH_CLOSE(); } catch (...) {}} while (0)
+
+#define THR_CALL_BEGIN(x) do { try {THR_DEF_CIENT(x);THR_CONNECT(x)
+#define THR_CALL_END() TRH_CLOSE(); } catch (...) {}} while (0)
 
 
 #define CLI_MENU_ITEM(x) #x, [](std::ostream &out, std::vector<std::string> _params) { x(out, _params); }
