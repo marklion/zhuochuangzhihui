@@ -14,10 +14,10 @@ void check_need_delete()
     }
 }
 
-std::string file_store_content(const std::string &_content, bool is_tmp)
+std::string file_store_content(const std::string &_content, const std::string &_ext_name, bool is_tmp)
 {
     std::string ret;
-    auto file_name = util_gen_ssid();
+    auto file_name = util_gen_ssid() + "." + _ext_name;
     int fd = open(("/database/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
     if (fd >= 0)
     {

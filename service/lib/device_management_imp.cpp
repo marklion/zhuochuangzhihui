@@ -316,6 +316,24 @@ void device_management_handler::video_record_slow(std::string &_return, const in
 
 void device_management_handler::push_scale_read(const int64_t scale_id, const double weight)
 {
+    auto pc_device = sqlite_orm::search_record<sql_device_meta>(scale_id);
+    if (pc_device)
+    {
+        auto set = pc_device->get_children<sql_device_set>("scale");
+        if (set)
+        {
+            sm_trigger(
+                set->get_pri_id(),
+                [&](abs_state_machine &sm)
+                {
+                    auto &ssm = dynamic_cast<scale_sm&>(sm);
+                    ssm.cur_weight = weight;
+                    ssm.tft = abs_state_machine::scale;
+
+                    return true;
+                });
+        }
+    }
 }
 
 void device_management_handler::push_id_read(const int64_t id_id, const std::string &id_number)
@@ -473,7 +491,7 @@ int64_t device_management_handler::get_same_side_device(int64_t _input_id, const
 
 int64_t device_management_handler::get_diff_side_device(int64_t _input_id, const std::string &_type)
 {
-    int64_t ret;
+    int64_t ret = 0;
 
     auto this_gate = get_same_side_device(_input_id, "gate");
     auto tg = sqlite_orm::search_record<sql_device_meta>(this_gate);
@@ -490,10 +508,14 @@ int64_t device_management_handler::get_diff_side_device(int64_t _input_id, const
         }
         else
         {
-            auto og = set->get_parent<sql_device_meta>("front_gate");
-            if (og)
+            auto set = tg->get_children<sql_device_set>("back_gate");
+            if (set)
             {
-                ret = get_same_side_device(og->get_pri_id(), _type);
+                auto og = set->get_parent<sql_device_meta>("front_gate");
+                if (og)
+                {
+                    ret = get_same_side_device(og->get_pri_id(), _type);
+                }
             }
         }
     }
@@ -707,7 +729,7 @@ void scale_sm::print_ticket()
 {
     auto p_id = device_management_handler::get_diff_side_device(trigger_device_id, "printer");
     THR_CALL_DM_BEGIN();
-    client->printer_print(p_id, "aaa");
+    client->printer_print(p_id, "暂无磅单");
     THR_CALL_END();
 }
 
@@ -755,10 +777,6 @@ void scale_state_scale::after_exit(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
     sm.cast_result();
-    THR_CALL_BEGIN(order_center);
-    client->order_push_weight(sm.order_number, sm.cur_weight, "自动");
-    THR_CALL_END();
-    sm.print_ticket();
 }
 
 std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_sm)
@@ -770,6 +788,10 @@ std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_
         _sm.tft == abs_state_machine::qr_reader)
     {
         sm.cast_busy();
+    }
+    else if (_sm.tft == abs_state_machine::manual_reset)
+    {
+        ret.reset(new scale_state_idle());
     }
     else if (_sm.tft == abs_state_machine::scale)
     {
@@ -825,6 +847,10 @@ std::unique_ptr<abs_sm_state> scale_state_prepare::proc_event(abs_state_machine 
     {
         sm.cast_busy();
     }
+    else if (_sm.tft == abs_state_machine::manual_reset)
+    {
+        ret.reset(new scale_state_idle());
+    }
     else if (_sm.tft == abs_state_machine::timer)
     {
         sm.cast_stop_stable();
@@ -850,14 +876,39 @@ std::unique_ptr<abs_sm_state> scale_state_prepare::proc_event(abs_state_machine 
 void scale_state_clean::before_enter(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
+    THR_CALL_BEGIN(order_center);
+    client->order_push_weight(sm.order_number, sm.cur_weight, "自动");
+    THR_CALL_END();
+    sm.print_ticket();
     sm.open_exit();
+    sm.start_scale_timer();
 }
 
 void scale_state_clean::after_exit(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.stop_scale_timer();
     sm.trigger_cam_plate();
     sm.record_scale_end();
+    auto begin_date = sm.begin_scale_date;
+    auto end_date = sm.end_scale_date;
+    auto enter_device_id = sm.trigger_device_id;
+    auto on = sm.order_number;
+    timer_wheel_add_node(
+        1, [=](void *)
+        {
+        THR_CALL_DM_BEGIN();
+        std::string file_name;
+        client->video_record_slow(file_name, device_management_handler::get_same_side_device(enter_device_id, "video_cam"), begin_date, end_date);
+        THR_CALL_BEGIN(order_center);
+        client->order_push_attach(on, "过磅录像", file_name);
+        THR_CALL_END();
+        client->video_record_slow(file_name, device_management_handler::get_diff_side_device(enter_device_id, "video_cam"), begin_date, end_date);
+        THR_CALL_BEGIN(order_center);
+        client->order_push_attach(on, "过磅录像", file_name);
+        THR_CALL_END();
+        THR_CALL_DM_END(); },
+        true);
 }
 
 std::unique_ptr<abs_sm_state> scale_state_clean::proc_event(abs_state_machine &_sm)
@@ -871,11 +922,26 @@ std::unique_ptr<abs_sm_state> scale_state_clean::proc_event(abs_state_machine &_
     {
         sm.cast_busy();
     }
-    else if (sm.tft == abs_state_machine::scale)
+    else if (_sm.tft == abs_state_machine::manual_reset)
     {
-        if (sm.cur_weight == 0)
+        ret.reset(new scale_state_idle());
+    }
+    else if (sm.tft == abs_state_machine::timer)
+    {
+        auto set = sqlite_orm::search_record<sql_device_set>(sm.set_id);
+        if (set)
         {
-            ret.reset(new scale_state_idle());
+            auto sc = set->get_parent<sql_device_meta>("scale");
+            if (sc)
+            {
+                THR_CALL_DM_BEGIN();
+                sm.cur_weight = client->last_scale_read(sc->get_pri_id());
+                THR_CALL_DM_END();
+                if (sm.cur_weight == 0)
+                {
+                    ret.reset(new scale_state_idle());
+                }
+            }
         }
     }
 

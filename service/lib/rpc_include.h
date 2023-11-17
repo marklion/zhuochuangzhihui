@@ -65,11 +65,12 @@ using namespace ::apache::thrift::server;
     transport->close(); \
     delete client
 
-#define THR_CALL_DM_BEGIN()                \
+
+#define THR_CALL_DM_BEGIN_DEV(x)                \
     do                                     \
     {                                      \
         THR_DEF_CIENT(device_management);  \
-        THR_CONNECT_DM(device_management); \
+        THR_CONNECT_DEV(device_management, x); \
         try                                \
         {
 #define THR_CALL_DM_END() \
@@ -78,6 +79,8 @@ using namespace ::apache::thrift::server;
     TRH_CLOSE();          \
     }                     \
     while (0)
+
+#define THR_CALL_DM_BEGIN() THR_CALL_DM_BEGIN_DEV(8124)
 
 #define THR_CALL_BEGIN(x) \
     do                    \

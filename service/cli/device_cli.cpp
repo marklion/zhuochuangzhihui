@@ -291,6 +291,49 @@ void show_device_status(std::ostream &out, std::vector<std::string> _params)
     }
 }
 
+int get_port_by_id(const std::string &_port)
+{
+    int ret = 0;
+    std::string cmd = "ps ax | grep '\\-i " + _port + "' | grep -v grep | awk '{print $(NF-2)}'";
+    auto fp = popen(cmd.c_str(), "r");
+    if (fp)
+    {
+        char buff[1024] = {0};
+        fread(buff, 1, sizeof(buff), fp);
+        ret = atoi(buff);
+        pclose(fp);
+    }
+
+    return ret;
+}
+
+void mock_device_action(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() < 2)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        auto port = get_port_by_id(_params[0]);
+        THR_CALL_DM_BEGIN_DEV(port);
+        auto cmd = _params[1];
+        if ("plate" == cmd)
+        {
+            client->push_plate_read(1, _params[2]);
+        }
+        else if ("scale" == cmd)
+        {
+            client->push_scale_read(1, atof(_params[2].c_str()));
+        }
+        else if ("gate" == cmd)
+        {
+            client->gate_ctrl(1, false);
+        }
+        THR_CALL_DM_END();
+    }
+}
+
 std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
 {
     auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu(_menu_name));
@@ -305,6 +348,7 @@ std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
     root_menu->Insert(CLI_MENU_ITEM(start_device), "启动设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(stop_device), "关闭设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(show_device_status), "查看设备启动状态", {"设备编号"});
+    root_menu->Insert(CLI_MENU_ITEM(mock_device_action), "仿冒设备数据", {"设备号","参数"});
 
     return root_menu;
 }

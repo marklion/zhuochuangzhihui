@@ -3,6 +3,7 @@
 
 int main(int argc, char const *argv[])
 {
+    timer_wheel_init();
     std::thread([]()
                 {
         while (1)

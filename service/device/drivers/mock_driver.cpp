@@ -12,11 +12,27 @@ public:
     std::string plate_no;
     mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id)
     {
-        timer_wheel_add_node(3, [&](void *)
-                             {
-            THR_CALL_DM_BEGIN();
-            client->push_scale_read(m_dev_id, scale_weight);
-            THR_CALL_DM_END(); });
+        timer_wheel_add_node(
+            3,
+            [&](void *)
+            {
+                if (scale_weight != 0)
+                {
+                    THR_CALL_DM_BEGIN();
+                    client->push_scale_read(m_dev_id, scale_weight);
+                    THR_CALL_DM_END();
+                }
+            });
+    }
+    virtual void push_plate_read(const int64_t plate_cam_id, const std::string &plate_no)
+    {
+        this->plate_no = plate_no;
+        plate_cam_cap(m_dev_id);
+        this->plate_no.clear();
+    }
+    virtual void push_scale_read(const int64_t scale_id, const double weight)
+    {
+        scale_weight = weight;
     }
     virtual void gate_ctrl(const int64_t gate_id, const bool is_open)
     {
@@ -25,7 +41,7 @@ public:
         is_gate_open = !is_open;
         timer_wheel_add_node(
             2, [&](void *)
-            { is_gate_open = ~is_gate_open; },
+            { is_gate_open = !is_gate_open; },
             true);
     }
     virtual void led_display(const int64_t led_id, const std::vector<std::string> &content)
@@ -56,12 +72,12 @@ public:
     }
     virtual void cap_picture_slow(std::string &_return, const int64_t cam_id)
     {
-        _return = file_store_content("这是一个车牌照片");
+        _return = file_store_content("这是一个车牌照片", "txt");
         m_pub_log.log("拍照");
     }
     virtual void video_record_slow(std::string &_return, const int64_t cam_id, const std::string &begin_date, const std::string &end_date)
     {
-        _return = file_store_content("这是一个从" + begin_date + "到" + end_date + "的录像");
+        _return = file_store_content("这是一个从" + begin_date + "到" + end_date + "的录像", "txt");
         m_pub_log.log("录像，从%s 到%s", begin_date.c_str(), end_date.c_str());
     }
     virtual void printer_print(const int64_t printer_id, const std::string &content)
@@ -78,7 +94,7 @@ public:
     {
         m_pub_log.log("手动触发抓拍，拍到车牌：'%s'", plate_no.c_str());
         THR_CALL_DM_BEGIN();
-        client->push_plate_read(plate_cam_id, plate_no);
+        client->push_plate_read(m_dev_id, plate_no);
         THR_CALL_DM_END();
     }
 };

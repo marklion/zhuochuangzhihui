@@ -21,7 +21,7 @@ class abs_state_machine
     tdf_log m_log;
 public:
     enum triggered_from_type {
-        plate_cam, id_reader, qr_reader, scale, timer,
+        plate_cam, id_reader, qr_reader, scale, timer,self, manual_reset
     } tft;
     std::string pass_plate_number;
     int64_t trigger_device_id = 0;
@@ -38,6 +38,7 @@ public:
         {
             m_log.log("sm %d proc %d trigger in %s", set_id, tft, m_cur_state->name().c_str());
             auto next_state = m_cur_state->proc_event(*this);
+            tft = self;
             if (next_state)
             {
                 m_log.log("sm %d leave %s", set_id, m_cur_state->name().c_str());
