@@ -18,7 +18,7 @@ std::string file_store_content(const std::string &_content, bool is_tmp)
 {
     std::string ret;
     auto file_name = util_gen_ssid();
-    int fd = open(("/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+    int fd = open(("/database/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
     if (fd >= 0)
     {
         if (_content.length() > 0 && _content.length() == write(fd, _content.data(), _content.length()))
@@ -36,7 +36,7 @@ std::string file_store_content(const std::string &_content, bool is_tmp)
     }
     check_need_delete();
 
-    return ret;
+    return "/files/" + ret;
 }
 
 void file_delete(const std::string &_content)
@@ -44,7 +44,7 @@ void file_delete(const std::string &_content)
     auto fs = sqlite_orm::search_record<sql_file_store>("file_path == '%s'", _content.c_str());
     if (fs)
     {
-        unlink(("/files/" + fs->file_path).c_str());
+        unlink(("/database/files/" + fs->file_path).c_str());
         fs->remove_record();
     }
     check_need_delete();
