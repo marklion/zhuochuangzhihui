@@ -19,6 +19,7 @@ public:
     virtual bool order_rollback_weight(const std::string &order_number, const std::string &opt_name);
     virtual bool order_push_gate(const std::string &order_number, const std::string &opt_name);
     virtual bool order_rollback_gate(const std::string &order_number, const std::string &opt_name);
+    virtual bool order_push_attach(const std::string &order_number, const std::string &name, const std::string &att_path);
 
     std::string order_is_dup(const vehicle_order_info &order);
     std::unique_ptr<sql_order> get_order_by_number(const std::string &_order_number);
@@ -29,7 +30,6 @@ public:
     void db_2_rpc(sql_order_history &_db, vehicle_order_history_node &_rpc);
 
     void rpc_2_db(const vehicle_order_info &_rpc, sql_order &_db);
-
 };
 
 #endif // _ORDER_CENTER_H_

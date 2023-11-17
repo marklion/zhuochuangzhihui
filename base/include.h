@@ -14,6 +14,7 @@
 #include "utils/utils.h"
 #include "utils/tdf_timer.h"
 #include "log_driver/cli.h"
+#include "file_up_down/file_up_down.h"
 #include "log_driver/clifilesession.h"
 #include "log_driver/clilocalsession.h"
 #include "log_driver/loopscheduler.h"

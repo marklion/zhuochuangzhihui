@@ -4,67 +4,67 @@
 void show_device_driver(std::ostream &out, std::vector<std::string> _params)
 {
     std::vector<device_driver> tmp;
+    THR_DEF_CIENT(config_management);
+    THR_CONNECT(config_management);
     try
     {
-        THR_DEF_CIENT(config_management);
-        THR_CONNECT(config_management);
         client->get_all_driver(tmp);
-        TRH_CLOSE();
-        tabulate::Table tab;
-        tab.add_row({"ID", "name"});
-        for (auto &itr : tmp)
-        {
-            tab.add_row({std::to_string(itr.id), itr.name});
-        }
-        out << tab << std::endl;
     }
     catch (gen_exp e)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
+    tabulate::Table tab;
+    tab.add_row({"ID", "name"});
+    for (auto &itr : tmp)
+    {
+        tab.add_row({std::to_string(itr.id), itr.name});
+    }
+    out << tab << std::endl;
 }
 
 void add_set(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(config_management);
-            THR_CONNECT(config_management);
-            client->add_device_set(_params[0], atoi(_params[1].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            client->add_device_set(_params[0], atoi(_params[1].c_str()));
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void del_set(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(config_management);
-            THR_CONNECT(config_management);
-            client->del_device_set(atoi(_params[0].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            client->del_device_set(atoi(_params[0].c_str()));
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
@@ -77,177 +77,202 @@ void del_set(std::ostream &out, std::vector<std::string> _params)
 void show_device_scale(std::ostream &out, std::vector<std::string> _params)
 {
     std::vector<device_scale_set> tmp;
+    THR_DEF_CIENT(config_management);
+    THR_CONNECT(config_management);
     try
     {
-        THR_DEF_CIENT(config_management);
-        THR_CONNECT(config_management);
         client->get_scale_config(tmp);
-        TRH_CLOSE();
-        tabulate::Table tab;
-        tab.add_row({"ID", "name", "devices"});
-        for (auto &itr : tmp)
-        {
-            std::vector<std::string> device_info;
-            PUT_DEVICE_TO_SET(plate_cam.front);
-            PUT_DEVICE_TO_SET(plate_cam.back);
-            PUT_DEVICE_TO_SET(video_cam.front);
-            PUT_DEVICE_TO_SET(video_cam.back);
-            PUT_DEVICE_TO_SET(led.front);
-            PUT_DEVICE_TO_SET(led.back);
-            PUT_DEVICE_TO_SET(speaker.front);
-            PUT_DEVICE_TO_SET(speaker.back);
-            PUT_DEVICE_TO_SET(gate.front);
-            PUT_DEVICE_TO_SET(gate.back);
-            PUT_DEVICE_TO_SET(id_reader.front);
-            PUT_DEVICE_TO_SET(id_reader.back);
-            PUT_DEVICE_TO_SET(qr_reader.front);
-            PUT_DEVICE_TO_SET(qr_reader.back);
-            PUT_DEVICE_TO_SET(printer.front);
-            PUT_DEVICE_TO_SET(printer.back);
-            PUT_DEVICE_TO_SET(scale);
-            tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
-        }
-        out << tab << std::endl;
     }
     catch (gen_exp e)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
+    tabulate::Table tab;
+    tab.add_row({"ID", "name", "devices"});
+    for (auto &itr : tmp)
+    {
+        std::vector<std::string> device_info;
+        PUT_DEVICE_TO_SET(plate_cam.front);
+        PUT_DEVICE_TO_SET(plate_cam.back);
+        PUT_DEVICE_TO_SET(video_cam.front);
+        PUT_DEVICE_TO_SET(video_cam.back);
+        PUT_DEVICE_TO_SET(led.front);
+        PUT_DEVICE_TO_SET(led.back);
+        PUT_DEVICE_TO_SET(speaker.front);
+        PUT_DEVICE_TO_SET(speaker.back);
+        PUT_DEVICE_TO_SET(gate.front);
+        PUT_DEVICE_TO_SET(gate.back);
+        PUT_DEVICE_TO_SET(id_reader.front);
+        PUT_DEVICE_TO_SET(id_reader.back);
+        PUT_DEVICE_TO_SET(qr_reader.front);
+        PUT_DEVICE_TO_SET(qr_reader.back);
+        PUT_DEVICE_TO_SET(printer.front);
+        PUT_DEVICE_TO_SET(printer.back);
+        PUT_DEVICE_TO_SET(scale);
+        tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
+    }
+    out << tab << std::endl;
 }
 void show_device_gate(std::ostream &out, std::vector<std::string> _params)
 {
     std::vector<device_gate_set> tmp;
+    THR_DEF_CIENT(config_management);
+    THR_CONNECT(config_management);
     try
     {
-        THR_DEF_CIENT(config_management);
-        THR_CONNECT(config_management);
         client->get_gate_config(tmp);
-        TRH_CLOSE();
-        tabulate::Table tab;
-        tab.add_row({"ID", "name", "devices"});
-        for (auto &itr : tmp)
-        {
-            std::vector<std::string> device_info;
-            PUT_DEVICE_TO_SET(plate_cam.front);
-            PUT_DEVICE_TO_SET(plate_cam.back);
-            PUT_DEVICE_TO_SET(video_cam.front);
-            PUT_DEVICE_TO_SET(video_cam.back);
-            PUT_DEVICE_TO_SET(led.front);
-            PUT_DEVICE_TO_SET(led.back);
-            PUT_DEVICE_TO_SET(speaker.front);
-            PUT_DEVICE_TO_SET(speaker.back);
-            PUT_DEVICE_TO_SET(gate.front);
-            PUT_DEVICE_TO_SET(gate.back);
-            PUT_DEVICE_TO_SET(id_reader.front);
-            PUT_DEVICE_TO_SET(id_reader.back);
-            PUT_DEVICE_TO_SET(qr_reader.front);
-            PUT_DEVICE_TO_SET(qr_reader.back);
-            tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
-        }
-        out << tab << std::endl;
     }
     catch (gen_exp e)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
+    tabulate::Table tab;
+    tab.add_row({"ID", "name", "devices"});
+    for (auto &itr : tmp)
+    {
+        std::vector<std::string> device_info;
+        PUT_DEVICE_TO_SET(plate_cam.front);
+        PUT_DEVICE_TO_SET(plate_cam.back);
+        PUT_DEVICE_TO_SET(video_cam.front);
+        PUT_DEVICE_TO_SET(video_cam.back);
+        PUT_DEVICE_TO_SET(led.front);
+        PUT_DEVICE_TO_SET(led.back);
+        PUT_DEVICE_TO_SET(speaker.front);
+        PUT_DEVICE_TO_SET(speaker.back);
+        PUT_DEVICE_TO_SET(gate.front);
+        PUT_DEVICE_TO_SET(gate.back);
+        PUT_DEVICE_TO_SET(id_reader.front);
+        PUT_DEVICE_TO_SET(id_reader.back);
+        PUT_DEVICE_TO_SET(qr_reader.front);
+        PUT_DEVICE_TO_SET(qr_reader.back);
+        tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
+    }
+    out << tab << std::endl;
 }
 void add_device(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 5)
     {
-        if (_params.size() != 5)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(config_management);
-            THR_CONNECT(config_management);
-            client->add_device_to_set(_params[0], _params[1], atoi(_params[2].c_str()), atoi(_params[3].c_str()), _params[4]);
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            std::vector<device_gate_set> gs;
+            std::vector<device_scale_set> ss;
+            client->get_scale_config(ss);
+            client->get_gate_config(gs);
+            long set_id = 0;
+            for (auto &itr : gs)
+            {
+                if (itr.name == _params[3])
+                {
+                    set_id = itr.id;
+                    break;
+                }
+            }
+            if (set_id <= 0)
+            {
+                for (auto &itr : ss)
+                {
+                    if (itr.name == _params[3])
+                    {
+                        set_id = itr.id;
+                        break;
+                    }
+                }
+            }
+
+            client->add_device_to_set(_params[0], _params[1], atoi(_params[2].c_str()), set_id, _params[4]);
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 void del_device(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(config_management);
-            THR_CONNECT(config_management);
-            client->del_device_from_set(atoi(_params[0].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            client->del_device_from_set(atoi(_params[0].c_str()));
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void start_device(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(device_management);
-            THR_CONNECT_DM(device_management);
-            client->device_ctrl(atoi(_params[0].c_str()), 1);
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DM(device_management);
+        try
+        {
+            client->device_ctrl(atoi(_params[0].c_str()), 1);
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 void stop_device(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(device_management);
-            THR_CONNECT_DM(device_management);
-            client->device_ctrl(atoi(_params[0].c_str()), 0);
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DM(device_management);
+        try
+        {
+            client->device_ctrl(atoi(_params[0].c_str()), 0);
+        }
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 void show_device_status(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DM(device_management);
+        try
         {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(device_management);
-            THR_CONNECT_DM(device_management);
             auto is_started = client->device_is_started(atoi(_params[0].c_str()));
             if (is_started)
             {
@@ -257,31 +282,105 @@ void show_device_status(std::ostream &out, std::vector<std::string> _params)
             {
                 out << "关闭" << std::endl;
             }
-            TRH_CLOSE();
         }
-    }
-    catch (gen_exp e)
-    {
-        out << e.msg << std::endl;
+        catch (gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
-
-
-std::unique_ptr<cli::Menu> make_device_cli()
+std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
 {
-    auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu("device"));
+    auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu(_menu_name));
 
     root_menu->Insert(CLI_MENU_ITEM(show_device_driver), "查看驱动");
     root_menu->Insert(CLI_MENU_ITEM(show_device_gate), "查看门组件");
     root_menu->Insert(CLI_MENU_ITEM(show_device_scale), "查看磅组件");
     root_menu->Insert(CLI_MENU_ITEM(add_set), "添加组件", {"组件名", "类型：0->门,1->磅"});
     root_menu->Insert(CLI_MENU_ITEM(del_set), "删除组件", {"组件编号"});
-    root_menu->Insert(CLI_MENU_ITEM(add_device), "添加设备", {"设备名", "参数", "驱动编号", "组件编号", "用途"});
+    root_menu->Insert(CLI_MENU_ITEM(add_device), "添加设备", {"设备名", "参数", "驱动编号", "组件名称", "用途"});
     root_menu->Insert(CLI_MENU_ITEM(del_device), "删除设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(start_device), "启动设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(stop_device), "关闭设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(show_device_status), "查看设备启动状态", {"设备编号"});
 
     return root_menu;
+}
+
+device_cli::device_cli() : common_cli(make_device_cli("device"), "device")
+{
+}
+
+std::string sub_bdr_make(const device_meta &_dev, const std::string &_use_for, const std::string &_set_name)
+{
+    std::string ret;
+    if (_dev.id > 0)
+    {
+        std::vector<std::string> sub_bdr_v;
+        sub_bdr_v.push_back("add_device");
+        sub_bdr_v.push_back("'" + _dev.name + "'");
+        sub_bdr_v.push_back("'" + _dev.driver_args + "'");
+        sub_bdr_v.push_back("'" + std::to_string(_dev.driver.id) + "'");
+        sub_bdr_v.push_back("'" + _set_name + "'");
+        sub_bdr_v.push_back(_use_for);
+        ret = util_join_string(sub_bdr_v, " ");
+        ret += "\n";
+    }
+    return ret;
+}
+
+std::string device_cli::make_bdr()
+{
+    std::string ret;
+
+    THR_CALL_BEGIN(config_management);
+    std::vector<device_gate_set> dgss;
+    client->get_gate_config(dgss);
+    std::vector<device_scale_set> dsss;
+    client->get_scale_config(dsss);
+    for (auto &itr : dgss)
+    {
+        ret += "add_set " + itr.name + " 0\n";
+        ret += sub_bdr_make(itr.gate.back, "back_gate", itr.name);
+        ret += sub_bdr_make(itr.gate.front, "front_gate", itr.name);
+        ret += sub_bdr_make(itr.id_reader.back, "back_id_reader", itr.name);
+        ret += sub_bdr_make(itr.id_reader.front, "front_id_reader", itr.name);
+        ret += sub_bdr_make(itr.led.back, "back_led", itr.name);
+        ret += sub_bdr_make(itr.led.front, "front_led", itr.name);
+        ret += sub_bdr_make(itr.plate_cam.back, "back_plate_cam", itr.name);
+        ret += sub_bdr_make(itr.plate_cam.front, "front_plate_cam", itr.name);
+        ret += sub_bdr_make(itr.qr_reader.back, "back_qr_reader", itr.name);
+        ret += sub_bdr_make(itr.qr_reader.front, "front_qr_reader", itr.name);
+        ret += sub_bdr_make(itr.speaker.back, "back_speaker", itr.name);
+        ret += sub_bdr_make(itr.speaker.front, "front_speaker", itr.name);
+        ret += sub_bdr_make(itr.video_cam.back, "back_video_cam", itr.name);
+        ret += sub_bdr_make(itr.video_cam.front, "front_video_cam", itr.name);
+    }
+    for (auto &itr : dsss)
+    {
+        ret += "add_set " + itr.name + " 1\n";
+        ret += sub_bdr_make(itr.gate.back, "back_gate", itr.name);
+        ret += sub_bdr_make(itr.gate.front, "front_gate", itr.name);
+        ret += sub_bdr_make(itr.id_reader.back, "back_id_reader", itr.name);
+        ret += sub_bdr_make(itr.id_reader.front, "front_id_reader", itr.name);
+        ret += sub_bdr_make(itr.led.back, "back_led", itr.name);
+        ret += sub_bdr_make(itr.led.front, "front_led", itr.name);
+        ret += sub_bdr_make(itr.plate_cam.back, "back_plate_cam", itr.name);
+        ret += sub_bdr_make(itr.plate_cam.front, "front_plate_cam", itr.name);
+        ret += sub_bdr_make(itr.qr_reader.back, "back_qr_reader", itr.name);
+        ret += sub_bdr_make(itr.qr_reader.front, "front_qr_reader", itr.name);
+        ret += sub_bdr_make(itr.speaker.back, "back_speaker", itr.name);
+        ret += sub_bdr_make(itr.speaker.front, "front_speaker", itr.name);
+        ret += sub_bdr_make(itr.video_cam.back, "back_video_cam", itr.name);
+        ret += sub_bdr_make(itr.video_cam.front, "front_video_cam", itr.name);
+
+        ret += sub_bdr_make(itr.printer.back, "back_printer", itr.name);
+        ret += sub_bdr_make(itr.printer.front, "front_printer", itr.name);
+        ret += sub_bdr_make(itr.scale, "scale", itr.name);
+    }
+    THR_CALL_END();
+
+    return ret;
 }

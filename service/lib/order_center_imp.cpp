@@ -468,3 +468,22 @@ bool order_center_handler::order_rollback_gate(const std::string &order_number, 
 {
     return false;
 }
+
+bool order_center_handler::order_push_attach(const std::string &order_number, const std::string &name, const std::string &att_path)
+{
+    bool ret = false;
+
+    auto es = get_order_by_number(order_number);
+    if (!es)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    sql_order_attach tmp;
+    tmp.att_name = name;
+    tmp.att_path = att_path;
+    tmp.set_parent(*es, "belong_order");
+
+    ret = tmp.insert_record();
+
+    return ret;
+}

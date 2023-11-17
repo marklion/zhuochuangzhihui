@@ -3,6 +3,13 @@
 
 int main(int argc, char const *argv[])
 {
+    std::thread([]()
+                {
+        while (1)
+        {
+        timer_wheel_schc();
+        } })
+        .detach();
     std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
     auto hdl = std::shared_ptr<device_management_handler>(new device_management_handler());
     multi_processor->registerProcessor("device_management", std::shared_ptr<TProcessor>(new device_managementProcessor(hdl)));
@@ -17,6 +24,7 @@ int main(int argc, char const *argv[])
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
 
     tp_server.serve();
+    timer_wheel_fini();
 
     return 0;
 }

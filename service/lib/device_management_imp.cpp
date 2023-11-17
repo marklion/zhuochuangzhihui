@@ -1,6 +1,7 @@
 #include "device_management_imp.h"
 #include "rpc_include.h"
 #include <wait.h>
+#include <sys/prctl.h>
 
 struct driver_run_status
 {
@@ -59,6 +60,7 @@ static int start_daemon(const std::string &_cmd, const std::string &_args, unsig
     pid = fork();
     if (pid <= 0)
     {
+        prctl(PR_SET_PDEATHSIG, SIGTERM);
         char **argv = (char **)malloc(args_size * (sizeof(argv) + 1));
         for (size_t i = 0; i < args_size; i++)
         {
@@ -113,7 +115,7 @@ void device_management_handler::init_all_set()
         start_device_no_exp(itr.speaker.front.id);
         start_device_no_exp(itr.video_cam.back.id);
         start_device_no_exp(itr.video_cam.front.id);
-        sm_init_add(std::make_shared<gate_sm>(itr.id), itr.id);
+        sm_init_add(std::make_shared<gate_sm>(itr.id, this), itr.id);
     }
     for (auto &itr : scale_tmp)
     {
@@ -134,6 +136,7 @@ void device_management_handler::init_all_set()
         start_device_no_exp(itr.printer.back.id);
         start_device_no_exp(itr.printer.front.id);
         start_device_no_exp(itr.scale.id);
+        sm_init_add(std::make_shared<scale_sm>(itr.id, this), itr.id);
     }
 }
 
@@ -340,8 +343,7 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                 [&](abs_state_machine &sm)
                 {
                     bool ret = false;
-                    auto &gsm = dynamic_cast<gate_sm &>(sm);
-                    auto result = set->should_handle_income_plate(plate_no, gsm.order_number);
+                    auto result = set->should_handle_income_plate(plate_no, sm.order_number);
                     if (result.length() > 0)
                     {
                         led_display(get_same_side_device(plate_cam_id, "led"), {result});
@@ -350,13 +352,52 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                     else
                     {
                         ret = true;
-                        gsm.trigger_device_id = plate_cam_id;
-                        gsm.pass_plate_number = plate_no;
+                        sm.tft = abs_state_machine::plate_cam;
+                        sm.trigger_device_id = plate_cam_id;
+                        sm.pass_plate_number = plate_no;
                     }
 
                     return ret;
                 });
         }
+    }
+}
+
+bool device_management_handler::gate_is_close(const int64_t gate_id)
+{
+    bool ret = false;
+    auto sp = get_status_from_map(gate_id);
+    if (sp)
+    {
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DEV(device_management, sp->port);
+        ret = client->gate_is_close(gate_id);
+        TRH_CLOSE();
+    }
+    return ret;
+}
+
+void device_management_handler::printer_print(const int64_t printer_id, const std::string &content)
+{
+    auto sp = get_status_from_map(printer_id);
+    if (sp)
+    {
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DEV(device_management, sp->port);
+        client->printer_print(printer_id, content);
+        TRH_CLOSE();
+    }
+}
+
+void device_management_handler::plate_cam_cap(const int64_t plate_cam_id)
+{
+    auto sp = get_status_from_map(plate_cam_id);
+    if (sp)
+    {
+        THR_DEF_CIENT(device_management);
+        THR_CONNECT_DEV(device_management, sp->port);
+        client->plate_cam_cap(plate_cam_id);
+        TRH_CLOSE();
     }
 }
 
@@ -415,18 +456,52 @@ int64_t device_management_handler::get_same_side_device(int64_t _input_id, const
         auto bi_set = ipd->get_children<sql_device_set>("back_id_reader");
         auto fq_set = ipd->get_children<sql_device_set>("front_qr_reader");
         auto bq_set = ipd->get_children<sql_device_set>("back_qr_reader");
+        auto bg_set = ipd->get_children<sql_device_set>("back_gate");
+        auto fg_set = ipd->get_children<sql_device_set>("front_gate");
         GOTHROUGH_EACH_SET(fpc_set, front_direc);
         GOTHROUGH_EACH_SET(bpc_set, back_direc);
         GOTHROUGH_EACH_SET(fi_set, front_direc);
         GOTHROUGH_EACH_SET(bi_set, back_direc);
         GOTHROUGH_EACH_SET(fq_set, front_direc);
         GOTHROUGH_EACH_SET(bq_set, back_direc);
+        GOTHROUGH_EACH_SET(fg_set, front_direc);
+        GOTHROUGH_EACH_SET(bg_set, back_direc);
     }
 
     return ret;
 }
 
-gate_sm::gate_sm(int64_t _set_id) : abs_state_machine(std::unique_ptr<abs_sm_state>(new gate_state_init())), set_id(_set_id)
+int64_t device_management_handler::get_diff_side_device(int64_t _input_id, const std::string &_type)
+{
+    int64_t ret;
+
+    auto this_gate = get_same_side_device(_input_id, "gate");
+    auto tg = sqlite_orm::search_record<sql_device_meta>(this_gate);
+    if (tg)
+    {
+        auto set = tg->get_children<sql_device_set>("front_gate");
+        if (set)
+        {
+            auto og = set->get_parent<sql_device_meta>("back_gate");
+            if (og)
+            {
+                ret = get_same_side_device(og->get_pri_id(), _type);
+            }
+        }
+        else
+        {
+            auto og = set->get_parent<sql_device_meta>("front_gate");
+            if (og)
+            {
+                ret = get_same_side_device(og->get_pri_id(), _type);
+            }
+        }
+    }
+
+    return ret;
+}
+
+gate_sm::gate_sm(int64_t _set_id, device_management_handler *dmh) : abs_state_machine(std::unique_ptr<abs_sm_state>(new gate_state_init()), dmh, _set_id)
 {
 }
 
@@ -523,5 +598,286 @@ std::unique_ptr<device_scale_set> get_scale_config_by_id(int64_t _id)
             break;
         }
     }
+    return ret;
+}
+
+scale_sm::scale_sm(int64_t _set_id, device_management_handler *dmh) : abs_state_machine(std::unique_ptr<scale_state_idle>(new scale_state_idle()), dmh, _set_id)
+{
+}
+
+void scale_sm::clear_state()
+{
+    this->cur_weight = 0;
+    this->order_number.clear();
+    this->pass_plate_number.clear();
+    this->weight_que.clear();
+    this->trigger_device_id = 0;
+    this->begin_scale_date.clear();
+    this->end_scale_date.clear();
+}
+
+void scale_sm::open_entry()
+{
+    auto tg_id = device_management_handler::get_same_side_device(trigger_device_id, "gate");
+    THR_CALL_DM_BEGIN();
+    client->gate_ctrl(tg_id, true);
+    THR_CALL_DM_END();
+}
+
+void scale_sm::open_exit()
+{
+    auto tg_id = device_management_handler::get_diff_side_device(trigger_device_id, "gate");
+    THR_CALL_DM_BEGIN();
+    client->gate_ctrl(tg_id, true);
+    THR_CALL_DM_END();
+}
+
+void scale_sm::start_scale_timer(int sec)
+{
+    m_timer = timer_wheel_add_node(
+        sec,
+        [this](void *p_set_id)
+        {
+            tft = timer;
+            trigger_sm();
+        });
+}
+
+void scale_sm::stop_scale_timer()
+{
+    timer_wheel_del_node(m_timer);
+}
+
+void scale_sm::cast_common(const std::string &_content)
+{
+    auto fs_id = device_management_handler::get_same_side_device(trigger_device_id, "speaker");
+    auto bs_id = device_management_handler::get_diff_side_device(trigger_device_id, "speaker");
+    auto fl_id = device_management_handler::get_same_side_device(trigger_device_id, "led");
+    auto bl_id = device_management_handler::get_diff_side_device(trigger_device_id, "led");
+    std::vector<std::string> content = {
+        "",
+        pass_plate_number,
+        _content,
+    };
+    auto sp_content = util_join_string(content, ",");
+    THR_CALL_DM_BEGIN();
+    client->speaker_cast(fs_id, sp_content);
+    client->speaker_cast(bs_id, sp_content);
+    client->led_display(fl_id, content);
+    client->led_display(bl_id, content);
+    THR_CALL_DM_END();
+}
+
+void scale_sm::cast_enter_info()
+{
+    cast_common("请上磅");
+}
+
+void scale_sm::cast_stop_stable()
+{
+    cast_common("车辆未完全上磅");
+}
+
+void scale_sm::cast_wait_scale()
+{
+    cast_common("请等待");
+}
+
+void scale_sm::cast_result()
+{
+    cast_common("已完成，请下磅");
+}
+
+void scale_sm::cast_busy()
+{
+    cast_common("正在称重，请等待");
+}
+
+void scale_sm::record_scale_start()
+{
+    begin_scale_date = util_get_timestring();
+}
+
+void scale_sm::record_scale_end()
+{
+    end_scale_date = util_get_timestring();
+}
+
+void scale_sm::print_ticket()
+{
+    auto p_id = device_management_handler::get_diff_side_device(trigger_device_id, "printer");
+    THR_CALL_DM_BEGIN();
+    client->printer_print(p_id, "aaa");
+    THR_CALL_END();
+}
+
+void scale_sm::trigger_cam_plate()
+{
+    auto pc_id = device_management_handler::get_diff_side_device(trigger_device_id, "plate_cam");
+    auto pc_o_id = device_management_handler::get_same_side_device(trigger_device_id, "plate_cam");
+    THR_CALL_DM_BEGIN();
+    client->plate_cam_cap(pc_id);
+    client->plate_cam_cap(pc_o_id);
+    THR_CALL_END();
+}
+
+void scale_state_idle::before_enter(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.clear_state();
+}
+
+void scale_state_idle::after_exit(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.open_entry();
+}
+
+std::unique_ptr<abs_sm_state> scale_state_idle::proc_event(abs_state_machine &_sm)
+{
+    std::unique_ptr<abs_sm_state> ret;
+    if (_sm.tft == abs_state_machine::plate_cam ||
+        _sm.tft == abs_state_machine::id_reader ||
+        _sm.tft == abs_state_machine::qr_reader)
+    {
+        ret.reset(new scale_state_prepare());
+    }
+    return ret;
+}
+
+void scale_state_scale::before_enter(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.cast_wait_scale();
+}
+
+void scale_state_scale::after_exit(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.cast_result();
+    THR_CALL_BEGIN(order_center);
+    client->order_push_weight(sm.order_number, sm.cur_weight, "自动");
+    THR_CALL_END();
+    sm.print_ticket();
+}
+
+std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    std::unique_ptr<abs_sm_state> ret;
+    if (_sm.tft == abs_state_machine::plate_cam ||
+        _sm.tft == abs_state_machine::id_reader ||
+        _sm.tft == abs_state_machine::qr_reader)
+    {
+        sm.cast_busy();
+    }
+    else if (_sm.tft == abs_state_machine::scale)
+    {
+        if (sm.weight_que.empty())
+        {
+            sm.weight_que.push_back(sm.cur_weight);
+        }
+        else
+        {
+            if (sm.weight_que.back() != sm.cur_weight)
+            {
+                sm.weight_que.clear();
+            }
+            sm.weight_que.push_back(sm.cur_weight);
+        }
+        if (sm.weight_que.size() > 3)
+        {
+            ret.reset(new scale_state_clean());
+        }
+    }
+
+    return ret;
+}
+
+void scale_state_prepare::before_enter(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.start_scale_timer(5);
+    auto plate_cam_id = device_management_handler::get_same_side_device(sm.trigger_device_id, "plate_cam");
+    std::string pic_path;
+    THR_CALL_DM_BEGIN();
+    client->cap_picture_slow(pic_path, plate_cam_id);
+    THR_CALL_DM_END();
+    THR_CALL_BEGIN(order_center);
+    client->order_push_attach(sm.order_number, "上磅照片", pic_path);
+    THR_CALL_END();
+    sm.record_scale_start();
+}
+
+void scale_state_prepare::after_exit(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.stop_scale_timer();
+}
+
+std::unique_ptr<abs_sm_state> scale_state_prepare::proc_event(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    std::unique_ptr<abs_sm_state> ret;
+    if (_sm.tft == abs_state_machine::plate_cam ||
+        _sm.tft == abs_state_machine::id_reader ||
+        _sm.tft == abs_state_machine::qr_reader)
+    {
+        sm.cast_busy();
+    }
+    else if (_sm.tft == abs_state_machine::timer)
+    {
+        sm.cast_stop_stable();
+        auto set = sqlite_orm::search_record<sql_device_set>(sm.set_id);
+        if (set)
+        {
+            auto fg = set->get_parent<sql_device_meta>("front_gate");
+            auto bg = set->get_parent<sql_device_meta>("back_gate");
+            if (fg && bg)
+            {
+                THR_CALL_DM_BEGIN();
+                if (client->gate_is_close(fg->get_pri_id()) && client->gate_is_close(bg->get_pri_id()))
+                {
+                    ret.reset(new scale_state_scale());
+                }
+                THR_CALL_DM_END();
+            }
+        }
+    }
+    return ret;
+}
+
+void scale_state_clean::before_enter(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.open_exit();
+}
+
+void scale_state_clean::after_exit(abs_state_machine &_sm)
+{
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+    sm.trigger_cam_plate();
+    sm.record_scale_end();
+}
+
+std::unique_ptr<abs_sm_state> scale_state_clean::proc_event(abs_state_machine &_sm)
+{
+    std::unique_ptr<abs_sm_state> ret;
+    auto &sm = dynamic_cast<scale_sm &>(_sm);
+
+    if (_sm.tft == abs_state_machine::plate_cam ||
+        _sm.tft == abs_state_machine::id_reader ||
+        _sm.tft == abs_state_machine::qr_reader)
+    {
+        sm.cast_busy();
+    }
+    else if (sm.tft == abs_state_machine::scale)
+    {
+        if (sm.cur_weight == 0)
+        {
+            ret.reset(new scale_state_idle());
+        }
+    }
+
     return ret;
 }

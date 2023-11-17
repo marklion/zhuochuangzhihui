@@ -1,0 +1,51 @@
+#include "file_up_down.h"
+#include "../db_orm/zh_db_config.h"
+#include "../utils/utils.h"
+#include "../utils/tdf_timer.h"
+
+void check_need_delete()
+{
+    auto last_exist_date = time(nullptr) - 15 * 24*3600;
+    auto expect_date = util_get_timestring(last_exist_date);
+    auto all_fs = sqlite_orm::search_record_all<sql_file_store>("upload_date != '' AND datetime(upload_date) < datetime('%s')", expect_date.c_str());
+    for (auto &itr:all_fs)
+    {
+        file_delete(itr.file_path);
+    }
+}
+
+std::string file_store_content(const std::string &_content, bool is_tmp)
+{
+    std::string ret;
+    auto file_name = util_gen_ssid();
+    int fd = open(("/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+    if (fd >= 0)
+    {
+        if (_content.length() > 0 && _content.length() == write(fd, _content.data(), _content.length()))
+        {
+            ret = file_name;
+            sql_file_store tmp;
+            tmp.file_path = file_name;
+            if (is_tmp)
+            {
+                tmp.upload_date = util_get_timestring();
+            }
+            tmp.insert_record();
+        }
+        close(fd);
+    }
+    check_need_delete();
+
+    return ret;
+}
+
+void file_delete(const std::string &_content)
+{
+    auto fs = sqlite_orm::search_record<sql_file_store>("file_path == '%s'", _content.c_str());
+    if (fs)
+    {
+        unlink(("/files/" + fs->file_path).c_str());
+        fs->remove_record();
+    }
+    check_need_delete();
+}

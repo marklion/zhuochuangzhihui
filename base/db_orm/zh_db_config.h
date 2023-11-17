@@ -401,6 +401,25 @@ public:
     }
 };
 
+class sql_file_store:public sql_tree_base {
+public:
+    std::string file_path;
+    std::string upload_date;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("file_path", sqlite_orm_column::STRING, &file_path));
+        ret.push_back(sqlite_orm_column("upload_date", sqlite_orm_column::STRING, &upload_date));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "file_store_table";
+    }
+};
+
 std::unique_ptr<sql_user> db_get_online_user(const std::string &_token);
 
 #endif

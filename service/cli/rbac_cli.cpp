@@ -4,12 +4,11 @@
 void show_users(std::ostream &out, std::vector<std::string> _params)
 {
     std::vector<rbac_user> tmp;
+    THR_DEF_CIENT(rbac_center);
+    THR_CONNECT(rbac_center);
     try
     {
-        THR_DEF_CIENT(rbac_center);
-        THR_CONNECT(rbac_center);
         client->get_all_user(tmp);
-        TRH_CLOSE();
         tabulate::Table tab;
         tab.add_row({"ID", "name", "phone", "pwd", "roles"});
         for (auto &itr : tmp)
@@ -22,6 +21,7 @@ void show_users(std::ostream &out, std::vector<std::string> _params)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
 }
 
 void add_user(std::ostream &out, std::vector<std::string> _params)
@@ -32,33 +32,32 @@ void add_user(std::ostream &out, std::vector<std::string> _params)
     }
     else
     {
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
         try
         {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
             rbac_user tmp;
             tmp.md5_password = util_calcu_md5(_params[2]);
             tmp.name = _params[0];
             tmp.phone = _params[1];
             client->add_user(tmp);
-            TRH_CLOSE();
         }
         catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
+        TRH_CLOSE();
     }
 }
 
 void show_permission(std::ostream &out, std::vector<std::string> _params)
 {
+    THR_DEF_CIENT(rbac_center);
+    THR_CONNECT(rbac_center);
     try
     {
-        THR_DEF_CIENT(rbac_center);
-        THR_CONNECT(rbac_center);
         std::vector<rbac_permission> tmp;
         client->get_all_permission(tmp);
-        TRH_CLOSE();
 
         tabulate::Table tab;
         tab.add_row({"ID", "name", "role_name", "type"});
@@ -73,20 +72,20 @@ void show_permission(std::ostream &out, std::vector<std::string> _params)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
 }
 
 void show_roles(std::ostream &out, std::vector<std::string> _params)
 {
+    THR_DEF_CIENT(rbac_center);
+    THR_CONNECT(rbac_center);
     try
     {
-        THR_DEF_CIENT(rbac_center);
-        THR_CONNECT(rbac_center);
         std::vector<rbac_role> tmp;
         client->get_all_roles(tmp);
-        TRH_CLOSE();
 
         tabulate::Table tab;
-        tab.add_row({"ID","name","users","permissions","type"});
+        tab.add_row({"ID", "name", "users", "permissions", "type"});
         for (auto &itr : tmp)
         {
             std::vector<std::string> users;
@@ -111,166 +110,167 @@ void show_roles(std::ostream &out, std::vector<std::string> _params)
     {
         out << e.msg << std::endl;
     }
+    TRH_CLOSE();
 }
 
 void add_user_to_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->add_user_to_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->add_user_to_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void del_user_from_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->del_user_from_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->del_user_from_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void del_user(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->del_user(atoi(_params[0].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->del_user(atoi(_params[0].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void add_perm_to_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->add_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->add_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 void del_perm_from_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->del_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->del_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
 void add_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 2)
     {
-        if (_params.size() != 2)
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
         {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
             rbac_role tmp;
             tmp.role_name = _params[0];
             tmp.read_only = atoi(_params[1].c_str());
             client->add_role(tmp);
-            TRH_CLOSE();
         }
-    }
-    catch (const gen_exp e)
-    {
-        out << e.msg << std::endl;
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 void del_role(std::ostream &out, std::vector<std::string> _params)
 {
-    try
+    if (_params.size() != 1)
     {
-        if (_params.size() != 1)
-        {
-            out << "参数错误" << std::endl;
-        }
-        else
-        {
-            THR_DEF_CIENT(rbac_center);
-            THR_CONNECT(rbac_center);
-            client->del_role(atoi(_params[0].c_str()));
-            TRH_CLOSE();
-        }
+        out << "参数错误" << std::endl;
     }
-    catch (const gen_exp e)
+    else
     {
-        out << e.msg << std::endl;
+        THR_DEF_CIENT(rbac_center);
+        THR_CONNECT(rbac_center);
+        try
+        {
+            client->del_role(atoi(_params[0].c_str()));
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
     }
 }
 
-std::unique_ptr<cli::Menu> make_rabc_cli()
+std::unique_ptr<cli::Menu> make_rabc_cli(const std::string &_menu_name)
 {
-    auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu("rbac"));
+    auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu(_menu_name));
 
     root_menu->Insert(CLI_MENU_ITEM(show_users), "查看用户");
     root_menu->Insert(CLI_MENU_ITEM(show_permission), "查看权限");
@@ -285,4 +285,13 @@ std::unique_ptr<cli::Menu> make_rabc_cli()
     root_menu->Insert(CLI_MENU_ITEM(del_perm_from_role), "取消角色权限", {"角色编号", "权限编号"});
 
     return root_menu;
+}
+
+rbac_cli::rbac_cli() : common_cli(make_rabc_cli("rbac"), "rbac")
+{
+}
+
+std::string rbac_cli::make_bdr()
+{
+    return std::string();
 }

@@ -3,7 +3,12 @@
 
 
 #include "../lib/rpc_include.h"
+#include "common_cli.h"
 
-std::unique_ptr<cli::Menu> make_device_cli();
+class device_cli:public common_cli{
+public:
+    device_cli();
+    virtual std::string make_bdr();
+};
 
 #endif // _DEVICE_CLI_H_

@@ -10,8 +10,6 @@ class timer_node {
     timer_handler m_handler;
     void *m_pdata = nullptr;
     bool m_one_time = false;
-    pthread_mutex_t node_lock = PTHREAD_MUTEX_INITIALIZER;
-    bool m_is_valid = true;
 public:
     timer_node(
         int _sec,
@@ -33,19 +31,9 @@ public:
     }
     void proc_timeout()
     {
-        pthread_mutex_lock(&node_lock);
-        if (m_is_valid)
-        {
             m_handler(m_pdata);
-        }
-        pthread_mutex_unlock(&node_lock);
     }
-    void set_invalid()
-    {
-        pthread_mutex_lock(&node_lock);
-        m_is_valid = false;
-        pthread_mutex_unlock(&node_lock);
-    }
+
     int belong_wheel_index = -1;
     std::list<std::shared_ptr<timer_node>>::iterator belong_list;
     int last_turn = 0;

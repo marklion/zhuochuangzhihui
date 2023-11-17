@@ -9,10 +9,13 @@ protected:
 
 public:
     virtual void init_all_set() {}
-  virtual void push_scale_read(const int64_t scale_id, const double weight) {}
-  virtual void push_id_read(const int64_t id_id, const std::string& id_number) {}
-  virtual void push_qr_read(const int64_t qr_id, const std::string& qr_content) {}
-  virtual void push_plate_read(const int64_t plate_cam_id, const std::string& plate_no) {}
+    virtual void push_scale_read(const int64_t scale_id, const double weight) {}
+    virtual void push_id_read(const int64_t id_id, const std::string &id_number) {}
+    virtual void push_qr_read(const int64_t qr_id, const std::string &qr_content) {}
+    virtual void push_plate_read(const int64_t plate_cam_id, const std::string &plate_no) {}
+    virtual bool gate_is_close(const int64_t gate_id) { return false; }
+    virtual void printer_print(const int64_t printer_id, const std::string &content) {}
+    virtual void plate_cam_cap(const int64_t plate_cam_id) {}
     common_driver(const std::string &_name) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log")
     {
     }
@@ -74,6 +77,7 @@ public:
         threadManager->threadFactory(threadFactory);
         threadManager->start();
         TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
+
         tp_server.serve();
     }
 };

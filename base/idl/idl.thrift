@@ -225,6 +225,7 @@ service order_center {
     bool order_rollback_weight(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_push_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_rollback_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
+    bool order_push_attach(1:string order_number, 2:string name, 3:string att_path) throws (1:gen_exp e),
 }
 
 service device_management {
@@ -234,6 +235,8 @@ service device_management {
     oneway void gate_ctrl(1:i64 gate_id, 2:bool is_open),
     oneway void led_display(1:i64 led_id, 2:list<string> content),
     oneway void speaker_cast(1:i64 speaker_id, 2:string content),
+    oneway void printer_print(1:i64 printer_id, 2:string content),
+    oneway void plate_cam_cap(1:i64 plate_cam_id),
     double last_scale_read(1:i64 scale_id) throws (1:gen_exp e),
     string last_id_read(1:i64 id_reader_id) throws (1:gen_exp e),
     string last_qr_read(1:i64 qr_reader_id) throws (1:gen_exp e),
@@ -244,4 +247,5 @@ service device_management {
     oneway void push_plate_read(1:i64 plate_cam_id, 2:string plate_no),
     string cap_picture_slow(1:i64 cam_id) throws (1:gen_exp e),
     string video_record_slow(1:i64 cam_id, 2:string begin_date, 3:string end_date) throws (1:gen_exp e),
+    bool gate_is_close(1:i64 gate_id) throws(1:gen_exp e),
 }

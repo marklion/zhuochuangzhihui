@@ -73,12 +73,9 @@ public:
         m_wheel.clear();
         m_proc_vec.clear();
     }
-    void push_timeout(timer_handle _th)
+    void push_timeout(timer_handle _th, int th_index)
     {
-        if (_th->belong_wheel_index >= 0)
-        {
-            m_proc_vec[_th->belong_wheel_index]->push_timeout(_th);
-        }
+        m_proc_vec[th_index]->push_timeout(_th);
     }
     void add_node(timer_handle _th)
     {
@@ -236,17 +233,18 @@ bool timer_wheel_schc()
                     {
                         g_wheel_inst.turn_wheel();
                         auto tns = g_wheel_inst.get_node();
-                        std::list<timer_handle> tmp_th;
+                        std::list<std::pair<int, timer_handle>> tmp_th;
                         for (auto &itr : tns)
                         {
                             if (itr->last_turn <= 0)
                             {
+                                auto to_p = std::pair<int, timer_handle>(itr->belong_wheel_index, itr);
                                 g_wheel_inst.del_node(itr);
                                 if (!itr->is_one_time())
                                 {
                                     g_wheel_inst.add_node(itr);
                                 }
-                                tmp_th.push_back(itr);
+                                tmp_th.push_back(to_p);
                             }
                             else
                             {
@@ -255,7 +253,7 @@ bool timer_wheel_schc()
                         }
                         for (auto &itr : tmp_th)
                         {
-                            g_wheel_inst.push_timeout(itr);
+                            g_wheel_inst.push_timeout(itr.second, itr.first);
                         }
                     }
                 }
@@ -310,7 +308,6 @@ void timer_wheel_del_node(timer_handle _th)
     {
         g_timer_log.err("failed to send mq:%s", strerror(errno));
     }
-    _th->set_invalid();
 }
 time_t util_get_time_by_string(const std::string &_time_string)
 {
