@@ -2,6 +2,18 @@
 
 class mock_driver : public common_driver
 {
+    std::string m_dev_name;
+    void record_status(const std::string &_status)
+    {
+        std::string s_path = "/tmp/" + m_dev_name  + ".txt";
+        int fd = open(s_path.c_str(), O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IROTH);
+        if (fd)
+        {
+            write(fd, _status.data(), _status.length());
+            write(fd, "\n", 1);
+            close(fd);
+        }
+    }
 public:
     tdf_log m_pub_log;
     long m_dev_id;
@@ -10,7 +22,7 @@ public:
     std::string id_number;
     std::string qr_content;
     std::string plate_no;
-    mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id)
+    mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id), m_dev_name(_dev_name)
     {
         timer_wheel_add_node(
             3,
@@ -40,17 +52,23 @@ public:
         m_pub_log.log(is_open ? "开门" : "关门");
         is_gate_open = !is_open;
         timer_wheel_add_node(
-            2, [&](void *)
-            { is_gate_open = !is_gate_open; },
+            2,
+            [this](void *)
+            {
+                is_gate_open = !is_gate_open;
+                this->record_status(is_gate_open ? "开门" : "关门");
+            },
             true);
     }
     virtual void led_display(const int64_t led_id, const std::vector<std::string> &content)
     {
         log_driver(led_id, __FUNCTION__, "content:%s", util_join_string(content, "\n").c_str());
+        record_status(util_join_string(content, "\n").c_str());
         m_pub_log.log("显示内容：'%s'", util_join_string(content, "\n").c_str());
     }
     virtual void speaker_cast(const int64_t speaker_id, const std::string &content)
     {
+        record_status(content);
         m_pub_log.log("播报内容：'%s'", content.c_str());
     }
     virtual double last_scale_read(const int64_t scale_id)

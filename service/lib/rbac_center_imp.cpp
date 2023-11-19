@@ -216,6 +216,11 @@ bool rbac_center_handler::del_user_from_role(const int64_t role_id, const int64_
 bool rbac_center_handler::add_user(const rbac_user &new_one)
 {
     bool ret = false;
+    auto es = sqlite_orm::search_record<sql_user>("phone == '%s'", new_one.phone.c_str());
+    if (es)
+    {
+        ZH_RETURN_DUP_USER_MSG();
+    }
     sql_user tmp;
     tmp.name = new_one.name;
     tmp.md5_password = new_one.md5_password;

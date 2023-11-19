@@ -29,7 +29,7 @@
         throw e;            \
     } while (0)
 #define ZH_RETURN_UNLOGIN_MSG() ZH_RETURN_MSG("用户未登录")
-#define ZH_RETURN_DUP_USER_MSG() ZH_RETURN_MSG("用户不存在")
+#define ZH_RETURN_DUP_USER_MSG() ZH_RETURN_MSG("用户已存在")
 #define ZH_RETURN_NO_PRAVILIGE() ZH_RETURN_MSG("无权限")
 #define ZH_RETURN_NEED_PRAVILIGE(_need_target)                                              \
     do                                                                                      \

@@ -10,7 +10,7 @@ FROM ubuntu
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cmake wget libpython3-dev npm sqlite3 libsqlite3-dev uuid uuid-dev libcurl4-openssl-dev automake bison flex g++ git libboost-all-dev libevent-dev libssl-dev libtool make pkg-config
 RUN npm install n -g
-RUN n stable
+RUN n v18.17.0
 RUN npm install pkg -g
 WORKDIR /root/
 RUN mkdir thrift_dir
@@ -38,3 +38,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y cups
 RUN npm install -g yarn && yarn global add wetty
 RUN echo 'root:P@ssw0rd' | chpasswd
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y net-tools
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ssh lsof
+RUN echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt install -y language-pack-zh-hans
+RUN export LANGUAGE="zh_CN:zh:en_US:en"
+RUN export LANG="zh_CN.UTF-8"

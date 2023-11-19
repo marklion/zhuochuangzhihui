@@ -325,6 +325,11 @@ bool config_management_handler::set_rule(const running_rule &rule)
     return ret;
 }
 
+void config_management_handler::reboot_system()
+{
+    exit(0);
+}
+
 void config_management_handler::get_rule(running_rule &_return)
 {
     auto er = sqlite_orm::search_record<sql_rule_config>(1);

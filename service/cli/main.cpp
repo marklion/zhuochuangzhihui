@@ -23,6 +23,11 @@ int main(int argc, char const *argv[])
             _out << "zczh" << std::endl;
         }
     });
+    root_menu->Insert("reboot", [](std::ostream &_out){
+        THR_CALL_BEGIN(config_management);
+        client->reboot_system();
+        THR_CALL_END();
+    });
 
     cli::Cli cli(std::move(root_menu));
     if (argc == 1)
@@ -34,17 +39,24 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        try
+        if (std::string(argv[1]) == "-d")
         {
-            std::fstream cmd_file(argv[1], std::ios::in);
-            cli::CliFileSession cf(cli, cmd_file);
+            cli::CliFileSession cf(cli);
             cf.Start();
         }
-        catch(const std::exception& e)
+        else
         {
-            std::cerr << e.what() << '\n';
+            try
+            {
+                std::fstream cmd_file(argv[1], std::ios::in);
+                cli::CliFileSession cf(cli, cmd_file);
+                cf.Start();
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
         }
-
     }
 
     return 0;

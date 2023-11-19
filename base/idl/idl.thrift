@@ -152,6 +152,7 @@ service config_management{
     bool update_vehicle(1:vehicle_config input) throws(1:gen_exp e),
     running_rule get_rule() throws(1:gen_exp e),
     bool set_rule(1:running_rule rule) throws (1:gen_exp e),
+    void reboot_system() throws (1:gen_exp e),
 }
 
 struct vehicle_order_opt_info {

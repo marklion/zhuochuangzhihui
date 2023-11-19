@@ -333,6 +333,127 @@ void mock_device_action(std::ostream &out, std::vector<std::string> _params)
         THR_CALL_DM_END();
     }
 }
+void clear_device(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 0)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_CALL_BEGIN(config_management);
+        std::vector<device_gate_set> tmp_g;
+        std::vector<device_scale_set> tmp_s;
+        client->get_gate_config(tmp_g);
+        client->get_scale_config(tmp_s);
+        for (auto &itr:tmp_g)
+        {
+            try{
+            client->del_device_from_set(itr.gate.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.gate.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.plate_cam.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.plate_cam.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.video_cam.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.video_cam.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.id_reader.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.id_reader.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.qr_reader.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.qr_reader.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.speaker.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.speaker.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.led.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.led.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_set(itr.id);
+            }catch(gen_exp e) {}
+        }
+        for (auto &itr:tmp_s)
+        {
+            try {
+            client->del_device_from_set(itr.gate.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.gate.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.plate_cam.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.plate_cam.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.video_cam.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.video_cam.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.id_reader.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.id_reader.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.qr_reader.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.qr_reader.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.speaker.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.speaker.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.led.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.led.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.printer.back.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.printer.front.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_from_set(itr.scale.id);
+            }catch(gen_exp e) {}
+            try{
+            client->del_device_set(itr.id);
+            }catch(gen_exp e) {}
+        }
+        THR_CALL_END();
+    }
+}
 
 std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
 {
@@ -349,6 +470,7 @@ std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
     root_menu->Insert(CLI_MENU_ITEM(stop_device), "关闭设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(show_device_status), "查看设备启动状态", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(mock_device_action), "仿冒设备数据", {"设备号","参数"});
+    root_menu->Insert(CLI_MENU_ITEM(clear_device), " 清除设备配置");
 
     return root_menu;
 }

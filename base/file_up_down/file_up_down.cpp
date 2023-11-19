@@ -18,7 +18,7 @@ std::string file_store_content(const std::string &_content, const std::string &_
 {
     std::string ret;
     auto file_name = util_gen_ssid() + "." + _ext_name;
-    int fd = open(("/database/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+    int fd = open(("/database/files/" + file_name).c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR|S_IROTH);
     if (fd >= 0)
     {
         if (_content.length() > 0 && _content.length() == write(fd, _content.data(), _content.length()))
