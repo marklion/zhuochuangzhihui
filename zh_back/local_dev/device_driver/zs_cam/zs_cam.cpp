@@ -181,7 +181,8 @@ public:
     }
 
     // 喇叭能力
-    virtual void speaker_speak(const std::string &_voice_content) {
+    virtual void speaker_speak(const std::string &_voice_content)
+    {
         auto voice_req = make_frame(0x30, make_voice_content(_voice_content));
         usleep(120000);
         auto zs_ret = VzLPRClient_SerialSend(g_zc_ser_handler, (unsigned char *)(voice_req.data()), voice_req.length());
@@ -192,7 +193,8 @@ public:
     }
 
     // 红绿灯能力
-    virtual void traffic_light_set(bool _is_green) {
+    virtual void traffic_light_set(bool _is_green)
+    {
         g_cur_green_light = _is_green;
     }
 

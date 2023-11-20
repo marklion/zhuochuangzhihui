@@ -2,6 +2,7 @@
 #include "rpc_include.h"
 #include <wait.h>
 #include <sys/prctl.h>
+#include <vector>
 
 struct driver_run_status
 {
@@ -417,6 +418,53 @@ void device_management_handler::plate_cam_cap(const int64_t plate_cam_id)
         client->plate_cam_cap(plate_cam_id);
         TRH_CLOSE();
     }
+}
+static bool isZombieProcess(pid_t pid) {
+    int status;
+    pid_t result = waitpid(pid, &status, WNOHANG | WUNTRACED | WCONTINUED);
+    if (result == -1) {
+        // 发生错误
+        return false;
+    } else if (result == 0) {
+        // 子进程状态未发生变化，不是僵尸进程
+        return false;
+    } else {
+        // 子进程状态发生变化
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            // 子进程已经退出或被终止，是僵尸进程
+            return true;
+        } else {
+            // 子进程被暂停或继续执行，不是僵尸进程
+            return false;
+        }
+    }
+}
+void device_management_handler::walk_zombie_process()
+{
+    std::vector<long> dids;
+    pthread_mutex_lock(&g_runing_lock);
+    for (auto itr = g_runing_map.begin(); itr!= g_runing_map.end(); ++itr)
+    {
+        if (isZombieProcess(itr->second.pid))
+        {
+            dids.push_back(itr->second.device_id);
+        }
+    }
+    pthread_mutex_unlock(&g_runing_lock);
+    THR_CALL_DM_BEGIN();
+    for (auto &itr:dids)
+    {
+        client->device_ctrl(itr, false);
+    }
+    THR_CALL_DM_END();
+    timer_wheel_add_node(3, [=](void *){
+        THR_CALL_DM_BEGIN();
+        for (auto &itr:dids)
+        {
+            client->device_ctrl(itr, true);
+        }
+        THR_CALL_DM_END();
+    }, true);
 }
 
 void device_management_handler::start_device_no_exp(int64_t id)

@@ -154,6 +154,7 @@ public:
     virtual bool gate_is_close(const int64_t gate_id);
     virtual void printer_print(const int64_t printer_id, const std::string &content);
     virtual void plate_cam_cap(const int64_t plate_cam_id);
+    void walk_zombie_process();
     void start_device_no_exp(int64_t id);
     void sm_init_add(std::shared_ptr<abs_state_machine> _sm, int64_t sm_id);
     void sm_trigger(int64_t sm_id, std::function<bool(abs_state_machine &_sm)> update_func);

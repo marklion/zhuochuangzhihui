@@ -16,4 +16,8 @@ std::string util_calcu_md5(const std::string &_input);
 std::string util_data_hex(const unsigned char *_data, int _length);
 std::string util_gen_ssid();
 
+std::string util_gbk2utf(const std::string &_utf);
+
+std::string util_utf2gbk(const std::string &_gbk);
+
 #endif // _UTILS_H_

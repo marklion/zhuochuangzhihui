@@ -39,6 +39,29 @@ std::string file_store_content(const std::string &_content, const std::string &_
     return "/files/" + ret;
 }
 
+std::string file_store_name(const std::string &_name, const std::string &_ext_name, bool is_tmp)
+{
+    std::string ret;
+    std::string file_content;
+    int fd = open(_name.c_str(), O_RDONLY);
+    if (fd)
+    {
+        char buff[8];
+        long read_len = 0;
+        while (0 < (read_len = read(fd, buff, sizeof(buff))))
+        {
+            file_content.append(buff, read_len);
+        }
+        close(fd);
+    }
+    if (file_content.length() > 0)
+    {
+        ret = file_store_content(file_content, _ext_name, is_tmp);
+    }
+
+    return ret;
+}
+
 void file_delete(const std::string &_content)
 {
     auto fs = sqlite_orm::search_record<sql_file_store>("file_path == '%s'", _content.c_str());

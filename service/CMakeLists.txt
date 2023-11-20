@@ -29,4 +29,4 @@ target_link_libraries(device_center pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_L
 target_link_libraries(zh_cli pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 
 target_link_libraries(mock_driver pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
-target_link_libraries(zs_plate_cam pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
+target_link_libraries(zs_plate_cam pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib VzLPRSDK)

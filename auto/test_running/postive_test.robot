@@ -16,11 +16,6 @@ ${p_weight}  20.23
 ${m_weight}  49.21
 
 *** Test Cases ***
-Self Test
-    Gate Close  ${s_fgate}
-    ${status}  Get Dev Status  ${s_fgate}
-    Log  ${status}
-
 Only Scale Full Flow
     [Setup]  Create A Order For Scale
     [Teardown]  Del Order Try  ${order_number}
@@ -30,6 +25,20 @@ Only Scale Full Flow
     Sleep  20s
     Confirm Order  order_number=${order_number}
     One Time Scale  m
+
+Only Scale p_weight Twice
+    [Setup]  Create A Order For Scale
+    [Teardown]  Del Order Try  ${order_number}
+    Check In Order  ${order_number}
+    Call Order  ${order_number}
+    One Time Scale  p
+    Sleep  20s
+    One Time Scale  m
+    ${driver_result}  Search Order  driver_phone=${driver_phone}
+    Should Not Be Empty  ${driver_result}
+    Confirm Order  order_number=${order_number}
+    One Time Scale  m
+
 
 *** Keywords ***
 Del Exist Order

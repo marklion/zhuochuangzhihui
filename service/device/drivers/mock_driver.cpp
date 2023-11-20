@@ -22,7 +22,7 @@ public:
     std::string id_number;
     std::string qr_content;
     std::string plate_no;
-    mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id), m_dev_name(_dev_name)
+    mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag, _dev_id), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id), m_dev_name(_dev_name)
     {
         timer_wheel_add_node(
             3,
@@ -48,7 +48,7 @@ public:
     }
     virtual void gate_ctrl(const int64_t gate_id, const bool is_open)
     {
-        log_driver(gate_id, __FUNCTION__, "is_open:%d", is_open);
+        log_driver(__FUNCTION__, "is_open:%d", is_open);
         m_pub_log.log(is_open ? "开门" : "关门");
         is_gate_open = !is_open;
         timer_wheel_add_node(
@@ -62,7 +62,7 @@ public:
     }
     virtual void led_display(const int64_t led_id, const std::vector<std::string> &content)
     {
-        log_driver(led_id, __FUNCTION__, "content:%s", util_join_string(content, "\n").c_str());
+        log_driver(__FUNCTION__, "content:%s", util_join_string(content, "\n").c_str());
         record_status(util_join_string(content, "\n").c_str());
         m_pub_log.log("显示内容：'%s'", util_join_string(content, "\n").c_str());
     }
@@ -73,7 +73,7 @@ public:
     }
     virtual double last_scale_read(const int64_t scale_id)
     {
-        log_driver(scale_id, __FUNCTION__, "ret:%f", scale_weight);
+        log_driver(__FUNCTION__, "ret:%f", scale_weight);
         return scale_weight;
     }
     virtual void last_id_read(std::string &_return, const int64_t id_reader_id)

@@ -6,6 +6,7 @@ class common_driver : public device_managementIf
 {
 protected:
     tdf_log m_log;
+    long self_dev_id = 0;
 
 public:
     virtual void init_all_set() {}
@@ -16,17 +17,17 @@ public:
     virtual bool gate_is_close(const int64_t gate_id) { return false; }
     virtual void printer_print(const int64_t printer_id, const std::string &content) {}
     virtual void plate_cam_cap(const int64_t plate_cam_id) {}
-    common_driver(const std::string &_name) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log")
+    common_driver(const std::string &_name, long _self_id) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log"),self_dev_id(_self_id)
     {
     }
-    void log_driver(const int64_t device_id, const char *_func_name, const char *tmlt, ...)
+    void log_driver(const char *_func_name, const char *tmlt, ...)
     {
         va_list vl;
         va_start(vl, tmlt);
         char tmpbuff[8018] = {0};
         vsnprintf(tmpbuff, sizeof(tmpbuff), tmlt, vl);
         va_end(vl);
-        m_log.log("pid %d call %s for device: %d,%s", getpid(), _func_name, device_id, tmpbuff);
+        m_log.log("pid %d call %s for device: %d,%s", getpid(), _func_name, self_dev_id, tmpbuff);
     }
     virtual bool device_ctrl(const int64_t device_id, const bool start)
     {

@@ -1,6 +1,11 @@
 #include "../../base/include.h"
 #include "../lib/rpc_include.h"
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+
 int main(int argc, char const *argv[])
 {
     timer_wheel_init();
@@ -23,6 +28,10 @@ int main(int argc, char const *argv[])
     threadManager->threadFactory(threadFactory);
     threadManager->start();
     TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
+
+    timer_wheel_add_node(8, [&](void *){
+        hdl->walk_zombie_process();
+    });
 
     tp_server.serve();
     timer_wheel_fini();
