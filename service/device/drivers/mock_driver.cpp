@@ -115,6 +115,13 @@ public:
         client->push_plate_read(m_dev_id, plate_no);
         THR_CALL_DM_END();
     }
+    virtual void push_id_read(const int64_t id_id, const std::string &id_number) {
+        m_pub_log.log("身份证触发：%s", id_number.c_str());
+        THR_CALL_DM_BEGIN();
+        this->id_number = id_number;
+        client->push_id_read(m_dev_id, id_number);
+        THR_CALL_DM_END();
+    }
 };
 
 int main(int argc, char **argv)

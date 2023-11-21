@@ -31,10 +31,13 @@ Config Best Dev
     Run ZH Cmd  add_device ${s_speaker} '-t s' 1 s back_speaker
     Run ZH Cmd  add_device ${s_s} '-t s' 1 s scale
     Run ZH Cmd  zczh
+    Run ZH Cmd  rule
+    Run ZH Cmd  set_zyzl_plugin http://192.168.0.101:5001 abc
+    Run ZH Cmd  zczh
     Run ZH Cmd  bdr
     Write  reboot
     DisConnect
-    Sleep  5s
+    Sleep  2s
 Clear Dev Config
     Connect ZH
     Run ZH Cmd  device
@@ -75,6 +78,13 @@ Mock Plate Cap
     Connect ZH
     Run ZH Cmd  device
     Run ZH Cmd  mock_device_action ${dev_id} plate ${plate_no}
+    DisConnect
+Mock Id Read
+    [Arguments]  ${id_no}  ${dev_name}
+    ${dev_id}  Get Dev ID by Name  dev_name=${dev_name}
+    Connect ZH
+    Run ZH Cmd  device
+    Run ZH Cmd  mock_device_action ${dev_id} id_reader ${id_no}
     DisConnect
 Set Scale Weight
     [Arguments]  ${weight}  ${dev_name}

@@ -1,20 +1,20 @@
 #include "order_center_imp.h"
 #include "rpc_include.h"
-#define CHECK_DUP_ITEM(x, y)                                    \
-    do                                                          \
-    {                                                           \
-        if (ret.length() <= 0)                                  \
-        {                                                       \
-            order_search_cond tmp;                              \
-            tmp.exp_status = 100;                              \
-            tmp.x = order.x;                                    \
-            std::vector<vehicle_order_info> es;                 \
-            search_order(es, tmp);                              \
-            if (es.size() > 0)                                  \
-            {                                                   \
+#define CHECK_DUP_ITEM(x, y)                             \
+    do                                                   \
+    {                                                    \
+        if (ret.length() <= 0)                           \
+        {                                                \
+            order_search_cond tmp;                       \
+            tmp.exp_status = 100;                        \
+            tmp.x = order.x;                             \
+            std::vector<vehicle_order_info> es;          \
+            search_order(es, tmp);                       \
+            if (es.size() > 0)                           \
+            {                                            \
                 ret = y + order.driver_phone + "已存在"; \
-            }                                                   \
-        }                                                       \
+            }                                            \
+        }                                                \
     } while (0)
 std::string order_center_handler::order_is_dup(const vehicle_order_info &order)
 {
@@ -39,6 +39,22 @@ std::unique_ptr<sql_order> order_center_handler::get_order_by_number(const std::
 
 void order_center_handler::auto_call_next()
 {
+}
+
+void order_center_handler::push_zyzl(const std::string &_order_number)
+{
+    running_rule rule;
+    THR_CALL_BEGIN(config_management);
+    client->get_rule(rule);
+    THR_CALL_END();
+    auto vo = get_order_by_number(_order_number);
+    if (vo && vo->status != 100 &&
+        vo->p_weight!= 0 && vo->m_weight != 0 &&
+        rule.zyzl_ssid.length() != 0 && rule.zyzl_host.length() != 0)
+    {
+        auto tmp = zyzl_plugin::get_inst();
+        tmp->push_weight(vo->plate_number, vo->p_time, vo->m_time, vo->p_weight, vo->m_weight, std::abs(vo->p_weight - vo->m_weight), "", vo->seal_no);
+    }
 }
 
 void order_center_handler::db_2_rpc(sql_order &_db, vehicle_order_info &_rpc)
@@ -149,6 +165,7 @@ bool order_center_handler::del_order(const std::string &order_number)
         ZH_RETURN_MSG("正在执行，无法关闭");
     }
 
+    push_zyzl(order_number);
     es->status = 100;
     ret = es->update_record();
 
@@ -170,12 +187,12 @@ bool order_center_handler::update_order(const vehicle_order_info &order)
     return ret;
 }
 
-#define SEARCH_COND_APPEND(x)                                             \
-    if (cond.x.length() > 0)                                   \
-    {                                                                     \
-        query_cond += " AND " ;\
-        query_cond += #x;\
-        query_cond += " == '" + cond.x+ "'"; \
+#define SEARCH_COND_APPEND(x)                 \
+    if (cond.x.length() > 0)                  \
+    {                                         \
+        query_cond += " AND ";                \
+        query_cond += #x;                     \
+        query_cond += " == '" + cond.x + "'"; \
     }
 
 void order_center_handler::search_order(std::vector<vehicle_order_info> &_return, const order_search_cond &cond)
@@ -205,8 +222,8 @@ void order_center_handler::search_order(std::vector<vehicle_order_info> &_return
         query_cond += " AND status != " + std::to_string(cond.exp_status);
     }
 
-    auto es = sqlite_orm::search_record_all<sql_order>("%s ORDER BY datetime(p_time) DESC LIMIT 20 OFFSET %d",query_cond.c_str(), cond.page_no * 20);
-    for (auto &itr:es)
+    auto es = sqlite_orm::search_record_all<sql_order>("%s ORDER BY datetime(p_time) DESC LIMIT 20 OFFSET %d", query_cond.c_str(), cond.page_no * 20);
+    for (auto &itr : es)
     {
         vehicle_order_info tmp;
         db_2_rpc(itr, tmp);
@@ -271,6 +288,7 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
     {
         es->call_info_name = opt_name;
         es->call_info_time = util_get_timestring();
+        zyzl_plugin::get_inst()->push_call(es->plate_number);
     }
     else if (es->status == 1)
     {
@@ -314,7 +332,7 @@ bool order_center_handler::order_confirm(const std::string &order_number, const 
 
 bool order_center_handler::order_set_seal_no(const std::string &order_number, const std::string &seal_no)
 {
-    bool ret =false;
+    bool ret = false;
     auto es = get_order_by_number(order_number);
     if (!es)
     {
@@ -396,8 +414,10 @@ bool order_center_handler::order_push_weight(const std::string &order_number, co
             }
             es->m_weight = weight;
             es->m_time = cur_date;
+            es->update_record();
             if (!eih)
             {
+                push_zyzl(es->order_number);
                 es->status = 100;
             }
         }
@@ -445,6 +465,7 @@ bool order_center_handler::order_push_gate(const std::string &order_number, cons
         tmp.occour_time = cur_date;
         tmp.set_parent(*es, "belong_order");
         tmp.insert_record();
+        push_zyzl(es->order_number);
         es->status = 100;
     }
     else

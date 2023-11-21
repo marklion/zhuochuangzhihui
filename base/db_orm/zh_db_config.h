@@ -386,12 +386,16 @@ class sql_rule_config : public sql_tree_base
 public:
     long auto_call_count = 0;
     long call_time_out = 0;
+    std::string zyzl_ssid;
+    std::string zyzl_host;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
 
         ret.push_back(sqlite_orm_column("auto_call_count", sqlite_orm_column::INTEGER, &auto_call_count));
         ret.push_back(sqlite_orm_column("call_time_out", sqlite_orm_column::INTEGER, &call_time_out));
+        ret.push_back(sqlite_orm_column("zyzl_ssid", sqlite_orm_column::STRING, &zyzl_ssid));
+        ret.push_back(sqlite_orm_column("zyzl_host", sqlite_orm_column::STRING, &zyzl_host));
 
         return ret;
     }
@@ -417,6 +421,25 @@ public:
     virtual std::string table_name()
     {
         return "file_store_table";
+    }
+};
+
+class sql_zyzl_plugin_que:public sql_tree_base {
+public:
+    std::string req_body;
+    std::string req_url;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("req_body", sqlite_orm_column::STRING, &req_body));
+        ret.push_back(sqlite_orm_column("req_url", sqlite_orm_column::STRING, &req_url));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "zyzl_plugin_que_table";
     }
 };
 

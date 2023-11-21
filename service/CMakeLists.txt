@@ -20,10 +20,11 @@ add_executable(zs_plate_cam ./device/drivers/zs_plate_cam.cpp)
 
 find_library(IDL_LIB libzh_idl.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(DB_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
+find_library(ZYZL_PLUGIN_LIB libzyzl_plugin.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(UTIL_LIB libzh_utils.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(FILE_UP_DOWN_LIB libfile_up_down.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 
-target_link_libraries(rpc_lib ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} ${FILE_UP_DOWN_LIB})
+target_link_libraries(rpc_lib ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} ${FILE_UP_DOWN_LIB} ${ZYZL_PLUGIN_LIB})
 target_link_libraries(core_service pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 target_link_libraries(device_center pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 target_link_libraries(zh_cli pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)

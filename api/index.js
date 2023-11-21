@@ -716,6 +716,227 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/order/get": {
+        module: 'order',
+        resource: 'vehicle_order_info',
+        is_write: false,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('order_center', 'get_order', [body.order_number]);
+        },
+        help_info: {
+            title: "查找派车单",
+            describe: "参数是搜索条件",
+            params: {
+                type: Object,
+                have_to: true,
+                explain: [
+                    {
+                        name: 'order_number',
+                        type: String,
+                        mean: "订单号",
+                        have_to: true,
+                    },
+                ]
+            },
+            result: {
+                type: Object,
+                mean: "查找到的派车单信息",
+                explain: [
+                    {
+                        name: 'back_plate_number',
+                        type: String,
+                        mean: "挂车车牌号"
+                    },
+                    {
+                        name: 'call_info',
+                        type: Object,
+                        mean: "叫号信息",
+                        explain: [
+                            {
+                                name: "operator_name",
+                                type: String,
+                                mean: '操作人'
+                            },
+                            {
+                                name: "operator_time",
+                                type: String,
+                                mean: '操作时间'
+                            }
+                        ]
+                    },
+                    {
+                        name: 'company_name',
+                        type: String,
+                        mean: "派车公司"
+                    },
+                    {
+                        name: 'confirm_info',
+                        type: String,
+                        mean: "确认装卸货信息",
+                        explain: [
+                            {
+                                name: "operator_name",
+                                type: String,
+                                mean: '操作人'
+                            },
+                            {
+                                name: "operator_time",
+                                type: String,
+                                mean: '操作时间'
+                            }
+                        ]
+                    },
+                    {
+                        name: 'driver_id',
+                        type: String,
+                        mean: "司机身份证号"
+                    },
+                    {
+                        name: 'driver_name',
+                        type: String,
+                        mean: "司机姓名"
+                    },
+                    {
+                        name: 'driver_phone',
+                        type: String,
+                        mean: "司机电话"
+                    },
+                    {
+                        name: 'enter_weight',
+                        type: String,
+                        mean: "进厂前重量"
+                    },
+                    {
+                        name: 'id',
+                        type: Number,
+                        mean: "编号"
+                    },
+                    {
+                        name: 'is_sale',
+                        type: Boolean,
+                        mean: "是否用于销售"
+                    },
+                    {
+                        name: 'm_time',
+                        type: String,
+                        mean: "二次称重时间"
+                    },
+                    {
+                        name: 'm_weight',
+                        type: Number,
+                        mean: "二次称重重量"
+                    },
+                    {
+                        name: 'order_number',
+                        type: String,
+                        mean: "派车单号",
+                    },
+                    {
+                        name: 'p_time',
+                        type: String,
+                        mean: "一次称重时间",
+                    },
+                    {
+                        name: 'p_weight',
+                        type: Number,
+                        mean: "一次称重重量",
+                    },
+                    {
+                        name: 'plate_number',
+                        type: String,
+                        mean: " 车牌号",
+                    },
+                    {
+                        name: 'reg_info',
+                        type: Object,
+                        mean: "排号信息",
+                        explain: [
+                            {
+                                name: "operator_name",
+                                type: String,
+                                mean: '操作人'
+                            },
+                            {
+                                name: "operator_time",
+                                type: String,
+                                mean: '操作时间'
+                            }
+                        ],
+                    },
+                    {
+                        name: 'seal_no',
+                        type: String,
+                        mean: "铅封号",
+                    },
+                    {
+                        name: 'status',
+                        type: Number,
+                        mean: "状态：0->无效， 1->未入场, 2->正在执行, 100->已完成",
+                    },
+                    {
+                        name: 'stuff_from',
+                        type: String,
+                        mean: "物料来源地",
+                    },
+                    {
+                        name: 'stuff_name',
+                        type: String,
+                        mean: "物料名",
+                    },
+                    {
+                        name: 'order_attachs',
+                        type: Array,
+                        mean: "派车单附件",
+                        explain: [
+                            {
+                                name: 'att_name',
+                                type: String,
+                                mean: '附件名',
+                            },
+                            {
+                                name: 'att_path',
+                                type: String,
+                                mean: '附件路径',
+                            },
+                            {
+                                name: 'id',
+                                type: Number,
+                                mean: ' 编号',
+                            },
+                        ],
+                    },
+                    {
+                        name: 'history_records',
+                        type: Array,
+                        mean: "执行历史节点",
+                        explain: [
+                            {
+                                name: "id",
+                                type: Number,
+                                mean: '编号'
+                            },
+                            {
+                                name: "node_caller",
+                                type: String,
+                                mean: '执行者'
+                            },
+                            {
+                                name: "node_name",
+                                type: String,
+                                mean: '节点名'
+                            },
+                            {
+                                name: "occour_time",
+                                type: String,
+                                mean: '执行时间'
+                            },
+                        ],
+                    },
+                ]
+            },
+        },
+    },
     "/api/order/check_in": {
         module: 'order',
         resource: 'vehicle_check_in',

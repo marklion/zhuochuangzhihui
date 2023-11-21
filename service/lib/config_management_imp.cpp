@@ -313,6 +313,8 @@ bool config_management_handler::set_rule(const running_rule &rule)
     {
         er->auto_call_count = rule.auto_call_count;
         er->call_time_out = rule.call_time_out;
+        er->zyzl_ssid = rule.zyzl_ssid;
+        er->zyzl_host = rule.zyzl_host;
         ret = er->update_record();
     }
     else
@@ -320,6 +322,8 @@ bool config_management_handler::set_rule(const running_rule &rule)
         sql_rule_config tmp;
         tmp.auto_call_count = rule.auto_call_count;
         tmp.call_time_out = rule.call_time_out;
+        tmp.zyzl_ssid = rule.zyzl_ssid;
+        tmp.zyzl_host = rule.zyzl_host;
         ret = tmp.insert_record();
     }
     return ret;
@@ -337,6 +341,8 @@ void config_management_handler::get_rule(running_rule &_return)
     {
         _return.auto_call_count = er->auto_call_count;
         _return.call_time_out = er->call_time_out;
+        _return.zyzl_host = er->zyzl_host;
+        _return.zyzl_ssid = er->zyzl_ssid;
     }
 }
 

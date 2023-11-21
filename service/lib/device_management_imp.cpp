@@ -337,8 +337,54 @@ void device_management_handler::push_scale_read(const int64_t scale_id, const do
     }
 }
 
+static std::string get_plate_no_by_id(const std::string &_id)
+{
+    std::string ret;
+    auto vo = sqlite_orm::search_record<sql_order>("driver_id == '%s' AND status != 100", _id.c_str());
+    if (vo)
+    {
+        ret = vo->plate_number;
+    }
+
+    return ret;
+}
+
 void device_management_handler::push_id_read(const int64_t id_id, const std::string &id_number)
 {
+    auto id_device = sqlite_orm::search_record<sql_device_meta>(id_id);
+    if (id_device)
+    {
+        auto set = id_device->get_children<sql_device_set>("front_id_reader");
+        if (!set)
+        {
+            set.reset(id_device->get_children<sql_device_set>("back_id_reader").release());
+        }
+        if (set)
+        {
+            auto plate_no = get_plate_no_by_id(id_number);
+            sm_trigger(
+                set->get_pri_id(),
+                [&](abs_state_machine &sm)
+                {
+                    bool ret = false;
+                    auto result = set->should_handle_income_plate(plate_no, sm.order_number);
+                    if (result.length() > 0)
+                    {
+                        led_display(get_same_side_device(id_id, "led"), {result});
+                        speaker_cast(get_same_side_device(id_id, "speaker"), result);
+                    }
+                    else
+                    {
+                        ret = true;
+                        sm.tft = abs_state_machine::id_reader;
+                        sm.trigger_device_id = id_id;
+                        sm.pass_plate_number = plate_no;
+                    }
+
+                    return ret;
+                });
+        }
+    }
 }
 
 void device_management_handler::push_qr_read(const int64_t qr_id, const std::string &qr_content)
@@ -419,21 +465,30 @@ void device_management_handler::plate_cam_cap(const int64_t plate_cam_id)
         TRH_CLOSE();
     }
 }
-static bool isZombieProcess(pid_t pid) {
+static bool isZombieProcess(pid_t pid)
+{
     int status;
     pid_t result = waitpid(pid, &status, WNOHANG | WUNTRACED | WCONTINUED);
-    if (result == -1) {
+    if (result == -1)
+    {
         // 发生错误
         return false;
-    } else if (result == 0) {
+    }
+    else if (result == 0)
+    {
         // 子进程状态未发生变化，不是僵尸进程
         return false;
-    } else {
+    }
+    else
+    {
         // 子进程状态发生变化
-        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+        if (WIFEXITED(status) || WIFSIGNALED(status))
+        {
             // 子进程已经退出或被终止，是僵尸进程
             return true;
-        } else {
+        }
+        else
+        {
             // 子进程被暂停或继续执行，不是僵尸进程
             return false;
         }
@@ -443,7 +498,7 @@ void device_management_handler::walk_zombie_process()
 {
     std::vector<long> dids;
     pthread_mutex_lock(&g_runing_lock);
-    for (auto itr = g_runing_map.begin(); itr!= g_runing_map.end(); ++itr)
+    for (auto itr = g_runing_map.begin(); itr != g_runing_map.end(); ++itr)
     {
         if (isZombieProcess(itr->second.pid))
         {
@@ -452,19 +507,21 @@ void device_management_handler::walk_zombie_process()
     }
     pthread_mutex_unlock(&g_runing_lock);
     THR_CALL_DM_BEGIN();
-    for (auto &itr:dids)
+    for (auto &itr : dids)
     {
         client->device_ctrl(itr, false);
     }
     THR_CALL_DM_END();
-    timer_wheel_add_node(3, [=](void *){
+    timer_wheel_add_node(
+        3, [=](void *)
+        {
         THR_CALL_DM_BEGIN();
         for (auto &itr:dids)
         {
             client->device_ctrl(itr, true);
         }
-        THR_CALL_DM_END();
-    }, true);
+        THR_CALL_DM_END(); },
+        true);
 }
 
 void device_management_handler::start_device_no_exp(int64_t id)

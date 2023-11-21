@@ -24,6 +24,7 @@ public:
     std::string order_is_dup(const vehicle_order_info &order);
     std::unique_ptr<sql_order> get_order_by_number(const std::string &_order_number);
     void auto_call_next();
+    void push_zyzl(const std::string &_order_number);
 
     void db_2_rpc(sql_order &_db, vehicle_order_info &_rpc);
     void db_2_rpc(sql_order_attach &_db, vehicle_order_attachment &_rpc);

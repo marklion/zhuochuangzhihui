@@ -129,6 +129,8 @@ struct vehicle_config {
 struct running_rule {
     1:i64 auto_call_count,
     2:i64 call_time_out,
+    3:string zyzl_ssid,
+    4:string zyzl_host,
 }
 
 service config_management{

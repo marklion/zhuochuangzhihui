@@ -1,10 +1,12 @@
 *** Settings ***
 Library  RequestsLibrary
+Library  Process
 Resource  cli_res.resource
 
 *** Variables ***
 ${BASE_URL}  http://localhost:31700/api
 ${token}
+${mock_server_process}
 
 *** Keywords ***
 POST to Server Try
@@ -38,6 +40,19 @@ Add Order Common
     ${order_data}  Create Dictionary  plate_number=${plate_no}  driver_phone=${driver_phone}  company_name=${company_name}  stuff_name=${stuff_name}  driver_id=${driver_id}
     POST to Server Success  /order/add  ${order_data}
 
+Get Order By Order Number Not Exist
+    [Arguments]  ${order_number}
+    Auth Api With Max Pri
+    ${search_condition}  Create Dictionary  order_number=${order_number}
+    POST to Server Failure  /order/get  ${search_condition}
+
+Get Order By Order Number Exist
+    [Arguments]  ${order_number}
+    Auth Api With Max Pri
+    ${search_condition}  Create Dictionary  order_number=${order_number}
+    ${search_result}  POST to Server Success  /order/get  ${search_condition}
+    RETURN  ${search_result}
+
 Search Order
     [Arguments]  ${plate_no}=  ${driver_phone}=
     Auth Api With Max Pri
@@ -50,3 +65,16 @@ Del Order Try
     Auth Api With Max Pri
     ${del_req}  Create Dictionary  order_number=${order_id}
     POST to Server Try  /order/del  ${del_req}
+
+Start Mock Service
+    Start Process  python auto/library/mock_server.py  shell=True  alias=mock_server_process
+    Sleep  2s
+
+Get Last Req
+    ${result}  GET  url=http://localhost:5001/check_call
+    RETURN  ${result.json()}[req]
+
+Stop Mock Service
+    Terminate Process  mock_server_process
+    ${output}  Get Process Result  mock_server_process  stderr=True
+    Log  ${output}

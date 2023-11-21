@@ -330,6 +330,10 @@ void mock_device_action(std::ostream &out, std::vector<std::string> _params)
         {
             client->gate_ctrl(1, false);
         }
+        else if ("id_reader" == cmd)
+        {
+            client->push_id_read(1, _params[2]);
+        }
         THR_CALL_DM_END();
     }
 }

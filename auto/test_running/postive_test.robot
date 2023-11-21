@@ -4,7 +4,7 @@ Resource  ../resource/rest_res.resource
 Resource  ../test_field/field_opt.resource
 Suite Setup  Config Best Dev
 Suite Teardown  Clear Dev Config
-
+Library  Collections
 *** Variables ***
 ${plate_no}  京A12345
 ${driver_phone}  18811111111
@@ -17,14 +17,20 @@ ${m_weight}  49.21
 
 *** Test Cases ***
 Only Scale Full Flow
-    [Setup]  Create A Order For Scale
-    [Teardown]  Del Order Try  ${order_number}
+    [Setup]  Run Keywords  Create A Order For Scale  AND  Start Mock Service
+    [Teardown]  Run Keywords  Del Order Try  ${order_number}  AND  Stop Mock Service
     Check In Order  ${order_number}
     Call Order  ${order_number}
-    One Time Scale  p
-    Sleep  20s
+    Sleep  6s
+    Check Call Push
+    One Time Scale  p  id
+    Sleep  6s
+    Check Order Status
     Confirm Order  order_number=${order_number}
     One Time Scale  m
+    Sleep  6s
+    Check Order Status  close
+    Check Weight Push
 
 Only Scale p_weight Twice
     [Setup]  Create A Order For Scale
@@ -33,7 +39,7 @@ Only Scale p_weight Twice
     Call Order  ${order_number}
     One Time Scale  p
     Sleep  20s
-    One Time Scale  m
+    One Time Scale  m  id
     ${driver_result}  Search Order  driver_phone=${driver_phone}
     Should Not Be Empty  ${driver_result}
     Confirm Order  order_number=${order_number}
@@ -62,19 +68,25 @@ Create A Order For Scale
     Gate Close  ${s_bgate}
 
 One Time Scale
-    [Arguments]  ${p_or_m}
+    [Arguments]  ${p_or_m}  ${cam_or_id}=cam
     ${weight}  Set Variable  ${p_weight}
     ${e_gate}  Set Variable  ${s_fgate}
     ${l_gate}  Set Variable  ${s_bgate}
     ${pc}  Set Variable  ${s_fpc}
+    ${id_reader}  Set Variable  ${s_fid}
     IF  $p_or_m == 'm'
         Set Test Variable  ${weight}  ${m_weight}
         Set Test Variable  ${e_gate}  ${s_bgate}
         Set Test Variable  ${l_gate}  ${s_fgate}
         Set Test Variable  ${pc}  ${s_bpc}
+        Set Test Variable  ${id_reader}  ${s_bid}
     END
-    Mock Plate Cap  ${plate_no}  ${pc}
-    Sleep  6s
+    IF  $cam_or_id == 'cam'
+        Mock Plate Cap  ${plate_no}  ${pc}
+    ELSE
+        Mock Id Read  ${driver_id}  ${id_reader}
+    END
+    Sleep  3s
     ${gate_status}  Get Dev Status  ${e_gate}
     Should Be Equal  ${gate_status}  开门
     ${gate_status}  Get Dev Status  ${l_gate}
@@ -88,4 +100,21 @@ One Time Scale
     Should Be Equal  ${gate_status}  关门
     Gate Close  ${l_gate}
     Set Scale Weight  0  ${s_s}
-
+Check Weight Push
+    ${api_sent}  Get Last Req
+    Should Be Equal As Strings  ${api_sent}[plateNo]  ${plate_no}
+    Should Be Equal As Numbers  ${api_sent}[pWeight]  ${p_weight}
+    Should Be Equal As Numbers  ${api_sent}[mWeight]  ${m_weight}
+Check Call Push
+    ${api_sent}  Get Last Req
+    Should Be Equal As Strings  ${api_sent}[plateNo]  ${plate_no}
+    Should Be Equal As Strings  ${api_sent}[driverName]  aaa
+Check Order Status
+    [Arguments]  ${open_or_close}=open
+    ${found_order}  Get Order By Order Number Exist  order_number=${order_number}
+    Should Be Equal As Strings  ${found_order}[plate_number]  ${plate_no}
+    IF  $open_or_close == 'open'
+        Should Not Be Equal As Integers  ${found_order}[status]  100
+    ELSE
+        Should Be Equal As Integers  ${found_order}[status]  100
+    END
