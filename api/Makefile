@@ -4,7 +4,7 @@ DELIVER_PATH=$(SRC_DIR)/build
 all:$(DELIVER_PATH)
 
 $(DELIVER_PATH):
-	pushd $(SRC_DIR); npm run build;
+	pushd $(SRC_DIR); npm install && npm run build;
 
 clean:
 	rm -rf $(DELIVER_PATH)
