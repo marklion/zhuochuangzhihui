@@ -10,6 +10,7 @@ config_management_handler::config_management_handler()
     } dmt_array[] = {
         {"mock_driver", "/bin/mock_driver"},
         {"zs_plate_cam", "/bin/zs_plate_cam"},
+        {"id_reader_driver", "/bin/id_reader_driver"},
         };
 
     for (auto &itr : dmt_array)
@@ -315,6 +316,8 @@ bool config_management_handler::set_rule(const running_rule &rule)
         er->call_time_out = rule.call_time_out;
         er->zyzl_ssid = rule.zyzl_ssid;
         er->zyzl_host = rule.zyzl_host;
+        er->date_ticket_prefix = rule.date_ticket_prefix;
+        er->oem_name = rule.oem_name;
         ret = er->update_record();
     }
     else
@@ -324,6 +327,8 @@ bool config_management_handler::set_rule(const running_rule &rule)
         tmp.call_time_out = rule.call_time_out;
         tmp.zyzl_ssid = rule.zyzl_ssid;
         tmp.zyzl_host = rule.zyzl_host;
+        tmp.date_ticket_prefix = rule.date_ticket_prefix;
+        tmp.oem_name = rule.oem_name;
         ret = tmp.insert_record();
     }
     return ret;
@@ -343,6 +348,8 @@ void config_management_handler::get_rule(running_rule &_return)
         _return.call_time_out = er->call_time_out;
         _return.zyzl_host = er->zyzl_host;
         _return.zyzl_ssid = er->zyzl_ssid;
+        _return.date_ticket_prefix = er->date_ticket_prefix;
+        _return.oem_name = er->oem_name;
     }
 }
 

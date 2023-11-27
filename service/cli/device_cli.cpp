@@ -459,6 +459,147 @@ void clear_device(std::ostream &out, std::vector<std::string> _params)
     }
 }
 
+void reset_scale(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        int sm_id = 0;
+        std::vector< device_scale_set> tmp;
+        THR_CALL_BEGIN(config_management);
+        client->get_scale_config(tmp);
+        THR_CALL_END();
+        for (auto &itr:tmp)
+        {
+            if (itr.name == _params[0]);
+            {
+                sm_id = itr.id;
+                break;
+            }
+        }
+        THR_CALL_DM_BEGIN();
+        client->reset_scale_sm(sm_id);
+        THR_CALL_DM_END();
+    }
+}
+
+void show_scale_status(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 0)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        std::vector<scale_sm_info> tmp;
+        THR_CALL_DM_BEGIN();
+        client->get_scale_sm_info(tmp);
+        THR_CALL_DM_END();
+        tabulate::Table tab;
+        tab.add_row({"ID", "name", "state", "plate", "weight"});
+        for (auto &itr : tmp)
+        {
+            tab.add_row({std::to_string(itr.set_info.id), itr.set_info.name, itr.cur_state, std::to_string(itr.cur_weight), itr.cur_plate});
+        }
+        out << tab << std::endl;
+    }
+}
+void test_gate(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 2)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_CALL_DM_BEGIN();
+        bool is_open = true;
+        if ("open" != _params[1])
+        {
+            is_open = false;
+        }
+        client->gate_ctrl(atoi(_params[0].c_str()), is_open);
+        THR_CALL_DM_END();
+    }
+}
+void test_led(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 2)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_CALL_DM_BEGIN();
+        bool is_show = true;
+        if ("show" != _params[1])
+        {
+            is_show= false;
+        }
+        if (is_show)
+        {
+            client->led_display(atoi(_params[0].c_str()), {"第一行", "第二行", "第三行非常非常长", "第四行"});
+        }
+        else
+        {
+            client->led_display(atoi(_params[0].c_str()), {"", "", "", ""});
+        }
+        THR_CALL_DM_END();
+    }
+}
+
+void test_speaker(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_CALL_DM_BEGIN();
+        client->speaker_cast(atoi(_params[0].c_str()), "测试播报");
+        THR_CALL_DM_END();
+    }
+}
+void test_plate_cam(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        std::string pic_path;
+        std::string plate_no;
+        THR_CALL_DM_BEGIN();
+        client->cap_picture_slow(pic_path, atoi(_params[0].c_str()));
+        client->plate_cam_cap(atoi(_params[0].c_str()));
+        client->last_plate_read(plate_no, atoi(_params[0].c_str()));
+        THR_CALL_DM_END();
+        out << "图片路径：" << pic_path << std::endl;
+        out << "车牌号：" << plate_no << std::endl;
+    }
+}
+
+void test_id_reader(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        std::string id_no;
+        THR_CALL_DM_BEGIN();
+        client->last_id_read(id_no, atoi(_params[0].c_str()));
+        THR_CALL_DM_END();
+        out << "身份证号：" << id_no << std::endl;
+    }
+}
+
 std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
 {
     auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu(_menu_name));
@@ -473,8 +614,15 @@ std::unique_ptr<cli::Menu> make_device_cli(const std::string &_menu_name)
     root_menu->Insert(CLI_MENU_ITEM(start_device), "启动设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(stop_device), "关闭设备", {"设备编号"});
     root_menu->Insert(CLI_MENU_ITEM(show_device_status), "查看设备启动状态", {"设备编号"});
-    root_menu->Insert(CLI_MENU_ITEM(mock_device_action), "仿冒设备数据", {"设备号","参数"});
+    root_menu->Insert(CLI_MENU_ITEM(mock_device_action), "仿冒设备数据", {"设备号", "参数"});
+    root_menu->Insert(CLI_MENU_ITEM(reset_scale), "重置磅状态", {"磅名称"});
+    root_menu->Insert(CLI_MENU_ITEM(show_scale_status), "查看磅状态");
     root_menu->Insert(CLI_MENU_ITEM(clear_device), " 清除设备配置");
+    root_menu->Insert(CLI_MENU_ITEM(test_gate), "测试道闸", {"设备编号", "动作:open->开门,close->关门"});
+    root_menu->Insert(CLI_MENU_ITEM(test_id_reader), "测试身份证", {"设备编号"});
+    root_menu->Insert(CLI_MENU_ITEM(test_led), "测试屏幕", {"设备编号", "动作:show->显示,close->清空"});
+    root_menu->Insert(CLI_MENU_ITEM(test_plate_cam), "测试抓拍机", {"设备编号"});
+    root_menu->Insert(CLI_MENU_ITEM(test_speaker), "测试喇叭", {"设备编号"});
 
     return root_menu;
 }

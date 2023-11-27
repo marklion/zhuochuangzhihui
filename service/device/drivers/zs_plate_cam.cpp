@@ -282,14 +282,9 @@ public:
         int zs_ret = 0;
         for (auto &itr : content)
         {
-            auto line_content = content[0];
-            if (line_content.length() > 0)
-            {
-                auto l_frame = make_frame(0x62, make_oneline_text(line_content, line_index));
-                usleep(120000);
-                zs_ret |= VzLPRClient_SerialSend(g_zc_ser_handler, (unsigned char *)(l_frame.data()), l_frame.length());
-            }
-            line_index++;
+            auto l_frame = make_frame(0x62, make_oneline_text(itr, line_index++));
+            usleep(120000);
+            zs_ret |= VzLPRClient_SerialSend(g_zc_ser_handler, (unsigned char *)(l_frame.data()), l_frame.length());
         }
         if (0 != zs_ret)
         {

@@ -296,6 +296,7 @@ public:
     long status = 0;
     std::string company_name;
     std::string stuff_from;
+    long reg_no = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -323,6 +324,7 @@ public:
         ret.push_back(sqlite_orm_column("status", sqlite_orm_column::INTEGER, &status));
         ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
         ret.push_back(sqlite_orm_column("stuff_from", sqlite_orm_column::STRING, &stuff_from));
+        ret.push_back(sqlite_orm_column("reg_no", sqlite_orm_column::INTEGER, &reg_no));
 
         return ret;
     }
@@ -388,6 +390,8 @@ public:
     long call_time_out = 0;
     std::string zyzl_ssid;
     std::string zyzl_host;
+    std::string date_ticket_prefix;
+    std::string oem_name;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -396,6 +400,8 @@ public:
         ret.push_back(sqlite_orm_column("call_time_out", sqlite_orm_column::INTEGER, &call_time_out));
         ret.push_back(sqlite_orm_column("zyzl_ssid", sqlite_orm_column::STRING, &zyzl_ssid));
         ret.push_back(sqlite_orm_column("zyzl_host", sqlite_orm_column::STRING, &zyzl_host));
+        ret.push_back(sqlite_orm_column("date_ticket_prefix", sqlite_orm_column::STRING, &date_ticket_prefix));
+        ret.push_back(sqlite_orm_column("oem_name", sqlite_orm_column::STRING, &oem_name));
 
         return ret;
     }
@@ -440,6 +446,45 @@ public:
     virtual std::string table_name()
     {
         return "zyzl_plugin_que_table";
+    }
+};
+
+class sql_ticket_today_index : public sql_tree_base
+{
+public:
+    long today_index;
+    std::string today_date;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("today_index", sqlite_orm_column::INTEGER, &today_index));
+        ret.push_back(sqlite_orm_column("today_date", sqlite_orm_column::STRING, &today_date));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "ticket_today_table";
+    }
+};
+class sql_reg_no_today_index : public sql_tree_base
+{
+public:
+    long today_index;
+    std::string today_date;
+    virtual std::vector<sqlite_orm_column> self_columns_defined()
+    {
+        std::vector<sqlite_orm_column> ret;
+
+        ret.push_back(sqlite_orm_column("today_index", sqlite_orm_column::INTEGER, &today_index));
+        ret.push_back(sqlite_orm_column("today_date", sqlite_orm_column::STRING, &today_date));
+
+        return ret;
+    }
+    virtual std::string table_name()
+    {
+        return "reg_no_today_table";
     }
 };
 

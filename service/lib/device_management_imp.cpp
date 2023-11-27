@@ -216,12 +216,30 @@ void device_management_handler::gate_ctrl(const int64_t gate_id, const bool is_o
 void device_management_handler::led_display(const int64_t led_id, const std::vector<std::string> &content)
 {
     auto sp = get_status_from_map(led_id);
+    std::string oem_name = "卓创智汇";
+    THR_CALL_BEGIN(config_management);
+    running_rule tmp;
+    client->get_rule(tmp);
+    if (tmp.oem_name.length() > 0)
+    {
+        oem_name = tmp.oem_name;
+    }
+    THR_CALL_END();
+
+    std::vector<std::string> pri_con(content);
+    if (content.size() == 4)
+    {
+        if (pri_con[0].length() == 0)
+        {
+            pri_con[0] = oem_name;
+        }
+    }
 
     if (sp)
     {
         THR_DEF_CIENT(device_management);
         THR_CONNECT_DEV(device_management, sp->port);
-        client->led_display(0, content);
+        client->led_display(0, pri_con);
         TRH_CLOSE();
     }
 }
@@ -327,7 +345,7 @@ void device_management_handler::push_scale_read(const int64_t scale_id, const do
                 set->get_pri_id(),
                 [&](abs_state_machine &sm)
                 {
-                    auto &ssm = dynamic_cast<scale_sm&>(sm);
+                    auto &ssm = dynamic_cast<scale_sm &>(sm);
                     ssm.cur_weight = weight;
                     ssm.tft = abs_state_machine::scale;
 
@@ -340,10 +358,13 @@ void device_management_handler::push_scale_read(const int64_t scale_id, const do
 static std::string get_plate_no_by_id(const std::string &_id)
 {
     std::string ret;
-    auto vo = sqlite_orm::search_record<sql_order>("driver_id == '%s' AND status != 100", _id.c_str());
-    if (vo)
+    if (_id.length() > 0)
     {
-        ret = vo->plate_number;
+        auto vo = sqlite_orm::search_record<sql_order>("driver_id == '%s' AND status != 100", _id.c_str());
+        if (vo)
+        {
+            ret = vo->plate_number;
+        }
     }
 
     return ret;
@@ -370,7 +391,7 @@ void device_management_handler::push_id_read(const int64_t id_id, const std::str
                     auto result = set->should_handle_income_plate(plate_no, sm.order_number);
                     if (result.length() > 0)
                     {
-                        led_display(get_same_side_device(id_id, "led"), {result});
+                        led_display(get_same_side_device(id_id, "led"), {"", result, "", util_get_timestring()});
                         speaker_cast(get_same_side_device(id_id, "speaker"), result);
                     }
                     else
@@ -411,7 +432,7 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                     auto result = set->should_handle_income_plate(plate_no, sm.order_number);
                     if (result.length() > 0)
                     {
-                        led_display(get_same_side_device(plate_cam_id, "led"), {result});
+                        led_display(get_same_side_device(plate_cam_id, "led"), {"", result, "", util_get_timestring()});
                         speaker_cast(get_same_side_device(plate_cam_id, "speaker"), result);
                     }
                     else
@@ -464,6 +485,52 @@ void device_management_handler::plate_cam_cap(const int64_t plate_cam_id)
         client->plate_cam_cap(plate_cam_id);
         TRH_CLOSE();
     }
+}
+void device_management_handler::get_scale_sm_info(std::vector<scale_sm_info> &_return)
+{
+    std::vector<device_scale_set> all_dcs;
+    THR_CALL_BEGIN(config_management);
+    client->get_scale_config(all_dcs);
+    THR_CALL_END();
+    for (auto &itr : all_dcs)
+    {
+        scale_sm_info tmp;
+        sm_run_in_scale(
+            itr.id,
+            [&](abs_state_machine &_sm)
+            {
+                auto &ssm = dynamic_cast<scale_sm &>(_sm);
+                tmp.cur_plate = ssm.pass_plate_number;
+                tmp.cur_state = ssm.m_cur_state->name();
+                tmp.cur_weight = ssm.cur_weight;
+            });
+        tmp.set_info = itr;
+        THR_CALL_DM_BEGIN();
+        tmp.front_gate_is_close = client->gate_is_close(tmp.set_info.gate.front.id);
+        tmp.back_gate_is_close = client->gate_is_close(tmp.set_info.gate.back.id);
+        THR_CALL_DM_END();
+        _return.push_back(tmp);
+    }
+}
+void device_management_handler::reset_scale_sm(const int64_t sm_id)
+{
+    sm_trigger(
+        sm_id,
+        [](abs_state_machine &_sm)
+        {
+            _sm.tft = abs_state_machine::manual_reset;
+            return true;
+        });
+}
+void device_management_handler::confirm_scale(const int64_t sm_id)
+{
+    sm_trigger(
+        sm_id,
+        [](abs_state_machine &_sm)
+        {
+            _sm.tft = abs_state_machine::manual_confirm;
+            return true;
+        });
 }
 static bool isZombieProcess(pid_t pid)
 {
@@ -554,6 +621,17 @@ void device_management_handler::sm_trigger(int64_t sm_id, std::function<bool(abs
     pthread_mutex_unlock(&map_lock);
 }
 
+void device_management_handler::sm_run_in_scale(int64_t sm_id, std::function<void(abs_state_machine &_sm)> runner)
+{
+    pthread_mutex_lock(&map_lock);
+    auto sm = m_sm_map[sm_id];
+    if (sm)
+    {
+        runner(*sm);
+    }
+    pthread_mutex_unlock(&map_lock);
+}
+
 #define GOTHROUGH_EACH_SET(x, y)                                 \
     if (x)                                                       \
     {                                                            \
@@ -636,13 +714,6 @@ void gate_state_init::before_enter(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<gate_sm &>(_sm);
     auto this_gate = get_gate_config_by_id(sm.set_id);
-    if (this_gate)
-    {
-        THR_CALL_DM_BEGIN();
-        client->led_display(this_gate->led.back.id, {"欢迎光临"});
-        client->led_display(this_gate->led.front.id, {"欢迎光临"});
-        THR_CALL_DM_END();
-    }
     sm.order_number.clear();
     sm.pass_plate_number.clear();
     sm.trigger_device_id = 0;
@@ -663,8 +734,8 @@ std::unique_ptr<abs_sm_state> gate_state_init::proc_event(abs_state_machine &_sm
         auto speaker_id = device_management_handler::get_same_side_device(sm.trigger_device_id, "speaker");
         auto led_id = device_management_handler::get_same_side_device(sm.trigger_device_id, "led");
         client->gate_ctrl(gate_id, true);
-        client->speaker_cast(speaker_id, "aaac");
-        client->led_display(led_id, {"asdfasdf", sm.pass_plate_number});
+        client->speaker_cast(speaker_id, "请通过");
+        client->led_display(led_id, {"", sm.pass_plate_number, "请通过", util_get_timestring()});
         THR_CALL_DM_END();
         THR_CALL_BEGIN(order_center);
         client->order_push_gate(sm.order_number, "自动");
@@ -734,7 +805,6 @@ scale_sm::scale_sm(int64_t _set_id, device_management_handler *dmh) : abs_state_
 
 void scale_sm::clear_state()
 {
-    this->cur_weight = 0;
     this->order_number.clear();
     this->pass_plate_number.clear();
     this->weight_que.clear();
@@ -785,8 +855,10 @@ void scale_sm::cast_common(const std::string &_content)
         "",
         pass_plate_number,
         _content,
+        util_get_timestring(),
     };
-    auto sp_content = util_join_string(content, ",");
+    auto spe_content = std::vector<std::string>(content.begin() + 1, content.begin() + 3);
+    auto sp_content = util_join_string(spe_content, ",");
     THR_CALL_DM_BEGIN();
     client->speaker_cast(fs_id, sp_content);
     client->speaker_cast(bs_id, sp_content);
@@ -818,6 +890,11 @@ void scale_sm::cast_result()
 void scale_sm::cast_busy()
 {
     cast_common("正在称重，请等待");
+}
+
+void scale_sm::cast_need_confirm()
+{
+    cast_common("未确认装卸货");
 }
 
 void scale_sm::record_scale_start()
@@ -858,6 +935,7 @@ void scale_state_idle::after_exit(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
     sm.open_entry();
+    sm.cast_enter_info();
 }
 
 std::unique_ptr<abs_sm_state> scale_state_idle::proc_event(abs_state_machine &_sm)
@@ -914,7 +992,18 @@ std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_
         }
         if (sm.weight_que.size() > 3)
         {
-            ret.reset(new scale_state_clean());
+            vehicle_order_info tmp;
+            THR_CALL_BEGIN(order_center);
+            client->get_order(tmp, sm.order_number);
+            THR_CALL_END();
+            if (tmp.p_weight == 0 || tmp.confirm_info.operator_time.length() > 0)
+            {
+                ret.reset(new scale_state_clean());
+            }
+            else
+            {
+                sm.cast_need_confirm();
+            }
         }
     }
 
@@ -924,7 +1013,7 @@ std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_
 void scale_state_prepare::before_enter(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
-    sm.start_scale_timer(5);
+    sm.start_scale_timer();
     auto plate_cam_id = device_management_handler::get_same_side_device(sm.trigger_device_id, "plate_cam");
     std::string pic_path;
     THR_CALL_DM_BEGIN();
@@ -974,6 +1063,10 @@ std::unique_ptr<abs_sm_state> scale_state_prepare::proc_event(abs_state_machine 
                 THR_CALL_DM_END();
             }
         }
+    }
+    else if (_sm.tft == abs_state_machine::manual_confirm)
+    {
+        ret.reset(new scale_state_scale());
     }
     return ret;
 }

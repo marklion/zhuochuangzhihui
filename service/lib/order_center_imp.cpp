@@ -1,27 +1,28 @@
 #include "order_center_imp.h"
 #include "rpc_include.h"
-#define CHECK_DUP_ITEM(x, y)                             \
-    do                                                   \
-    {                                                    \
-        if (ret.length() <= 0)                           \
-        {                                                \
-            order_search_cond tmp;                       \
-            tmp.exp_status = 100;                        \
-            tmp.x = order.x;                             \
-            std::vector<vehicle_order_info> es;          \
-            search_order(es, tmp);                       \
-            if (es.size() > 0)                           \
-            {                                            \
-                ret = y + order.driver_phone + "已存在"; \
-            }                                            \
-        }                                                \
+#include <iomanip> // 包含 setw 和 setfill
+#define CHECK_DUP_ITEM(x, y)                           \
+    do                                                 \
+    {                                                  \
+        if (ret.length() <= 0 && order.x.length() > 0) \
+        {                                              \
+            order_search_cond tmp;                     \
+            tmp.exp_status = 100;                      \
+            tmp.x = order.x;                           \
+            std::vector<vehicle_order_info> es;        \
+            search_order(es, tmp);                     \
+            if (es.size() > 0)                         \
+            {                                          \
+                ret = y + order.x + "已存在";          \
+            }                                          \
+        }                                              \
     } while (0)
 std::string order_center_handler::order_is_dup(const vehicle_order_info &order)
 {
     std::string ret;
 
     CHECK_DUP_ITEM(driver_phone, "司机电话");
-    CHECK_DUP_ITEM(driver_id, "司机司机身份证");
+    CHECK_DUP_ITEM(driver_id, "司机身份证");
     CHECK_DUP_ITEM(plate_number, "车牌号");
 
     return ret;
@@ -39,6 +40,23 @@ std::unique_ptr<sql_order> order_center_handler::get_order_by_number(const std::
 
 void order_center_handler::auto_call_next()
 {
+    running_rule tmp;
+    THR_CALL_BEGIN(config_management);
+    client->get_rule(tmp);
+    THR_CALL_END();
+    if (tmp.auto_call_count > 0)
+    {
+        auto called_orders = sqlite_orm::search_record_all<sql_order>("status != 100 AND reg_info_time != '' AND call_info_time != '' ORDER BY datetime(reg_info_time)");
+        if (called_orders.size() < tmp.auto_call_count)
+        {
+            auto wait_order = sqlite_orm::search_record<sql_order>("status == 1 AND reg_info_time != '' AND call_info_time == '' ORDER BY datetime(reg_info_time)");
+            if (wait_order)
+            {
+                order_call(wait_order->order_number, true, "(自动)");
+                auto_call_next();
+            }
+        }
+    }
 }
 
 void order_center_handler::push_zyzl(const std::string &_order_number)
@@ -49,12 +67,85 @@ void order_center_handler::push_zyzl(const std::string &_order_number)
     THR_CALL_END();
     auto vo = get_order_by_number(_order_number);
     if (vo && vo->status != 100 &&
-        vo->p_weight!= 0 && vo->m_weight != 0 &&
+        vo->p_weight != 0 && vo->m_weight != 0 &&
         rule.zyzl_ssid.length() != 0 && rule.zyzl_host.length() != 0)
     {
         auto tmp = zyzl_plugin::get_inst();
-        tmp->push_weight(vo->plate_number, vo->p_time, vo->m_time, vo->p_weight, vo->m_weight, std::abs(vo->p_weight - vo->m_weight), "", vo->seal_no);
+        auto ticket_no = gen_ticket_no();
+        if (ticket_no.empty())
+        {
+            ticket_no = _order_number;
+        }
+        tmp->push_weight(vo->plate_number, vo->p_time, vo->m_time, vo->p_weight, vo->m_weight, std::abs(vo->p_weight - vo->m_weight), ticket_no, vo->seal_no);
     }
+}
+
+std::string order_center_handler::gen_ticket_no()
+{
+    std::string ret;
+    running_rule rule;
+    THR_CALL_BEGIN(config_management);
+    client->get_rule(rule);
+    THR_CALL_END();
+    if (rule.date_ticket_prefix.length() > 0)
+    {
+        ret = rule.date_ticket_prefix;
+        auto to_tic = sqlite_orm::search_record<sql_ticket_today_index>(1);
+        if (!to_tic)
+        {
+            sql_ticket_today_index tmp;
+            tmp.today_index = 0;
+            tmp.today_date = util_get_datestring();
+            tmp.insert_record();
+        }
+        to_tic.reset(sqlite_orm::search_record<sql_ticket_today_index>(1).release());
+        if (to_tic->today_date != util_get_datestring())
+        {
+            to_tic->today_index = 0;
+            to_tic->today_date = util_get_datestring();
+        }
+        to_tic->today_index++;
+        to_tic->update_record();
+
+        auto date_string = util_get_datestring();
+        date_string = util_join_string(util_split_string(date_string, "-"), "");
+        ret += date_string;
+        auto str = std::to_string(to_tic->today_index);
+        ret += std::string(4 - str.length(), '0') + str;
+    }
+
+    return ret;
+}
+
+long order_center_handler::gen_reg_no()
+{
+    long ret = 0;
+    auto to_tic = sqlite_orm::search_record<sql_reg_no_today_index>(1);
+    if (!to_tic)
+    {
+        sql_reg_no_today_index tmp;
+        tmp.today_index = 0;
+        tmp.today_date = util_get_datestring();
+        tmp.insert_record();
+    }
+    to_tic.reset(sqlite_orm::search_record<sql_reg_no_today_index>(1).release());
+    if (to_tic->today_date != util_get_datestring())
+    {
+        to_tic->today_index = 0;
+        to_tic->today_date = util_get_datestring();
+    }
+    to_tic->today_index++;
+    to_tic->update_record();
+    ret = to_tic->today_index;
+    return ret;
+}
+
+void order_center_handler::close_order(sql_order &_order)
+{
+    push_zyzl(_order.order_number);
+    _order.status = 100;
+    _order.update_record();
+    auto_call_next();
 }
 
 void order_center_handler::db_2_rpc(sql_order &_db, vehicle_order_info &_rpc)
@@ -83,6 +174,7 @@ void order_center_handler::db_2_rpc(sql_order &_db, vehicle_order_info &_rpc)
     _rpc.status = _db.status;
     _rpc.stuff_from = _db.stuff_from;
     _rpc.stuff_name = _db.stuff_name;
+    _rpc.reg_no = _db.reg_no;
     auto attchs = _db.get_all_children<sql_order_attach>("belong_order");
     auto hns = _db.get_all_children<sql_order_history>("belong_order");
     for (auto &itr : attchs)
@@ -126,6 +218,13 @@ void order_center_handler::rpc_2_db(const vehicle_order_info &_rpc, sql_order &_
     _db.plate_number = _rpc.plate_number;
     _db.stuff_from = _rpc.stuff_from;
     _db.stuff_name = _rpc.stuff_name;
+    auto id_has_x = _db.driver_id;
+    auto x_index = id_has_x.find_last_of('X');
+    if (x_index != std::string::npos)
+    {
+        id_has_x[x_index] = 'x';
+    }
+    _db.driver_id = id_has_x;
 }
 
 bool order_center_handler::add_order(const vehicle_order_info &order)
@@ -165,11 +264,9 @@ bool order_center_handler::del_order(const std::string &order_number)
         ZH_RETURN_MSG("正在执行，无法关闭");
     }
 
-    push_zyzl(order_number);
-    es->status = 100;
-    ret = es->update_record();
+    close_order(*es);
 
-    return ret;
+    return true;
 }
 
 bool order_center_handler::update_order(const vehicle_order_info &order)
@@ -242,6 +339,17 @@ void order_center_handler::get_order(vehicle_order_info &_return, const std::str
     db_2_rpc(*es, _return);
 }
 
+void order_center_handler::get_registered_order(std::vector<vehicle_order_info> &_return)
+{
+    auto reg_infos = sqlite_orm::search_record_all<sql_order>("status != 100 AND reg_no != 0 ORDER BY datetime(reg_info_time)");
+    for (auto &itr : reg_infos)
+    {
+        vehicle_order_info tmp;
+        db_2_rpc(itr, tmp);
+        _return.push_back(tmp);
+    }
+}
+
 bool order_center_handler::order_check_in(const std::string &order_number, const bool is_check_in, const std::string &opt_name)
 {
     bool ret = false;
@@ -256,11 +364,13 @@ bool order_center_handler::order_check_in(const std::string &order_number, const
     {
         es->reg_info_name = opt_name;
         es->reg_info_time = util_get_timestring();
+        es->reg_no = gen_reg_no();
     }
     else if (es->status == 1)
     {
         es->reg_info_name = "";
         es->reg_info_time = "";
+        es->reg_no = 0;
         es->call_info_name = "";
         es->call_info_time = "";
         es->confirm_info_name = "";
@@ -288,7 +398,7 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
     {
         es->call_info_name = opt_name;
         es->call_info_time = util_get_timestring();
-        zyzl_plugin::get_inst()->push_call(es->plate_number);
+        zyzl_plugin::get_inst()->push_call(es->plate_number, es->driver_name);
     }
     else if (es->status == 1)
     {
@@ -296,6 +406,8 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
         es->confirm_info_time = "";
         es->call_info_name = "";
         es->call_info_time = "";
+        es->update_record();
+        auto_call_next();
     }
     ret = es->update_record();
     return ret;
@@ -325,7 +437,7 @@ bool order_center_handler::order_confirm(const std::string &order_number, const 
         es->confirm_info_name = "";
         es->confirm_info_time = "";
     }
-    es->update_record();
+    ret = es->update_record();
 
     return ret;
 }
@@ -417,8 +529,7 @@ bool order_center_handler::order_push_weight(const std::string &order_number, co
             es->update_record();
             if (!eih)
             {
-                push_zyzl(es->order_number);
-                es->status = 100;
+                close_order(*es);
             }
         }
     }
@@ -465,8 +576,7 @@ bool order_center_handler::order_push_gate(const std::string &order_number, cons
         tmp.occour_time = cur_date;
         tmp.set_parent(*es, "belong_order");
         tmp.insert_record();
-        push_zyzl(es->order_number);
-        es->status = 100;
+        close_order(*es);
     }
     else
     {

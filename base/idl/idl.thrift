@@ -131,6 +131,8 @@ struct running_rule {
     2:i64 call_time_out,
     3:string zyzl_ssid,
     4:string zyzl_host,
+    5:string date_ticket_prefix,
+    6:string oem_name,
 }
 
 service config_management{
@@ -199,6 +201,7 @@ struct vehicle_order_info {
     21:i64 status,
     22:string company_name,
     23:string stuff_from,
+    24:i64 reg_no,
 }
 
 struct order_search_cond {
@@ -220,6 +223,7 @@ service order_center {
     bool update_order(1:vehicle_order_info order) throws (1:gen_exp e),
     list<vehicle_order_info> search_order(1:order_search_cond cond) throws (1:gen_exp e),
     vehicle_order_info get_order(1:string order_number) throws (1:gen_exp e),
+    list<vehicle_order_info> get_registered_order() throws (1:gen_exp e),
     bool order_check_in(1:string order_number, 2:bool is_check_in, 3:string opt_name) throws (1:gen_exp e),
     bool order_call(1:string order_number, 2:bool is_call, 3:string opt_name) throws (1:gen_exp e),
     bool order_confirm(1:string order_number, 2:bool is_confirm, 3:string opt_name) throws(1:gen_exp e),
@@ -229,6 +233,15 @@ service order_center {
     bool order_push_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_rollback_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_push_attach(1:string order_number, 2:string name, 3:string att_path) throws (1:gen_exp e),
+}
+
+struct scale_sm_info {
+    1:device_scale_set set_info,
+    2:string cur_state,
+    3:string cur_plate,
+    4:double cur_weight,
+    5:bool front_gate_is_close,
+    6:bool back_gate_is_close,
 }
 
 service device_management {
@@ -251,4 +264,7 @@ service device_management {
     string cap_picture_slow(1:i64 cam_id) throws (1:gen_exp e),
     string video_record_slow(1:i64 cam_id, 2:string begin_date, 3:string end_date) throws (1:gen_exp e),
     bool gate_is_close(1:i64 gate_id) throws(1:gen_exp e),
+    list<scale_sm_info> get_scale_sm_info() throws (1:gen_exp e),
+    void reset_scale_sm(1:i64 sm_id) throws (1:gen_exp e),
+    void confirm_scale(1:i64 sm_id) throws (1:gen_exp e),
 }

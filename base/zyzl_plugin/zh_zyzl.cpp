@@ -14,17 +14,21 @@ zyzl_plugin::zyzl_plugin()
         4,
         [this](void *)
         {
-            auto exist_req = sqlite_orm::search_record<sql_zyzl_plugin_que>("PRI_ID != 0");
-            if (exist_req)
+            auto ers = sqlite_orm::search_record_all<sql_zyzl_plugin_que>("PRI_ID != 0");
+            for (auto &itr : ers)
             {
                 auto send_ret = send_to_zyzl(
-                    exist_req->req_url,
-                    neb::CJsonObject(exist_req->req_body),
+                    itr.req_url,
+                    neb::CJsonObject(itr.req_body),
                     [](const neb::CJsonObject &)
                     { return true; });
                 if (send_ret)
                 {
-                    exist_req->remove_record();
+                    itr.remove_record();
+                }
+                else
+                {
+                    break;
                 }
             }
         });
@@ -66,14 +70,14 @@ bool zyzl_plugin::push_weight(const std::string &_plate, const std::string &_p_t
     return ret;
 }
 
-bool zyzl_plugin::push_call(const std::string &_plate)
+bool zyzl_plugin::push_call(const std::string &_plate, const std::string &_driver_name)
 {
     bool ret = false;
     std::string call_vehicle_path = "/call_vehicle";
 
     neb::CJsonObject req;
     req.Add("plateNo", _plate);
-    req.Add("driverName", get_driver_name_from_plate(_plate));
+    req.Add("driverName", _driver_name);
 
     send_to_que(call_vehicle_path, req);
     ret = true;
@@ -122,9 +126,7 @@ bool zyzl_plugin::send_to_zyzl(const std::string &_path, const neb::CJsonObject 
     {
         httplib::Client cli(remote_url);
         cli.set_read_timeout(20, 0);
-        cli.set_default_headers(httplib::Headers({
-            {"Content-Type", "application/json"}
-        }));
+        cli.set_default_headers(httplib::Headers({{"Content-Type", "application/json"}}));
         cli.set_follow_location(true);
         auto begin_point = time(NULL);
         auto real_req = _req;

@@ -1,9 +1,9 @@
 #include "zh_vcom_link.h"
-#include "../zh_tdf/tdf_include.h"
+#include "../log_driver/log_driver.h"
 #include <thread>
 #include <sys/select.h>
 
-static tdf_log g_log("vcom");
+static tdf_log g_log("vcom", "/tmp/vcom.log", "/tmp/vcom.log");
 
 zh_vcom_link::zh_vcom_link(const std::string &_ip, unsigned short _port) : ip(_ip), port(_port)
 {

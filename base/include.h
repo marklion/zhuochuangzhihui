@@ -15,6 +15,7 @@
 #include "utils/tdf_timer.h"
 #include "log_driver/cli.h"
 #include "file_up_down/file_up_down.h"
+#include "serial_link/zh_vcom_link.h"
 #include "zyzl_plugin/zh_zyzl.h"
 #include "log_driver/clifilesession.h"
 #include "log_driver/clilocalsession.h"

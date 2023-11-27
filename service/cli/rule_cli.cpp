@@ -32,12 +32,64 @@ void set_zyzl_plugin(std::ostream &out, std::vector<std::string> _params)
     }
 }
 
+void set_ticket_prefix(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            running_rule tmp;
+            client->get_rule(tmp);
+            tmp.date_ticket_prefix = _params[0];
+            client->set_rule(tmp);
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
+    }
+}
+
+void auto_call_count(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            running_rule tmp;
+            client->get_rule(tmp);
+            tmp.auto_call_count = atoi(_params[0].c_str());
+            client->set_rule(tmp);
+        }
+        catch (const gen_exp e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
+    }
+}
+
 std::unique_ptr<cli::Menu> make_rule_cli(const std::string &_menu_name)
 {
     auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu(_menu_name));
 
     root_menu->Insert(CLI_MENU_ITEM(bdr), "列出配置");
+    root_menu->Insert(CLI_MENU_ITEM(auto_call_count), "自动叫号容量", {"容量值"});
     root_menu->Insert(CLI_MENU_ITEM(set_zyzl_plugin), "设置掌易插件参数", {"主机地址", "调用凭证"});
+    root_menu->Insert(CLI_MENU_ITEM(set_ticket_prefix), "设置磅单号前缀", {"前缀"});
 
     return root_menu;
 }
@@ -64,6 +116,10 @@ std::string rule_cli::make_bdr()
     if (tmp.zyzl_host.length() > 0)
     {
         ret.push_back("set_zyzl_plugin " + tmp.zyzl_host + " " + tmp.zyzl_ssid);
+    }
+    if (tmp.date_ticket_prefix.length() > 0)
+    {
+        ret.push_back("set_ticket_prefix " + tmp.date_ticket_prefix);
     }
 
     return util_join_string(ret, "\n");

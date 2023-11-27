@@ -17,17 +17,20 @@ add_executable(zh_cli ${CLI_SRC})
 
 add_executable(mock_driver ./device/drivers/mock_driver.cpp)
 add_executable(zs_plate_cam ./device/drivers/zs_plate_cam.cpp)
+add_executable(id_reader_driver ./device/drivers/id_reader.cpp)
 
 find_library(IDL_LIB libzh_idl.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(DB_LIB libsqlite_orm.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(ZYZL_PLUGIN_LIB libzyzl_plugin.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(UTIL_LIB libzh_utils.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 find_library(FILE_UP_DOWN_LIB libfile_up_down.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
+find_library(SERIAL_LINK_LIB libserial_link.so ${PRJ_INTERNAL_BUILD}/lib ../base/build/lib)
 
-target_link_libraries(rpc_lib ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} ${FILE_UP_DOWN_LIB} ${ZYZL_PLUGIN_LIB})
+target_link_libraries(rpc_lib ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} ${FILE_UP_DOWN_LIB} ${ZYZL_PLUGIN_LIB} ${SERIAL_LINK_LIB})
 target_link_libraries(core_service pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 target_link_libraries(device_center pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 target_link_libraries(zh_cli pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 
 target_link_libraries(mock_driver pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib)
 target_link_libraries(zs_plate_cam pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib VzLPRSDK)
+target_link_libraries(id_reader_driver pthread thrift ${IDL_LIB} ${DB_LIB} ${UTIL_LIB} rpc_lib termb)

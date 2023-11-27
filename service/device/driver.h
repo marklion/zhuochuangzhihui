@@ -6,9 +6,9 @@ class common_driver : public device_managementIf
 {
 protected:
     tdf_log m_log;
-    long self_dev_id = 0;
 
 public:
+    long self_dev_id = 0;
     virtual void init_all_set() {}
     virtual void push_scale_read(const int64_t scale_id, const double weight) {}
     virtual void push_id_read(const int64_t id_id, const std::string &id_number) {}
@@ -17,7 +17,10 @@ public:
     virtual bool gate_is_close(const int64_t gate_id) { return false; }
     virtual void printer_print(const int64_t printer_id, const std::string &content) {}
     virtual void plate_cam_cap(const int64_t plate_cam_id) {}
-    common_driver(const std::string &_name, long _self_id) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log"),self_dev_id(_self_id)
+    virtual void get_scale_sm_info(std::vector<scale_sm_info> &_return) {}
+    virtual void reset_scale_sm(const int64_t sm_id) {}
+    virtual void confirm_scale(const int64_t sm_id) {}
+    common_driver(const std::string &_name, long _self_id) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log"), self_dev_id(_self_id)
     {
     }
     void log_driver(const char *_func_name, const char *tmlt, ...)

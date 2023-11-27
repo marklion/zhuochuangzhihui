@@ -22,17 +22,19 @@ public:
     std::string id_number;
     std::string qr_content;
     std::string plate_no;
+    double last_sw = 0;
     mock_driver(const std::string &_log_tag, const std::string &_dev_name, long _dev_id) : common_driver(_log_tag, _dev_id), m_pub_log(_dev_name, "/tmp/pub_log.log", "/tmp/pub_log.log"), m_dev_id(_dev_id), m_dev_name(_dev_name)
     {
         timer_wheel_add_node(
             3,
             [&](void *)
             {
-                if (scale_weight != 0)
+                if (scale_weight != 0 || last_sw != scale_weight)
                 {
                     THR_CALL_DM_BEGIN();
                     client->push_scale_read(m_dev_id, scale_weight);
                     THR_CALL_DM_END();
+                    last_sw = scale_weight;
                 }
             });
     }

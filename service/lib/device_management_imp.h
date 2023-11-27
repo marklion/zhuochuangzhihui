@@ -17,11 +17,11 @@ public:
 class device_management_handler;
 class abs_state_machine
 {
-    std::unique_ptr<abs_sm_state> m_cur_state;
     tdf_log m_log;
 public:
+    std::unique_ptr<abs_sm_state> m_cur_state;
     enum triggered_from_type {
-        plate_cam, id_reader, qr_reader, scale, timer,self, manual_reset
+        plate_cam, id_reader, qr_reader, scale, timer,self, manual_reset, manual_confirm
     } tft;
     std::string pass_plate_number;
     int64_t trigger_device_id = 0;
@@ -122,6 +122,7 @@ public:
     void cast_wait_scale();
     void cast_result();
     void cast_busy();
+    void cast_need_confirm();
     void record_scale_start();
     void record_scale_end();
     void print_ticket();
@@ -154,10 +155,17 @@ public:
     virtual bool gate_is_close(const int64_t gate_id);
     virtual void printer_print(const int64_t printer_id, const std::string &content);
     virtual void plate_cam_cap(const int64_t plate_cam_id);
+    virtual void get_scale_sm_info(std::vector<scale_sm_info> &_return);
+    virtual void reset_scale_sm(const int64_t sm_id);
+    virtual void confirm_scale(const int64_t sm_id);
+
     void walk_zombie_process();
     void start_device_no_exp(int64_t id);
+
     void sm_init_add(std::shared_ptr<abs_state_machine> _sm, int64_t sm_id);
     void sm_trigger(int64_t sm_id, std::function<bool(abs_state_machine &_sm)> update_func);
+    void sm_run_in_scale(int64_t sm_id, std::function<void(abs_state_machine &_sm)> runner);
+
     static int64_t get_same_side_device(int64_t _input_id, const std::string &_type);
     static int64_t get_diff_side_device(int64_t _input_id, const std::string &_type);
 };
