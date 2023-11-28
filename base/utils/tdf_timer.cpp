@@ -316,6 +316,10 @@ void timer_wheel_del_node(timer_handle _th)
     {
         g_timer_log.err("failed to send mq:%s", strerror(errno));
     }
+    else
+    {
+        delete tmp;
+    }
 }
 time_t util_get_time_by_string(const std::string &_time_string)
 {
