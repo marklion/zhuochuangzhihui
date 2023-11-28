@@ -90,6 +90,61 @@ Auto Call When Finish
     Confirm Order  ${first_order}[order_number]
     One Time Scale  m  29.1  trig_plate_no=${first_order}[plate_no]
     Check Call Push  ${second_order}[plate_no]
+
+Auto Pass After Time Out
+    [Teardown]  Del Exist Order
+    Connect ZH
+    Run ZH Cmd  rule
+    Run ZH Cmd  call_time_out 1
+    DisConnect
+    @{multi_orders}  Make Multi Info
+    Create Mult Order  @{multi_orders}
+    Set Auto Call Count  1
+    ${first_order}  Get From List  ${multi_orders}  0
+    Check In Order  ${first_order}[order_number]
+    Sleep  2s
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=1
+    Sleep  2m
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=0
+
+Auto Pass Before Time Out
+    [Teardown]  Del Exist Order
+    Connect ZH
+    Run ZH Cmd  rule
+    Run ZH Cmd  call_time_out 3
+    DisConnect
+    @{multi_orders}  Make Multi Info
+    Create Mult Order  @{multi_orders}
+    Set Auto Call Count  1
+    ${first_order}  Get From List  ${multi_orders}  0
+    Check In Order  ${first_order}[order_number]
+    Sleep  2s
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=1
+    Sleep  2m
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=1
+
+No Auto Pass
+    [Teardown]  Del Exist Order
+    Connect ZH
+    Run ZH Cmd  rule
+    Run ZH Cmd  call_time_out 0
+    DisConnect
+    @{multi_orders}  Make Multi Info
+    Create Mult Order  @{multi_orders}
+    Set Auto Call Count  1
+    ${first_order}  Get From List  ${multi_orders}  0
+    Check In Order  ${first_order}[order_number]
+    Sleep  2s
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=1
+    Sleep  2m
+    @{reg_orders}  Get Reg Orders
+    Length Should Be  ${reg_orders}  length=1
+
 *** Keywords ***
 Make Multi Info
     @{m_orders}  Create List

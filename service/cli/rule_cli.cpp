@@ -81,6 +81,30 @@ void auto_call_count(std::ostream &out, std::vector<std::string> _params)
         TRH_CLOSE();
     }
 }
+void call_time_out(std::ostream &out, std::vector<std::string> _params)
+{
+    if (_params.size() != 1)
+    {
+        out << "参数错误" << std::endl;
+    }
+    else
+    {
+        THR_DEF_CIENT(config_management);
+        THR_CONNECT(config_management);
+        try
+        {
+            running_rule tmp;
+            client->get_rule(tmp);
+            tmp.call_time_out= atoi(_params[0].c_str());
+            client->set_rule(tmp);
+        }
+        catch (const gen_exp &e)
+        {
+            out << e.msg << std::endl;
+        }
+        TRH_CLOSE();
+    }
+}
 
 std::unique_ptr<cli::Menu> make_rule_cli(const std::string &_menu_name)
 {
@@ -88,6 +112,7 @@ std::unique_ptr<cli::Menu> make_rule_cli(const std::string &_menu_name)
 
     root_menu->Insert(CLI_MENU_ITEM(bdr), "列出配置");
     root_menu->Insert(CLI_MENU_ITEM(auto_call_count), "自动叫号容量", {"容量值"});
+    root_menu->Insert(CLI_MENU_ITEM(call_time_out), " 自动过号时间", {"过号时间（分钟）"});
     root_menu->Insert(CLI_MENU_ITEM(set_zyzl_plugin), "设置掌易插件参数", {"主机地址", "调用凭证"});
     root_menu->Insert(CLI_MENU_ITEM(set_ticket_prefix), "设置磅单号前缀", {"前缀"});
 

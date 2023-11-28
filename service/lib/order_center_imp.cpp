@@ -148,6 +148,31 @@ void order_center_handler::close_order(sql_order &_order)
     auto_call_next();
 }
 
+void order_center_handler::check_order_pass()
+{
+    running_rule tmp;
+    THR_CALL_BEGIN(config_management);
+    client->get_rule(tmp);
+    THR_CALL_END();
+    if (tmp.call_time_out > 0)
+    {
+        std::vector<vehicle_order_info> ao;
+        get_registered_order(ao);
+        auto now = time(nullptr);
+        for (auto &itr : ao)
+        {
+            if (itr.status == 1 && itr.call_info.operator_time.length() > 0)
+            {
+                auto call_time = util_get_time_by_string(itr.call_info.operator_time);
+                if (call_time + tmp.call_time_out * 60 < now)
+                {
+                    order_check_in(itr.order_number, false, "(超时自动过号)");
+                }
+            }
+        }
+    }
+}
+
 void order_center_handler::db_2_rpc(sql_order &_db, vehicle_order_info &_rpc)
 {
     _rpc.back_plate_number = _db.back_plate_number;
@@ -225,6 +250,22 @@ void order_center_handler::rpc_2_db(const vehicle_order_info &_rpc, sql_order &_
         id_has_x[x_index] = 'x';
     }
     _db.driver_id = id_has_x;
+}
+
+order_center_handler::order_center_handler()
+{
+    timer_wheel_add_node(
+        60,
+        [&](void *)
+        {
+            try
+            {
+                check_order_pass();
+            }
+            catch (gen_exp &e)
+            {
+            }
+        });
 }
 
 bool order_center_handler::add_order(const vehicle_order_info &order)

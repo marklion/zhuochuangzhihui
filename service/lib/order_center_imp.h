@@ -6,6 +6,7 @@
 class order_center_handler : public order_centerIf
 {
 public:
+    order_center_handler();
     virtual bool add_order(const vehicle_order_info &order);
     virtual bool del_order(const std::string &order_number);
     virtual bool update_order(const vehicle_order_info &order);
@@ -29,6 +30,7 @@ public:
     std::string gen_ticket_no();
     long gen_reg_no();
     void close_order(sql_order &_order);
+    void check_order_pass();
 
     void db_2_rpc(sql_order &_db, vehicle_order_info &_rpc);
     void db_2_rpc(sql_order_attach &_db, vehicle_order_attachment &_rpc);

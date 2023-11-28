@@ -43,3 +43,4 @@ RUN echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt install -y language-pack-zh-hans
 RUN export LANGUAGE="zh_CN:zh:en_US:en"
 RUN export LANG="zh_CN.UTF-8"
+RUN npm install -g wetty@2.3.0 --force
