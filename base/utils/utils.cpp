@@ -3,6 +3,39 @@
 #include <openssl/md5.h>
 #include <iconv.h>
 #include <string.h>
+#include <string>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <malloc.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <utime.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <map>
+#include <sys/epoll.h>
+#include <sys/timerfd.h>
+#include <list>
+#include <iostream>
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <thread>
+#include <mqueue.h>
+#include <set>
 
 std::vector<std::string> util_split_string(const std::string &s, const std::string &seperator)
 {
@@ -53,7 +86,7 @@ std::string util_join_string(const std::vector<std::string> &_vec, const std::st
 {
     std::string ret;
 
-    for (const auto &itr:_vec)
+    for (const auto &itr : _vec)
     {
         ret += itr + _dil;
     }
@@ -116,14 +149,14 @@ static int code_convert(char *from_charset, char *to_charset, char *inbuf, size_
     iconv_close(cd);
     return 0;
 }
-//UNICODE码转为GB2312码
+// UNICODE码转为GB2312码
 static int u2g(char *inbuf, int inlen, char *outbuf, int outlen)
 {
     return code_convert("utf-8", "gb2312", inbuf, inlen, outbuf, outlen);
 }
 static int g2u(char *inbuf, int inlen, char *outbuf, int outlen)
 {
-    return code_convert("gb2312","utf-8", inbuf, inlen, outbuf, outlen);
+    return code_convert("gb2312", "utf-8", inbuf, inlen, outbuf, outlen);
 }
 std::string util_gbk2utf(const std::string &_utf)
 {
@@ -140,4 +173,45 @@ std::string util_utf2gbk(const std::string &_gbk)
     strcpy(in_buff, _gbk.c_str());
     u2g(in_buff, strlen(in_buff), out_buff, sizeof(out_buff));
     return std::string(out_buff);
+}
+int util_connect_to_device_tcp_server(const std::string &_ip, unsigned short _port, const std::function<void(const std::string &)> *_log_func)
+{
+    int ret = -1;
+    sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(_port),
+        .sin_addr = {.s_addr = inet_addr(_ip.c_str())},
+    };
+    auto socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd >= 0)
+    {
+        if (0 == connect(socket_fd, (sockaddr *)&server_addr, sizeof(server_addr)))
+        {
+            ret = socket_fd;
+        }
+        else
+        {
+            if (_log_func)
+            {
+                (*_log_func)("failed to connect server");
+            }
+            else
+            {
+                perror("failed to connect server");
+            }
+            close(socket_fd);
+        }
+    }
+    else
+    {
+        if (_log_func)
+        {
+            (*_log_func)("failed to open socket fd");
+        }
+        else
+        {
+            perror("failed to open socket fd");
+        }
+    }
+    return ret;
 }
