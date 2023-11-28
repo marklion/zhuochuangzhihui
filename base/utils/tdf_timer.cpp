@@ -298,9 +298,6 @@ timer_handle timer_wheel_add_node(int _sec, const timer_handler &_func, bool _on
     if (0 != mq_send(g_mq_fd, (char *)&tmp, sizeof(tmp), 1))
     {
         g_timer_log.err("failed to send mq:%s", strerror(errno));
-    }
-    else
-    {
         delete tmp;
         th.reset();
     }
@@ -315,9 +312,6 @@ void timer_wheel_del_node(timer_handle _th)
     if (0 != mq_send(g_mq_fd, (char *)&tmp, sizeof(tmp), 1))
     {
         g_timer_log.err("failed to send mq:%s", strerror(errno));
-    }
-    else
-    {
         delete tmp;
     }
 }
