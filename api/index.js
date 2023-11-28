@@ -370,7 +370,6 @@ const g_api_permisson = {
         is_write: false,
         no_need_rabc: true,
         handler: async function (body) {
-            let ta = [];
             return await request_rpc('rbac_center', 'login', [body.phone, body.pwd]);
         },
         help_info: {
