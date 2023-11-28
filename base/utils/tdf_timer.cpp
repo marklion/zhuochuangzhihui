@@ -87,11 +87,14 @@ public:
     }
     void del_node(timer_handle _th)
     {
-        if (_th->belong_wheel_index >= 0 && _th->belong_list != m_wheel[_th->belong_wheel_index].end())
+        if (_th)
         {
-            m_wheel[_th->belong_wheel_index].erase(_th->belong_list);
-            _th->belong_list = m_wheel[_th->belong_wheel_index].end();
-            _th->belong_wheel_index = -1;
+            if (_th->belong_wheel_index >= 0 && _th->belong_list != m_wheel[_th->belong_wheel_index].end())
+            {
+                m_wheel[_th->belong_wheel_index].erase(_th->belong_list);
+                _th->belong_list = m_wheel[_th->belong_wheel_index].end();
+                _th->belong_wheel_index = -1;
+            }
         }
     }
 
@@ -295,6 +298,11 @@ timer_handle timer_wheel_add_node(int _sec, const timer_handler &_func, bool _on
     if (0 != mq_send(g_mq_fd, (char *)&tmp, sizeof(tmp), 1))
     {
         g_timer_log.err("failed to send mq:%s", strerror(errno));
+    }
+    else
+    {
+        delete tmp;
+        th.reset();
     }
 
     return th;
