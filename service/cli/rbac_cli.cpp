@@ -17,7 +17,7 @@ void show_users(std::ostream &out, std::vector<std::string> _params)
         }
         out << tab << std::endl;
     }
-    catch (gen_exp e)
+    catch (gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -68,7 +68,7 @@ void show_permission(std::ostream &out, std::vector<std::string> _params)
         }
         out << tab << std::endl;
     }
-    catch (const gen_exp e)
+    catch (const gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -106,7 +106,7 @@ void show_roles(std::ostream &out, std::vector<std::string> _params)
         }
         out << tab << std::endl;
     }
-    catch (const gen_exp e)
+    catch (const gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -127,7 +127,7 @@ void add_user_to_role(std::ostream &out, std::vector<std::string> _params)
         {
             client->add_user_to_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -149,7 +149,7 @@ void del_user_from_role(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_user_from_role(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -171,7 +171,7 @@ void del_user(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_user(atoi(_params[0].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -193,7 +193,7 @@ void add_perm_to_role(std::ostream &out, std::vector<std::string> _params)
         {
             client->add_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -214,7 +214,7 @@ void del_perm_from_role(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_role_permission(atoi(_params[0].c_str()), atoi(_params[1].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -239,7 +239,7 @@ void add_role(std::ostream &out, std::vector<std::string> _params)
             tmp.read_only = atoi(_params[1].c_str());
             client->add_role(tmp);
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -260,7 +260,7 @@ void del_role(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_role(atoi(_params[0].c_str()));
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }

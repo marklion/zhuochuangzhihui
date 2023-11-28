@@ -10,7 +10,7 @@ void show_device_driver(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_all_driver(tmp);
     }
-    catch (gen_exp e)
+    catch (gen_exp & e)
     {
         out << e.msg << std::endl;
     }
@@ -38,7 +38,7 @@ void add_set(std::ostream &out, std::vector<std::string> _params)
         {
             client->add_device_set(_params[0], atoi(_params[1].c_str()));
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -60,7 +60,7 @@ void del_set(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_device_set(atoi(_params[0].c_str()));
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -83,7 +83,7 @@ void show_device_scale(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_scale_config(tmp);
     }
-    catch (gen_exp e)
+    catch (gen_exp & e)
     {
         out << e.msg << std::endl;
     }
@@ -123,7 +123,7 @@ void show_device_gate(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_gate_config(tmp);
     }
-    catch (gen_exp e)
+    catch (gen_exp & e)
     {
         out << e.msg << std::endl;
     }
@@ -190,7 +190,7 @@ void add_device(std::ostream &out, std::vector<std::string> _params)
 
             client->add_device_to_set(_params[0], _params[1], atoi(_params[2].c_str()), set_id, _params[4]);
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -211,7 +211,7 @@ void del_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_device_from_set(atoi(_params[0].c_str()));
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -233,7 +233,7 @@ void start_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->device_ctrl(atoi(_params[0].c_str()), 1);
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -254,7 +254,7 @@ void stop_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->device_ctrl(atoi(_params[0].c_str()), 0);
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -283,7 +283,7 @@ void show_device_status(std::ostream &out, std::vector<std::string> _params)
                 out << "关闭" << std::endl;
             }
         }
-        catch (gen_exp e)
+        catch (gen_exp & e)
         {
             out << e.msg << std::endl;
         }
@@ -354,106 +354,106 @@ void clear_device(std::ostream &out, std::vector<std::string> _params)
         {
             try{
             client->del_device_from_set(itr.gate.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.gate.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.plate_cam.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.plate_cam.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.video_cam.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.video_cam.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.id_reader.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.id_reader.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.qr_reader.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.qr_reader.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.speaker.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.speaker.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.led.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.led.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_set(itr.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
         }
         for (auto &itr:tmp_s)
         {
             try {
             client->del_device_from_set(itr.gate.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.gate.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.plate_cam.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.plate_cam.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.video_cam.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.video_cam.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.id_reader.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.id_reader.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.qr_reader.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.qr_reader.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.speaker.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.speaker.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.led.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.led.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.printer.back.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.printer.front.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_from_set(itr.scale.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
             try{
             client->del_device_set(itr.id);
-            }catch(gen_exp e) {}
+            }catch(gen_exp & e) {}
         }
         THR_CALL_END();
     }
@@ -474,7 +474,7 @@ void reset_scale(std::ostream &out, std::vector<std::string> _params)
         THR_CALL_END();
         for (auto &itr:tmp)
         {
-            if (itr.name == _params[0]);
+            if (itr.name == _params[0])
             {
                 sm_id = itr.id;
                 break;

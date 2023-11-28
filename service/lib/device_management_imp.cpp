@@ -597,7 +597,7 @@ void device_management_handler::start_device_no_exp(int64_t id)
     {
         device_ctrl(id, true);
     }
-    catch (gen_exp e)
+    catch (gen_exp &e)
     {
     }
 }

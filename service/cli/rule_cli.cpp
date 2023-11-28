@@ -24,7 +24,7 @@ void set_zyzl_plugin(std::ostream &out, std::vector<std::string> _params)
             tmp.zyzl_ssid = _params[1];
             client->set_rule(tmp);
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -49,7 +49,7 @@ void set_ticket_prefix(std::ostream &out, std::vector<std::string> _params)
             tmp.date_ticket_prefix = _params[0];
             client->set_rule(tmp);
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -74,7 +74,7 @@ void auto_call_count(std::ostream &out, std::vector<std::string> _params)
             tmp.auto_call_count = atoi(_params[0].c_str());
             client->set_rule(tmp);
         }
-        catch (const gen_exp e)
+        catch (const gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -107,7 +107,7 @@ std::string rule_cli::make_bdr()
 
     if (tmp.auto_call_count != 0)
     {
-        ret.push_back("auto_call_count "+ std::to_string(tmp.auto_call_count));
+        ret.push_back("auto_call_count " + std::to_string(tmp.auto_call_count));
     }
     if (tmp.call_time_out != 0)
     {
