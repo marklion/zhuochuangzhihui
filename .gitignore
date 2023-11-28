@@ -2,5 +2,8 @@ zczh_software_*
 */build/
 */plugin_build/
 build/
-zh_pub/zh_rpc_base/gen_code/
+gen_code/
+node_gen_code/
 .DS_Store
+*/cmake_tmp_dir/
+node_modules/

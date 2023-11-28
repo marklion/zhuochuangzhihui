@@ -35,7 +35,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 139`
+    line=`expr $line - 141`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -44,16 +44,18 @@ start_all_server() {
     cp /conf/ngx_http_flv_live_module.so /lib/nginx/modules/
     nginx -c /conf/nginx.conf
     service cups start
-    pushd /zh_rest_node
-    pm2 start index.js
-    popd
     wetty &
     ulimit -c unlimited
     sysctl -w kernel.core_pattern=/database/core.%e.%p.%s.%E
     ulimit -c
-    ulimit -q 819200000
-    process_manager &
-    zh_daemon
+    ulimit -q 819200000 && service ssh start
+    echo 'export LANG=zh_CN.UTF-8' >> ~/.bashrc
+    echo 'export LC_ALL=zh_CN.UTF-8' >> ~/.bashrc
+    device_center &
+    pushd /api
+    pm2 start index.js
+    popd
+    core_service
 }
 
 start_docker_con() {
@@ -72,7 +74,7 @@ start_docker_con() {
     then
         PORT_ARG=""
     fi
-    local CON_ID=`docker create --privileged ${MOUNT_PROC_ARG} --restart=always ${PORT_ARG} -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -e OEM_SHORT="${OEM_SHORT_INPUT}" -e URL_REMOTE="${URL_REMOTE_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res  ${DOCKER_IMG_NAME} /root/install.sh`
+    local CON_ID=`docker create --privileged ${MOUNT_PROC_ARG} --restart=always ${PORT_ARG} -e BASE_URL=${BASE_URL_INPUT} -e OEM_NAME=${OEM_NAME_INPUT} -e WECHAT_SECRET="${WECHAT_SECRET_INPUT}" -e WECHAT_MP_SECRET="${WECHAT_MP_SECRET_INPUT}" -e ALI_KEY_ID="${ALI_KEY_ID_INPUT}" -e ALI_KEY_SEC="${ALI_KEY_SEC_INPUT}" -e MAIL_PWD="${MAIL_PWD_INPUT}" -e OEM_SHORT="${OEM_SHORT_INPUT}" -e URL_REMOTE="${URL_REMOTE_INPUT}" -v ${DATA_BASE_PATH}:/database -v ${DEVICE_CONFIG_FILE_PATH}:/conf/device -v ${IMG_BED}:/manage_dist/logo_res -v files:/database/files  ${DOCKER_IMG_NAME} /root/install.sh`
     docker cp $0 ${CON_ID}:/root/
     docker start ${CON_ID}
 }
