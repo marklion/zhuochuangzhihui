@@ -54,7 +54,7 @@
                             <u-button type="primary" size="mini" text="出口识别" @click="focus_cam_id = single_sm.set_info.plate_cam.back.id"></u-button>
                         </u-grid-item>
                         <u-grid-item>
-                            <u-button type="error" size="mini" text="重置" @click="reset_scale(single_sm.set_info.id)"></u-button>
+                            <u-button type="error" size="mini" text="重置" @click="reset_confirm_id =  single_sm.set_info.id"></u-button>
                         </u-grid-item>
                     </u-grid>
                 </view>
@@ -71,6 +71,8 @@
             <u--input placeholder="不输入即直接抓拍识别" border="surround" v-model="focus_plate"></u--input>
         </view>
     </u-modal>
+    <u-modal :show="reset_confirm_id != 0" title="确定要重置吗?" closeOnClickOverlay @close="reset_confirm_id = 0" @confirm="reset_scale">
+    </u-modal>
 </view>
 </template>
 
@@ -82,6 +84,7 @@ export default {
             pic_path: '',
             focus_cam_id: 0,
             focus_plate: '',
+            reset_confirm_id: 0,
         }
     },
 
@@ -92,25 +95,26 @@ export default {
         this.init_device_info();
     },
     methods: {
-        reset_scale: function (_sm_id) {
+        reset_scale: function () {
             this.$send_req('/api/reset_scale_sm', {
-                sm_id: _sm_id,
+                sm_id: this.reset_confirm_id,
             }).then(() => {
-                this.init_device_info();
+                this.reset_confirm_id = 0;
+                uni.startPullDownRefresh();
             });
         },
         manual_scale: function (_sm_id) {
             this.$send_req('/api/confirm_scale', {
                 sm_id: _sm_id,
             }).then(() => {
-                this.init_device_info();
+                uni.startPullDownRefresh();
             });
         },
         trigger_cap: function () {
             var cb_func = () => {
                 this.focus_cam_id = 0;
                 this.focus_plate = '';
-                this.init_device_info();
+                uni.startPullDownRefresh();
             };
             if (this.focus_plate) {
                 this.$send_req('/api/device_mock/push_plate', {
@@ -135,7 +139,7 @@ export default {
                 device_id: device_id,
                 is_open: _is_open,
             }).then(() => {
-                this.init_device_info();
+                uni.startPullDownRefresh();
             });
         },
         init_device_info: function () {

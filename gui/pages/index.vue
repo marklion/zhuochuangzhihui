@@ -8,7 +8,7 @@
     <u-search placeholder="输入车号过滤" v-model="search_key" :showAction="false" @change="load_more"></u-search>
     <u-list @scrolltolower="load_more" showScrollbar lowerThreshold="50">
         <u-list-item v-for="(item, index) in order_need_show" :key="index">
-            <u-cell :title="item.plate_number + '-' + item.back_plate_number" :label="item.driver_name + '-' + item.driver_phone">
+            <u-cell :title="item.plate_number + '-' + item.back_plate_number" :label="item.driver_name + '-' + item.driver_phone" isLink :url="'/pages/detail?order_number=' + item.order_number">
                 <view slot="value" style="text-align:right">
                     <view>
                         {{item.stuff_name}}

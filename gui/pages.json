@@ -4,14 +4,21 @@
 			"path": "pages/index",
 			"style": {
 				"navigationBarTitleText": "派车中心",
-				"enablePullDownRefresh":true
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/detail",
+			"style": {
+				"navigationBarTitleText": "详细信息",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/device",
 			"style": {
 				"navigationBarTitleText": "设备",
-				"enablePullDownRefresh":true
+				"enablePullDownRefresh": true
 			}
 		},
 		{
