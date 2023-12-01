@@ -307,11 +307,11 @@ public:
     }
     virtual void cap_picture_slow(std::string &_return, const int64_t cam_id)
     {
-        std::string pic_path = "/database/files/" + g_dev_ip + "_" + util_get_timestring() + ".jpg";
+        std::string pic_path = "/tmp/pic" + std::to_string(self_dev_id) + "_" + std::to_string(time(nullptr)) + ".jpg";
         int zs_ret = -1;
         if (0 == (zs_ret = VzLPRClient_SaveSnapImageToJpeg(g_zc_handler, pic_path.c_str())))
         {
-            file_store_name(pic_path, "jpg");
+            _return = file_store_name(pic_path, "jpg", true);
         }
         else
         {

@@ -728,6 +728,89 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/order/count": {
+        module: 'order',
+        resource: 'vehicle_order_info',
+        is_write: false,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('order_center', 'count_order', [body]);
+        },
+        help_info: {
+            title: "获取派车单数量",
+            describe: "参数是搜索条件",
+            params: {
+                type: Object,
+                have_to: true,
+                explain: [
+                    {
+                        name: "plate_number",
+                        type: String,
+                        mean: "车牌号",
+                        have_to: false,
+                    },
+                    {
+                        name: "driver_phone",
+                        type: String,
+                        mean: "司机电话",
+                        have_to: false,
+                    },
+                    {
+                        name: "company_name",
+                        type: String,
+                        mean: "派车公司",
+                        have_to: false,
+                    },
+                    {
+                        name: "stuff_name",
+                        type: String,
+                        mean: "货物名称",
+                        have_to: false,
+                    },
+                    {
+                        name: "status",
+                        type: Number,
+                        mean: "状态,0->不过滤",
+                        have_to: false,
+                    },
+                    {
+                        name: "begin_time",
+                        type: String,
+                        mean: " 起始时间",
+                        have_to: false,
+                    },
+                    {
+                        name: "end_time",
+                        type: String,
+                        mean: "结束时间",
+                        have_to: false,
+                    },
+                    {
+                        name: "page_no",
+                        type: Number,
+                        mean: "页码，缺省情况为第一页;每页 20 条数据",
+                        have_to: false,
+                    },
+                    {
+                        name: "driver_id",
+                        type: String,
+                        mean: "司机身份证号",
+                        have_to: false,
+                    },
+                    {
+                        name: "exp_status",
+                        type: Number,
+                        mean: "排除的状态",
+                        have_to: false,
+                    },
+                ]
+            },
+            result: {
+                type: Number,
+                mean: "数量",
+            },
+        },
+    },
     "/api/order/search": {
         module: 'order',
         resource: 'vehicle_order_info',
@@ -1114,14 +1197,14 @@ const g_api_permisson = {
                         mean: "当前重量"
                     },
                     {
-                        name:'front_gate_is_close',
-                        type:Boolean,
-                        mean:"前道闸是否关闭"
+                        name: 'front_gate_is_close',
+                        type: Boolean,
+                        mean: "前道闸是否关闭"
                     },
                     {
-                        name:'back_gate_is_close',
-                        type:Boolean,
-                        mean:"后道闸是否关闭"
+                        name: 'back_gate_is_close',
+                        type: Boolean,
+                        mean: "后道闸是否关闭"
                     },
                     g_scale_set_info,
                 ],

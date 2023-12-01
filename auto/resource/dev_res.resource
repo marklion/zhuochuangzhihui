@@ -161,7 +161,7 @@ Config Best Dev
     Run ZH Cmd  add_device ${s_s} '-t s' 1 s scale
     Run ZH Cmd  zczh
     Run ZH Cmd  rule
-    Run ZH Cmd  set_zyzl_plugin http://192.168.0.11:5001 abc
+    Run ZH Cmd  set_zyzl_plugin http://192.168.0.107:5001 abc
     Run ZH Cmd  set_ticket_prefix WR
     Run ZH Cmd  auto_call_count 2
     Run ZH Cmd  zczh

@@ -76,9 +76,13 @@ public:
 int main(int argc, char **argv)
 {
     timer_wheel_init();
-    std::thread([](){
+    std::thread([]()
+                {
+        while (1)
+        {
         timer_wheel_schc();
-    });
+        } })
+        .detach();
     using namespace clipp;
     unsigned short run_port = 0;
     unsigned short self_id;

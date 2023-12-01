@@ -1,6 +1,7 @@
 zczh_software_*
 */build/
 */plugin_build/
+*/uni_modules/
 build/
 gen_code/
 node_gen_code/

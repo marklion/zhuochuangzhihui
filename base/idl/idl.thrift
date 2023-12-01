@@ -233,6 +233,7 @@ service order_center {
     bool order_push_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_rollback_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_push_attach(1:string order_number, 2:string name, 3:string att_path) throws (1:gen_exp e),
+    i64 count_order(1:order_search_cond cond) throws (1:gen_exp e),
 }
 
 struct scale_sm_info {

@@ -1,0 +1,63 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index",
+			"style": {
+				"navigationBarTitleText": "派车中心",
+				"enablePullDownRefresh":true
+			}
+		},
+		{
+			"path": "pages/device",
+			"style": {
+				"navigationBarTitleText": "设备",
+				"enablePullDownRefresh":true
+			}
+		},
+		{
+			"path": "pages/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/myself",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#3cc51f",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index",
+				"text": "派车",
+				"iconPath": "static/order.png"
+			},
+			{
+				"pagePath": "pages/device",
+				"text": "设备",
+				"iconPath": "static/device.png"
+			},
+			{
+				"pagePath": "pages/myself",
+				"text": "我的",
+				"iconPath": "static/self.png"
+			}
+		]
+	},
+	"easycom": {
+		"^u-(.*)": "@/uni_modules/uview-ui/components/u-$1/u-$1.vue"
+	}
+}

@@ -320,8 +320,11 @@ void rbac_center_handler::login(std::string &_return, const std::string &phone, 
     {
         ZH_RETURN_MSG("用户名或密码错误");
     }
-    user->online_token = util_gen_ssid();
-    user->update_record();
+    if (user->online_token.empty())
+    {
+        user->online_token = util_gen_ssid();
+        user->update_record();
+    }
     _return = user->online_token;
 }
 

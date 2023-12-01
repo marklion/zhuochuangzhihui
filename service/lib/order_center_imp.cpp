@@ -659,3 +659,33 @@ bool order_center_handler::order_push_attach(const std::string &order_number, co
 
     return ret;
 }
+
+int64_t order_center_handler::count_order(const order_search_cond &cond)
+{
+    std::string query_cond = "PRI_ID != 0";
+
+    if (cond.begin_time.length() > 0)
+    {
+        query_cond += " AND datetime(p_time) >= datetime('" + cond.begin_time + "')";
+    }
+    if (cond.end_time.length() > 0)
+    {
+        query_cond += " AND datetime(p_time) <= datetime('" + cond.end_time + "')";
+    }
+    SEARCH_COND_APPEND(company_name);
+    SEARCH_COND_APPEND(stuff_name);
+    SEARCH_COND_APPEND(driver_id);
+    SEARCH_COND_APPEND(driver_phone);
+    SEARCH_COND_APPEND(plate_number);
+
+    if (cond.status != 0)
+    {
+        query_cond += " AND status == " + std::to_string(cond.status);
+    }
+    else if (cond.exp_status != 0)
+    {
+        query_cond += " AND status != " + std::to_string(cond.exp_status);
+    }
+    auto ao = sqlite_orm::search_record_all<sql_order>(query_cond);
+    return ao.size();
+}

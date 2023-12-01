@@ -10,10 +10,13 @@ Del Order
     ${del_req}  Create Dictionary  order_number=${order_id}
     POST to Server Success  /order/del  ${del_req}
 Del Exist Order
-    ${plate_result}  Search Order
-    ${plate_result_length}  Get Length  ${plate_result}
-    FOR  ${order}  IN  @{plate_result}
-        Del Order  ${order}[order_number]
+    FOR  ${i}  IN RANGE  999
+        ${plate_result}  Search Order
+        ${plate_result_length}  Get Length  ${plate_result}
+        Exit For Loop If  ${plate_result_length} == 0
+        FOR  ${order}  IN  @{plate_result}
+            Del Order  ${order}[order_number]
+        END
     END
 Search Order
     [Arguments]  ${plate_no}=  ${driver_phone}=
