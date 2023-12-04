@@ -689,3 +689,25 @@ int64_t order_center_handler::count_order(const order_search_cond &cond)
     auto ao = sqlite_orm::search_record_all<sql_order>(query_cond);
     return ao.size();
 }
+
+void order_center_handler::get_req_que(std::vector<req_wait_info>& _return)
+{
+    auto all_req = sqlite_orm::search_record_all<sql_zyzl_plugin_que>("PRI_ID != 0");
+    for (auto &itr:all_req)
+    {
+        req_wait_info tmp;
+        tmp.req_body = itr.req_body;
+        tmp.req_url = itr.req_url;
+        tmp.id = itr.get_pri_id();
+        _return.push_back(tmp);
+    }
+}
+
+void order_center_handler::pop_out_req(const int64_t req_id)
+{
+    auto es = sqlite_orm::search_record<sql_zyzl_plugin_que>(req_id);
+    if (es)
+    {
+        es->remove_record();
+    }
+}

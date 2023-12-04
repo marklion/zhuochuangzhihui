@@ -23,6 +23,8 @@ public:
     virtual bool order_rollback_gate(const std::string &order_number, const std::string &opt_name);
     virtual bool order_push_attach(const std::string &order_number, const std::string &name, const std::string &att_path);
     virtual int64_t count_order(const order_search_cond &cond);
+    virtual void get_req_que(std::vector<req_wait_info> & _return);
+    virtual void pop_out_req(const int64_t req_id);
 
     std::string order_is_dup(const vehicle_order_info &order);
     std::unique_ptr<sql_order> get_order_by_number(const std::string &_order_number);

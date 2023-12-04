@@ -1397,6 +1397,69 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/req_que/get": {
+        module: 'order',
+        resource: 'vehicle_order_info',
+        is_write: false,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('order_center', 'get_req_que', []);
+        },
+        help_info: {
+            title: "获取第三方请求队列",
+            describe: "如果有第三方请求未完成，队列则不为空",
+            result: {
+                type: Boolean,
+                mean: "默认成功",
+            },
+        },
+    },
+    "/api/req_que/pop": {
+        module: 'order',
+        resource: 'vehicle_order_info',
+        is_write: true,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('order_center', 'pop_out_req', [body.req_id]);
+        },
+        help_info: {
+            title: "弹出请求队列中的元素",
+            describe: "弹出后则不发送该请求",
+            params: {
+                type: Object,
+                have_to: true,
+                explain: [
+                    {
+                        name: "req_id",
+                        type: Number,
+                        mean: "请求编号",
+                        have_to: true,
+                    },
+                ]
+            },
+            result: {
+                type: Array,
+                mean: '队列中的内容',
+                explain: [
+                    {
+                        name: 'req_url',
+                        type: String,
+                        mean: "请求路径"
+                    },
+                    {
+                        name: 'req_body',
+                        type: String,
+                        mean: "请求内容"
+                    },
+                    {
+                        name: 'id',
+                        type: Number,
+                        mean: "请求编号"
+                    },
+                ],
+            },
+        },
+    },
 }
 function api_param_walk_check(api_param_req, input) {
     let ret = "params input wrong";

@@ -8,3 +8,4 @@ node_gen_code/
 .DS_Store
 */cmake_tmp_dir/
 node_modules/
+results/

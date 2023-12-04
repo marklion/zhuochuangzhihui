@@ -217,6 +217,12 @@ struct order_search_cond {
     10:i64 exp_status,
 }
 
+struct req_wait_info{
+    1:string req_url,
+    2:string req_body,
+    3:i64 id,
+}
+
 service order_center {
     bool add_order(1:vehicle_order_info order) throws (1:gen_exp e),
     bool del_order(1:string order_number) throws (1:gen_exp e),
@@ -234,6 +240,8 @@ service order_center {
     bool order_rollback_gate(1:string order_number, 3:string opt_name) throws(1:gen_exp e),
     bool order_push_attach(1:string order_number, 2:string name, 3:string att_path) throws (1:gen_exp e),
     i64 count_order(1:order_search_cond cond) throws (1:gen_exp e),
+    list<req_wait_info> get_req_que() throws (1:gen_exp e),
+    void pop_out_req(1:i64 req_id) throws (1:gen_exp e),
 }
 
 struct scale_sm_info {
