@@ -24,6 +24,13 @@ Req Queue Test
     ${rq}  POST to Server Success  /req_que/get
     Length Should Be  ${rq}  0
 
+Modify Driver Id Test
+    [Teardown]  Del Exist Order
+    ${on}  Add Order Common  plate1  dp1
+    Change Driver Id  ${on}  1234
+    ${new_o}  Get Order By Order Number Exist  order_number=${on}
+    Should Be Equal As Strings  ${new_o['driver_id']}  1234
+
 *** Keywords ***
 Create Many Orders
     Del Exist Order
