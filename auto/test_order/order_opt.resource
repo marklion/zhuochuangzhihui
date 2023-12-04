@@ -54,3 +54,8 @@ Check Order Status
     ELSE
         Should Be Equal As Integers  ${found_order}[status]  100
     END
+Change Driver Id
+    [Arguments]  ${order_number}  ${driver_id}
+    ${es_o}  Get Order By Order Number Exist  order_number=${order_number}
+    Set To Dictionary  ${es_o}  driver_id  ${driver_id}
+    POST to Server Success  /order/update  ${es_o}

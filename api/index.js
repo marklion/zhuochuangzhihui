@@ -363,6 +363,75 @@ const g_order_found_result = {
     ]
 }
 
+const g_api_order_params = {
+
+    type: Object,
+    have_to: true,
+    explain: [
+        {
+            name: "back_plate_number",
+            type: String,
+            mean: "挂车号",
+            have_to: false,
+        },
+        {
+            name: "company_name",
+            type: String,
+            mean: "派车公司",
+            have_to: false,
+        },
+        {
+            name: "driver_id",
+            type: String,
+            mean: "司机身份证号",
+            have_to: false,
+        },
+        {
+            name: "driver_name",
+            type: String,
+            mean: "司机姓名",
+            have_to: false,
+        },
+        {
+            name: "driver_phone",
+            type: String,
+            mean: "司机电话",
+            have_to: true,
+        },
+        {
+            name: "enter_weight",
+            type: Number,
+            mean: "进厂前净重",
+            have_to: false,
+        },
+        {
+            name: "is_sale",
+            type: Boolean,
+            mean: "是否是销售车辆",
+            have_to: false,
+        },
+        {
+            name: "plate_number",
+            type: String,
+            mean: "车牌号",
+            have_to: true,
+        },
+        {
+            name: "stuff_from",
+            type: String,
+            mean: "物料来源地",
+            have_to: false,
+        },
+        {
+            name: "stuff_name",
+            type: String,
+            mean: "物料名",
+            have_to: false,
+        },
+    ]
+
+};
+
 const g_api_permisson = {
     "/api/login": {
         module: '',
@@ -616,6 +685,7 @@ const g_api_permisson = {
             },
         },
     },
+
     "/api/order/add": {
         module: 'order',
         resource: 'vehicle_order_info',
@@ -627,72 +697,25 @@ const g_api_permisson = {
         help_info: {
             title: "创建派车单",
             describe: "创建后派车单处于未入场状态",
-            params: {
-                type: Object,
-                have_to: true,
-                explain: [
-                    {
-                        name: "back_plate_number",
-                        type: String,
-                        mean: "挂车号",
-                        have_to: false,
-                    },
-                    {
-                        name: "company_name",
-                        type: String,
-                        mean: "派车公司",
-                        have_to: false,
-                    },
-                    {
-                        name: "driver_id",
-                        type: String,
-                        mean: "司机身份证号",
-                        have_to: false,
-                    },
-                    {
-                        name: "driver_name",
-                        type: String,
-                        mean: "司机姓名",
-                        have_to: false,
-                    },
-                    {
-                        name: "driver_phone",
-                        type: String,
-                        mean: "司机电话",
-                        have_to: true,
-                    },
-                    {
-                        name: "enter_weight",
-                        type: Number,
-                        mean: "进厂前净重",
-                        have_to: false,
-                    },
-                    {
-                        name: "is_sale",
-                        type: Boolean,
-                        mean: "是否是销售车辆",
-                        have_to: false,
-                    },
-                    {
-                        name: "plate_number",
-                        type: String,
-                        mean: "车牌号",
-                        have_to: true,
-                    },
-                    {
-                        name: "stuff_from",
-                        type: String,
-                        mean: "物料来源地",
-                        have_to: false,
-                    },
-                    {
-                        name: "stuff_name",
-                        type: String,
-                        mean: "物料名",
-                        have_to: false,
-                    },
-                ]
+            params: g_api_order_params,
+            result: {
+                type: Boolean,
+                mean: "是否创建成功",
             },
+        },
+    },
+    "/api/order/update": {
+        module: 'order',
+        resource: 'vehicle_order_info',
+        is_write: true,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('order_center', 'update_order', [body]);
+        },
+        help_info: {
+            title: "修改派车单",
+            describe: "修改派车单信息",
+            params: g_api_order_params,
             result: {
                 type: Boolean,
                 mean: "是否创建成功",
