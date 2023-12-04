@@ -2,13 +2,14 @@
 #include "rbac_cli.h"
 #include "device_cli.h"
 #include "rule_cli.h"
+#include "system_cli.h"
 #include <fstream>
 
 
 int main(int argc, char const *argv[])
 {
     common_cli *sub_c[] = {
-        new rbac_cli(),new device_cli(), new rule_cli()
+        new rbac_cli(),new device_cli(), new rule_cli(), new system_cli(),
     };
     auto root_menu = std::unique_ptr<cli::Menu>(new cli::Menu("zczh"));
     for (auto &itr:sub_c)
