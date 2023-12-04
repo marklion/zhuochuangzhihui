@@ -15,6 +15,7 @@ void show_users(std::ostream &out, std::vector<std::string> _params)
         {
             tab.add_row({std::to_string(itr.id), itr.name, itr.phone, itr.md5_password, util_join_string(itr.role_name, "\n")});
         }
+        tab.format().multi_byte_characters(true);
         out << tab << std::endl;
     }
     catch (gen_exp &e)
@@ -66,6 +67,8 @@ void show_permission(std::ostream &out, std::vector<std::string> _params)
         {
             tab.add_row({std::to_string(itr.id), itr.text_name, util_join_string(itr.role_name, "\n"), (itr.is_module ? "模块" : "资源")});
         }
+
+        tab.format().multi_byte_characters(true);
         out << tab << std::endl;
     }
     catch (const gen_exp &e)
@@ -104,6 +107,7 @@ void show_roles(std::ostream &out, std::vector<std::string> _params)
             }
             tab.add_row({std::to_string(itr.id), itr.role_name, util_join_string(users, "\n"), util_join_string(perms, "\n"), (itr.read_only ? "只读" : "读写")});
         }
+        tab.format().multi_byte_characters(true);
         out << tab << std::endl;
     }
     catch (const gen_exp &e)

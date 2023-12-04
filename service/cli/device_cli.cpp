@@ -10,7 +10,7 @@ void show_device_driver(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_all_driver(tmp);
     }
-    catch (gen_exp & e)
+    catch (gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -21,6 +21,7 @@ void show_device_driver(std::ostream &out, std::vector<std::string> _params)
     {
         tab.add_row({std::to_string(itr.id), itr.name});
     }
+    tab.format().multi_byte_characters(true);
     out << tab << std::endl;
 }
 
@@ -38,7 +39,7 @@ void add_set(std::ostream &out, std::vector<std::string> _params)
         {
             client->add_device_set(_params[0], atoi(_params[1].c_str()));
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -60,7 +61,7 @@ void del_set(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_device_set(atoi(_params[0].c_str()));
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -83,7 +84,7 @@ void show_device_scale(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_scale_config(tmp);
     }
-    catch (gen_exp & e)
+    catch (gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -112,6 +113,7 @@ void show_device_scale(std::ostream &out, std::vector<std::string> _params)
         PUT_DEVICE_TO_SET(scale);
         tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
     }
+    tab.format().multi_byte_characters(true);
     out << tab << std::endl;
 }
 void show_device_gate(std::ostream &out, std::vector<std::string> _params)
@@ -123,7 +125,7 @@ void show_device_gate(std::ostream &out, std::vector<std::string> _params)
     {
         client->get_gate_config(tmp);
     }
-    catch (gen_exp & e)
+    catch (gen_exp &e)
     {
         out << e.msg << std::endl;
     }
@@ -149,6 +151,7 @@ void show_device_gate(std::ostream &out, std::vector<std::string> _params)
         PUT_DEVICE_TO_SET(qr_reader.back);
         tab.add_row({std::to_string(itr.id), itr.name, util_join_string(device_info, "\n")});
     }
+    tab.format().multi_byte_characters(true);
     out << tab << std::endl;
 }
 void add_device(std::ostream &out, std::vector<std::string> _params)
@@ -190,7 +193,7 @@ void add_device(std::ostream &out, std::vector<std::string> _params)
 
             client->add_device_to_set(_params[0], _params[1], atoi(_params[2].c_str()), set_id, _params[4]);
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -211,7 +214,7 @@ void del_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->del_device_from_set(atoi(_params[0].c_str()));
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -233,7 +236,7 @@ void start_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->device_ctrl(atoi(_params[0].c_str()), 1);
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -254,7 +257,7 @@ void stop_device(std::ostream &out, std::vector<std::string> _params)
         {
             client->device_ctrl(atoi(_params[0].c_str()), 0);
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -283,7 +286,7 @@ void show_device_status(std::ostream &out, std::vector<std::string> _params)
                 out << "关闭" << std::endl;
             }
         }
-        catch (gen_exp & e)
+        catch (gen_exp &e)
         {
             out << e.msg << std::endl;
         }
@@ -350,110 +353,242 @@ void clear_device(std::ostream &out, std::vector<std::string> _params)
         std::vector<device_scale_set> tmp_s;
         client->get_gate_config(tmp_g);
         client->get_scale_config(tmp_s);
-        for (auto &itr:tmp_g)
+        for (auto &itr : tmp_g)
         {
-            try{
-            client->del_device_from_set(itr.gate.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.gate.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.plate_cam.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.plate_cam.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.video_cam.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.video_cam.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.id_reader.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.id_reader.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.qr_reader.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.qr_reader.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.speaker.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.speaker.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.led.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.led.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_set(itr.id);
-            }catch(gen_exp & e) {}
+            try
+            {
+                client->del_device_from_set(itr.gate.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.gate.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.plate_cam.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.plate_cam.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.video_cam.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.video_cam.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.id_reader.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.id_reader.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.qr_reader.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.qr_reader.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.speaker.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.speaker.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.led.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.led.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_set(itr.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
         }
-        for (auto &itr:tmp_s)
+        for (auto &itr : tmp_s)
         {
-            try {
-            client->del_device_from_set(itr.gate.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.gate.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.plate_cam.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.plate_cam.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.video_cam.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.video_cam.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.id_reader.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.id_reader.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.qr_reader.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.qr_reader.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.speaker.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.speaker.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.led.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.led.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.printer.back.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.printer.front.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_from_set(itr.scale.id);
-            }catch(gen_exp & e) {}
-            try{
-            client->del_device_set(itr.id);
-            }catch(gen_exp & e) {}
+            try
+            {
+                client->del_device_from_set(itr.gate.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.gate.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.plate_cam.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.plate_cam.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.video_cam.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.video_cam.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.id_reader.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.id_reader.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.qr_reader.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.qr_reader.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.speaker.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.speaker.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.led.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.led.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.printer.back.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.printer.front.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_from_set(itr.scale.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
+            try
+            {
+                client->del_device_set(itr.id);
+            }
+            catch (gen_exp &e)
+            {
+            }
         }
         THR_CALL_END();
     }
@@ -468,11 +603,11 @@ void reset_scale(std::ostream &out, std::vector<std::string> _params)
     else
     {
         int sm_id = 0;
-        std::vector< device_scale_set> tmp;
+        std::vector<device_scale_set> tmp;
         THR_CALL_BEGIN(config_management);
         client->get_scale_config(tmp);
         THR_CALL_END();
-        for (auto &itr:tmp)
+        for (auto &itr : tmp)
         {
             if (itr.name == _params[0])
             {
@@ -504,6 +639,7 @@ void show_scale_status(std::ostream &out, std::vector<std::string> _params)
         {
             tab.add_row({std::to_string(itr.set_info.id), itr.set_info.name, itr.cur_state, std::to_string(itr.cur_weight), itr.cur_plate});
         }
+        tab.format().multi_byte_characters(true);
         out << tab << std::endl;
     }
 }
@@ -537,7 +673,7 @@ void test_led(std::ostream &out, std::vector<std::string> _params)
         bool is_show = true;
         if ("show" != _params[1])
         {
-            is_show= false;
+            is_show = false;
         }
         if (is_show)
         {
