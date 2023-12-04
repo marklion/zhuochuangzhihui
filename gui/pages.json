@@ -28,6 +28,13 @@
 			}
 		},
 		{
+			"path": "pages/req_que",
+			"style": {
+				"navigationBarTitleText": "推送队列",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
 			"path": "pages/myself",
 			"style": {
 				"navigationBarTitleText": "我的"

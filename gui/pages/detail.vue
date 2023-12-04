@@ -84,6 +84,8 @@ export default {
 }
 </script>
 
-<style>
-
+<style scoped>
+.u-cell-group {
+    border: 1px solid #f0b820;
+}
 </style>

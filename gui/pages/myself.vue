@@ -1,7 +1,9 @@
 <template>
 <view>
-    <u-link :href="dev_page" text="打开维护页面"></u-link>
+    <u-cell  title="推送队列" url="/pages/req_que" is_link ></u-cell>
     <u-button type="error" text="退出登录" @click="log_off"></u-button>
+    <u-divider ></u-divider>
+    <u-link :href="dev_page" text="打开维护页面"></u-link>
 </view>
 </template>
 
