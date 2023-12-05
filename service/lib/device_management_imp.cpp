@@ -1093,19 +1093,27 @@ void scale_state_clean::after_exit(abs_state_machine &_sm)
     auto enter_device_id = sm.trigger_device_id;
     auto on = sm.order_number;
     timer_wheel_add_node(
-        1, [=](void *)
+        1,
+        [=](void *)
         {
-        THR_CALL_DM_BEGIN();
-        std::string file_name;
-        client->video_record_slow(file_name, device_management_handler::get_same_side_device(enter_device_id, "video_cam"), begin_date, end_date);
-        THR_CALL_BEGIN(order_center);
-        client->order_push_attach(on, "过磅录像", file_name);
-        THR_CALL_END();
-        client->video_record_slow(file_name, device_management_handler::get_diff_side_device(enter_device_id, "video_cam"), begin_date, end_date);
-        THR_CALL_BEGIN(order_center);
-        client->order_push_attach(on, "过磅录像", file_name);
-        THR_CALL_END();
-        THR_CALL_DM_END(); },
+            THR_CALL_DM_BEGIN();
+            std::string file_name;
+            client->video_record_slow(file_name, device_management_handler::get_same_side_device(enter_device_id, "video_cam"), begin_date, end_date);
+            THR_CALL_BEGIN(order_center);
+            if (file_name.length() > 0)
+            {
+                client->order_push_attach(on, "过磅录像", file_name);
+            }
+            THR_CALL_END();
+            client->video_record_slow(file_name, device_management_handler::get_diff_side_device(enter_device_id, "video_cam"), begin_date, end_date);
+            THR_CALL_BEGIN(order_center);
+            if (file_name.length() > 0)
+            {
+                client->order_push_attach(on, "过磅录像", file_name);
+            }
+            THR_CALL_END();
+            THR_CALL_DM_END();
+        },
         true);
 }
 

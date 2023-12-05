@@ -15,12 +15,11 @@
         <u-cell v-if="order.p_time" :title="'一次称重:' + order.p_weight" :label="order.p_time" :value="order.is_sale?'皮重':'毛重'"></u-cell>
         <u-cell v-if="order.m_time" :title="'二次称重:' + order.m_weight" :label="order.m_time" :value="order.is_sale?'毛重':'皮重'"></u-cell>
     </u-cell-group>
-
+    <u-cell-group title="附件">
+        <u-swiper previousMargin="30" nextMargin="30" :autoplay="false" radius="5" bgColor="#ffffff" indicator :height="260" :list="att_paths" @click="preview_att"></u-swiper>
+    </u-cell-group>
     <u-cell-group title="流程节点">
         <u-cell v-for="(single_node,index) in order.history_records" :key="index" :title="single_node.node_name" :label="single_node.occour_time" :value="single_node.node_caller"></u-cell>
-    </u-cell-group>
-    <u-cell-group title="附件">
-        <u-cell v-for="(single_node,index) in order.order_attachs" :key="index" :title="single_node.att_name" :label="single_node.att_path"></u-cell>
     </u-cell-group>
     <u-button type="error" text="关闭订单" @click="confirm_close = true" v-if="order.status == 1"></u-button>
     <u-modal :show="confirm_close" @confirm="close_order" closeOnClickOverlay title="确定要关闭吗?" @close="confirm_close = false"></u-modal>
@@ -28,12 +27,16 @@
 </template>
 
 <script>
+import path from 'path';
 export default {
     data: function () {
         return {
             order: {},
             confirm_close: false,
             ready_to_show: false,
+            make_att_path: function (att_path) {
+                return 'https://' + uni.getStorageSync('domain') + '.d8sis.cn' + att_path;
+            },
         }
     },
     onLoad: function () {
@@ -57,8 +60,31 @@ export default {
 
             return ret;
         },
+        att_paths: function () {
+            var ret = [];
+            this.order.order_attachs.forEach((item) => {
+                ret.push({
+                    url: this.make_att_path(item.att_path),
+                    title: item.att_name
+                });
+            });
+            return ret;
+        },
     },
     methods: {
+        preview_att: function (index) {
+            var paths = [];
+            var real_path = this.make_att_path(this.order.order_attachs[index].att_path);
+            if (real_path.split('.').pop() == 'jpg') {
+                paths.push(real_path);
+            }
+            if (paths.length > 0) {
+                uni.previewImage({
+                    urls: paths,
+                    current: real_path
+                });
+            }
+        },
         close_order: function () {
             this.$send_req('/api/order/del', {
                 order_number: this.order.order_number

@@ -5,6 +5,8 @@ Resource  cli_res.resource
 *** Variables ***
 ${s_fpc}  fpc
 ${s_bpc}  bpc
+${s_fvc}  fvc
+${s_bvc}  bvc
 ${s_fgate}  fg
 ${s_bgate}  bg
 ${s_fled}  fl
@@ -150,6 +152,8 @@ Config Best Dev
     Run ZH Cmd  add_set s 1
     Run ZH Cmd  add_device ${s_fpc} '-t s' 1 s front_plate_cam
     Run ZH Cmd  add_device ${s_bpc} '-t s' 1 s back_plate_cam
+    Run ZH Cmd  add_device ${s_fvc} '-t s' 1 s front_video_cam
+    Run ZH Cmd  add_device ${s_bvc} '-t s' 1 s back_video_cam
     Run ZH Cmd  add_device ${s_fled} '-t s' 1 s front_led
     Run ZH Cmd  add_device ${s_bled} '-t s' 1 s back_led
     Run ZH Cmd  add_device ${s_fid} '-t s' 1 s front_id_reader
@@ -161,7 +165,7 @@ Config Best Dev
     Run ZH Cmd  add_device ${s_s} '-t s' 1 s scale
     Run ZH Cmd  zczh
     Run ZH Cmd  rule
-    Run ZH Cmd  set_zyzl_plugin http://192.168.0.107:5001 abc
+    Run ZH Cmd  set_zyzl_plugin http://192.168.0.109:5001 abc
     Run ZH Cmd  set_ticket_prefix WR
     Run ZH Cmd  auto_call_count 2
     Run ZH Cmd  zczh
