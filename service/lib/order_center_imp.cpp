@@ -439,7 +439,15 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
     {
         es->call_info_name = opt_name;
         es->call_info_time = util_get_timestring();
-        zyzl_plugin::get_inst()->push_call(es->plate_number, es->driver_name);
+
+        running_rule rule;
+        THR_CALL_BEGIN(config_management);
+        client->get_rule(rule);
+        THR_CALL_END();
+        if (rule.zyzl_host.length() > 0 && rule.zyzl_ssid.length() > 0)
+        {
+            zyzl_plugin::get_inst()->push_call(es->plate_number, es->driver_name);
+        }
     }
     else if (es->status == 1)
     {
@@ -690,10 +698,10 @@ int64_t order_center_handler::count_order(const order_search_cond &cond)
     return ao.size();
 }
 
-void order_center_handler::get_req_que(std::vector<req_wait_info>& _return)
+void order_center_handler::get_req_que(std::vector<req_wait_info> &_return)
 {
     auto all_req = sqlite_orm::search_record_all<sql_zyzl_plugin_que>("PRI_ID != 0");
-    for (auto &itr:all_req)
+    for (auto &itr : all_req)
     {
         req_wait_info tmp;
         tmp.req_body = itr.req_body;

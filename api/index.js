@@ -705,7 +705,7 @@ const g_api_permisson = {
         },
     },
     "/api/order/update": {
-        module: 'order',
+        module: 'config',
         resource: 'vehicle_order_info',
         is_write: true,
         no_need_rabc: false,
@@ -1480,6 +1480,39 @@ const g_api_permisson = {
                         mean: "请求编号"
                     },
                 ],
+            },
+        },
+    },
+    "/api/update": {
+        module: 'order',
+        resource: 'stuff',
+        is_write: true,
+        no_need_rabc: false,
+        handler: async function (body) {
+            var update_file = '/tmp/' + body.file;
+            const util = require('node:util');
+            const exec = util.promisify(require('node:child_process').exec);
+            await exec(`cp ${update_file} /root/install.sh`);
+            return await request_rpc('config_management', 'reboot_system', []);
+        },
+        help_info: {
+            title: "更新程序",
+            describe: "需要先上传更新文件，然后填入返回的文件编号",
+            params: {
+                type: Object,
+                have_to: true,
+                explain: [
+                    {
+                        name: "file",
+                        type: String,
+                        mean: "文件编号",
+                        have_to: true,
+                    },
+                ]
+            },
+            result: {
+                type: Boolean,
+                mean: "是否更新成功",
             },
         },
     },
