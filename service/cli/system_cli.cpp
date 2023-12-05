@@ -35,7 +35,15 @@ void update(std::ostream &out, std::vector<std::string> _params)
     {
         std::string cmd = "cp /tmp/install.sh /root/install.sh";
         system(cmd.c_str());
-        out << "已完成，重启后生效" << std::endl;
+        out << "已完成，重启后生效,是否重启？Yes(y) or No(n)" << std::endl;
+        std::string fb;
+        std::cin >> fb;
+        if (fb == "y" || fb == "Y")
+        {
+            THR_CALL_BEGIN(config_management);
+            client->reboot_system();
+            THR_CALL_END();
+        }
     }
 }
 void version(std::ostream &out, std::vector<std::string> _params)
