@@ -1,35 +1,90 @@
 <template>
 <view class="content">
-    <u-sticky bgColor="#fff">
-        <u-tabs :list="status_list" @change="update_status_filter"></u-tabs>
-    </u-sticky>
+    <u-row>
+        <u-col :span="10">
+            <u-sticky bgColor="#fff">
+                <u-tabs :list="status_list" @change="update_status_filter"></u-tabs>
+            </u-sticky>
+        </u-col>
+        <u-col :span="2">
+            <u-button type="primary" text="新增" size="small" @click="create_diag = true"></u-button>
+        </u-col>
+    </u-row>
+    <u-popup mode="top" :show="create_diag" @close="create_diag = false">
+        <view>
+            <u--form :labelWidth="100" :model="new_order" :rules="create_rules" ref="order_form">
+                <u-form-item label="车号" prop="plate_number" borderBottom>
+                    <u--input v-model="new_order.plate_number" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="挂车号" prop="back_plate_number" borderBottom>
+                    <u--input v-model="new_order.back_plate_number" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="派车公司" prop="company_name" borderBottom>
+                    <u--input v-model="new_order.company_name" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="司机姓名" prop="driver_name" borderBottom>
+                    <u--input v-model="new_order.driver_name" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="司机电话" prop="driver_phone" borderBottom>
+                    <u--input v-model="new_order.driver_phone" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="司机身份证号" prop="driver_id" borderBottom>
+                    <u--input v-model="new_order.driver_id" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="物料名" prop="stuff_name" borderBottom>
+                    <u--input v-model="new_order.stuff_name" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="进厂类型" prop="is_sale" borderBottom>
+                    <u-radio-group v-model="sale_choose" placement="row">
+                        <u-radio name="采购" label="采购"></u-radio>
+                        <u-radio name="销售" label="销售"></u-radio>
+                    </u-radio-group>
+                </u-form-item>
+                <!-- <u-form-item label="姓名" prop="plate_number" borderBottom>
+                    <u--input v-model="new_order.plate_number" border="none"></u--input>
+                </u-form-item>
+                <u-form-item label="姓名" prop="plate_number" borderBottom>
+                    <u--input v-model="new_order.plate_number" border="none"></u--input>
+                </u-form-item> -->
+                <u-button text="提交" type="success" @click="add_new_order"></u-button>
+            </u--form>
+        </view>
+    </u-popup>
     <u-cell title="日期范围" :value="date_range" @click="show_date_picker = true"></u-cell>
     <u-calendar :show="show_date_picker" mode="range" @confirm="handle_confirm_date" :monthNum="48" allowSameDay :minDate="minDate" :maxDate="maxDate" @close="show_date_picker = false"></u-calendar>
     <u-search placeholder="输入车号过滤" v-model="search_key" :showAction="false" @change="load_more"></u-search>
     <u-list @scrolltolower="load_more" showScrollbar lowerThreshold="50">
         <u-list-item v-for="(item, index) in order_need_show" :key="index">
-            <u-cell :title="item.plate_number + '-' + item.back_plate_number" :label="item.driver_name + '-' + item.driver_phone" isLink :url="'/pages/detail?order_number=' + item.order_number">
-                <view slot="value" style="text-align:right">
-                    <view>
-                        {{item.stuff_name}}
-                        皮{{item.p_weight.toFixed(2)}}
-                        毛{{item.m_weight.toFixed(2)}}
-                    </view>
-                    <view>
-                        {{item.company_name}}
-                    </view>
-                </view>
-                <view slot="icon">
-                    <view>
-                        <u-icon v-if="item.status==100" name="checkbox-mark" color="green" size="28"></u-icon>
-                        <u-icon v-else-if="item.status==1" name="clock" color="red" size="28"></u-icon>
-                        <u-icon v-else name="hourglass-half-fill" color="yellow" size="28"></u-icon>
-                    </view>
-                    <view v-if="item.status == 100">
-                        {{Math.abs(item.p_weight - item.m_weight).toFixed(2)}}
-                    </view>
-                </view>
-            </u-cell>
+            <u-swipe-action>
+                <u-swipe-action-item :options="options1" @click="dup_order(item)">
+                    <u-cell :title="item.plate_number + '-' + item.back_plate_number" :label="item.driver_name + '-' + item.driver_phone" isLink :url="'/pages/detail?order_number=' + item.order_number">
+                        <view slot="value" style="text-align:right">
+                            <view>
+                                {{item.stuff_name}}
+                                {{item.is_sale?'皮':'毛'}}{{item.p_weight.toFixed(2)}}
+                                {{item.is_sale?'毛':'皮'}}{{item.m_weight.toFixed(2)}}
+                            </view>
+                            <view>
+                                {{item.company_name}}
+                            </view>
+                            <view>
+                                左滑更多
+                            </view>
+                        </view>
+                        <view slot="icon">
+                            <view>
+                                <u-icon v-if="item.status==100" name="checkbox-mark" color="green" size="28"></u-icon>
+                                <u-icon v-else-if="item.status==1" name="clock" color="red" size="28"></u-icon>
+                                <u-icon v-else name="hourglass-half-fill" color="yellow" size="28"></u-icon>
+                            </view>
+                            <view v-if="item.status == 100">
+                                {{Math.abs(item.p_weight - item.m_weight).toFixed(2)}}
+                            </view>
+                        </view>
+                    </u-cell>
+                </u-swipe-action-item>
+            </u-swipe-action>
+
         </u-list-item>
     </u-list>
 </view>
@@ -40,6 +95,36 @@ import PinyinMatch from 'pinyin-match';
 export default {
     data() {
         return {
+            create_rules: {
+                plate_number: {
+                    type: 'string',
+                    required: true,
+                    message: '请输入车号',
+                    trigger: 'blur',
+                },
+                driver_phone: {
+                    type: 'string',
+                    required: true,
+                    message: '请输入司机电话',
+                    trigger: 'blur',
+                },
+            },
+            options1: [{
+                text: '复制'
+            }],
+            create_diag: false,
+            new_order: {
+                back_plate_number: '',
+                company_name: '',
+                driver_id: '',
+                driver_name: '',
+                driver_phone: '',
+                enter_weight: 0,
+                is_sale: true,
+                plate_number: '',
+                stuff_from: '',
+                stuff_name: '',
+            },
             all_orders: [],
             search_key: '',
             status_filter: 0,
@@ -74,6 +159,22 @@ export default {
         }
     },
     computed: {
+        sale_choose: {
+            get: function () {
+                var ret = '销售';
+                if (this.new_order.is_sale == false) {
+                    ret = '采购';
+                }
+                return ret;
+            },
+            set: function (val) {
+                if (val == '采购')
+                    this.new_order.is_sale = false;
+                else if (val == '销售') {
+                    this.new_order.is_sale = true;
+                }
+            }
+        },
         maxDate: function () {
             var ret = '';
             var date = new Date();
@@ -127,6 +228,44 @@ export default {
         this.fetch_order_count();
     },
     methods: {
+        dup_order: function (_order) {
+            console.log(_order);
+            this.new_order.company_name = _order.company_name;
+            this.new_order.back_plate_number = _order.back_plate_number;
+            this.new_order.driver_id = _order.driver_id;
+            this.new_order.driver_name = _order.driver_name;
+            this.new_order.driver_phone = _order.driver_phone;
+            this.new_order.enter_weight = _order.enter_weight;
+            this.new_order.is_sale = _order.is_sale;
+            this.new_order.plate_number = _order.plate_number;
+            this.new_order.stuff_from = _order.stuff_from;
+            this.new_order.stuff_name = _order.stuff_name;
+            this.create_diag = true;
+        },
+        add_new_order: function () {
+            this.$refs.order_form.validate().then(res => {
+                this.$send_req('/api/order/add', this.new_order).then(resp => {
+                    if (resp) {
+                        this.create_diag = false;
+                        this.new_order = {
+                            back_plate_number: '',
+                            company_name: '',
+                            driver_id: '',
+                            driver_name: '',
+                            driver_phone: '',
+                            enter_weight: 0,
+                            is_sale: true,
+                            plate_number: '',
+                            stuff_from: '',
+                            stuff_name: '',
+                        };
+                        uni.startPullDownRefresh();
+                    }
+                });
+            }).catch(errors => {
+                uni.$u.toast('参数错误')
+            })
+        },
         fetch_order_count: function () {
             this.$send_req('/api/order/count', {
                 status: 1,
