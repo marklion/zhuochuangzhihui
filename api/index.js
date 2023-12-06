@@ -468,224 +468,6 @@ const g_api_permisson = {
             },
         },
     },
-    "/api/get_stuff_config": {
-        module: 'config',
-        resource: 'stuff',
-        is_write: false,
-        handler: async function () {
-            return await request_rpc('config_management', 'get_stuff_config', []);
-        },
-
-    },
-    "/api/get_contract_config": {
-        module: 'config',
-        resource: 'contract',
-        is_write: false,
-        handler: async function () {
-            return await request_rpc('config_management', 'get_contract_config', []);
-        },
-        help_info: {
-            title: "获取合同配置",
-            describe: "获取所有合同信息",
-            result: {
-                type: Array,
-                mean: " 包含所有合同信息的数组",
-                explain: [
-                    {
-                        name: "name",
-                        mean: "供应商或客户名称",
-                        type: String,
-                    },
-                    {
-                        name: "is_sale",
-                        mean: "类型：客户true，供应商 false",
-                        type: Boolean,
-                    },
-                    {
-                        name: "attachment",
-                        mean: " 附件",
-                        type: String,
-                    },
-                    {
-                        name: "id",
-                        mean: " 编号",
-                        type: Number,
-                    },
-                    {
-                        name: "code",
-                        mean: "自定义编码",
-                        type: String,
-                    },
-                    {
-                        name: "admin_name_phone",
-                        mean: "联系人姓名电话",
-                        type: String,
-                    },
-                    {
-                        name: "balance",
-                        mean: "余额",
-                        type: Number,
-                    },
-                    {
-                        name: "credit",
-                        mean: "授信额度",
-                        type: Number,
-                    },
-                    {
-                        name: "follow_stuffs",
-                        mean: "关注物料列表",
-                        type: Array,
-                        explain: [
-                            {
-                                name: 'id',
-                                mean: "编号",
-                                type: Number,
-                            },
-                            {
-                                name: 'stuff_name',
-                                mean: "物料名称",
-                                type: String,
-                            },
-                            {
-                                name: 'inventory',
-                                mean: "库存",
-                                type: Number,
-                            },
-                            {
-                                name: 'need_enter_weight',
-                                mean: "是否需要进厂前磅单",
-                                type: Boolean,
-                            },
-                            {
-                                name: 'price',
-                                mean: "统一单价",
-                                type: Number,
-                            },
-                            {
-                                name: 'expect_weight',
-                                mean: "期望净重",
-                                type: Number,
-                            },
-                            {
-                                name: 'need_manual_scale',
-                                mean: "是否开启手动确认重量",
-                                type: Boolean,
-                            },
-                            {
-                                name: 'min_limit',
-                                mean: "最小毛重",
-                                type: Number,
-                            },
-                            {
-                                name: 'max_limit',
-                                mean: "最大毛重",
-                                type: Number,
-                            },
-                            {
-                                name: 'code',
-                                mean: "自定义编码",
-                                type: String,
-                            },
-                            {
-                                name: 'use_for_white_list',
-                                mean: "是否用于白名单",
-                                type: Boolean,
-                            },
-                            {
-                                name: 'auto_call_count',
-                                mean: "场内进车容量",
-                                type: Number,
-                            },
-                        ],
-                    },
-                ],
-            },
-        },
-    },
-    "/api/get_vehicle_config": {
-        module: 'config',
-        resource: 'vehicle',
-        is_write: false,
-    },
-    "/api/add_stuff_config": {
-        module: 'config',
-        resource: 'stuff',
-        is_write: true,
-    },
-    "/api/update_stuff_config": {
-        module: 'config',
-        resource: 'stuff',
-        is_write: true,
-    },
-    "/api/add_contract_config": {
-        module: 'config',
-        resource: 'contract',
-        is_write: true,
-        handler: async function (body) {
-            return await request_rpc('config_management', 'add_contract', [body]);
-        },
-    },
-    "/api/update_contract_config": {
-        module: 'config',
-        resource: 'contract',
-        is_write: true,
-    },
-    "/api/add_vehicle_config": {
-        module: 'config',
-        resource: 'vehicle',
-        is_write: true,
-    },
-    "/api/update_vehicle_config": {
-        module: 'config',
-        resource: 'vehicle',
-        is_write: true,
-        help_info: {
-            title: "modify vehicle config",
-            describe: "modify id specified vehicle config to param",
-            params: {
-                type: Object,
-                have_to: true,
-                explain: [
-                    {
-                        name: "p1",
-                        type: String,
-                        mean: "user's phone number",
-                        have_to: true,
-                    },
-                    {
-                        name: "p2",
-                        type: Number,
-                        mean: "user's password that handled with md5 hashing",
-                        have_to: true,
-                    },
-                    {
-                        name: "p3",
-                        type: String,
-                        mean: "user's password that handled with md5 hashing",
-                        have_to: true,
-                    }, {
-                        name: "p4",
-                        type: Array,
-                        mean: "user's password that handled with md5 hashing",
-                        have_to: false,
-                        explain: [
-                            {
-                                name: "a1",
-                                type: String,
-                                mean: "adsf",
-                                have_to: true,
-                            },
-                        ],
-                    },
-                ]
-            },
-            result: {
-                type: String,
-                mean: "token for other apis",
-            },
-        },
-    },
-
     "/api/order/add": {
         module: 'order',
         resource: 'vehicle_order_info',
@@ -1635,7 +1417,7 @@ function make_param_help(params) {
     });
     ret.push({
         table: {
-            headers: ["param name", "type", "have to", "describe"],
+            headers: ["字段名", "类型", "是否必填", "描述"],
             rows: rows,
         },
     });
@@ -1703,13 +1485,13 @@ app.get('/api/help', (req, res) => {
                 }
             });
             out_json.push({
-                h2: "describe"
+                h2: "描述"
             });
             out_json.push({
                 p: ali.describe
             });
             out_json.push({
-                h2: "params"
+                h2: "参数"
             });
             if (ali.params) {
                 let tph = make_param_help(ali.params);
@@ -1723,7 +1505,7 @@ app.get('/api/help', (req, res) => {
                 });
             }
             out_json.push({
-                h2: "return"
+                h2: "返回"
             });
             if (ali.result) {
                 let tph = make_result_help(ali.result)
@@ -1739,28 +1521,81 @@ app.get('/api/help', (req, res) => {
             }
         }
     });
-    cv = new showdown.Converter({
-        tables: true,
-        tablesHeaderId: true
-    })
-    let html_content = cv.makeHtml(json2md(out_json));
-    let md_temp_github = `
+    const MarkdownIt = require('markdown-it');
+    const mdTocAndAnchor = require('markdown-it-toc-and-anchor').default;
+
+    const md = new MarkdownIt({
+        html: true,
+        linkify: true,
+        typographer: true,
+    });
+
+    md.use(mdTocAndAnchor, {
+        toc: true,
+        tocFirstLevel: 1,
+        tocLastLevel: 6,
+        wrapHeadingTextInAnchor: true
+    });
+
+    let markdownText = json2md(out_json);
+    markdownText =
+        `
+# 概述
++ 本文档中所有接口使用 POST 方法
++ 除登录接口之外，需要先调用登录接口获取 token，然后在请求头中带上 token 才能调用其他接口
++ 每个接口的参数和返回值都是 JSON 格式
++ 接口返回的对象中会携带两个字段，err_msg 和 result
++ err_msg 为空字符串表示成功，否则表示失败
++ result字段是真正的接口返回值，每个接口的返回值都不一样，具体参考接口文档
+    ` + markdownText;
+    const htmlContent = md.render(markdownText);
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>接口文档</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css">
+    <title>接口文档</title>
+    <style>
+        #toc {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            overflow: auto;
+            border-right: 1px solid #000;
+        }
+        #content {
+            margin-left: 310px;
+        }
+        #toc a {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
+    <div id="toc"></div>
     <article class="markdown-body">
-    ${html_content}
+    <div id="content">${htmlContent}</div>
     </article>
+    <script>
+    window.onload = function() {
+        const toc = document.getElementById('toc');
+        const links = document.querySelectorAll('#content h1 a');
+
+        links.forEach((link, index) => {
+            const newLink = document.createElement('a');
+            newLink.href = link.href;
+            newLink.textContent = (index + 1) + '. ' +link.textContent;
+            toc.appendChild(newLink);
+        });
+    }
+    </script>
 </body>
 </html>
-`
-    res.send(md_temp_github);
+`;
+    res.send(html);
 });
 
 
