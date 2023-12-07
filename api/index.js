@@ -1265,6 +1265,40 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/device_run_time": {
+        module: 'order',
+        resource: 'vehicle_scale',
+        is_write: false,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('device_management', 'get_device_run_time', []);
+        },
+        help_info: {
+            title: "获取所有设备的运行时间",
+            describe: "获取所有设备的运行时间",
+            result: {
+                type: Array,
+                mean: '设备信息',
+                explain: [
+                    {
+                        name: 'name',
+                        type: String,
+                        mean: "设备名"
+                    },
+                    {
+                        name: 'id',
+                        type: Number,
+                        mean: "设备编号"
+                    },
+                    {
+                        name: 'stay_time',
+                        type: String,
+                        mean: "运行时间"
+                    },
+                ],
+            },
+        },
+    },
     "/api/update": {
         module: 'order',
         resource: 'stuff',

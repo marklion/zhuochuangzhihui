@@ -22,6 +22,9 @@ Clear Dev Config
     Connect ZH
     Run ZH Cmd  device
     Run ZH Cmd  clear_device
+    Run ZH Cmd  zczh
+    Run ZH Cmd  rule
+    Run ZH Cmd  clear
     DisConnect
 Get Dev Status
     [Arguments]  ${dev_name}

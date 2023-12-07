@@ -20,6 +20,7 @@ public:
     virtual void get_scale_sm_info(std::vector<scale_sm_info> &_return) {}
     virtual void reset_scale_sm(const int64_t sm_id) {}
     virtual void confirm_scale(const int64_t sm_id) {}
+    virtual void get_device_run_time(std::vector<device_run_time> & _return){}
     common_driver(const std::string &_name, long _self_id) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log"), self_dev_id(_self_id)
     {
     }

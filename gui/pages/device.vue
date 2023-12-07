@@ -1,5 +1,6 @@
 <template>
 <view>
+    <u-divider text="称重状态"></u-divider>
     <view v-for="(single_sm, index) in scale_sm" :key="index">
         <u-cell-group :title="single_sm.set_info.name + '-' + single_sm.cur_state + '-' + single_sm.cur_plate">
             <u-cell>
@@ -73,6 +74,11 @@
     </u-modal>
     <u-modal :show="reset_confirm_id != 0" title="确定要重置吗?" closeOnClickOverlay @close="reset_confirm_id = 0" @confirm="reset_scale">
     </u-modal>
+    <u-divider text="设备状态"></u-divider>
+    <u-read-more toggle closeText="展开更多" v-if="all_device.length > 0" :showHeight="200">
+        <u-cell v-for="(single_dev, index) in all_device" :key="index" :title="single_dev.name" :value="single_dev.stay_time">
+        </u-cell>
+    </u-read-more>
 </view>
 </template>
 
@@ -85,6 +91,7 @@ export default {
             focus_cam_id: 0,
             focus_plate: '',
             reset_confirm_id: 0,
+            all_device: [],
         }
     },
 
@@ -142,7 +149,13 @@ export default {
                 uni.startPullDownRefresh();
             });
         },
-        init_device_info: function () {
+        init_stay_time: function () {
+            this.$send_req('/api/device_run_time', {}).then(resp => {
+                this.all_device = resp;
+            });
+        },
+        init_device_info: async function () {
+            await this.init_stay_time();
             this.$send_req('/api/get_scale_sm_info', {}).then(resp => {
                 this.scale_sm = resp;
                 uni.stopPullDownRefresh();

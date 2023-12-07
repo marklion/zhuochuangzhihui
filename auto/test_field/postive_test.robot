@@ -144,6 +144,12 @@ No Auto Pass
     Sleep  2m
     @{reg_orders}  Get Reg Orders
     Length Should Be  ${reg_orders}  length=1
+Get Dev Run Time
+    ${resp}  POST to Server Success  /device_run_time
+    ${len}  Get Length  ${resp}
+    Should Not Be Equal As Integers  ${len}  0
+    ${time_info}  Set Variable  ${resp}[0][stay_time]
+    Should Match Regexp  ${time_info}  (\\d+-)?(\\d{2}:)?\\d{2}:\\d{2}
 
 *** Keywords ***
 Make Multi Info
