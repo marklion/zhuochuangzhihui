@@ -532,6 +532,36 @@ void device_management_handler::confirm_scale(const int64_t sm_id)
             return true;
         });
 }
+void device_management_handler::get_device_run_time(std::vector<device_run_time> &_return)
+{
+    std::vector<driver_run_status> dids;
+    pthread_mutex_lock(&g_runing_lock);
+    for (auto itr = g_runing_map.begin(); itr != g_runing_map.end(); ++itr)
+    {
+        dids.push_back(itr->second);
+    }
+    pthread_mutex_unlock(&g_runing_lock);
+    for (auto &itr : dids)
+    {
+        device_run_time tmp;
+        tmp.id = itr.device_id;
+        std::string cmd = "ps -p " + std::to_string(itr.pid) + " -o etime=";
+        auto pfile = popen(cmd.c_str(), "r");
+        if (pfile)
+        {
+            char buff[1024] = {0};
+            fread(buff, 1, sizeof(buff), pfile);
+            tmp.stay_time = buff;
+            pclose(pfile);
+        }
+        auto dm = sqlite_orm::search_record<sql_device_meta>(tmp.id);
+        if (dm)
+        {
+            tmp.name = dm->name;
+        }
+        _return.push_back(tmp);
+    }
+}
 static bool isZombieProcess(pid_t pid)
 {
     int status;

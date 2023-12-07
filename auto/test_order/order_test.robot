@@ -42,7 +42,7 @@ Create Many Orders
 Config zyzl Push
     Connect ZH
     Run ZH Cmd  rule
-    Run ZH Cmd  set_zyzl_plugin http://192.168.0.107:5001 abc
+    Run ZH Cmd  set_zyzl_plugin http://192.168.0.109:1111 abc
     DisConnect
 Clear zyzl Config
     Connect ZH

@@ -135,6 +135,12 @@ struct running_rule {
     6:string oem_name,
 }
 
+struct device_run_time{
+    1:i64 id,
+    2:string name,
+    3:string stay_time,
+}
+
 service config_management{
     list<stuff_config> get_stuff_config() throws (1:gen_exp e),
     bool add_stuff_config(1:stuff_config new_one) throws (1:gen_exp e),
@@ -276,4 +282,5 @@ service device_management {
     list<scale_sm_info> get_scale_sm_info() throws (1:gen_exp e),
     void reset_scale_sm(1:i64 sm_id) throws (1:gen_exp e),
     void confirm_scale(1:i64 sm_id) throws (1:gen_exp e),
+    list<device_run_time> get_device_run_time() throws (1:gen_exp e),
 }
