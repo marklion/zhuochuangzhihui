@@ -11,6 +11,9 @@ const std::string node_name_enter = "进厂";
 const std::string node_name_exit = "出厂";
 const std::string node_name_p_weight = "一次称重";
 const std::string node_name_m_weight = "二次称重";
+const std::string node_name_create= "创建";
+const std::string node_name_update= "创建";
+const std::string node_name_close= "关闭";
 class sql_stuff : public sql_tree_base
 {
 public:
@@ -297,6 +300,8 @@ public:
     std::string company_name;
     std::string stuff_from;
     long reg_no = 0;
+    std::string create_time;
+    std::string continue_until;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -325,6 +330,8 @@ public:
         ret.push_back(sqlite_orm_column("company_name", sqlite_orm_column::STRING, &company_name));
         ret.push_back(sqlite_orm_column("stuff_from", sqlite_orm_column::STRING, &stuff_from));
         ret.push_back(sqlite_orm_column("reg_no", sqlite_orm_column::INTEGER, &reg_no));
+        ret.push_back(sqlite_orm_column("create_time", sqlite_orm_column::STRING, &create_time));
+        ret.push_back(sqlite_orm_column("continue_until", sqlite_orm_column::STRING, &continue_until));
 
         return ret;
     }

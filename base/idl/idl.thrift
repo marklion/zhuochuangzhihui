@@ -57,6 +57,8 @@ service rbac_center{
     list<rbac_user> get_all_user() throws (1:gen_exp e),
     list<rbac_permission> get_all_permission() throws (1:gen_exp e),
     string login(1:string phone, 2:string pwd) throws (1:gen_exp e),
+    string get_name_by_token(1:string token) throws (1:gen_exp e),
+    rbac_user get_user_by_token(1:string token) throws (1:gen_exp e),
 }
 
 struct device_driver {
@@ -208,6 +210,7 @@ struct vehicle_order_info {
     22:string company_name,
     23:string stuff_from,
     24:i64 reg_no,
+    25:string continue_until,
 }
 
 struct order_search_cond {
@@ -221,6 +224,8 @@ struct order_search_cond {
     8:i64 page_no,
     9:string driver_id,
     10:i64 exp_status,
+    11:string create_time_begin,
+    12:string create_time_end,
 }
 
 struct req_wait_info{
@@ -230,9 +235,9 @@ struct req_wait_info{
 }
 
 service order_center {
-    bool add_order(1:vehicle_order_info order) throws (1:gen_exp e),
-    bool del_order(1:string order_number) throws (1:gen_exp e),
-    bool update_order(1:vehicle_order_info order) throws (1:gen_exp e),
+    bool add_order(1:vehicle_order_info order, 2:string opt_name) throws (1:gen_exp e),
+    bool del_order(1:string order_number, 2:string opt_name) throws (1:gen_exp e),
+    bool update_order(1:vehicle_order_info order, 2:string opt_name) throws (1:gen_exp e),
     list<vehicle_order_info> search_order(1:order_search_cond cond) throws (1:gen_exp e),
     vehicle_order_info get_order(1:string order_number) throws (1:gen_exp e),
     list<vehicle_order_info> get_registered_order() throws (1:gen_exp e),

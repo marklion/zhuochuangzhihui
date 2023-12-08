@@ -360,6 +360,11 @@ const g_order_found_result = {
                 },
             ],
         },
+        {
+            name:'continue_until',
+            type:String,
+            mean:'连续派车截止日期, 为空则不是连续派车单',
+        }
     ]
 }
 
@@ -428,6 +433,18 @@ const g_api_order_params = {
             mean: "物料名",
             have_to: false,
         },
+        {
+            name: "continue_until",
+            type: String,
+            mean: "连续派车截止日期, 为空则不是连续派车单",
+            have_to: false,
+        },
+        {
+            name: "opt_name",
+            type: String,
+            mean: "操作人，不存在或为空则记录为当前调用用户",
+            have_to: false,
+        },
     ]
 
 };
@@ -468,13 +485,56 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/user_info": {
+        module: '',
+        resource: '',
+        is_write: false,
+        no_need_rabc: true,
+        handler: async function (body) {
+            return await request_rpc('rbac_center', 'get_user_by_token', [body.token]);
+        },
+        help_info: {
+            title: "获取用户信息",
+            describe: "获取用户信息",
+            result: {
+                type: Object,
+                mean: "用户信息",
+                explain: [
+                    {
+                        name: "id",
+                        mean: "用户编号",
+                        type: Number,
+                    },
+                    {
+                        name: "name",
+                        mean: "用户名",
+                        type: String,
+                    },
+                    {
+                        name: "phone",
+                        mean: "用户电话",
+                        type: String,
+                    },
+                    {
+                        name: "md5_password",
+                        mean: "密码",
+                        type: String,
+                    },
+                ],
+            },
+        },
+    },
     "/api/order/add": {
         module: 'order',
         resource: 'vehicle_order_info',
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'add_order', [body]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'add_order', [body, name]);
         },
         help_info: {
             title: "创建派车单",
@@ -492,7 +552,11 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'update_order', [body]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'update_order', [body, name]);
         },
         help_info: {
             title: "修改派车单",
@@ -510,7 +574,12 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'del_order', [body.order_number]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            body.opt_name = name;
+            return await request_rpc('order_center', 'del_order', [body.order_number, name]);
         },
         help_info: {
             title: "关闭派车单",
@@ -524,6 +593,12 @@ const g_api_permisson = {
                         type: String,
                         mean: "派车单号",
                         have_to: true,
+                    },
+                    {
+                        name: "opt_name",
+                        type: String,
+                        mean: "操作人，不存在或为空则记录为当前调用用户",
+                        have_to: false,
                     },
                 ]
             },
@@ -662,15 +737,27 @@ const g_api_permisson = {
                         have_to: false,
                     },
                     {
+                        name: "create_time_begin",
+                        type: String,
+                        mean: "创建起始时间",
+                        have_to: false,
+                    },
+                    {
+                        name: "create_time_end",
+                        type: String,
+                        mean: " 创建结束时间",
+                        have_to: false,
+                    },
+                    {
                         name: "begin_time",
                         type: String,
-                        mean: " 起始时间",
+                        mean: "一次称重起始时间",
                         have_to: false,
                     },
                     {
                         name: "end_time",
                         type: String,
-                        mean: "结束时间",
+                        mean: "一次称重结束时间",
                         have_to: false,
                     },
                     {
@@ -743,7 +830,11 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'order_check_in', [body.order_number, body.is_check_in, body.opt_name]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'order_check_in', [body.order_number, body.is_check_in, name]);
         },
         help_info: {
             title: "车辆排号",
@@ -767,8 +858,8 @@ const g_api_permisson = {
                     {
                         name: "opt_name",
                         type: String,
-                        mean: "操作人",
-                        have_to: true,
+                        mean: "操作人, 不存在或为空则记录为当前调用用户",
+                        have_to: false,
                     },
                 ]
             },
@@ -784,7 +875,11 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'order_call', [body.order_number, body.is_call, body.opt_name]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'order_call', [body.order_number, body.is_call, name]);
         },
         help_info: {
             title: "叫车进场",
@@ -808,8 +903,8 @@ const g_api_permisson = {
                     {
                         name: "opt_name",
                         type: String,
-                        mean: "操作人",
-                        have_to: true,
+                        mean: "操作人, 不存在或为空则记录为当前调用用户",
+                        have_to: false,
                     },
                 ]
             },
@@ -825,7 +920,11 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'order_confirm', [body.order_number, body.is_confirm, body.opt_name]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'order_confirm', [body.order_number, body.is_confirm, name]);
         },
         help_info: {
             title: "确认装卸货",
@@ -849,8 +948,8 @@ const g_api_permisson = {
                     {
                         name: "opt_name",
                         type: String,
-                        mean: "操作人",
-                        have_to: true,
+                        mean: "操作人, 不存在或为空则记录为当前调用用户",
+                        have_to: false,
                     },
                 ]
             },
@@ -1403,7 +1502,9 @@ Object.keys(g_api_permisson).forEach(key => {
                     verify_ret = await verify_rbac(req.headers.token, api_content.module, api_content.resource, api_content.is_write);
                 }
                 if (verify_ret && api_content.handler) {
-                    let resp = await api_content.handler(req.body);
+                    let token_body = req.body;
+                    token_body.token = req.headers.token;
+                    let resp = await api_content.handler(token_body);
                     if (resp != undefined) {
                         ret.result = resp;
                     }

@@ -51,10 +51,28 @@ Only Scale Full Flow
     One Time Scale  m  ${m_weight}  trig_plate_no=${plate_no}
     Check Order Status  ${order_number}  close
     Check Weight Push  ${plate_no}  ${p_weight}  ${m_weight}
+    ${new_o}  Search Order  plate_no=${plate_no}
+    Length Should Be  ${new_o}  0
+
+Continue Order Test
+    [Setup]  Create A Order For Scale  True
+    [Teardown]  Del Exist Order
+    Check In Order  ${order_number}
+    Sleep  6s
+    One Time Scale  p  ${p_weight}  cam_or_id=id  trig_driver_id=${driver_id}
+    Confirm Order  ${order_number}
+    One Time Scale  m  ${m_weight}  trig_plate_no=${plate_no}
+    Check Weight Push  ${plate_no}  ${p_weight}  ${m_weight}
+    ${new_o}  Search Order  plate_no=${plate_no}
+    Length Should Be  ${new_o}  1
+
 *** Keywords ***
 Create A Order For Scale
+    [Arguments]  ${is_continue}=False
     Del Exist Order
-    ${on}  Add Order Common  plate_no=${plate_no}  driver_phone=${driver_phone}  driver_id=${driver_id}  company_name=${company_name}  stuff_name=${stuff_name}  driver_name=${driver_name}
+    ${today}  Get Current Date  result_format=%Y-%m-%d
+    ${continue_until}  Set Variable If  ${is_continue}  ${today}
+    ${on}  Add Order Common  plate_no=${plate_no}  driver_phone=${driver_phone}  driver_id=${driver_id}  company_name=${company_name}  stuff_name=${stuff_name}  driver_name=${driver_name}  continue_until=${continue_until}
     Set Suite Variable  ${order_number}  ${on}
     Gate Close  ${s_fgate}
     Gate Close  ${s_bgate}

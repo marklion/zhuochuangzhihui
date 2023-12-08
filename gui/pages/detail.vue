@@ -5,11 +5,24 @@
         </u-cell>
         <u-cell :label="order.id" :value="order.phone" :title="order.driver_name">
         </u-cell>
+        <u-cell v-if="order.continue_until" title="连续派车截止" :value="order.continue_until"></u-cell>
     </u-cell-group>
     <u-cell-group :title="status_string">
-        <u-cell title="排队信息" :label="order.reg_info.operator_time" :value="order.reg_info.operator_name||'未操作'"></u-cell>
-        <u-cell title="叫号信息" :label="order.call_info.operator_time" :value="order.call_info.operator_name||'未操作'"></u-cell>
-        <u-cell title="确认信息" :label="order.confirm_info.operator_time" :value="order.confirm_info.operator_name||'未操作'"></u-cell>
+        <u-cell title="排队信息" :label="order.reg_info.operator_time" :value="order.reg_info.operator_name||'未操作'">
+            <view slot="right-icon" v-if="order.status == 1">
+                <u-button size="small" :text="order.reg_info.operator_time?'取消':'排号'" @click="do_check_in" :type="order.reg_info.operator_time?'error':'success'"></u-button>
+            </view>
+        </u-cell>
+        <u-cell title="叫号信息" :label="order.call_info.operator_time" :value="order.call_info.operator_name||'未操作'">
+            <view slot="right-icon" v-if="order.status == 1">
+                <u-button size="small" :text="order.call_info.operator_time?'取消':'叫号'" @click="do_call" :type="order.call_info.operator_time?'error':'success'"></u-button>
+            </view>
+        </u-cell>
+        <u-cell title="确认信息" :label="order.confirm_info.operator_time" :value="order.confirm_info.operator_name||'未操作'">
+            <view slot="right-icon" v-if="order.status != 100">
+                <u-button size="small" :text="order.confirm_info.operator_time?'取消':'确认'" @click="do_confirm" :type="order.confirm_info.operator_time?'error':'success'"></u-button>
+            </view>
+        </u-cell>
     </u-cell-group>
     <u-cell-group :title="'净重:' + ((order.p_weight==0 || order.m_weight==0)?'未知':Math.abs(order.p_weight - order.m_weight).toFixed(2))">
         <u-cell v-if="order.p_time" :title="'一次称重:' + order.p_weight" :label="order.p_time" :value="order.is_sale?'皮重':'毛重'"></u-cell>
@@ -72,6 +85,33 @@ export default {
         },
     },
     methods: {
+        do_confirm: function () {
+            this.$send_req('/api/order/confirm', {
+                order_number: this.order.order_number,
+                is_confirm: this.order.confirm_info.operator_time ? false : true,
+                opt_name: '',
+            }).then(() => {
+                uni.startPullDownRefresh();
+            });
+        },
+        do_call: function () {
+            this.$send_req('/api/order/call', {
+                order_number: this.order.order_number,
+                is_call: this.order.call_info.operator_time ? false : true,
+                opt_name: '',
+            }).then(() => {
+                uni.startPullDownRefresh();
+            });
+        },
+        do_check_in: function () {
+            this.$send_req('/api/order/check_in', {
+                order_number: this.order.order_number,
+                is_check_in: this.order.reg_info.operator_time ? false : true,
+                opt_name: '',
+            }).then(() => {
+                uni.startPullDownRefresh();
+            });
+        },
         preview_att: function (index) {
             var paths = [];
             var real_path = this.make_att_path(this.order.order_attachs[index].att_path);

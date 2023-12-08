@@ -7,9 +7,9 @@ class order_center_handler : public order_centerIf
 {
 public:
     order_center_handler();
-    virtual bool add_order(const vehicle_order_info &order);
-    virtual bool del_order(const std::string &order_number);
-    virtual bool update_order(const vehicle_order_info &order);
+    virtual bool add_order(const vehicle_order_info &order, const std::string &opt_name);
+    virtual bool del_order(const std::string &order_number, const std::string &opt_name);
+    virtual bool update_order(const vehicle_order_info &order, const std::string &opt_name);
     virtual void search_order(std::vector<vehicle_order_info> &_return, const order_search_cond &cond);
     virtual void get_order(vehicle_order_info &_return, const std::string &order_number);
     virtual void get_registered_order(std::vector<vehicle_order_info> &_return);
@@ -23,7 +23,7 @@ public:
     virtual bool order_rollback_gate(const std::string &order_number, const std::string &opt_name);
     virtual bool order_push_attach(const std::string &order_number, const std::string &name, const std::string &att_path);
     virtual int64_t count_order(const order_search_cond &cond);
-    virtual void get_req_que(std::vector<req_wait_info> & _return);
+    virtual void get_req_que(std::vector<req_wait_info> &_return);
     virtual void pop_out_req(const int64_t req_id);
 
     std::string order_is_dup(const vehicle_order_info &order);
@@ -32,7 +32,7 @@ public:
     void push_zyzl(const std::string &_order_number);
     std::string gen_ticket_no();
     long gen_reg_no();
-    void close_order(sql_order &_order);
+    void close_order(sql_order &_order, const std::string &_opt_name = "");
     void check_order_pass();
 
     void db_2_rpc(sql_order &_db, vehicle_order_info &_rpc);
