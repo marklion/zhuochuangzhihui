@@ -1,3 +1,4 @@
+#include "rbac_center_imp.h"
 #include "rpc_include.h"
 #include "rbac_center_imp.h"
 rbac_center_handler::rbac_center_handler()
@@ -328,6 +329,15 @@ void rbac_center_handler::login(std::string &_return, const std::string &phone, 
     _return = user->online_token;
 }
 
+void rbac_center_handler::get_name_by_token(std::string & _return, const std::string & token)
+{
+    auto user = db_get_online_user(token);
+    if (user)
+    {
+        _return = user->name;
+    }
+}
+
 void rbac_center_handler::db_2_rpc(sql_permission &_db, rbac_permission &_rpc)
 {
     _rpc.name = _db.permission_name;
@@ -361,3 +371,12 @@ void rbac_center_handler::db_2_rpc(sql_user &_db, rbac_user &_rpc)
         }
     }
 }
+void rbac_center_handler::get_user_by_token(rbac_user & _return, const std::string & token)
+{
+    auto user = db_get_online_user(token);
+    if (user)
+    {
+        db_2_rpc(*user, _return);
+    }
+}
+

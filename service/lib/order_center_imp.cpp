@@ -140,12 +140,29 @@ long order_center_handler::gen_reg_no()
     return ret;
 }
 
-void order_center_handler::close_order(sql_order &_order)
+void order_center_handler::close_order(sql_order &_order, const std::string &_opt_name)
 {
     push_zyzl(_order.order_number);
     _order.status = 100;
     _order.update_record();
     auto_call_next();
+    if (_order.continue_until.length() > 0)
+    {
+        auto now_time = time(nullptr);
+        auto continue_time = util_get_time_by_string(_order.continue_until) + 24 * 60 * 60;
+        if (now_time < continue_time)
+        {
+            vehicle_order_info tmp;
+            db_2_rpc(_order, tmp);
+            add_order(tmp, _opt_name);
+        }
+    }
+    sql_order_history tmp_his;
+    tmp_his.node_caller = _opt_name;
+    tmp_his.occour_time = util_get_timestring();
+    tmp_his.node_name = node_name_close;
+    tmp_his.set_parent(_order, "belong_order");
+    tmp_his.insert_record();
 }
 
 void order_center_handler::check_order_pass()
@@ -214,6 +231,7 @@ void order_center_handler::db_2_rpc(sql_order &_db, vehicle_order_info &_rpc)
         db_2_rpc(itr, tmp);
         _rpc.history_records.push_back(tmp);
     }
+    _rpc.continue_until = _db.continue_until;
 }
 
 void order_center_handler::db_2_rpc(sql_order_attach &_db, vehicle_order_attachment &_rpc)
@@ -250,6 +268,7 @@ void order_center_handler::rpc_2_db(const vehicle_order_info &_rpc, sql_order &_
         id_has_x[x_index] = 'x';
     }
     _db.driver_id = id_has_x;
+    _db.continue_until = _rpc.continue_until;
 }
 
 order_center_handler::order_center_handler()
@@ -268,7 +287,7 @@ order_center_handler::order_center_handler()
         });
 }
 
-bool order_center_handler::add_order(const vehicle_order_info &order)
+bool order_center_handler::add_order(const vehicle_order_info &order, const std::string &opt_name)
 {
     bool ret = false;
 
@@ -284,13 +303,21 @@ bool order_center_handler::add_order(const vehicle_order_info &order)
     if (tmp.insert_record())
     {
         tmp.order_number = std::to_string(time(nullptr)) + std::to_string(tmp.get_pri_id());
+        tmp.create_time = util_get_timestring();
         ret = tmp.update_record();
+
+        sql_order_history tmp_his;
+        tmp_his.node_caller = opt_name;
+        tmp_his.occour_time = util_get_timestring();
+        tmp_his.node_name = node_name_create;
+        tmp_his.set_parent(tmp, "belong_order");
+        tmp_his.insert_record();
     }
 
     return ret;
 }
 
-bool order_center_handler::del_order(const std::string &order_number)
+bool order_center_handler::del_order(const std::string &order_number, const std::string &opt_name)
 {
     bool ret = false;
 
@@ -305,12 +332,13 @@ bool order_center_handler::del_order(const std::string &order_number)
         ZH_RETURN_MSG("正在执行，无法关闭");
     }
 
-    close_order(*es);
+    es->continue_until = "";
+    close_order(*es, opt_name);
 
     return true;
 }
 
-bool order_center_handler::update_order(const vehicle_order_info &order)
+bool order_center_handler::update_order(const vehicle_order_info &order, const std::string &opt_name)
 {
     bool ret = false;
 
@@ -321,6 +349,13 @@ bool order_center_handler::update_order(const vehicle_order_info &order)
     }
     rpc_2_db(order, *es);
     ret = es->update_record();
+
+    sql_order_history tmp_his;
+    tmp_his.node_caller = opt_name;
+    tmp_his.occour_time = util_get_timestring();
+    tmp_his.node_name = node_name_update;
+    tmp_his.set_parent(*es, "belong_order");
+    tmp_his.insert_record();
 
     return ret;
 }
@@ -344,6 +379,14 @@ void order_center_handler::search_order(std::vector<vehicle_order_info> &_return
     if (cond.end_time.length() > 0)
     {
         query_cond += " AND datetime(p_time) <= datetime('" + cond.end_time + "')";
+    }
+    if (cond.create_time_begin.length() > 0)
+    {
+        query_cond += " AND datetime(create_time) >= datetime('" + cond.create_time_begin + "')";
+    }
+    if (cond.create_time_end.length() > 0)
+    {
+        query_cond += " AND datetime(create_time) <= datetime('" + cond.create_time_end + "')";
     }
     SEARCH_COND_APPEND(company_name);
     SEARCH_COND_APPEND(stuff_name);
@@ -400,6 +443,10 @@ bool order_center_handler::order_check_in(const std::string &order_number, const
     {
         ZH_RETURN_NO_ORDER();
     }
+    if (es->status != 1)
+    {
+        ZH_RETURN_MSG("未入场才能排号");
+    }
 
     if (is_check_in)
     {
@@ -407,7 +454,7 @@ bool order_center_handler::order_check_in(const std::string &order_number, const
         es->reg_info_time = util_get_timestring();
         es->reg_no = gen_reg_no();
     }
-    else if (es->status == 1)
+    else
     {
         es->reg_info_name = "";
         es->reg_info_time = "";

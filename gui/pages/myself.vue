@@ -1,5 +1,12 @@
 <template>
 <view>
+    <u-cell-group :title="'域名:' + domain">
+        <u-cell :title="self_info.name" :label="'电话:' + self_info.phone">
+            <view slot="value" v-for="(single_role,index) in self_info.role_name" :key="index">
+                {{single_role}}
+            </view>
+        </u-cell>
+    </u-cell-group>
     <u-cell title="推送队列" url="/pages/req_que" is_link></u-cell>
     <u-upload accept="file" @afterRead="upload_update_pack">
         <u-cell title="上传更新包"></u-cell>
@@ -16,6 +23,8 @@ export default {
     data: function () {
         return {
             confirm_update: '',
+            self_info: {},
+            domain: uni.getStorageSync('domain'),
         };
     },
     computed: {
@@ -33,7 +42,15 @@ export default {
             })
         },
     },
+    onLoad: function () {
+        this.init_self_info();
+    },
     methods: {
+        init_self_info: function () {
+            this.$send_req('/api/user_info').then((res) => {
+                this.self_info = res;
+            });
+        },
         exec_update: function () {
             console.log(this.confirm_update);
             this.$send_req('/api/update', {

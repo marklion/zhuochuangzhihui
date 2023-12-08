@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "crypto": "^1.0.1",
+    "moment": "^2.29.4",
     "pinyin-match": "^1.2.5"
   }
 }

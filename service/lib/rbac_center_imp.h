@@ -19,6 +19,8 @@ public:
     virtual bool add_role_permission(const int64_t role_id, const int64_t perm_id);
     virtual bool del_role_permission(const int64_t role_id, const int64_t perm_id);
     virtual void login(std::string &_return, const std::string &phone, const std::string &pwd);
+    virtual void get_name_by_token(std::string &_return, const std::string &token);
+    virtual void get_user_by_token(rbac_user& _return, const std::string& token);
     void db_2_rpc(sql_permission &_db, rbac_permission &_rpc);
     void db_2_rpc(sql_user &_db, rbac_user &_user);
 };

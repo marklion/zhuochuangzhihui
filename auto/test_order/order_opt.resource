@@ -6,8 +6,8 @@ Library  DateTime
 
 *** Keywords ***
 Del Order
-    [Arguments]  ${order_id}
-    ${del_req}  Create Dictionary  order_number=${order_id}
+    [Arguments]  ${order_id}  ${opt_name}=
+    ${del_req}  Create Dictionary  order_number=${order_id}  opt_name=${opt_name}
     POST to Server Success  /order/del  ${del_req}
 Del Exist Order
     FOR  ${i}  IN RANGE  999
@@ -24,8 +24,8 @@ Search Order
     ${search_result}  POST to Server Success  /order/search  ${search_condition}
     RETURN  ${search_result}
 Add Order Common
-    [Arguments]  ${plate_no}  ${driver_phone}  ${company_name}=测试公司  ${stuff_name}=测试物料  ${driver_id}=  ${driver_name}=
-    ${order_data}  Create Dictionary  plate_number=${plate_no}  driver_phone=${driver_phone}  company_name=${company_name}  stuff_name=${stuff_name}  driver_id=${driver_id}  driver_name=${driver_name}
+    [Arguments]  ${plate_no}  ${driver_phone}  ${company_name}=测试公司  ${stuff_name}=测试物料  ${driver_id}=  ${driver_name}=  ${continue_until}=
+    ${order_data}  Create Dictionary  plate_number=${plate_no}  driver_phone=${driver_phone}  company_name=${company_name}  stuff_name=${stuff_name}  driver_id=${driver_id}  driver_name=${driver_name}  continue_until=${continue_until}
     POST to Server Success  /order/add  ${order_data}
     ${driver_result}  Search Order  driver_phone=${driver_phone}
     RETURN  ${driver_result}[0][order_number]

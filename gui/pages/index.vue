@@ -12,7 +12,7 @@
     </u-row>
     <u-popup mode="top" :show="create_diag" @close="create_diag = false">
         <view>
-            <u--form :labelWidth="100" :model="new_order" :rules="create_rules" ref="order_form">
+            <u--form :labelWidth="150" :model="new_order" :rules="create_rules" ref="order_form">
                 <u-form-item label="车号" prop="plate_number" borderBottom>
                     <u--input v-model="new_order.plate_number" border="none"></u--input>
                 </u-form-item>
@@ -34,6 +34,10 @@
                 <u-form-item label="物料名" prop="stuff_name" borderBottom>
                     <u--input v-model="new_order.stuff_name" border="none"></u--input>
                 </u-form-item>
+                <u-form-item label="连续派车截止日期" prop="continue_untile" borderBottom @click="show_continue_picker = true; hideKeyboard()">
+                    <u--input v-model="new_order.continue_until" disabled disabledColor="#ffffff" placeholder="不填写即不连续派车" border="none"></u--input>
+                    <u-icon slot="right" name="arrow-right"></u-icon>
+                </u-form-item>
                 <u-form-item label="进厂类型" prop="is_sale" borderBottom>
                     <u-radio-group v-model="sale_choose" placement="row">
                         <u-radio name="采购" label="采购"></u-radio>
@@ -50,6 +54,7 @@
             </u--form>
         </view>
     </u-popup>
+    <u-datetime-picker :show="show_continue_picker" mode="date" closeOnClickOverlay @confirm="confirm_continue_until" @cancel="clear_continue_until" @close="close_continue_until" :minDate="min_continue_date"></u-datetime-picker>
     <u-cell title="日期范围" :value="date_range" @click="show_date_picker = true"></u-cell>
     <u-calendar :show="show_date_picker" mode="range" @confirm="handle_confirm_date" :monthNum="48" allowSameDay :minDate="minDate" :maxDate="maxDate" @close="show_date_picker = false"></u-calendar>
     <u-search placeholder="输入车号过滤" v-model="search_key" :showAction="false" @change="load_more"></u-search>
@@ -68,13 +73,14 @@
                                 {{item.company_name}}
                             </view>
                             <view>
-                                左滑更多
+                                左滑复制
                             </view>
                         </view>
                         <view slot="icon">
                             <view>
-                                <u-icon v-if="item.status==100" name="checkbox-mark" color="green" size="28"></u-icon>
-                                <u-icon v-else-if="item.status==1" name="clock" color="red" size="28"></u-icon>
+                                <u-icon v-if="item.status==100 && item.p_weight != 0 && item.m_weight != 0" name="checkbox-mark" color="green" size="28"></u-icon>
+                                <u-icon v-else-if="item.status==100" name="man-delete" color="red" size="28"></u-icon>
+                                <u-icon v-else-if="item.status==1" name="clock" color="blue" size="28"></u-icon>
                                 <u-icon v-else name="hourglass-half-fill" color="yellow" size="28"></u-icon>
                             </view>
                             <view v-if="item.status == 100">
@@ -92,9 +98,11 @@
 
 <script>
 import PinyinMatch from 'pinyin-match';
+import moment from 'moment'
 export default {
     data() {
         return {
+            show_continue_picker: false,
             create_rules: {
                 plate_number: {
                     type: 'string',
@@ -124,6 +132,7 @@ export default {
                 plate_number: '',
                 stuff_from: '',
                 stuff_name: '',
+                continue_until: '',
             },
             all_orders: [],
             search_key: '',
@@ -156,6 +165,7 @@ export default {
             date_begin: '',
             date_end: '',
             show_date_picker: false,
+            min_continue_date: 0,
         }
     },
     computed: {
@@ -223,11 +233,27 @@ export default {
             }
         });
         this.date_begin = new Date().toISOString().slice(0, 10);
+        this.min_continue_date = new Date().getTime();
         this.date_end = new Date().toISOString().slice(0, 10);
         this.fetch_orders();
         this.fetch_order_count();
     },
     methods: {
+        confirm_continue_until: function (e) {
+            this.show_continue_picker = false;
+            console.log(e.value);
+            this.new_order.continue_until = moment(e.value).format('YYYY-MM-DD');
+        },
+        clear_continue_until: function () {
+            this.new_order.continue_until = '';
+            this.show_continue_picker = false;
+        },
+        close_continue_until: function () {
+            this.show_continue_picker = false;
+        },
+        hideKeyboard() {
+            uni.hideKeyboard()
+        },
         dup_order: function (_order) {
             console.log(_order);
             this.new_order.company_name = _order.company_name;
@@ -243,6 +269,9 @@ export default {
             this.create_diag = true;
         },
         add_new_order: function () {
+            this.new_order.enter_weight = parseFloat(this.new_order.enter_weight);
+            this.new_order.plate_number = this.new_order.plate_number.toUpperCase();
+            this.new_order.back_plate_number = this.new_order.back_plate_number.toUpperCase();
             this.$refs.order_form.validate().then(res => {
                 this.$send_req('/api/order/add', this.new_order).then(resp => {
                     if (resp) {
@@ -258,6 +287,7 @@ export default {
                             plate_number: '',
                             stuff_from: '',
                             stuff_name: '',
+                            continue_until: '',
                         };
                         uni.startPullDownRefresh();
                     }
@@ -311,11 +341,21 @@ export default {
                 req_begin_time = '';
                 req_end_time = '';
             }
+            let create_time_begin = '';
+            let create_time_end = '';
+            if (this.status_filter == 0) {
+                create_time_begin = req_begin_time;
+                create_time_end = req_end_time;
+                req_begin_time = '';
+                req_end_time = '';
+            }
             this.$send_req('/api/order/search', {
                 page_no: parseInt(this.all_orders.length / 20),
                 status: this.status_filter,
                 begin_time: req_begin_time,
                 end_time: req_end_time,
+                create_time_begin: create_time_begin,
+                create_time_end: create_time_end,
             }).then(res => {
                 res.forEach(item => {
                     this.all_orders.push(item);
