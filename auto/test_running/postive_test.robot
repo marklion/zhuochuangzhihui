@@ -47,6 +47,7 @@ Only Scale Full Flow
     Check Call Push  ${plate_no}  driver_name=${driver_name}
     One Time Scale  p  ${p_weight}  cam_or_id=id  trig_driver_id=${driver_id}
     Check Order Status  ${order_number}
+    Check P Push
     Confirm Order  ${order_number}
     One Time Scale  m  ${m_weight}  trig_plate_no=${plate_no}
     Check Order Status  ${order_number}  close

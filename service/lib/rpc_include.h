@@ -53,11 +53,13 @@ using namespace ::apache::thrift::transport;
 using namespace ::apache::thrift::server;
 
 #define THR_DEF_CIENT(x) x##Client *client = nullptr
-#define THR_CONNECT_DEV(x, y)                                                          \
-    std::shared_ptr<TTransport> transport(new THttpClient("localhost", y, "/zh_rpc")); \
-    std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));                 \
-    transport->open();                                                                 \
-    std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x));  \
+#define THR_CONNECT_DEV(x, y)                                                         \
+    std::shared_ptr<TSocket> th_socket(new TSocket("localhost", y));                  \
+    th_socket->setRecvTimeout(8000);                                                  \
+    std::shared_ptr<TTransport> transport(new THttpClient(th_socket, "/zh_rpc"));     \
+    std::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));                \
+    transport->open();                                                                \
+    std::shared_ptr<TMultiplexedProtocol> mp(new TMultiplexedProtocol(protocol, #x)); \
     client = new x##Client(mp)
 #define THR_CONNECT(x) THR_CONNECT_DEV(x, 8123);
 #define THR_CONNECT_DM(x) THR_CONNECT_DEV(x, 8124)
@@ -65,13 +67,12 @@ using namespace ::apache::thrift::server;
     transport->close(); \
     delete client
 
-
-#define THR_CALL_DM_BEGIN_DEV(x)                \
-    do                                     \
-    {                                      \
-        THR_DEF_CIENT(device_management);  \
+#define THR_CALL_DM_BEGIN_DEV(x)               \
+    do                                         \
+    {                                          \
+        THR_DEF_CIENT(device_management);      \
         THR_CONNECT_DEV(device_management, x); \
-        try                                \
+        try                                    \
         {
 #define THR_CALL_DM_END() \
     }                     \

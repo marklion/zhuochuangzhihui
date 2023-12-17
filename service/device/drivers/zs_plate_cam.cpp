@@ -136,16 +136,15 @@ static std::string make_frame(unsigned char _cmd, const std::string &_data)
 
 void common_callback(VzLPRClientHandle handle, void *pUserData, VZ_LPRC_COMMON_NOTIFY eNotify, const char *pStrDetail)
 {
-    auto p_healthy = (bool *)pUserData;
+    auto p_com_driver = (common_driver *)pUserData;
     switch (eNotify)
     {
     case VZ_LPRC_ACCESS_DENIED:
     case VZ_LPRC_NETWORK_ERR:
     case VZ_LPRC_OFFLINE:
-        *p_healthy = false;
+        p_com_driver->exit_driver("device offline");
         break;
     case VZ_LPRC_ONLINE:
-        *p_healthy = true;
         break;
     default:
         break;
@@ -171,6 +170,7 @@ int plate_callback(VzLPRClientHandle handle, void *pUserData,
     return 0;
 }
 
+
 class zs_plate_cam_driver : public common_driver
 {
     bool m_gate_is_open = false;
@@ -178,12 +178,19 @@ class zs_plate_cam_driver : public common_driver
 
 public:
     using common_driver::common_driver;
+
+    virtual void before_exit_driver()
+    {
+        VzLPRClient_Close(g_zc_handler);
+        VzLPRClient_SerialStop(g_zc_ser_handler);
+        VzLPRClient_Cleanup();
+    }
     virtual void init_all_set()
     {
         int zs_ret = -1;
         if (0 == (zs_ret = VzLPRClient_Setup()))
         {
-            if (0 == (zs_ret = VZLPRClient_SetCommonNotifyCallBack(common_callback, &healthy)))
+            if (0 == (zs_ret = VZLPRClient_SetCommonNotifyCallBack(common_callback, this)))
             {
                 auto handler = VzLPRClient_Open(g_dev_ip.c_str(), 80, "admin", "admin");
                 if (handler > 0)
@@ -196,7 +203,7 @@ public:
                     if (0 != (zs_ret = VzLPRClient_SetSerialParameter(handler, 0, &ser_param)))
                     {
                         log_driver(__FUNCTION__, "failed to set ser param:%d", zs_ret);
-                        exit(-1);
+                        exit_driver("failed to set ser param");
                     }
                     auto ser_handler = VzLPRClient_SerialStart_V2(
                         handler,
@@ -214,7 +221,7 @@ public:
                     else
                     {
                         log_driver(__FUNCTION__, "failed to open ser port:%lld", ser_handler);
-                        exit(-1);
+                        exit_driver("failed to open ser port");
                     }
                     g_zc_handler = handler;
                     if (0 == (zs_ret = VzLPRClient_SetPlateInfoCallBack(handler, plate_callback, this, false)))
@@ -224,25 +231,25 @@ public:
                     else
                     {
                         log_driver(__FUNCTION__, "failed to set callback:%d", zs_ret);
-                        exit(-1);
+                        exit_driver("failed to set callback");
                     }
                 }
                 else
                 {
                     log_driver(__FUNCTION__, "failed to open device:%s", g_dev_ip.c_str());
-                    exit(-1);
+                    exit_driver("failed to open device");
                 }
             }
             else
             {
                 log_driver(__FUNCTION__, "failed to set common callback:%d", zs_ret);
-                exit(-1);
+                exit_driver("failed to set common callback");
             }
         }
         else
         {
             log_driver(__FUNCTION__, "failed to setup device:%d", zs_ret);
-            exit(-1);
+            exit_driver("failed to setup device");
         }
     }
     virtual void plate_cam_cap(const int64_t plate_cam_id)
@@ -324,7 +331,7 @@ public:
 
         int val = 1;
         auto zs_ret = VzLPRClient_GetGPIOValue(g_zc_handler, 0, &val);
-        if (0 == val)
+        if (1 == val)
         {
             ret = true;
         }

@@ -85,6 +85,21 @@ bool zyzl_plugin::push_call(const std::string &_plate, const std::string &_drive
     return ret;
 }
 
+bool zyzl_plugin::push_p(const std::string &_plate)
+{
+    std::string push_p_path = "/push_p";
+
+    neb::CJsonObject req;
+    req.Add("id", get_id_from_plate(_plate));
+
+    send_to_zyzl(
+        push_p_path,
+        req,
+        [](const neb::CJsonObject &)
+        { return true; });
+    return true;
+}
+
 std::string zyzl_plugin::get_id_from_plate(const std::string &_plate)
 {
     std::string ret;

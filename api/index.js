@@ -1035,7 +1035,11 @@ const g_api_permisson = {
         is_write: true,
         no_need_rabc: false,
         handler: async function (body) {
-            return await request_rpc('order_center', 'order_push_weight', [body.order_number, body.weight, body.opt_name]);
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'order_push_weight', [body.order_number, body.weight, name]);
         },
         help_info: {
             title: "推送重量",
@@ -1060,7 +1064,7 @@ const g_api_permisson = {
                         name: "opt_name",
                         type: String,
                         mean: "操作人",
-                        have_to: true,
+                        have_to: false,
                     },
                 ]
             },

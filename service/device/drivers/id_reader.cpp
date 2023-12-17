@@ -45,16 +45,16 @@ class id_reader_driver : public common_driver
 public:
     std::string last_id;
     using common_driver::common_driver;
+
     virtual void init_all_set()
     {
-
         if (1 != InitComm(com_inter->get_pts().c_str()))
         {
             log_driver(__FUNCTION__, "failed to init id reader");
-            exit(-1);
+            exit_driver("failed to init id reader");
         }
         timer_wheel_add_node(
-            1,
+            2,
             [this](void *)
             {
                 auto id = read_id();
@@ -66,6 +66,15 @@ public:
                     last_id = id;
                 }
             });
+        timer_wheel_add_node(3, [this](void *)
+                             {
+            std::string command = "ping -c 1 " + g_dev_ip;
+            int result = std::system(command.c_str());
+            if (result != 0)
+            {
+                log_driver(__FUNCTION__, "failed to ping id reader");
+                exit_driver("failed to ping id reader");
+            } });
     }
     virtual void last_id_read(std::string &_return, const int64_t id_reader_id)
     {

@@ -12,8 +12,11 @@ const std::string node_name_exit = "出厂";
 const std::string node_name_p_weight = "一次称重";
 const std::string node_name_m_weight = "二次称重";
 const std::string node_name_create= "创建";
-const std::string node_name_update= "创建";
+const std::string node_name_update= "更新";
 const std::string node_name_close= "关闭";
+const std::string node_name_check_in="排号";
+const std::string node_name_call="叫号";
+const std::string node_name_confirm="确认出厂";
 class sql_stuff : public sql_tree_base
 {
 public:

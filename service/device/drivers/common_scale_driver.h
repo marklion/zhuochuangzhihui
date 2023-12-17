@@ -65,10 +65,22 @@ public:
             3,
             [&](void *)
             {
-                THR_CALL_DM_BEGIN();
-                client->push_scale_read(self_dev_id, weight);
-                THR_CALL_DM_END();
+                if (weight > 0)
+                {
+                    THR_CALL_DM_BEGIN();
+                    client->push_scale_read(self_dev_id, weight);
+                    THR_CALL_DM_END();
+                }
             });
+        timer_wheel_add_node(3, [this](void *)
+                             {
+            std::string command = "ping -c 1 " + dev_ip;
+            int result = std::system(command.c_str());
+            if (result != 0)
+            {
+                log_driver(__FUNCTION__, "failed to ping scale");
+                exit_driver("failed to ping scale");
+            } });
     }
 
     virtual double last_scale_read(const int64_t scale_id)

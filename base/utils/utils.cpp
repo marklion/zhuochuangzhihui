@@ -133,6 +133,15 @@ std::string util_gen_ssid()
 
     return ret;
 }
+std::string util_double_to_string(double _d)
+{
+    std::string ret;
+    char buffer[34] = {0};
+    snprintf(buffer, sizeof(buffer), "%.2f", _d);
+    ret = buffer;
+
+    return ret;
+}
 static int code_convert(char *from_charset, char *to_charset, char *inbuf, size_t inlen, char *outbuf, size_t outlen)
 {
     iconv_t cd;

@@ -32,6 +32,18 @@ def record_call():
         "result": "success"
     });
 
+@app.route(base_url+'/push_p', methods=['POST'])
+def record_p():
+    # 记录请求内容
+    global g_last_path
+    global g_last_req
+    g_last_req = request.get_json()
+    g_last_path = request.path
+    # 返回空的响应
+    return json.dumps({
+        "result": "success"
+    });
+
 @app.route(base_url+'/push_weight', methods=['POST'])
 def record_weight():
     # 记录请求内容

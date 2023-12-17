@@ -6,6 +6,7 @@ class common_driver : public device_managementIf
 {
 protected:
     tdf_log m_log;
+    TThreadPoolServer *p_tp_server = nullptr;
 
 public:
     long self_dev_id = 0;
@@ -20,7 +21,7 @@ public:
     virtual void get_scale_sm_info(std::vector<scale_sm_info> &_return) {}
     virtual void reset_scale_sm(const int64_t sm_id) {}
     virtual void confirm_scale(const int64_t sm_id) {}
-    virtual void get_device_run_time(std::vector<device_run_time> & _return){}
+    virtual void get_device_run_time(std::vector<device_run_time> &_return) {}
     common_driver(const std::string &_name, long _self_id) : m_log(_name, "/tmp/" + _name + ".log", "/tmp/" + _name + ".log"), self_dev_id(_self_id)
     {
     }
@@ -69,7 +70,7 @@ public:
     virtual void video_record_slow(std::string &_return, const int64_t cam_id, const std::string &begin_date, const std::string &end_date)
     {
     }
-    static void start_driver(unsigned short _port, device_managementIf *_driver)
+    static void start_driver(unsigned short _port, common_driver *_driver)
     {
         std::shared_ptr<TMultiplexedProcessor> multi_processor(new TMultiplexedProcessor());
         multi_processor->registerProcessor("device_management", std::shared_ptr<TProcessor>(new device_managementProcessor(std::shared_ptr<device_managementIf>(_driver))));
@@ -81,9 +82,26 @@ public:
         std::shared_ptr<ThreadFactory> threadFactory(new ThreadFactory());
         threadManager->threadFactory(threadFactory);
         threadManager->start();
-        TThreadPoolServer tp_server(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
-
-        tp_server.serve();
+        _driver->p_tp_server = new TThreadPoolServer(multi_processor, serverTransport, transportFactory, protocolFactory, threadManager);
+        _driver->p_tp_server->serve();
+    }
+    void stop_driver()
+    {
+        if (p_tp_server)
+        {
+            p_tp_server->stop();
+        }
+    }
+    virtual void before_exit_driver()
+    {
+    }
+    void exit_driver(const std::string &_msg)
+    {
+        before_exit_driver();
+        timer_wheel_fini();
+        stop_driver();
+        log_driver(__FUNCTION__, "exit because: %s", _msg.c_str());
+        exit(-1);
     }
 };
 
