@@ -48,6 +48,9 @@ Start Mock Service
 Get Last Req
     ${result}  GET  url=http://localhost:5001/check_call
     RETURN  ${result.json()}[req]
+Get Last Req Path
+    ${result}  GET  url=http://localhost:5001/check_call
+    RETURN  ${result.json()}[path]
 Stop Mock Service
     Terminate Process  mock_server_process
     ${output}  Get Process Result  mock_server_process  stderr=True

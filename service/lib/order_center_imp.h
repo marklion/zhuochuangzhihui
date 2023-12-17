@@ -32,7 +32,7 @@ public:
     void push_zyzl(const std::string &_order_number);
     std::string gen_ticket_no();
     long gen_reg_no();
-    void close_order(sql_order &_order, const std::string &_opt_name = "");
+    void close_order(sql_order &_order, const std::string &_opt_name = "自动");
     void check_order_pass();
 
     void db_2_rpc(sql_order &_db, vehicle_order_info &_rpc);

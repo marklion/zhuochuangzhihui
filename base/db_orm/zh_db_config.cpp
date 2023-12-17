@@ -52,9 +52,9 @@ std::string sql_device_set::should_handle_income_plate(const std::string &_plate
         auto vo = sqlite_orm::search_record<sql_order>("plate_number == '%s' AND status != 100", _plate_no.c_str());
         if (vo)
         {
-            _order_number = vo->order_number;
             if (vo->call_info_time.length() > 0)
             {
+                _order_number = vo->order_number;
                 if (is_scale)
                 {
                     ret = "";
@@ -69,6 +69,7 @@ std::string sql_device_set::should_handle_income_plate(const std::string &_plate
                 }
                 else
                 {
+                    _order_number = "";
                     ret = "未确认不能出厂";
                 }
             }

@@ -35,18 +35,20 @@
         <u-cell v-for="(single_node,index) in order.history_records" :key="index" :title="single_node.node_name" :label="single_node.occour_time" :value="single_node.node_caller"></u-cell>
     </u-cell-group>
     <u-button type="error" text="关闭订单" @click="confirm_close = true" v-if="order.status == 1"></u-button>
+    <u-button type="warning" text="放空" @click="empty_confirm= true" v-else-if="order.status == 2 && order.p_weight != 0"></u-button>
     <u-modal :show="confirm_close" @confirm="close_order" closeOnClickOverlay title="确定要关闭吗?" @close="confirm_close = false"></u-modal>
+    <u-modal :show="empty_confirm" @confirm="empty_order" closeOnClickOverlay title="确定要放空吗?" @close="empty_confirm = false"></u-modal>
 </view>
 </template>
 
 <script>
-import path from 'path';
 export default {
     data: function () {
         return {
             order: {},
             confirm_close: false,
             ready_to_show: false,
+            empty_confirm: false,
             make_att_path: function (att_path) {
                 return 'https://' + uni.getStorageSync('domain') + '.d8sis.cn' + att_path;
             },
@@ -124,6 +126,16 @@ export default {
                     current: real_path
                 });
             }
+        },
+        empty_order: function () {
+            this.$send_req('/api/order/push_weight', {
+                order_number: this.order.order_number,
+                weight: this.order.p_weight,
+            }).then(() => {
+                this.empty_confirm = false;
+            }).finally(() => {
+                uni.startPullDownRefresh();
+            });
         },
         close_order: function () {
             this.$send_req('/api/order/del', {

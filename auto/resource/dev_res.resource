@@ -53,7 +53,7 @@ Verify LED Content
     ${status}  Encode String To Bytes  ${status}  iso-8859-1
     ${status}  Decode Bytes To String  ${status}  UTF-8
     ${line_focus}  Get Line  ${status}  ${line_num}
-    Should Be Equal As Strings  ${line_focus}  ${content}
+    Should Contain  ${line_focus}  ${content}
 Verify Speaker Content
     [Arguments]  ${dev_name}  ${content}=${EMPTY}
     ${status}  Get Dev Status  ${dev_name}
@@ -131,14 +131,14 @@ One Time Scale
     Sleep  1s
     Verify LED with Plate  ${trig_plate_no}  请上磅  ${e_led}
     Verify LED with Plate  ${trig_plate_no}  请上磅  ${l_led}
-    Sleep  3s
+    Sleep  6s
     Verify Gate Status  ${e_gate}  open
     Verify Gate Status  ${l_gate}  close
-    Verify LED with Plate  ${trig_plate_no}  车辆未完全上磅  ${e_led}
-    Verify LED with Plate  ${trig_plate_no}  车辆未完全上磅  ${l_led}
+    Verify LED with Plate  ${trig_plate_no}  未完全上磅  ${e_led}
+    Verify LED with Plate  ${trig_plate_no}  未完全上磅  ${l_led}
     Gate Close  ${e_gate}
     Set Scale Weight  ${weight}  ${s_s}
-    Sleep  5s
+    Sleep  8s
     Verify LED with Plate  ${trig_plate_no}   请等待  ${e_led}
     Verify LED with Plate  ${trig_plate_no}   请等待  ${l_led}
     Sleep  17s

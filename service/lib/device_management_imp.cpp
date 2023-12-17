@@ -388,7 +388,8 @@ void device_management_handler::push_id_read(const int64_t id_id, const std::str
                 [&](abs_state_machine &sm)
                 {
                     bool ret = false;
-                    auto result = set->should_handle_income_plate(plate_no, sm.order_number);
+                    std::string order_number;
+                    auto result = set->should_handle_income_plate(plate_no, order_number);
                     if (result.length() > 0)
                     {
                         led_display(get_same_side_device(id_id, "led"), {"", result, "", util_get_timestring()});
@@ -396,10 +397,19 @@ void device_management_handler::push_id_read(const int64_t id_id, const std::str
                     }
                     else
                     {
-                        ret = true;
-                        sm.tft = abs_state_machine::id_reader;
-                        sm.trigger_device_id = id_id;
-                        sm.pass_plate_number = plate_no;
+                        bool should_proc = true;
+                        if (set->is_scale && sm.order_number.length() > 0)
+                        {
+                            should_proc = false;
+                        }
+                        if (should_proc)
+                        {
+                            ret = true;
+                            sm.order_number = order_number;
+                            sm.tft = abs_state_machine::id_reader;
+                            sm.trigger_device_id = id_id;
+                            sm.pass_plate_number = plate_no;
+                        }
                     }
 
                     return ret;
@@ -429,7 +439,8 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                 [&](abs_state_machine &sm)
                 {
                     bool ret = false;
-                    auto result = set->should_handle_income_plate(plate_no, sm.order_number);
+                    std::string order_number;
+                    auto result = set->should_handle_income_plate(plate_no, order_number);
                     if (result.length() > 0)
                     {
                         led_display(get_same_side_device(plate_cam_id, "led"), {"", result, "", util_get_timestring()});
@@ -437,10 +448,19 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                     }
                     else
                     {
-                        ret = true;
-                        sm.tft = abs_state_machine::plate_cam;
-                        sm.trigger_device_id = plate_cam_id;
-                        sm.pass_plate_number = plate_no;
+                        bool should_proc = true;
+                        if (set->is_scale && sm.order_number.length() > 0)
+                        {
+                            should_proc = false;
+                        }
+                        if (should_proc)
+                        {
+                            ret = true;
+                            sm.order_number = order_number;
+                            sm.tft = abs_state_machine::plate_cam;
+                            sm.trigger_device_id = plate_cam_id;
+                            sm.pass_plate_number = plate_no;
+                        }
                     }
 
                     return ret;
@@ -904,7 +924,7 @@ void scale_sm::cast_enter_info()
 
 void scale_sm::cast_stop_stable()
 {
-    cast_common("车辆未完全上磅");
+    cast_common("未完全上磅");
 }
 
 void scale_sm::cast_wait_scale()
@@ -914,7 +934,7 @@ void scale_sm::cast_wait_scale()
 
 void scale_sm::cast_result()
 {
-    cast_common("已完成，请下磅");
+    cast_common("已完成，请下磅," + util_double_to_string(cur_weight) + "吨");
 }
 
 void scale_sm::cast_busy()
@@ -1043,7 +1063,7 @@ std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_
 void scale_state_prepare::before_enter(abs_state_machine &_sm)
 {
     auto &sm = dynamic_cast<scale_sm &>(_sm);
-    sm.start_scale_timer();
+    sm.start_scale_timer(5);
     auto plate_cam_id = device_management_handler::get_same_side_device(sm.trigger_device_id, "plate_cam");
     std::string pic_path;
     THR_CALL_DM_BEGIN();

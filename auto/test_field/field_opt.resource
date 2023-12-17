@@ -34,6 +34,9 @@ Check Call Push
     ELSE
         Should Not Be Equal As Strings  ${api_sent}[plateNo]  ${plate_no}
     END
+Check P Push
+    ${api_path_sent}  Get Last Req Path
+    Should Contain  ${api_path_sent}  push_p
 Check Weight Push
     [Arguments]  ${plate_no}  ${p_weight}  ${m_weight}
     ${api_sent}  Get Last Req

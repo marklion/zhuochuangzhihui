@@ -447,12 +447,16 @@ bool order_center_handler::order_check_in(const std::string &order_number, const
     {
         ZH_RETURN_MSG("未入场才能排号");
     }
-
+    sql_order_history tmp;
+    tmp.node_caller = opt_name;
+    tmp.occour_time = util_get_timestring();
+    tmp.node_name = node_name_check_in;
     if (is_check_in)
     {
         es->reg_info_name = opt_name;
         es->reg_info_time = util_get_timestring();
         es->reg_no = gen_reg_no();
+        tmp.node_name += "->" + std::to_string(es->reg_no) + "号";
     }
     else
     {
@@ -463,7 +467,10 @@ bool order_center_handler::order_check_in(const std::string &order_number, const
         es->call_info_time = "";
         es->confirm_info_name = "";
         es->confirm_info_time = "";
+        tmp.node_name += " 取消";
     }
+    tmp.set_parent(*es, "belong_order");
+    tmp.insert_record();
     ret = es->update_record();
     auto_call_next();
 
@@ -482,6 +489,11 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
     {
         ZH_RETURN_MSG("车辆未排号");
     }
+
+    sql_order_history tmp;
+    tmp.node_caller = opt_name;
+    tmp.occour_time = util_get_timestring();
+    tmp.node_name = node_name_call;
     if (is_call)
     {
         es->call_info_name = opt_name;
@@ -496,15 +508,18 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
             zyzl_plugin::get_inst()->push_call(es->plate_number, es->driver_name);
         }
     }
-    else if (es->status == 1)
+    else
     {
         es->confirm_info_name = "";
         es->confirm_info_time = "";
         es->call_info_name = "";
         es->call_info_time = "";
         es->update_record();
+        tmp.node_name += " 取消";
         auto_call_next();
     }
+    tmp.set_parent(*es, "belong_order");
+    tmp.insert_record();
     ret = es->update_record();
     return ret;
 }
@@ -523,6 +538,10 @@ bool order_center_handler::order_confirm(const std::string &order_number, const 
         ZH_RETURN_MSG("车辆未叫号");
     }
 
+    sql_order_history tmp;
+    tmp.node_caller = opt_name;
+    tmp.occour_time = util_get_timestring();
+    tmp.node_name = node_name_confirm;
     if (is_confirm)
     {
         es->confirm_info_name = opt_name;
@@ -530,9 +549,13 @@ bool order_center_handler::order_confirm(const std::string &order_number, const 
     }
     else
     {
+        tmp.node_name += " 取消";
         es->confirm_info_name = "";
         es->confirm_info_time = "";
     }
+
+    tmp.set_parent(*es, "belong_order");
+    tmp.insert_record();
     ret = es->update_record();
 
     return ret;
@@ -589,6 +612,7 @@ bool order_center_handler::order_push_weight(const std::string &order_number, co
         }
         es->p_weight = weight;
         es->p_time = cur_date;
+        zyzl_plugin::get_inst()->push_p(es->plate_number);
     }
     else
     {
@@ -602,6 +626,7 @@ bool order_center_handler::order_push_weight(const std::string &order_number, co
             tmp.insert_record();
             es->p_weight = weight;
             es->p_time = cur_date;
+            zyzl_plugin::get_inst()->push_p(es->plate_number);
         }
         else
         {
