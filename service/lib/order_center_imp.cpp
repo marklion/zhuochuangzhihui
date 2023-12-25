@@ -171,6 +171,10 @@ void order_center_handler::check_order_pass()
     THR_CALL_BEGIN(config_management);
     client->get_rule(tmp);
     THR_CALL_END();
+    std::vector<scale_sm_info> sm_i;
+    THR_CALL_DM_BEGIN();
+    client->get_scale_sm_info(sm_i);
+    THR_CALL_DM_END();
     if (tmp.call_time_out > 0)
     {
         std::vector<vehicle_order_info> ao;
@@ -178,7 +182,16 @@ void order_center_handler::check_order_pass()
         auto now = time(nullptr);
         for (auto &itr : ao)
         {
-            if (itr.status == 1 && itr.call_info.operator_time.length() > 0)
+            bool is_scaling = false;
+            for (auto &itr_sm : sm_i)
+            {
+                if (itr_sm.cur_plate == itr.plate_number)
+                {
+                    is_scaling = true;
+                    break;
+                }
+            }
+            if (itr.status == 1 && itr.call_info.operator_time.length() > 0 && !is_scaling)
             {
                 auto call_time = util_get_time_by_string(itr.call_info.operator_time);
                 if (call_time + tmp.call_time_out * 60 < now)

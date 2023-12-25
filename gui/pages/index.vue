@@ -319,7 +319,7 @@ export default {
             this.load_more();
         },
         load_more: function () {
-            if (this.need_load_more && this.order_need_show.length <= 20) {
+            if (this.need_load_more) {
                 this.fetch_orders();
             }
             this.fetch_order_count();

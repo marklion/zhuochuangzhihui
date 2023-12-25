@@ -3,7 +3,7 @@
     <u-cell-group :title="'单号:' + order.order_number">
         <u-cell :value="order.is_sale?'销售':'采购'" :label="order.company_name+ '-' + order.stuff_name" :title="order.plate_number + '-' + order.back_plate_number">
         </u-cell>
-        <u-cell :label="order.id" :value="order.phone" :title="order.driver_name">
+        <u-cell :label="order.driver_id" :value="order.driver_phone" :title="order.driver_name">
         </u-cell>
         <u-cell v-if="order.continue_until" title="连续派车截止" :value="order.continue_until"></u-cell>
     </u-cell-group>
@@ -66,7 +66,7 @@ export default {
 
             switch (this.order.status) {
                 case 2:
-                    ret = '已出场';
+                    ret = '已入场';
                     break;
                 case 100:
                     ret = '已完成';
