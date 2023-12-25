@@ -4,3 +4,9 @@ zczh_software_*
 build/
 zh_pub/zh_rpc_base/gen_code/
 .DS_Store
+*/node_modules/
+results/
+*/cmake_tmp_dir/
+**/gen_code/
+**/node_gen_code/
+*/uni_modules/

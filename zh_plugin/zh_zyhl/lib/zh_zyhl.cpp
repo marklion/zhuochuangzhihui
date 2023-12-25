@@ -435,7 +435,7 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
                 single_plan.Get("number", last_weight);
                 load_req.ReplaceAdd("load_number", _weight + last_weight);
             }
-            else if (!single_plan.IsNull("number") || single_plan.IsNull("carEntery"))
+            else if (single_plan.IsNull("carEntery"))
             {
                 continue;
             }
