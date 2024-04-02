@@ -77,3 +77,14 @@ void zh_plugin_conf_set_config(const char *_file_path, const std::string &_key, 
     out_file << config.ToString() << std::endl;
     unlock_config_file(fd);
 }
+
+void zh_plugin_conf_delete_config(const char *_file_path, const std::string &_key)
+{
+    auto fd = lock_config_file_write(_file_path);
+    neb::CJsonObject config(pri_get_config(_file_path));
+    config.Delete(_key);
+
+    std::fstream out_file(_file_path, std::ios::out);
+    out_file << config.ToString() << std::endl;
+    unlock_config_file(fd);
+}
