@@ -162,6 +162,7 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                 {
                     int ev_type = 0;
                     bool is_close = false;
+                    bool has_io_event = false;
                     std::string plate_no;
                     std::string cam_ip(pAlarmer->sDeviceIP);
                     switch (lCommand)
@@ -174,11 +175,13 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         if (al_info.byExternalDevStatus == DEVICES_STATUS_CLOSED)
                         {
                             is_close = true;
+                            has_io_event = true;
                             g_log.log("door (%s) is close", cam_ip.c_str());
                         }
                         if (al_info.byExternalDevStatus == DEVICES_STATUS_OPENED)
                         {
                             is_close = false;
+                            has_io_event = true;
                             g_log.log("door (%s) is open", cam_ip.c_str());
                         }
                         break;
@@ -205,7 +208,7 @@ bool zh_hk_subcribe_event(const std::string &_road_ip, zh_sub_callback_cfg _call
                         break;
                     }
                     auto &hk_duh = g_device_user_map[cam_ip];
-                    if (ev_type == 1)
+                    if (ev_type == 1 && has_io_event)
                     {
                         hk_duh.callback_cfg.is_close = is_close;
                     }

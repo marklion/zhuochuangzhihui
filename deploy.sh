@@ -18,7 +18,7 @@ OEM_SHORT_INPUT="卓创智汇"
 URL_REMOTE_INPUT=".d8sis.cn"
 
 is_in_container() {
-    cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null
+    ls /.dockerenv >/dev/null 2>&1
 }
 
 make_docker_img_from_dockerfile() {
@@ -35,7 +35,7 @@ get_docker_image() {
 
 start_all_server() {
     line=`wc -l $0|awk '{print $1}'`
-    line=`expr $line - 132`
+    line=`expr $line - 133`
     mkdir /tmp/sys_zh
     tail -n $line $0 | tar zx  -C /tmp/sys_zh/
     rsync -aK /tmp/sys_zh/ /
@@ -51,6 +51,7 @@ start_all_server() {
     ulimit -c unlimited
     sysctl -w kernel.core_pattern=/database/core.%e.%p.%s.%E
     ulimit -c
+    chown -R www-data /manage_dist/
     zh_daemon
 }
 

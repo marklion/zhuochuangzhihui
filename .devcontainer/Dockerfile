@@ -2,7 +2,7 @@
 
 # [Choice] Ubuntu version: bionic, focal
 ARG VARIANT="focal"
-FROM ubuntu
+FROM ubuntu:focal
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
