@@ -511,15 +511,6 @@ bool order_center_handler::order_call(const std::string &order_number, const boo
     {
         es->call_info_name = opt_name;
         es->call_info_time = util_get_timestring();
-
-        running_rule rule;
-        THR_CALL_BEGIN(config_management);
-        client->get_rule(rule);
-        THR_CALL_END();
-        if (rule.zyzl_host.length() > 0 && rule.zyzl_ssid.length() > 0)
-        {
-            zyzl_plugin::get_inst()->push_call(es->plate_number, es->driver_name);
-        }
     }
     else
     {

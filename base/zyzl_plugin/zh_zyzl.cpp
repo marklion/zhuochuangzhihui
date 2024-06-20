@@ -146,7 +146,7 @@ bool zyzl_plugin::send_to_zyzl(const std::string &_path, const neb::CJsonObject 
         auto begin_point = time(NULL);
         auto real_req = _req;
 
-        std::string real_path = "/pa_web/pa_rest" + _path + "?token=" + token;
+        std::string real_path = "/mt_api/pa_rest" + _path + "?token=" + token;
         g_log.log("send req to host->%s path->%s token->%s:%s", remote_url.c_str(), real_path.c_str(), token.c_str(), real_req.ToFormattedString().c_str());
 
         if (_is_get)

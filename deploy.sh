@@ -19,7 +19,7 @@ OEM_SHORT_INPUT="卓创智汇"
 URL_REMOTE_INPUT=".d8sis.cn"
 
 is_in_container() {
-    cat /proc/1/cgroup | grep pids | grep docker 2>&1>/dev/null
+    ls /.dockerenv >/dev/null 2>&1
 }
 
 make_docker_img_from_dockerfile() {
