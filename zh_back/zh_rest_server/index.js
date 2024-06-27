@@ -57,7 +57,7 @@ app.post('/zh_rest/vehicle_order/get', async (req, res) =>{
             console.log(resp.basic_info.id);
             var id = new Int64(resp.basic_info.id.buffer);
             console.log(id);
-            ret = { basic_info: { id: id.toNumber(),driver_id:resp.basic_info.driver_id } };
+            ret = { basic_info: { id: id.toNumber(),driver_id:resp.basic_info.driver_id, p_weight:resp.basic_info.p_weight } };
         }
     } catch (error) {
         ret.err_msg = error;
