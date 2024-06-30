@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     }
     else if (cmd == "init")
     {
-        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "http://www.hnjt.top");
+        zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "remote_url", "https://www.hht.top");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "username", "mhg");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "password", "mhg123456");
         zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "enabled", "true");

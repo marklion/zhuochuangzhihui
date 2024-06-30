@@ -14,4 +14,4 @@ aux_source_directory(../../zh_back/zh_tdf TDF_SRC)
 add_library(zh_hnnc STATIC ${API_SRC} ${PUB_SRC} ${TDF_SRC})
 add_executable(zh_hnnc_plugin ${PLUGIN_SRC})
 
-target_link_libraries(zh_hnnc_plugin zh_hnnc pthread rt)
+target_link_libraries(zh_hnnc_plugin zh_hnnc pthread rt ssl crypto)

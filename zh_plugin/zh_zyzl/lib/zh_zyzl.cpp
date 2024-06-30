@@ -310,7 +310,7 @@ void ZH_ZYZL_sync_plans(const std::list<zy_sync_plan_data> &_plan_data)
 
             return found_ret; }) == _plan_data.end())
         {
-            auto order_id = itr.order_number.substr(std::to_string(time(nullptr)).length());
+            auto order_id = itr.order_number.substr(2);
             cancel_plan_from_remote(order_id);
         }
     }

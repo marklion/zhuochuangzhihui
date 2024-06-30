@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 #include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #define PLUGIN_CONF_FILE "/plugin/zh_hnnc/conf/plugin.json"
