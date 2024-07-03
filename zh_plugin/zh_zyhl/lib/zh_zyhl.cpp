@@ -3,6 +3,7 @@
 #include "httplib.h"
 #include "../../../zh_pub/zh_cpp_pub/zh_plugin_conf.h"
 #include <thread>
+#include <vector>
 
 #define PLUGIN_CONF_FILE "/plugin/zh_zyhl/conf/plugin.json"
 static tdf_log g_log("zyhl", "/plugin/audit.log", "/plugin/audit.log");
@@ -131,12 +132,10 @@ static bool hl_vehicle_is_xy(const neb::CJsonObject &_hl_v, const std::vector<ve
 static std::string trim(const std::string &str)
 {
     std::string result;
-    size_t start = str.find_first_not_of(" ");
-    size_t end = str.find_last_not_of(" ");
-    if (start != std::string::npos && end != std::string::npos)
-    {
-        result = str.substr(start, end - start + 1);
-    }
+    std::vector<char> number_set = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    auto b_cur = std::find_first_of(str.begin(), str.end(), number_set.begin(), number_set.end());
+    auto e_cur = std::find_first_of(str.rbegin(), str.rend(), number_set.begin(), number_set.end());
+    result.assign(b_cur, e_cur.base());
     return result;
 }
 
@@ -547,4 +546,9 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
     std::string zip_cmd = "zip -q /manage_dist/logo_res/" + req_serial + ".zip -r /tmp/" + req_serial;
     system(zip_cmd.c_str());
     zh_plugin_conf_set_config(PLUGIN_CONF_FILE, "download_status", "/logo_res/" + req_serial + ".zip");
+}
+
+void test_strim()
+{
+    std::cout << trim("\t  112314231 \t adsaf") << std::endl;
 }

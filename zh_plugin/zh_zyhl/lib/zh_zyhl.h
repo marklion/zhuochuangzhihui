@@ -23,4 +23,5 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight);
 
 std::string send_file_to_zyhl(const std::string &_id, const std::string &_path);
 void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date, const std::string &_trans_comapny_name);
+void test_strim();
 #endif // _ZYHL_LIB_H_

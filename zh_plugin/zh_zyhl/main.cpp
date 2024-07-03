@@ -76,6 +76,7 @@ int main(int argc, char **argv)
                 command("refresh").set(cmd) |
                 command("pull").set(cmd) |
                 command("enabled").set(cmd) |
+                command("test_strim").set(cmd) |
                 (command("download_ticket").set(cmd) & value("begin_date", begin_date) & value("end_date", end_date) & value("trans_company", trans_company)) |
                 (command("upload_file").set(cmd) & value("file", file_name)) |
                 (command("proc_event").set(cmd) & required("-c") & value("event_name", event_name) & value("order_number", order_number) & option("-t").set(cmd_test)));
@@ -141,6 +142,11 @@ int main(int argc, char **argv)
     else if (cmd == "upload_file")
     {
         std::cout << send_file_to_zyhl("", file_name) << std::endl;
+        iret = 0;
+    }
+    else if (cmd == "test_strim")
+    {
+        test_strim();
         iret = 0;
     }
     else if (cmd == "download_ticket")
