@@ -3413,7 +3413,7 @@ bool vehicle_order_center_handler::manual_push_nc(const std::string &order_numbe
 }
 void vehicle_order_center_handler::get_today_xy_vehicle(std::vector<vehicle_order_detail> &_return)
 {
-    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 100 AND seal_no == '正在泄压' AND substr(m_cam_time, 1, 10) == '%s'", zh_rpc_util_get_datestring().c_str());
+    auto vos = sqlite_orm::search_record_all<zh_sql_vehicle_order>("status == 100 AND seal_no == '正在泄压' AND (substr(m_cam_time, 1, 10) == '%s' OR substr(m_cam_time, 1, 10) == '%s')", zh_rpc_util_get_datestring().c_str(), zh_rpc_util_get_datestring(time(nullptr) - 3600 * 24).c_str());
     for (auto &itr : vos)
     {
         vehicle_order_detail tmp;

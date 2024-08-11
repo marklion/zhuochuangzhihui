@@ -100,11 +100,12 @@ std::string zh_double2string_reserve2(double _value)
     std::stringstream ss;
     ss.setf(std::ios::fixed);
     ss.precision(2);
+    _value = std::round(_value * 100) / 100.0;
     ss << _value;
     return ss.str();
 }
 
-static bool hl_vehicle_is_xy(const neb::CJsonObject &_hl_v, const std::vector<vehicle_order_detail> &_xy_vos)
+static bool hl_vehicle_is_xy(const neb::CJsonObject &_hl_v, const std::vector<vehicle_order_detail> &_xy_vos, double except_weight = 0)
 {
     bool ret = false;
     struct vehicle_last_weight {
@@ -114,13 +115,22 @@ static bool hl_vehicle_is_xy(const neb::CJsonObject &_hl_v, const std::vector<ve
     double hl_weight = 0;
     _hl_v.Get("number", hl_weight);
     std::map<std::string, vehicle_last_weight> tmp_map;
+    bool no_need_plus = false;
     for (auto &itr : _xy_vos)
     {
-        tmp_map[itr.basic_info.main_vehicle_number].weight += itr.basic_info.m_weight - itr.basic_info.p_weight;
+        auto tmp_w = itr.basic_info.m_weight - itr.basic_info.p_weight;
+        if (tmp_w == except_weight && !no_need_plus)
+        {
+            no_need_plus = true;
+            continue;
+        }
+        tmp_map[itr.basic_info.main_vehicle_number].weight += tmp_w;
     }
     for (auto itr = tmp_map.begin(); itr != tmp_map.end(); ++itr)
     {
-        if (itr->first == _hl_v("driver_no") && zh_double2string_reserve2(itr->second.weight) == zh_double2string_reserve2(hl_weight))
+        if (itr->first == _hl_v("driver_no") &&
+            zh_double2string_reserve2(itr->second.weight) == zh_double2string_reserve2(hl_weight) &&
+            hl_weight > 0)
         {
             ret = true;
             break;
@@ -233,8 +243,16 @@ static std::string util_get_timestring(time_t _time)
 
     return std::string(buff);
 }
-std::string util_get_datestring(time_t _time)
+std::string util_get_datestring(time_t _time, bool need_offset)
 {
+    if (need_offset)
+    {
+        auto st_time = localtime(&_time);
+        if (st_time->tm_hour < 5)
+        {
+            _time -= 86400;
+        }
+    }
     auto date_time = util_get_timestring(_time);
     return date_time.substr(0, 10);
 }
@@ -428,7 +446,7 @@ bool push_vehicle_weight(const std::string &_vehicle_number, double _weight)
             load_req.Add("load_number", _weight);
             load_req.Add("load_date", util_get_datestring(time(nullptr)));
 
-            if (hl_vehicle_is_xy(single_plan, xy_vos))
+            if (hl_vehicle_is_xy(single_plan, xy_vos, _weight))
             {
                 double last_weight = 0;
                 single_plan.Get("number", last_weight);
@@ -486,7 +504,7 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
     for (auto tmp_time = begin_date_time; tmp_time <= end_date_time; tmp_time += 3600 * 24)
     {
         neb::CJsonObject get_plan_req;
-        get_plan_req.ReplaceAdd("date", util_get_datestring(tmp_time));
+        get_plan_req.ReplaceAdd("date", util_get_datestring(tmp_time, false));
         send_req_to_zyhl(
             "/thirdparty/list_plan",
             get_plan_req,
@@ -498,7 +516,7 @@ void get_zip_ticket(const std::string &_begin_date, const std::string &_end_date
                     if (resp[i]["transport_company"]("name") == _trans_comapny_name || _trans_comapny_name.empty())
                     {
                         ticket_meta tmp_meta;
-                        tmp_meta.date = util_get_datestring(tmp_time);
+                        tmp_meta.date = util_get_datestring(tmp_time, false);
                         tmp_meta.vehicle_number = resp[i]("driver_no");
                         tmp_meta.trans_company = std::to_string(i) + "_" + resp[i]["transport_company"]("name");
                         auto ticket_attach = resp[i]["attachment"];
