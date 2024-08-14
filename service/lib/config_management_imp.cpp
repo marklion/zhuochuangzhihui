@@ -12,6 +12,7 @@ config_management_handler::config_management_handler()
         {"zs_plate_cam", "/bin/zs_plate_cam"},
         {"id_reader_driver", "/bin/id_reader_driver"},
         {"wr_style_scale", "/bin/wr_style_scale_driver"},
+        {"wl_style_scale", "/bin/wl_style_scale_driver"},
         };
 
     for (auto &itr : dmt_array)
