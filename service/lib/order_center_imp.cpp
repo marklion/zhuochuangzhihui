@@ -76,7 +76,18 @@ void order_center_handler::push_zyzl(const std::string &_order_number)
         {
             ticket_no = _order_number;
         }
-        tmp->push_weight(vo->plate_number, vo->p_time, vo->m_time, vo->p_weight, vo->m_weight, std::abs(vo->p_weight - vo->m_weight), ticket_no, vo->seal_no);
+        auto p_time = vo->p_time;
+        auto m_time = vo->m_time;
+        auto p_weight = vo->p_weight;
+        auto m_weight = vo->m_weight;
+        if (!vo->is_sale)
+        {
+            p_time = vo->m_time;
+            m_time = vo->p_time;
+            p_weight = vo->m_weight;
+            m_weight = vo->p_weight;
+        }
+        tmp->push_weight(vo->plate_number, p_time, m_time, p_weight, m_weight, std::abs(p_weight - m_weight), ticket_no, vo->seal_no);
     }
 }
 
