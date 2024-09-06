@@ -375,9 +375,11 @@ void device_management_handler::push_id_read(const int64_t id_id, const std::str
     auto id_device = sqlite_orm::search_record<sql_device_meta>(id_id);
     if (id_device)
     {
+        bool enter_direct = true;
         auto set = id_device->get_children<sql_device_set>("front_id_reader");
         if (!set)
         {
+            enter_direct = false;
             set.reset(id_device->get_children<sql_device_set>("back_id_reader").release());
         }
         if (set)
@@ -389,7 +391,28 @@ void device_management_handler::push_id_read(const int64_t id_id, const std::str
                 {
                     bool ret = false;
                     std::string order_number;
-                    auto result = set->should_handle_income_plate(plate_no, order_number);
+                    std::string result = "未找到车辆信息";
+                    if (!set->is_scale)
+                    {
+                        if (enter_direct)
+                        {
+                            THR_CALL_BEGIN(order_center);
+                            if (client->check_pass_permit("", id_number))
+                            {
+                                result = "";
+                                plate_no = "允许通过";
+                            }
+                            THR_CALL_END();
+                        }
+                        else
+                        {
+                            result = "";
+                        }
+                    }
+                    else
+                    {
+                        result = set->should_handle_income_plate(plate_no, order_number);
+                    }
                     if (result.length() > 0)
                     {
                         led_display(get_same_side_device(id_id, "led"), {"", result, "", util_get_timestring()});
@@ -427,9 +450,11 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
     auto pc_device = sqlite_orm::search_record<sql_device_meta>(plate_cam_id);
     if (pc_device)
     {
+        bool enter_direct = true;
         auto set = pc_device->get_children<sql_device_set>("front_plate_cam");
         if (!set)
         {
+            enter_direct = false;
             set.reset(pc_device->get_children<sql_device_set>("back_plate_cam").release());
         }
         if (set)
@@ -440,7 +465,27 @@ void device_management_handler::push_plate_read(const int64_t plate_cam_id, cons
                 {
                     bool ret = false;
                     std::string order_number;
-                    auto result = set->should_handle_income_plate(plate_no, order_number);
+                    std::string result = "未找到车辆信息";
+                    if (!set->is_scale)
+                    {
+                        if (enter_direct)
+                        {
+                            THR_CALL_BEGIN(order_center);
+                            if (client->check_pass_permit(plate_no, ""))
+                            {
+                                result = "";
+                            }
+                            THR_CALL_END();
+                        }
+                        else
+                        {
+                            result = "";
+                        }
+                    }
+                    else
+                    {
+                        result = set->should_handle_income_plate(plate_no, order_number);
+                    }
                     if (result.length() > 0)
                     {
                         led_display(get_same_side_device(plate_cam_id, "led"), {"", result, "", util_get_timestring()});
@@ -579,6 +624,19 @@ void device_management_handler::get_device_run_time(std::vector<device_run_time>
         {
             tmp.name = dm->name;
         }
+        _return.push_back(tmp);
+    }
+}
+void device_management_handler::get_gate_sm_info(std::vector<gate_sm_info> &_return)
+{
+    std::vector<device_gate_set> all_dgs;
+    THR_CALL_BEGIN(config_management);
+    client->get_gate_config(all_dgs);
+    THR_CALL_END();
+    for (auto &itr : all_dgs)
+    {
+        gate_sm_info tmp;
+        tmp.set_info = itr;
         _return.push_back(tmp);
     }
 }
@@ -787,9 +845,6 @@ std::unique_ptr<abs_sm_state> gate_state_init::proc_event(abs_state_machine &_sm
         client->speaker_cast(speaker_id, "请通过");
         client->led_display(led_id, {"", sm.pass_plate_number, "请通过", util_get_timestring()});
         THR_CALL_DM_END();
-        THR_CALL_BEGIN(order_center);
-        client->order_push_gate(sm.order_number, "自动");
-        THR_CALL_END();
     }
     sm.init_sm();
 

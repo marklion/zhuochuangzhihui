@@ -158,7 +158,8 @@ public:
     virtual void get_scale_sm_info(std::vector<scale_sm_info> &_return);
     virtual void reset_scale_sm(const int64_t sm_id);
     virtual void confirm_scale(const int64_t sm_id);
-    virtual void get_device_run_time(std::vector<device_run_time> & _return);
+    virtual void get_device_run_time(std::vector<device_run_time> &_return);
+    virtual void get_gate_sm_info(std::vector<gate_sm_info> &_return);
 
     void walk_zombie_process();
     void start_device_no_exp(int64_t id);

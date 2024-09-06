@@ -17,8 +17,10 @@ public:
     bool push_p(const std::string &_plate);
     std::string get_id_from_plate(const std::string &_plate);
     bool send_to_zyzl(const std::string &_path, const neb::CJsonObject &_req, const std::function<bool(const neb::CJsonObject &)> &_callback, bool _is_get = false);
+    bool send_to_zyzl(const std::string &_path, const neb::CJsonObject &_req, neb::CJsonObject &resp);
     std::string get_driver_name_from_plate(const std::string &_plate);
     void send_to_que(const std::string &_path, const neb::CJsonObject &_req, bool _is_get = false);
+    bool should_pass_gate(const std::string &_plate, const std::string &_id_card);
 };
 
 #endif // _ZH_ZYZL_H_

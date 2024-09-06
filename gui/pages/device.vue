@@ -1,6 +1,42 @@
 <template>
 <view>
     <u-divider text="称重状态"></u-divider>
+
+    <view v-for="(single_sm, index) in gate_sm" :key="index">
+        <u-cell :title="single_sm.set_info.name">
+            <view slot="label">
+                <u-row gutter="10" justify="space-between">
+                    <u-col :span="3">
+                        <u-button type="primary" size="mini" text="开入口" @click="gate_ctrl(single_sm.set_info.gate.front.id, true)"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="primary" size="mini" text="开出口" @click="gate_ctrl(single_sm.set_info.gate.back.id, true)"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="error" size="mini" text="关入口" @click="gate_ctrl(single_sm.set_info.gate.front.id, false)"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="error" size="mini" text="关出口" @click="gate_ctrl(single_sm.set_info.gate.back.id, false)"></u-button>
+                    </u-col>
+                </u-row>
+
+                <u-row gutter="10" justify="space-between">
+                    <u-col :span="3">
+                        <u-button type="success" size="mini" text="入口拍照" @click="take_pic(single_sm.set_info.plate_cam.front.id)"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="primary" size="mini" text="入口识别" @click="focus_cam_id = single_sm.set_info.plate_cam.front.id"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="success" size="mini" text="出口拍照" @click="take_pic(single_sm.set_info.plate_cam.back.id)"></u-button>
+                    </u-col>
+                    <u-col :span="3">
+                        <u-button type="primary" size="mini" text="出口识别" @click="focus_cam_id = single_sm.set_info.plate_cam.back.id"></u-button>
+                    </u-col>
+                </u-row>
+            </view>
+        </u-cell>
+    </view>
     <view v-for="(single_sm, index) in scale_sm" :key="index">
         <u-cell-group :title="single_sm.set_info.name + '-' + single_sm.cur_state + '-' + single_sm.cur_plate">
             <u-cell>
@@ -40,19 +76,19 @@
                 <view slot="title">
                     <u-grid :col="3">
                         <u-grid-item>
-                            <u-button type="success" size="mini" text="入口拍照" @click="take_pic(single_sm.set_info.plate_cam.front.id)"></u-button>
+                            <u-button type="success" size="mini" text="前门拍照" @click="take_pic(single_sm.set_info.plate_cam.front.id)"></u-button>
                         </u-grid-item>
                         <u-grid-item>
-                            <u-button type="primary" size="mini" text="入口识别" @click="focus_cam_id = single_sm.set_info.plate_cam.front.id"></u-button>
+                            <u-button type="primary" size="mini" text="前门识别" @click="focus_cam_id = single_sm.set_info.plate_cam.front.id"></u-button>
                         </u-grid-item>
                         <u-grid-item>
                             <u-button type="warning" size="mini" text="手动称重" @click="manual_scale(single_sm.set_info.id)"></u-button>
                         </u-grid-item>
                         <u-grid-item>
-                            <u-button type="success" size="mini" text="出口拍照" @click="take_pic(single_sm.set_info.plate_cam.back.id)"></u-button>
+                            <u-button type="success" size="mini" text="后门拍照" @click="take_pic(single_sm.set_info.plate_cam.back.id)"></u-button>
                         </u-grid-item>
                         <u-grid-item>
-                            <u-button type="primary" size="mini" text="出口识别" @click="focus_cam_id = single_sm.set_info.plate_cam.back.id"></u-button>
+                            <u-button type="primary" size="mini" text="后门识别" @click="focus_cam_id = single_sm.set_info.plate_cam.back.id"></u-button>
                         </u-grid-item>
                         <u-grid-item>
                             <u-button type="error" size="mini" text="重置" @click="reset_confirm_id =  single_sm.set_info.id"></u-button>
@@ -87,6 +123,7 @@ export default {
     data: function () {
         return {
             scale_sm: [],
+            gate_sm: [],
             pic_path: '',
             focus_cam_id: 0,
             focus_plate: '',
@@ -158,6 +195,10 @@ export default {
             await this.init_stay_time();
             this.$send_req('/api/get_scale_sm_info', {}).then(resp => {
                 this.scale_sm = resp;
+                uni.stopPullDownRefresh();
+            });
+            this.$send_req('/api/get_gate_sm_info', {}).then(resp => {
+                this.gate_sm = resp;
                 uni.stopPullDownRefresh();
             });
         },

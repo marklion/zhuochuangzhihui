@@ -11,6 +11,8 @@ protected:
 public:
     long self_dev_id = 0;
     virtual void init_all_set() {}
+
+    virtual void get_gate_sm_info(std::vector<gate_sm_info> &_return) {}
     virtual void push_scale_read(const int64_t scale_id, const double weight) {}
     virtual void push_id_read(const int64_t id_id, const std::string &id_number) {}
     virtual void push_qr_read(const int64_t qr_id, const std::string &qr_content) {}

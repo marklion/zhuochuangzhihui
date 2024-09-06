@@ -253,6 +253,7 @@ service order_center {
     i64 count_order(1:order_search_cond cond) throws (1:gen_exp e),
     list<req_wait_info> get_req_que() throws (1:gen_exp e),
     void pop_out_req(1:i64 req_id) throws (1:gen_exp e),
+    bool check_pass_permit(1:string plate, 2:string id_card) throws (1:gen_exp e),
 }
 
 struct scale_sm_info {
@@ -263,6 +264,9 @@ struct scale_sm_info {
     5:bool front_gate_is_close,
     6:bool back_gate_is_close,
 }
+ struct gate_sm_info {
+    1:device_gate_set set_info,
+ }
 
 service device_management {
     oneway void init_all_set(),
@@ -288,4 +292,5 @@ service device_management {
     void reset_scale_sm(1:i64 sm_id) throws (1:gen_exp e),
     void confirm_scale(1:i64 sm_id) throws (1:gen_exp e),
     list<device_run_time> get_device_run_time() throws (1:gen_exp e),
+    list<gate_sm_info> get_gate_sm_info() throws (1:gen_exp e),
 }

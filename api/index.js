@@ -1119,6 +1119,26 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/get_gate_sm_info": {
+        module: 'order',
+        resource: 'vehicle_scale',
+        is_write: false,
+        no_need_rabc: false,
+        handler: async function (body) {
+            return await request_rpc('device_management', 'get_gate_sm_info', []);
+        },
+        help_info: {
+            title: "获取大门状态",
+            describe: "能获取到大门的配置",
+            result: {
+                type: Object,
+                mean: '当前门的配置',
+                explain: [
+                    g_scale_set_info,
+                ],
+            },
+        },
+    },
     "/api/reset_scale_sm": {
         module: 'order',
         resource: 'vehicle_scale',

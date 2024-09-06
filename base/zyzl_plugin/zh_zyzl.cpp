@@ -205,6 +205,61 @@ bool zyzl_plugin::send_to_zyzl(const std::string &_path, const neb::CJsonObject 
     return ret;
 }
 
+bool zyzl_plugin::send_to_zyzl(const std::string &_path, const neb::CJsonObject &_req, neb::CJsonObject &resp)
+{
+    bool ret = false;
+    std::string token;
+    std::string remote_url;
+    auto rule = sqlite_orm::search_record<sql_rule_config>(1);
+    if (rule)
+    {
+        token = rule->zyzl_ssid;
+        remote_url = rule->zyzl_host;
+    }
+    if (token.length() > 0 && remote_url.length() > 0)
+    {
+        httplib::Client cli(remote_url);
+        cli.set_read_timeout(20, 0);
+        cli.set_default_headers(httplib::Headers({{"Content-Type", "application/json"}, {"token", token}}));
+        cli.set_follow_location(true);
+        auto begin_point = time(NULL);
+        auto real_req = _req;
+
+        std::string real_path = "/mt_api/api/v1" + _path;
+        g_log.log("send req to host->%s path->%s token->%s:%s", remote_url.c_str(), real_path.c_str(), token.c_str(), real_req.ToFormattedString().c_str());
+
+        auto res = cli.Post(real_path.c_str(), real_req.ToString(), "application/json");
+        if (res)
+        {
+            auto res_json = neb::CJsonObject(res->body);
+            g_log.log("recv resp from zyzl:%s", res_json.ToFormattedString().c_str());
+            if (res_json("err_msg") == "")
+            {
+                ret = true;
+                resp = res_json["result"];
+            }
+            else
+            {
+                g_log.err("failure because %s", res_json("err_msg").c_str());
+                std::cerr << res_json("err_msg") << std::endl;
+            }
+        }
+        else
+        {
+            g_log.err("failed to post api req :%s", httplib::to_string(res.error()).c_str());
+        }
+
+        auto end_point = time(NULL);
+        g_log.log("spend %d second", end_point - begin_point);
+    }
+    else
+    {
+        g_log.err("no access code or url");
+    }
+
+    return ret;
+}
+
 std::string zyzl_plugin::get_driver_name_from_plate(const std::string &_plate)
 {
     std::string ret;
@@ -237,4 +292,27 @@ void zyzl_plugin::send_to_que(const std::string &_path, const neb::CJsonObject &
     tmp.req_body = _req.ToString();
     tmp.req_url = _path;
     tmp.insert_record();
+}
+
+bool zyzl_plugin::should_pass_gate(const std::string &_plate, const std::string &_id_card)
+{
+    bool ret = false;
+
+    neb::CJsonObject req;
+    req.Add("plate", _plate);
+    req.Add("id_card", _id_card);
+
+    neb::CJsonObject resp;
+    if (send_to_zyzl(
+            "/global/search_valid_plan_by_plate_id",
+            req,
+            resp))
+    {
+        if (resp.KeyExist("result"))
+        {
+            ret = resp("result") == "true";
+        }
+    }
+
+    return ret;
 }

@@ -806,3 +806,8 @@ void order_center_handler::pop_out_req(const int64_t req_id)
         es->remove_record();
     }
 }
+
+bool order_center_handler::check_pass_permit(const std::string &plate, const std::string &id_card)
+{
+    return zyzl_plugin::get_inst()->should_pass_gate(plate, id_card);
+}

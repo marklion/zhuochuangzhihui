@@ -25,6 +25,7 @@ public:
     virtual int64_t count_order(const order_search_cond &cond);
     virtual void get_req_que(std::vector<req_wait_info> &_return);
     virtual void pop_out_req(const int64_t req_id);
+    virtual bool check_pass_permit(const std::string& plate, const std::string& id_card);
 
     std::string order_is_dup(const vehicle_order_info &order);
     std::unique_ptr<sql_order> get_order_by_number(const std::string &_order_number);
