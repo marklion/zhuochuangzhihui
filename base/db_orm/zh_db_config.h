@@ -10,6 +10,7 @@
 const std::string node_name_enter = "进厂";
 const std::string node_name_exit = "出厂";
 const std::string node_name_p_weight = "一次称重";
+const std::string node_name_rollback_weight = "回退一次称重";
 const std::string node_name_m_weight = "二次称重";
 const std::string node_name_create= "创建";
 const std::string node_name_update= "更新";

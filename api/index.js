@@ -994,6 +994,45 @@ const g_api_permisson = {
             },
         },
     },
+    "/api/order/rollback": {
+        module: 'order',
+        resource: 'vehicle_scale',
+        is_write: true,
+        no_need_rabc: false,
+        handler: async function (body) {
+            let name = body.opt_name;
+            if (!name) {
+                name = await request_rpc('rbac_center', 'get_name_by_token', [body.token]);
+            }
+            return await request_rpc('order_center', 'order_rollback_weight', [body.order_number, name]);
+        },
+        help_info: {
+            title: "回退一次重量",
+            describe: "回退一次重量",
+            params: {
+                type: Object,
+                have_to: true,
+                explain: [
+                    {
+                        name: "order_number",
+                        type: String,
+                        mean: "派车单号",
+                        have_to: true,
+                    },
+                    {
+                        name: "opt_name",
+                        type: String,
+                        mean: "操作人",
+                        have_to: false,
+                    },
+                ]
+            },
+            result: {
+                type: Boolean,
+                mean: "是否成功",
+            },
+        },
+    },
     "/api/order/push_gate": {
         module: 'order',
         resource: 'vehicle_scale',

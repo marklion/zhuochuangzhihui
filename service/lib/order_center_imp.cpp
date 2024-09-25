@@ -677,7 +677,30 @@ bool order_center_handler::order_push_weight(const std::string &order_number, co
 
 bool order_center_handler::order_rollback_weight(const std::string &order_number, const std::string &opt_name)
 {
-    return false;
+    bool ret = false;
+    auto es = get_order_by_number(order_number);
+    if (!es)
+    {
+        ZH_RETURN_NO_ORDER();
+    }
+    auto cur_date = util_get_timestring();
+    if (es->status != 2 || es->m_weight != 0)
+    {
+        ZH_RETURN_MSG("无效操作");
+    }
+    es->status = 1;
+    auto eph = es->get_children<sql_order_history>("belong_order", "node_name == '%s'", node_name_p_weight.c_str());
+    if (eph)
+    {
+        eph->remove_record();
+    }
+
+    es->p_weight = 0;
+    es->p_time = "";
+
+    ret = es->update_record();
+
+    return ret;
 }
 
 bool order_center_handler::order_push_gate(const std::string &order_number, const std::string &opt_name)
