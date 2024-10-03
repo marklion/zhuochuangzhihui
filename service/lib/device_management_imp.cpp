@@ -721,21 +721,35 @@ void device_management_handler::sm_init_add(std::shared_ptr<abs_state_machine> _
 void device_management_handler::sm_trigger(int64_t sm_id, std::function<bool(abs_state_machine &_sm)> update_func)
 {
     pthread_mutex_lock(&map_lock);
-    auto sm = m_sm_map[sm_id];
-    if (sm && update_func(*sm))
+    try
     {
-        sm->trigger_sm();
+        auto sm = m_sm_map[sm_id];
+        if (sm && update_func(*sm))
+        {
+            sm->trigger_sm();
+        }
     }
+    catch (...)
+    {
+    }
+
     pthread_mutex_unlock(&map_lock);
 }
 
 void device_management_handler::sm_run_in_scale(int64_t sm_id, std::function<void(abs_state_machine &_sm)> runner)
 {
     pthread_mutex_lock(&map_lock);
-    auto sm = m_sm_map[sm_id];
-    if (sm)
+    try
     {
-        runner(*sm);
+
+        auto sm = m_sm_map[sm_id];
+        if (sm)
+        {
+            runner(*sm);
+        }
+    }
+    catch (...)
+    {
     }
     pthread_mutex_unlock(&map_lock);
 }
