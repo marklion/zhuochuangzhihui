@@ -1109,7 +1109,16 @@ std::unique_ptr<abs_sm_state> scale_state_scale::proc_event(abs_state_machine &_
             }
             sm.weight_que.push_back(sm.cur_weight);
         }
-        if (sm.weight_que.size() > 3)
+        auto require_weight_count = 3;
+        THR_CALL_BEGIN(config_management);
+        running_rule tmp;
+        client->get_rule(tmp);
+        if (tmp.weight_turn > 0)
+        {
+            require_weight_count = tmp.weight_turn;
+        }
+        THR_CALL_END();
+        if (sm.weight_que.size() > require_weight_count)
         {
             vehicle_order_info tmp;
             THR_CALL_BEGIN(order_center);

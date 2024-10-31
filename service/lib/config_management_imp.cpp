@@ -13,7 +13,7 @@ config_management_handler::config_management_handler()
         {"id_reader_driver", "/bin/id_reader_driver"},
         {"wr_style_scale", "/bin/wr_style_scale_driver"},
         {"wl_style_scale", "/bin/wl_style_scale_driver"},
-        };
+    };
 
     for (auto &itr : dmt_array)
     {
@@ -187,7 +187,7 @@ bool config_management_handler::del_device_set(const int64_t set_id)
 void config_management_handler::get_contract_config(std::vector<contract_config> &_return)
 {
     auto ccs = sqlite_orm::search_record_all<sql_contract>();
-    for (auto &itr:ccs)
+    for (auto &itr : ccs)
     {
         contract_config tmp;
         db_2_rpc(itr, tmp);
@@ -320,6 +320,7 @@ bool config_management_handler::set_rule(const running_rule &rule)
         er->zyzl_host = rule.zyzl_host;
         er->date_ticket_prefix = rule.date_ticket_prefix;
         er->oem_name = rule.oem_name;
+        er->weight_turn = rule.weight_turn;
         ret = er->update_record();
     }
     else
@@ -331,6 +332,7 @@ bool config_management_handler::set_rule(const running_rule &rule)
         tmp.zyzl_host = rule.zyzl_host;
         tmp.date_ticket_prefix = rule.date_ticket_prefix;
         tmp.oem_name = rule.oem_name;
+        tmp.weight_turn = rule.weight_turn;
         ret = tmp.insert_record();
     }
     return ret;
@@ -352,6 +354,7 @@ void config_management_handler::get_rule(running_rule &_return)
         _return.zyzl_ssid = er->zyzl_ssid;
         _return.date_ticket_prefix = er->date_ticket_prefix;
         _return.oem_name = er->oem_name;
+        _return.weight_turn = er->weight_turn;
     }
 }
 

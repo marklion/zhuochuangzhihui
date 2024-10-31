@@ -403,6 +403,7 @@ public:
     std::string zyzl_host;
     std::string date_ticket_prefix;
     std::string oem_name;
+    long weight_turn = 0;
     virtual std::vector<sqlite_orm_column> self_columns_defined()
     {
         std::vector<sqlite_orm_column> ret;
@@ -413,6 +414,7 @@ public:
         ret.push_back(sqlite_orm_column("zyzl_host", sqlite_orm_column::STRING, &zyzl_host));
         ret.push_back(sqlite_orm_column("date_ticket_prefix", sqlite_orm_column::STRING, &date_ticket_prefix));
         ret.push_back(sqlite_orm_column("oem_name", sqlite_orm_column::STRING, &oem_name));
+        ret.push_back(sqlite_orm_column("weight_turn", sqlite_orm_column::INTEGER, &weight_turn));
 
         return ret;
     }

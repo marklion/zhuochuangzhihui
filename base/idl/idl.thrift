@@ -135,6 +135,7 @@ struct running_rule {
     4:string zyzl_host,
     5:string date_ticket_prefix,
     6:string oem_name,
+    7:i64 weight_turn,
 }
 
 struct device_run_time{
