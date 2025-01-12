@@ -2041,6 +2041,10 @@ static bool push_req_to_hn(zh_sql_vehicle_order &_order, const std::string &_pic
                             vo.reset(sqlite_orm::search_record<zh_sql_vehicle_order>(vo->get_pri_id()).release());
                             if (vo)
                             {
+                                if (req_json_content("transtype") == "UpGrossRece" && std_err == "该客户无对应的收款信息")
+                                {
+                                    std_err = "";
+                                }
                                 if (std_err.empty())
                                 {
                                     tdf_log tmp_log("plugin_exec");
