@@ -233,6 +233,8 @@ static bool create_plan_to_remote(const zy_sync_plan_data &_plan)
     req.Add("customerName", _plan.customerName);
     req.Add("stuffName", _plan.stuffName);
     req.Add("trans_company_name", _plan.trans_company_name);
+    req.Add("c3", _plan.c3);
+    req.Add("c4", _plan.c4);
     send_to_zyzl("/create_plan", req, [&](const neb::CJsonObject &_resp) -> bool
                  {
         ret = true;
@@ -264,6 +266,8 @@ zy_sync_plan_data json_to_struct_plan(const neb::CJsonObject &_json)
     tmp.useFor = "气站";
     tmp.order_number = _json("orderNo");
     tmp.trans_company_name = _json("transCompanyName");
+    tmp.c3 = _json("c3");
+    tmp.c4 = _json("c4");
 
     return tmp;
 }

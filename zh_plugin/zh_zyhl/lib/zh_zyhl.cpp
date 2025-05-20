@@ -192,6 +192,8 @@ void fetch_plan_from_zyhl(const std::string &_date)
                 tmp.Add("companyName", company_name);
                 tmp.Add("stuffName", single_item["product"]("type"));
                 tmp.Add("transCompanyName", single_item["transport_company"]("name"));
+                tmp.Add("c3", single_item["distribution_company"]("name"));
+                tmp.Add("c4", single_item["receiving_company"]("name"));
                 req_list.push_back(tmp);
             }
         }
